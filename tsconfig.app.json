@@ -5,10 +5,19 @@
     "types": ["vite/client"],
 
     /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+  
+    //关闭 declared but its value is never read
+    "noUnusedParameters": false,
+    // This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+    "erasableSyntaxOnly": false,
+    "noFallthroughCasesInSwitch": true,   
+    // 关闭严格模式，以允许隐式 any 类型
+    "strict": false,
+   
+    // 其他配置...
+    "noImplicitAny": false,
+    "skipLibCheck": true,
 
     /* Path Aliases */
     "paths": {

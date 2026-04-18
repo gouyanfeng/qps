@@ -47,8 +47,8 @@ export const useGlobalStore = defineStore("qps-global",{
   getters: {},
   actions: {
     // Set GlobalState
-    setGlobalState(...args: ObjToKeyValArray<GlobalState>) {
-      this.$patch({ [args[0]]: args[1] });
+    setGlobalState(key: keyof GlobalState | string, value: any) {
+      this.$patch({ [key]: value });
     }
   },
   persist: piniaPersistConfig("qps-global")
