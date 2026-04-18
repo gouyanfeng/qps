@@ -1,40 +1,67 @@
 {
+  /*
+   * 应用代码的 TypeScript 配置文件
+   * 继承自 Vue 官方提供的 DOM 环境配置
+   */
+  
+  // 继承 Vue 官方的 DOM 环境配置
   "extends": "@vue/tsconfig/tsconfig.dom.json",
+  
   "compilerOptions": {
+    // TypeScript 构建信息文件位置，用于加速增量编译
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    
+    // 包含的类型定义文件
     "types": ["vite/client"],
 
-    /* Linting */
+    /* 代码检查选项 */
+    // 不报告未使用的局部变量
     "noUnusedLocals": false,
-  
-    //关闭 declared but its value is never read
+    
+    // 不报告未使用的参数
     "noUnusedParameters": false,
-    // This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+    
+    // 禁用只能使用可擦除语法的限制
     "erasableSyntaxOnly": false,
-    "noFallthroughCasesInSwitch": true,   
+    
+    // 报告 switch 语句中的 fallthrough 情况
+    "noFallthroughCasesInSwitch": true,
+    
     // 关闭严格模式，以允许隐式 any 类型
     "strict": false,
-   
-    // 其他配置...
+    
+    // 允许隐式 any 类型
     "noImplicitAny": false,
+    
+    // 跳过库文件的类型检查
     "skipLibCheck": true,
 
-    /* Path Aliases */
+    /* 路径别名配置 */
     "paths": {
+      // 将 @/* 映射到 ./src/*
       "@/*": ["./src/*"]
     },
 
-    /* Module Syntax */
+    /* 模块语法配置 */
+    // 禁用严格的模块语法检查
     "verbatimModuleSyntax": false
   },
+  
+  // 包含的文件
   "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "build/**/*.ts",
-    "build/**/*.d.ts",
-    "vite.config.ts"
+    "src/**/*.ts",      // 所有 TypeScript 文件
+    "src/**/*.d.ts",     // 所有类型声明文件
+    "src/**/*.tsx",      // 所有 TypeScript JSX 文件
+    "src/**/*.vue",      // 所有 Vue 组件文件
+    "build/**/*.ts",     // 构建脚本文件
+    "build/**/*.d.ts",    // 构建脚本类型声明文件
+    "vite.config.ts"      // Vite 配置文件
   ],
-  "exclude": ["node_modules", "dist", "**/*.js"]
+  
+  // 排除的文件
+  "exclude": [
+    "node_modules",  // 第三方依赖
+    "dist",          // 构建输出目录
+    "**/*.js"        // 所有 JavaScript 文件
+  ]
 }
