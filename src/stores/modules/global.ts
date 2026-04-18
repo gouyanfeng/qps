@@ -3,7 +3,7 @@ import { GlobalState } from "@/stores/interface";
 import { DEFAULT_PRIMARY } from "@/config";
 import piniaPersistConfig from "@/stores/helper/persist";
 
-export const useGlobalStore = defineStore("geeker-global",{
+export const useGlobalStore = defineStore("qps-global",{
 
   // 修改默认值之后，需清除 localStorage 数据
   state: (): GlobalState => ({
@@ -51,5 +51,5 @@ export const useGlobalStore = defineStore("geeker-global",{
       this.$patch({ [args[0]]: args[1] });
     }
   },
-  persist: piniaPersistConfig("geeker-global")
+  persist: piniaPersistConfig("qps-global")
 });

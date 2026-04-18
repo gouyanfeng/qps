@@ -1,6 +1,4 @@
 import { createApp } from 'vue'
-import {  createRouter ,createWebHashHistory} from 'vue-router'
-
 
 // reset style sheet
 import "@/styles/reset.scss";
@@ -19,32 +17,28 @@ import "@/styles/element-dark.scss";
 // custom element css
 import "@/styles/element.scss";
 
+import * as Icons from "@element-plus/icons-vue";
 import App from './App.vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
+import router from './routers'
 
 // pinia store
 import pinia from "@/stores";
 
-import HelloWorld from './components/HelloWorld.vue'
-import AboutView from './components/AboutView.vue'
-
-
-
-
-const routes = [
-  { path: '/', component: HelloWorld },
-  { path: '/about', component: AboutView },
-]
-
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes,
-})
+import I18n from "@/languages/index";
 
 const app = createApp(App)
+
+// register the element Icons component
+Object.keys(Icons).forEach(key => {
+  app.component(key, Icons[key as keyof typeof Icons]);
+});
+
 app.use(router)
 app.use(ElementPlus)
 app.use(pinia)
+app.use(I18n)
+
 app.mount('#app')
