@@ -869,9 +869,9 @@
           }
         },
         {
-          "path": "/system/roleManage",
-          "name": "roleManage",
-          "component": "/system/roleManage/index",
+          "path": "/system/role",
+          "name": "role",
+          "component": "/system/role/index",
           "meta": {
             "icon": "Menu",
             "title": "角色管理",

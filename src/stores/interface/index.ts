@@ -47,6 +47,12 @@ export interface TabsState {
   tabsMenuList: TabsMenuProps[];
 }
 
+/* RoleType */
+export interface RoleType {
+  label: string;
+  value: string;
+}
+
 /* AuthState */
 export interface AuthState {
   routeName: string;

@@ -1,5 +1,5 @@
 <template>
-    <div class="merchants">
+    <div class="list-page">
         <QueryPage :pagination="pagination" v-model:collapsed="collapsed" @search="handleSearch" @reset="resetSearch"
             @sizeChange="handleSizeChange" @currentChange="handleCurrentChange">
             <!-- 搜索条件 -->
@@ -222,6 +222,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="scss">
-@import './index.scss';
-</style>
+<style scoped lang="scss"></style>

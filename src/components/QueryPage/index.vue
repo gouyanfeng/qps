@@ -160,6 +160,7 @@ defineExpose({
     }
 
     .table-header {
+        height: 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;

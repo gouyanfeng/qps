@@ -1,5 +1,5 @@
 <template>
-    <div class="users">
+    <div class="list-page">
         <QueryPage :pagination="pagination" v-model:collapsed="collapsed" @search="handleSearch" @reset="resetSearch"
             @sizeChange="handleSizeChange" @currentChange="handleCurrentChange">
             <!-- 搜索条件 -->
@@ -10,13 +10,6 @@
                     </el-form-item>
                     <el-form-item label="真实姓名">
                         <el-input v-model="searchForm.realName" placeholder="请输入真实姓名" />
-                    </el-form-item>
-                    <el-form-item label="角色">
-                        <el-select v-model="searchForm.role" placeholder="请选择角色">
-                            <el-option label="管理员" value="admin" />
-                            <el-option label="商户" value="merchant" />
-                            <el-option label="用户" value="user" />
-                        </el-select>
                     </el-form-item>
                     <el-form-item label="状态">
                         <el-select v-model="searchForm.isActive" placeholder="请选择状态">
@@ -137,7 +130,6 @@ const form = reactive<User.ReqUserForm>({
     password: '',
     realName: '',
     role: 'user',
-    merchantId: '',
     isActive: true
 })
 
@@ -213,7 +205,6 @@ const openDialog = (type: string, row?: User.ResUserList) => {
             password: '',
             realName: '',
             role: 'user',
-            merchantId: '',
             isActive: true
         })
         currentUserId.value = ''
@@ -224,7 +215,6 @@ const openDialog = (type: string, row?: User.ResUserList) => {
             password: '',
             realName: row.realName,
             role: row.role,
-            merchantId: row.merchantId,
             isActive: row.isActive
         })
         currentUserId.value = row.id
@@ -255,6 +245,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="scss">
-@import './index.scss';
-</style>
+<style scoped lang="scss"></style>
