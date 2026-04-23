@@ -5,7 +5,7 @@ import piniaPersistConfig from "@/stores/helper/persist";
 export const useUserStore = defineStore("qps-user", {
   state: (): UserState => ({
     token: "",
-    userInfo: { name: "Geeker" }
+    userInfo: { name: "qps" },
   }),
   getters: {},
   actions: {
@@ -16,7 +16,7 @@ export const useUserStore = defineStore("qps-user", {
     // Set setUserInfo
     setUserInfo(userInfo: UserState["userInfo"]) {
       this.userInfo = userInfo;
-    }
+    },
   },
-  persist: piniaPersistConfig("qps-user")
+  persist: piniaPersistConfig("qps-user"),
 });

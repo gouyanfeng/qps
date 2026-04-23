@@ -1,0 +1,26 @@
+.merchants {
+  padding: 20px;
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .mb20 {
+    margin-bottom: 20px;
+  }
+  
+  .mt20 {
+    margin-top: 20px;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .dialog-footer {
+    text-align: right;
+  }
+}

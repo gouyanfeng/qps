@@ -44,7 +44,8 @@
 
     /* 模块语法配置 */
     // 禁用严格的模块语法检查
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "jsx": "preserve",
   },
   
   // 包含的文件

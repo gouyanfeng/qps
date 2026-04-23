@@ -16,6 +16,20 @@
       }
     },
     {
+      "path": "/merchants",
+      "name": "merchants",
+      "component": "/merchants/index",
+      "meta": {
+        "icon": "Shop",
+        "title": "商户管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
       "path": "/dataScreen",
       "name": "dataScreen",
       "component": "/dataScreen/index",

@@ -23,6 +23,7 @@ initTheme();
 
 // init language
 const i18n = useI18n();
+
 onMounted(() => {
   const language = globalStore.language ?? getBrowserLang();
   i18n.locale.value = language;

@@ -37,7 +37,12 @@ export namespace Login {
     password: string;
   }
   export interface ResLogin {
-    access_token: string;
+    token: string;
+    userId: string;
+    username: string;
+    realName: string;
+    role: string;
+    merchantId: string;
   }
   export interface ResAuthButtons {
     [key: string]: string[];
@@ -86,5 +91,41 @@ export namespace User {
     id: string;
     name: string;
     children?: ResDepartment[];
+  }
+}
+
+// 商户管理模块
+export namespace Merchant {
+  export interface ReqMerchantParams extends ReqPage {
+    name: string;
+    phone: string;
+    isActive: boolean;
+  }
+  export interface ResMerchantList {
+    id: string;
+    name: string;
+    phone: string;
+    expiryDate: string;
+    isActive: boolean;
+    createdAt: string;
+  }
+  export interface ReqMerchantForm {
+    name: string;
+    phone: string;
+    expiryDate: string;
+    isActive: boolean;
+  }
+  export interface ReqMerchantUpdate {
+    name: string;
+    phone: string;
+    expiryDate: string;
+    isActive: boolean;
+  }
+  export interface ResMerchantPagination {
+    data: ResMerchantList[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
   }
 }
