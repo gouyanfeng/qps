@@ -19,7 +19,7 @@ export interface ResPage<T> {
 
 // 分页请求参数
 export interface ReqPage {
-  pageNum: number;
+  page: number;
   pageSize: number;
 }
 
@@ -122,7 +122,7 @@ export namespace Merchant {
     isActive: boolean;
   }
   export interface ResMerchantPagination {
-    data: ResMerchantList[];
+    list: ResMerchantList[];
     totalCount: number;
     totalPages: number;
     currentPage: number;

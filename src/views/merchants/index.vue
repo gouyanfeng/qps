@@ -1,20 +1,69 @@
 <template>
-    <div class="table-box">
-        <ProTable ref="proTable" title="商户管理" :columns="columns" :request-api="getMerchantList"
-            :search-col="{ xs: 1, sm: 2, md: 2, lg: 3, xl: 3 }">
-            <!-- 表格 header 按钮 -->
-            <template #tableHeader>
-                <el-button type="primary" :icon="CirclePlus" @click="openDrawer('新增')">新增商户</el-button>
+    <div class="merchants">
+        <QueryPage :pagination="pagination" v-model:collapsed="collapsed" @search="handleSearch" @reset="resetSearch"
+            @sizeChange="handleSizeChange" @currentChange="handleCurrentChange">
+            <!-- 搜索条件 -->
+            <template #searchConditions>
+                <el-form :model="searchForm" :inline="true">
+                    <el-form-item label="商户名称">
+                        <el-input v-model="searchForm.name" placeholder="请输入商户名称" />
+                    </el-form-item>
+                    <el-form-item label="联系电话">
+                        <el-input v-model="searchForm.phone" placeholder="请输入联系电话" />
+                    </el-form-item>
+                    <el-form-item label="状态">
+                        <el-select v-model="searchForm.isActive" placeholder="请选择状态">
+                            <el-option label="激活" :value="true" />
+                            <el-option label="禁用" :value="false" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="创建日期" v-show="!collapsed">
+                        <el-date-picker v-model="searchForm.createDate" type="date" placeholder="选择创建日期" />
+                    </el-form-item>
+                    <el-form-item label="过期日期" v-show="!collapsed">
+                        <el-date-picker v-model="searchForm.expiryDate" type="date" placeholder="选择过期日期" />
+                    </el-form-item>
+                </el-form>
             </template>
 
-            <!-- 表格操作 -->
-            <template #operation="scope">
-                <el-button type="primary" link :icon="View" @click="openDrawer('查看', scope.row)">查看</el-button>
-                <el-button type="primary" link :icon="EditPen" @click="openDrawer('编辑', scope.row)">编辑</el-button>
+            <!-- 功能按钮 -->
+            <template #headerButtons>
+                <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增商户</el-button>
             </template>
-        </ProTable>
 
-        <!-- 商户抽屉组件 -->
+            <!-- 表格 -->
+            <template #table>
+                <el-table v-loading="loading" :data="merchantList" style="width: 100%" border>
+                    <el-table-column prop="name" label="商户名称" width="180" />
+                    <el-table-column prop="phone" label="联系电话" width="150" />
+                    <el-table-column prop="expiryDate" label="过期日期" width="200">
+                        <template #default="{ row }">
+                            {{ formatDate(row.expiryDate) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="isActive" label="状态" width="100">
+                        <template #default="{ row }">
+                            <el-tag :type="row.isActive ? 'success' : 'danger'">
+                                {{ row.isActive ? '激活' : '禁用' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="createdAt" label="创建时间" width="200">
+                        <template #default="{ row }">
+                            {{ formatDate(row.createdAt) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" fixed="right" align="center">
+                        <template #default="{ row }">
+                            <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
+                            <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </template>
+        </QueryPage>
+
+        <!-- 商户对话框 -->
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
             <el-form :model="form" label-width="120px">
                 <el-form-item label="商户名称">
@@ -42,104 +91,101 @@
 </template>
 
 <script setup lang="ts" name="merchants">
-import { ref, reactive } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Merchant } from "@/api/interface";
-import ProTable from "@/components/ProTable/index.vue";
-import { CirclePlus, EditPen, View } from "@element-plus/icons-vue";
-import { ProTableInstance, ColumnProps } from "@/components/ProTable/interface";
-import { merchantApi } from "@/api/modules/merchant";
-import { validateHeaderName } from "http";
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Merchant } from '@/api/interface'
+import { CirclePlus, EditPen, View } from '@element-plus/icons-vue'
+import { merchantApi } from '@/api/modules/merchant'
+import QueryPage from '@/components/QueryPage/index.vue'
 
-// ProTable 实例
-const proTable = ref<ProTableInstance>();
-
-// 对话框状态
-const dialogVisible = ref(false);
-const dialogTitle = ref("");
-const dialogType = ref("");
-const currentMerchantId = ref("");
+// 状态管理
+const loading = ref(false)
+const collapsed = ref(true)
+const merchantList = ref<Merchant.ResMerchantList[]>([])
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const dialogType = ref('')
+const currentMerchantId = ref('')
 
 // 表单数据
+const searchForm = reactive({
+    name: '',
+    phone: '',
+    isActive: undefined as boolean | undefined,
+    createDate: undefined as string | undefined,
+    expiryDate: undefined as string | undefined
+})
+
+const pagination = reactive({
+    currentPage: 1,
+    pageSize: 10,
+    total: 0
+})
+
 const form = reactive<Merchant.ReqMerchantForm>({
-    name: "",
-    phone: "",
+    name: '',
+    phone: '',
     expiryDate: new Date().toISOString(),
     isActive: true
-});
+})
 
-// 表格配置项
-const columns = reactive<ColumnProps<Merchant.ResMerchantList>[]>([
+// 工具函数
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
+}
 
-    {
-        prop: "name",
-        label: "商户名称",
-        width: 180,
-        search: { el: "input" }
-    },
-    {
-        prop: "phone",
-        label: "联系电话",
-        width: 150,
-        search: { el: "input" }
-    },
-    {
-        prop: "expiryDate",
-        label: "过期日期",
-        width: 200,
-        formatter: (row: Merchant.ResMerchantList) => {
-            return new Date(row.expiryDate).toLocaleString();
+// API 调用
+const getMerchantList = async () => {
+
+    try {
+        const params = {
+            page: pagination.currentPage,
+            pageSize: pagination.pageSize,
+            ...searchForm
         }
-    },
-    {
-        prop: "isActive",
-        label: "状态",
-        width: 100,
-        // tag: true,
-        formatter: (row: Merchant.ResMerchantList) => {
-            return row.isActive ? "激活" : "禁用";
-        },
-        search: {
-            el: "select",
-            props: {
-                options: [
-                    { label: "激活", value: true },
-                    { label: "禁用", value: false }
-                ]
-            }
-        }
-    },
-    {
-        prop: "createdAt",
-        label: "创建时间",
-        width: 200,
-        formatter: (row: Merchant.ResMerchantList) => {
-            return new Date(row.createdAt).toLocaleString();
-        }
-    },
-    { prop: "operation", label: "操作", width: 200, fixed: "right" }
-]);
+        const response = await merchantApi.getMerchantList(params)
+        merchantList.value = response.data.list || []
+        pagination.total = response.data.totalCount || 0
+    } catch (error) {
+        ElMessage.error('获取商户列表失败')
+    }
+}
 
+// 事件处理
+const handleSearch = () => {
+    getMerchantList()
+}
 
-// 获取商户列表
-const getMerchantList = (params: any) => {
-    return merchantApi.getMerchantList(params);
-};
+const resetSearch = () => {
+    searchForm.name = ''
+    searchForm.phone = ''
+    searchForm.isActive = undefined
+    searchForm.createDate = undefined
+    searchForm.expiryDate = undefined
+    getMerchantList()
+}
 
-// 打开抽屉
-const openDrawer = (type: string, row?: Merchant.ResMerchantList) => {
-    dialogTitle.value = type;
-    dialogType.value = type;
+const handleSizeChange = (size: number) => {
+    getMerchantList()
+}
 
-    if (type === "新增") {
+const handleCurrentChange = (current: number) => {
+    getMerchantList()
+}
+
+const openDialog = (type: string, row?: Merchant.ResMerchantList) => {
+    dialogTitle.value = type
+    dialogType.value = type
+
+    if (type === '新增') {
         // 重置表单
         Object.assign(form, {
-            name: "",
-            phone: "",
+            name: '',
+            phone: '',
             expiryDate: new Date().toISOString(),
             isActive: true
-        });
-        currentMerchantId.value = "";
+        })
+        currentMerchantId.value = ''
     } else if (row) {
         // 填充表单数据
         Object.assign(form, {
@@ -147,40 +193,35 @@ const openDrawer = (type: string, row?: Merchant.ResMerchantList) => {
             phone: row.phone,
             expiryDate: row.expiryDate,
             isActive: row.isActive
-        });
-        currentMerchantId.value = row.id;
+        })
+        currentMerchantId.value = row.id
     }
 
-    dialogVisible.value = true;
-};
+    dialogVisible.value = true
+}
 
-// 提交表单
 const submitForm = async () => {
     try {
-        if (dialogType.value === "新增") {
-            await merchantApi.addMerchant(form);
-            ElMessage.success("新增商户成功");
-        } else if (dialogType.value === "编辑" && currentMerchantId.value) {
-            await merchantApi.updateMerchant(currentMerchantId.value, form);
-            ElMessage.success("更新商户成功");
+        if (dialogType.value === '新增') {
+            await merchantApi.addMerchant(form)
+            ElMessage.success('新增商户成功')
+        } else if (dialogType.value === '编辑' && currentMerchantId.value) {
+            await merchantApi.updateMerchant(currentMerchantId.value, form)
+            ElMessage.success('更新商户成功')
         }
-        dialogVisible.value = false;
-        proTable.value?.getTableList();
+        dialogVisible.value = false
+        getMerchantList()
     } catch (error) {
-        ElMessage.error("操作失败");
+        ElMessage.error('操作失败')
     }
-};
+}
 
+// 初始化
+onMounted(() => {
+    getMerchantList()
+})
 </script>
 
-<style scoped>
-.table-box {
-    width: 100%;
-    height: 100%;
-}
-
-.dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-}
+<style scoped lang="scss">
+@import './index.scss';
 </style>
