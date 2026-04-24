@@ -30,6 +30,20 @@
       }
     },
     {
+      "path": "/rooms",
+      "name": "rooms",
+      "component": "/rooms/index",
+      "meta": {
+        "icon": "House",
+        "title": "房间管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
       "path": "/users",
       "name": "users",
       "component": "/users/index",

@@ -2,8 +2,6 @@ import "@/styles/reset.scss";
 import "@/styles/common.scss";
 import "@/assets/iconfont/iconfont.scss";
 import "@/assets/fonts/font.scss";
-import "element-plus/dist/index.css";
-import "element-plus/theme-chalk/dark/css-vars.css";
 import "@/styles/element-dark.scss";
 import "@/styles/element.scss";
 import "element-plus/dist/index.css";
@@ -11,9 +9,9 @@ import "element-plus/theme-chalk/dark/css-vars.css";
 
 import { createApp } from "vue";
 import * as Icons from "@element-plus/icons-vue";
-import App from "./App.vue";
+import App from "@/App.vue";
 import ElementPlus from "element-plus";
-import router from "./routers";
+import router from "@/routers";
 import pinia from "@/stores";
 import I18n from "@/languages/index";
 
