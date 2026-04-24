@@ -1,7 +1,6 @@
 <template>
     <div class="list-page">
-        <QueryPage :pagination="pagination" v-model:collapsed="collapsed" @search="handleSearch" @reset="resetSearch"
-            @sizeChange="handleSizeChange" @currentChange="handleCurrentChange">
+        <QueryPage api="/admin/merchants" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->
             <template #searchConditions>
                 <el-form :model="searchForm" :inline="true">
@@ -17,10 +16,10 @@
                             <el-option label="禁用" :value="false" />
                         </el-select>
                     </el-form-item>
-                    <el-form-item label="创建日期" v-show="!collapsed">
+                    <el-form-item label="创建日期">
                         <el-date-picker v-model="searchForm.createDate" type="date" placeholder="选择创建日期" />
                     </el-form-item>
-                    <el-form-item label="过期日期" v-show="!collapsed">
+                    <el-form-item label="过期日期">
                         <el-date-picker v-model="searchForm.expiryDate" type="date" placeholder="选择过期日期" />
                     </el-form-item>
                 </el-form>
@@ -32,8 +31,8 @@
             </template>
 
             <!-- 表格 -->
-            <template #table>
-                <el-table v-loading="loading" :data="merchantList" style="width: 100%" border>
+            <template #table="{ tableData }">
+                <el-table :data="tableData" style="width: 100%" border>
                     <el-table-column prop="name" label="商户名称" width="180" />
                     <el-table-column prop="phone" label="联系电话" width="150" />
                     <el-table-column prop="expiryDate" label="过期日期" width="200">
@@ -91,17 +90,17 @@
 </template>
 
 <script setup lang="ts" name="merchants">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Merchant } from '@/api/interface'
 import { CirclePlus, EditPen, View } from '@element-plus/icons-vue'
 import { merchantApi } from '@/api/modules/merchant'
 import QueryPage from '@/components/QueryPage/index.vue'
 
+// 引用
+const queryPageRef = ref()
+
 // 状态管理
-const loading = ref(false)
-const collapsed = ref(true)
-const merchantList = ref<Merchant.ResMerchantList[]>([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const dialogType = ref('')
@@ -116,12 +115,6 @@ const searchForm = reactive({
     expiryDate: undefined as string | undefined
 })
 
-const pagination = reactive({
-    currentPage: 1,
-    pageSize: 10,
-    total: 0
-})
-
 const form = reactive<Merchant.ReqMerchantForm>({
     name: '',
     phone: '',
@@ -134,46 +127,20 @@ const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
 }
 
-// API 调用
-const getMerchantList = async () => {
-
-    try {
-        const params = {
-            page: pagination.currentPage,
-            pageSize: pagination.pageSize,
-            ...searchForm
-        }
-        const response = await merchantApi.getMerchantList(params)
-        merchantList.value = response.data.list || []
-        pagination.total = response.data.totalCount || 0
-    } catch (error) {
-        ElMessage.error('获取商户列表失败')
-    }
+// 处理重置事件
+const handleReset = () => {
+    // 重置搜索表单
+    Object.assign(searchForm, {
+        name: '',
+        phone: '',
+        isActive: undefined,
+        createDate: undefined,
+        expiryDate: undefined
+    })
 }
 
 // 事件处理
-const handleSearch = () => {
-    getMerchantList()
-}
-
-const resetSearch = () => {
-    searchForm.name = ''
-    searchForm.phone = ''
-    searchForm.isActive = undefined
-    searchForm.createDate = undefined
-    searchForm.expiryDate = undefined
-    getMerchantList()
-}
-
-const handleSizeChange = (size: number) => {
-    getMerchantList()
-}
-
-const handleCurrentChange = (current: number) => {
-    getMerchantList()
-}
-
-const openDialog = (type: string, row?: Merchant.ResMerchantList) => {
+const openDialog = (type: string, row?: any) => {
     dialogTitle.value = type
     dialogType.value = type
 
@@ -210,16 +177,16 @@ const submitForm = async () => {
             ElMessage.success('更新商户成功')
         }
         dialogVisible.value = false
-        getMerchantList()
+        // 重新获取数据
+        if (queryPageRef.value) {
+            queryPageRef.value.getTableList()
+        }
     } catch (error) {
         ElMessage.error('操作失败')
     }
 }
 
-// 初始化
-onMounted(() => {
-    getMerchantList()
-})
+
 </script>
 
 <style scoped lang="scss"></style>

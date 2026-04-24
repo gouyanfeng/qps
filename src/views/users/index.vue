@@ -1,7 +1,7 @@
 <template>
     <div class="list-page">
-        <QueryPage :pagination="pagination" v-model:collapsed="collapsed" @search="handleSearch" @reset="resetSearch"
-            @sizeChange="handleSizeChange" @currentChange="handleCurrentChange">
+        <QueryPage api="http://localhost:5000/api/admin/users" :searchParam="searchForm" @reset="handleReset"
+            ref="queryPageRef">
             <!-- 搜索条件 -->
             <template #searchConditions>
                 <el-form :model="searchForm" :inline="true">
@@ -26,8 +26,8 @@
             </template>
 
             <!-- 表格 -->
-            <template #table>
-                <el-table v-loading="loading" :data="userList" style="width: 100%" border>
+            <template #table="{ tableData }">
+                <el-table :data="tableData" style="width: 100%" border>
                     <el-table-column prop="username" label="用户名" width="180" />
                     <el-table-column prop="realName" label="真实姓名" width="150" />
                     <el-table-column prop="role" label="角色" width="120">
@@ -95,17 +95,17 @@
 </template>
 
 <script setup lang="ts" name="users">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User } from '@/api/interface'
 import { CirclePlus, EditPen, View } from '@element-plus/icons-vue'
 import { userApi } from '@/api/modules/user'
 import QueryPage from '@/components/QueryPage/index.vue'
 
+// 引用
+const queryPageRef = ref()
+
 // 状态管理
-const loading = ref(false)
-const collapsed = ref(true)
-const userList = ref<User.ResUserList[]>([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const dialogType = ref('')
@@ -117,12 +117,6 @@ const searchForm = reactive({
     realName: '',
     role: '',
     isActive: undefined as boolean | undefined
-})
-
-const pagination = reactive({
-    currentPage: 1,
-    pageSize: 10,
-    total: 0
 })
 
 const form = reactive<User.ReqUserForm>({
@@ -156,45 +150,19 @@ const getRoleType = (role: string) => {
     return typeMap[role as keyof typeof typeMap] || 'default'
 }
 
-// API 调用
-const getUserList = async () => {
-
-    try {
-        const params = {
-            page: pagination.currentPage,
-            pageSize: pagination.pageSize,
-            ...searchForm
-        }
-        const response = await userApi.getUserList(params)
-        userList.value = response.data.list || []
-        pagination.total = response.data.totalCount || 0
-    } catch (error) {
-        ElMessage.error('获取用户列表失败')
-    }
+// 处理重置事件
+const handleReset = () => {
+    // 重置搜索表单
+    Object.assign(searchForm, {
+        username: '',
+        realName: '',
+        role: '',
+        isActive: undefined
+    })
 }
 
 // 事件处理
-const handleSearch = () => {
-    getUserList()
-}
-
-const resetSearch = () => {
-    searchForm.username = ''
-    searchForm.realName = ''
-    searchForm.role = ''
-    searchForm.isActive = undefined
-    getUserList()
-}
-
-const handleSizeChange = (size: number) => {
-    getUserList()
-}
-
-const handleCurrentChange = (current: number) => {
-    getUserList()
-}
-
-const openDialog = (type: string, row?: User.ResUserList) => {
+const openDialog = (type: string, row?: any) => {
     dialogTitle.value = type
     dialogType.value = type
 
@@ -233,16 +201,16 @@ const submitForm = async () => {
             ElMessage.success('更新用户成功')
         }
         dialogVisible.value = false
-        getUserList()
+        // 重新获取数据
+        if (queryPageRef.value) {
+            queryPageRef.value.getTableList()
+        }
     } catch (error) {
         ElMessage.error('操作失败')
     }
 }
 
-// 初始化
-onMounted(() => {
-    getUserList()
-})
+
 </script>
 
 <style scoped lang="scss"></style>

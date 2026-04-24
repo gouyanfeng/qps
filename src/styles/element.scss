@@ -172,8 +172,12 @@
           display: inline-flex;
         }
       }
+   
     }
-
+   .el-scrollbar__view
+      {
+        min-height: 45px;
+      }
     // table 中 image 图片样式
     .table-image {
       width: 50px;

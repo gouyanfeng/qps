@@ -1,15 +1,14 @@
 <template>
     <div class="list-page">
-        <QueryPage :pagination="pagination" v-model:collapsed="collapsed" @search="handleSearch" @reset="resetSearch"
-            @sizeChange="handleSizeChange" @currentChange="handleCurrentChange">
+        <QueryPage api="/admin/roles" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->
             <template #searchConditions>
                 <el-form :model="searchForm" :inline="true">
                     <el-form-item label="角色名称">
-                        <el-input v-model="searchForm.label" placeholder="请输入角色名称" />
+                        <el-input v-model="searchForm.name" placeholder="请输入角色名称" />
                     </el-form-item>
                     <el-form-item label="角色值">
-                        <el-input v-model="searchForm.value" placeholder="请输入角色值" />
+                        <el-input v-model="searchForm.code" placeholder="请输入角色值" />
                     </el-form-item>
                 </el-form>
             </template>
@@ -20,10 +19,10 @@
             </template>
 
             <!-- 表格 -->
-            <template #table>
-                <el-table v-loading="loading" :data="roleList" style="width: 100%" border>
-                    <el-table-column prop="label" label="角色名称" width="180" />
-                    <el-table-column prop="value" label="角色值" width="150" />
+            <template #table="{ tableData }">
+                <el-table :data="tableData" style="width: 100% " border>
+                    <el-table-column prop="name" label="角色名称" width="180" />
+                    <el-table-column prop="code" label="角色值" width="150" />
                     <el-table-column label="操作" fixed="right" align="center">
                         <template #default="{ row }">
                             <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
@@ -39,10 +38,10 @@
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
             <el-form :model="form" label-width="120px">
                 <el-form-item label="角色名称">
-                    <el-input v-model="form.label" placeholder="请输入角色名称" />
+                    <el-input v-model="form.name" placeholder="请输入角色名称" />
                 </el-form-item>
                 <el-form-item label="角色值">
-                    <el-input v-model="form.value" placeholder="请输入角色值" />
+                    <el-input v-model="form.code" placeholder="请输入角色值" />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -56,17 +55,16 @@
 </template>
 
 <script setup lang="ts" name="role">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
-import { useRoleStore } from '@/stores/modules/role'
+import { roleApi } from '@/api/modules/role'
 import QueryPage from '@/components/QueryPage/index.vue'
 
+// 引用
+const queryPageRef = ref()
+
 // 状态管理
-const loading = ref(false)
-const collapsed = ref(true)
-const roleStore = useRoleStore()
-const roleList = ref(roleStore.rolesGet)
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const dialogType = ref('')
@@ -74,66 +72,25 @@ const currentRoleValue = ref('')
 
 // 表单数据
 const searchForm = reactive({
-    label: '',
-    value: ''
-})
-
-const pagination = reactive({
-    currentPage: 1,
-    pageSize: 10,
-    total: 0
+    name: '',
+    code: ''
 })
 
 const form = reactive({
-    label: '',
-    value: ''
+    name: '',
+    code: ''
 })
 
-// 加载角色列表
-const loadRoles = () => {
-    roleList.value = roleStore.rolesGet
-    pagination.total = roleList.value.length
-}
-
-// API 调用
-const getRoleList = async () => {
-    try {
-        await roleStore.getRoles()
-        loadRoles()
-    } catch (error) {
-        ElMessage.error('获取角色列表失败')
-    }
+// 处理重置事件
+const handleReset = () => {
+    // 重置搜索表单
+    Object.assign(searchForm, {
+        name: '',
+        code: ''
+    })
 }
 
 // 事件处理
-const handleSearch = () => {
-    // 过滤角色列表
-    const filteredRoles = roleStore.rolesGet.filter(role => {
-        return (
-            role.label.toLowerCase().includes(searchForm.label.toLowerCase()) &&
-            role.value.toLowerCase().includes(searchForm.value.toLowerCase())
-        )
-    })
-    roleList.value = filteredRoles
-    pagination.total = filteredRoles.length
-}
-
-const resetSearch = () => {
-    searchForm.label = ''
-    searchForm.value = ''
-    loadRoles()
-}
-
-const handleSizeChange = (size: number) => {
-    pagination.pageSize = size
-    loadRoles()
-}
-
-const handleCurrentChange = (current: number) => {
-    pagination.currentPage = current
-    loadRoles()
-}
-
 const openDialog = (type: string, row?: any) => {
     dialogTitle.value = type
     dialogType.value = type
@@ -141,17 +98,17 @@ const openDialog = (type: string, row?: any) => {
     if (type === '新增') {
         // 重置表单
         Object.assign(form, {
-            label: '',
-            value: ''
+            name: '',
+            code: ''
         })
         currentRoleValue.value = ''
     } else if (row) {
         // 填充表单数据
         Object.assign(form, {
-            label: row.label,
-            value: row.value
+            name: row.name,
+            code: row.code
         })
-        currentRoleValue.value = row.value
+        currentRoleValue.value = row.id
     }
 
     dialogVisible.value = true
@@ -160,45 +117,43 @@ const openDialog = (type: string, row?: any) => {
 const submitForm = async () => {
     try {
         if (dialogType.value === '新增') {
-            roleStore.addRole(form)
+            await roleApi.addRole(form)
             ElMessage.success('新增角色成功')
         } else if (dialogType.value === '编辑' && currentRoleValue.value) {
-            roleStore.updateRole(form)
+            await roleApi.updateRole(currentRoleValue.value, form)
             ElMessage.success('更新角色成功')
         }
         dialogVisible.value = false
-        loadRoles()
+        // 重新获取数据
+        if (queryPageRef.value) {
+            queryPageRef.value.getTableList()
+        }
     } catch (error) {
         ElMessage.error('操作失败')
     }
 }
 
-const deleteRole = (row: any) => {
-    ElMessageBox.confirm(
-        '确定要删除这个角色吗？',
-        '删除角色',
-        {
+const deleteRole = async (row: any) => {
+    try {
+        await ElMessageBox.confirm('确定要删除这个角色吗？', '删除角色', {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             type: 'warning'
+        })
+        await roleApi.deleteRole(row.value)
+        ElMessage.success('删除角色成功')
+        // 重新获取数据
+        if (queryPageRef.value) {
+            queryPageRef.value.getTableList()
         }
-    ).then(async () => {
-        try {
-            roleStore.removeRole(row.value)
-            ElMessage.success('删除角色成功')
-            loadRoles()
-        } catch (error) {
-            ElMessage.error('删除失败')
-        }
-    }).catch(() => {
+    } catch (error) {
         // 取消删除
-    })
+    }
 }
 
-// 初始化
-onMounted(() => {
-    getRoleList()
-})
+
+
+
 </script>
 
 <style scoped lang="scss"></style>
