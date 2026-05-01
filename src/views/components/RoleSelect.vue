@@ -1,6 +1,5 @@
 <template>
-    <el-select v-model="modelValue" :placeholder="placeholder" :disabled="disabled" :clearable="clearable"
-        @change="handleChange">
+    <el-select v-model="selectedValue" :placeholder="placeholder" :disabled="disabled" :clearable="clearable">
         <el-option v-for="role in roles" :key="role.value" :label="role.label" :value="role.value" />
     </el-select>
 </template>
@@ -38,11 +37,14 @@ const roleStore = useRoleStore()
 // 从 store 获取角色数据
 const roles = computed(() => roleStore.rolesGet)
 
-// 处理选择变化
-const handleChange = (value: string) => {
-    emit('update:modelValue', value)
-    emit('change', value)
-}
+// 双向绑定的计算属性
+const selectedValue = computed({
+    get: () => props.modelValue,
+    set: (value: string) => {
+        emit('update:modelValue', value)
+        emit('change', value)
+    }
+})
 
 // 初始化
 onMounted(async () => {

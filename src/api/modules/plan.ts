@@ -26,7 +26,7 @@ export const planApi = {
   },
   // 切换套餐状态
   togglePlanStatus: (id: string, isActive: boolean) => {
-    return http.post<any>(`/admin/plans/${id}/toggle-status`, isActive);
+    return http.post<any>(`/admin/plans/${id}/toggle-status`, { isActive });
   },
 };
 

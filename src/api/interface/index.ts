@@ -68,13 +68,13 @@ export namespace Merchant {
     name: string;
     phone: string;
     expiryDate: string;
-    isActive: boolean;
+    isActive?: boolean;
   }
   export interface ReqMerchantUpdate {
-    name: string;
-    phone: string;
-    expiryDate: string;
-    isActive: boolean;
+    name?: string;
+    phone?: string;
+    expiryDate?: string;
+    isActive?: boolean;
   }
   export interface ResMerchantPagination {
     list: ResMerchantList[];

@@ -201,12 +201,6 @@ onMounted(() => {
         flex-wrap: wrap;
     }
 
-    .search-conditions .el-form-item {
-        width: 25%;
-        box-sizing: border-box;
-        padding-right: 15px;
-        margin-bottom: 10px;
-    }
 
     .search-conditions.collapsed {
         max-height: 40px;
@@ -217,11 +211,6 @@ onMounted(() => {
         display: none;
     }
 
-    .search-conditions .el-form-item .el-input,
-    .search-conditions .el-form-item .el-select,
-    .search-conditions .el-form-item .el-date-picker {
-        width: 100%;
-    }
 
     .search-buttons {
         display: flex;
