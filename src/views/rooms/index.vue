@@ -4,15 +4,19 @@
             <!-- 搜索条件 -->
             <template #searchConditions>
                 <el-form :model="searchForm" :inline="true">
-                    <el-form-item label="房间名称">
-                        <el-input v-model="searchForm.name" placeholder="请输入房间名称" />
-                    </el-form-item>
-                    <el-form-item label="房间类型">
-                        <el-input v-model="searchForm.type" placeholder="请输入房间类型" />
+                    <el-form-item label="房间号">
+                        <el-input v-model="searchForm.roomNumber" placeholder="请输入房间号" />
                     </el-form-item>
                     <el-form-item label="状态">
-                        <el-select v-model="searchForm.isActive" placeholder="请选择状态">
-                            <el-option label="激活" :value="true" />
+                        <el-select v-model="searchForm.status" placeholder="请选择状态">
+                            <el-option label="空闲" value="idle" />
+                            <el-option label="使用中" value="occupied" />
+                            <el-option label="维护中" value="maintenance" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="是否启用">
+                        <el-select v-model="searchForm.isEnabled" placeholder="请选择">
+                            <el-option label="启用" :value="true" />
                             <el-option label="禁用" :value="false" />
                         </el-select>
                     </el-form-item>
@@ -27,15 +31,23 @@
             <!-- 表格 -->
             <template #table="{ tableData }">
                 <el-table :data="tableData" style="width: 100%" border>
-                    <el-table-column prop="name" label="房间名称" width="180" />
-                    <el-table-column prop="type" label="房间类型" width="150" />
-                    <el-table-column prop="capacity" label="容量" width="100" />
-                    <el-table-column prop="price" label="价格" width="100" />
-                    <el-table-column prop="isActive" label="状态" width="100">
+                    <el-table-column prop="roomNumber" label="房间号" width="150" />
+                    <el-table-column prop="shopId" label="所属门店" width="180" />
+                    <el-table-column prop="unitPrice" label="单价" width="120">
                         <template #default="{ row }">
-                            <el-tag :type="row.isActive ? 'success' : 'danger'">
-                                {{ row.isActive ? '激活' : '禁用' }}
+                            ¥{{ row.unitPrice }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态" width="120">
+                        <template #default="{ row }">
+                            <el-tag :type="getStatusType(row.status)">
+                                {{ getStatusText(row.status) }}
                             </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="isEnabled" label="是否启用" width="120">
+                        <template #default="{ row }">
+                            <el-switch :model-value="row.isEnabled" disabled />
                         </template>
                     </el-table-column>
                     <el-table-column prop="createdAt" label="创建时间" width="200">
@@ -43,10 +55,14 @@
                             {{ formatDate(row.createdAt) }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" fixed="right" align="center">
+                    <el-table-column label="操作" align="center">
                         <template #default="{ row }">
                             <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
                             <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+                            <el-button :type="row.status === 'occupied' ? 'success' : 'warning'" link
+                                :icon="row.status === 'occupied' ? Sunrise : Sunny" @click="handlePower(row)">
+                                {{ row.status === 'occupied' ? '断电' : '通电' }}
+                            </el-button>
                             <el-button type="danger" link :icon="Delete" @click="deleteRoom(row)">删除</el-button>
                         </template>
                     </el-table-column>
@@ -57,20 +73,17 @@
         <!-- 房间对话框 -->
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
             <el-form :model="form" label-width="120px">
-                <el-form-item label="房间名称">
-                    <el-input v-model="form.name" placeholder="请输入房间名称" />
+                <el-form-item label="房间号">
+                    <el-input v-model="form.roomNumber" placeholder="请输入房间号" />
                 </el-form-item>
-                <el-form-item label="房间类型">
-                    <el-input v-model="form.type" placeholder="请输入房间类型" />
+                <el-form-item label="所属门店">
+                    <el-input v-model="form.shopId" placeholder="请输入门店ID" />
                 </el-form-item>
-                <el-form-item label="容量">
-                    <el-input v-model.number="form.capacity" type="number" placeholder="请输入容量" />
+                <el-form-item label="单价">
+                    <el-input v-model.number="form.unitPrice" type="number" placeholder="请输入单价" />
                 </el-form-item>
-                <el-form-item label="价格">
-                    <el-input v-model.number="form.price" type="number" placeholder="请输入价格" />
-                </el-form-item>
-                <el-form-item label="状态">
-                    <el-switch v-model="form.isActive" active-text="激活" inactive-text="禁用" />
+                <el-form-item label="是否启用">
+                    <el-switch v-model="form.isEnabled" active-text="启用" inactive-text="禁用" />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -86,7 +99,7 @@
 <script setup lang="ts" name="rooms">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
+import { CirclePlus, EditPen, View, Delete, Sunrise, Sunny } from '@element-plus/icons-vue'
 import { roomApi } from '@/api/modules/room'
 import QueryPage from '@/components/QueryPage/index.vue'
 
@@ -101,17 +114,16 @@ const currentRoomId = ref('')
 
 // 表单数据
 const searchForm = reactive({
-    name: '',
-    type: '',
-    isActive: undefined as boolean | undefined
+    roomNumber: '',
+    status: '',
+    isEnabled: undefined as boolean | undefined
 })
 
 const form = reactive({
-    name: '',
-    type: '',
-    capacity: 0,
-    price: 0,
-    isActive: true
+    roomNumber: '',
+    shopId: '',
+    unitPrice: 0,
+    isEnabled: true
 })
 
 // 工具函数
@@ -119,13 +131,39 @@ const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
 }
 
+const getStatusType = (status: string) => {
+    switch (status) {
+        case 'idle':
+            return 'success'
+        case 'occupied':
+            return 'warning'
+        case 'maintenance':
+            return 'danger'
+        default:
+            return 'info'
+    }
+}
+
+const getStatusText = (status: string) => {
+    switch (status) {
+        case 'idle':
+            return '空闲'
+        case 'occupied':
+            return '使用中'
+        case 'maintenance':
+            return '维护中'
+        default:
+            return status
+    }
+}
+
 // 处理重置事件
 const handleReset = () => {
     // 重置搜索表单
     Object.assign(searchForm, {
-        name: '',
-        type: '',
-        isActive: undefined
+        roomNumber: '',
+        status: '',
+        isEnabled: undefined
     })
 }
 
@@ -137,21 +175,19 @@ const openDialog = (type: string, row?: any) => {
     if (type === '新增') {
         // 重置表单
         Object.assign(form, {
-            name: '',
-            type: '',
-            capacity: 0,
-            price: 0,
-            isActive: true
+            roomNumber: '',
+            shopId: '',
+            unitPrice: 0,
+            isEnabled: true
         })
         currentRoomId.value = ''
     } else if (row) {
         // 填充表单数据
         Object.assign(form, {
-            name: row.name,
-            type: row.type,
-            capacity: row.capacity,
-            price: row.price,
-            isActive: row.isActive
+            roomNumber: row.roomNumber,
+            shopId: row.shopId,
+            unitPrice: row.unitPrice,
+            isEnabled: row.isEnabled
         })
         currentRoomId.value = row.id
     }
@@ -193,6 +229,20 @@ const deleteRoom = async (row: any) => {
         }
     } catch (error) {
         // 取消删除
+    }
+}
+
+const handlePower = async (row: any) => {
+    try {
+        const powerOn = row.status !== 'occupied'
+        await roomApi.togglePower(row.id, powerOn)
+        ElMessage.success(powerOn ? '通电成功' : '断电成功')
+        // 重新获取数据
+        if (queryPageRef.value) {
+            queryPageRef.value.getTableList()
+        }
+    } catch (error) {
+        ElMessage.error('电源控制失败')
     }
 }
 

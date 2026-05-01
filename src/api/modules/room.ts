@@ -20,6 +20,10 @@ export const roomApi = {
   deleteRoom: (id: string) => {
     return http.delete(`/admin/rooms/${id}`);
   },
+  // 电源控制
+  togglePower: (roomId: string, powerOn: boolean) => {
+    return http.post<any>("/admin/rooms/toggle-power", { roomId, powerOn });
+  },
 };
 
 export default roomApi;

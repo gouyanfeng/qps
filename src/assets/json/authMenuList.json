@@ -44,6 +44,48 @@
       }
     },
     {
+      "path": "/shops",
+      "name": "shops",
+      "component": "/shops/index",
+      "meta": {
+        "icon": "School",
+        "title": "门店管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/coupons",
+      "name": "coupons",
+      "component": "/coupons/index",
+      "meta": {
+        "icon": "Ticket",
+        "title": "优惠券管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/plans",
+      "name": "plans",
+      "component": "/plans/index",
+      "meta": {
+        "icon": "CreditCard",
+        "title": "套餐管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
       "path": "/users",
       "name": "users",
       "component": "/users/index",
