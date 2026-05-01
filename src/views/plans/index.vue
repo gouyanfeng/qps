@@ -8,7 +8,7 @@
                         <el-input v-model="searchForm.name" placeholder="请输入套餐名称" />
                     </el-form-item>
                     <el-form-item label="是否启用">
-                        <el-select v-model="searchForm.isActive" placeholder="请选择">
+                        <el-select v-model="searchForm.isActive" placeholder="请选择" style="width: 200px">
                             <el-option label="启用" :value="true" />
                             <el-option label="禁用" :value="false" />
                         </el-select>

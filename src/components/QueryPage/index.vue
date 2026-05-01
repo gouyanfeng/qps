@@ -201,6 +201,27 @@ onMounted(() => {
         flex-wrap: wrap;
     }
 
+    .search-conditions .el-form-item {
+        width: 33.33%;
+        min-width: 220px;
+        box-sizing: border-box;
+        padding-right: 15px;
+        margin-bottom: 10px;
+
+        .el-select {
+            width: 100% !important;
+            min-width: 200px;
+        }
+
+        .el-input {
+            width: 100% !important;
+            min-width: 200px;
+        }
+
+        .el-select__wrapper {
+            width: 100% !important;
+        }
+    }
 
     .search-conditions.collapsed {
         max-height: 40px;

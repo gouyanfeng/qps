@@ -11,7 +11,7 @@
                         <el-input v-model="searchForm.phone" placeholder="请输入联系电话" />
                     </el-form-item>
                     <el-form-item label="状态">
-                        <el-select v-model="searchForm.isActive" placeholder="请选择状态">
+                        <el-select v-model="searchForm.isActive" placeholder="请选择状态" style="width: 200px">
                             <el-option label="激活" :value="true" />
                             <el-option label="禁用" :value="false" />
                         </el-select>

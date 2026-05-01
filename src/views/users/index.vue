@@ -11,7 +11,7 @@
                         <el-input v-model="searchForm.realName" placeholder="请输入真实姓名" />
                     </el-form-item>
                     <el-form-item label="状态">
-                        <el-select v-model="searchForm.isActive" placeholder="请选择状态">
+                        <el-select v-model="searchForm.isActive" placeholder="请选择状态" style="width: 200px">
                             <el-option label="激活" :value="true" />
                             <el-option label="禁用" :value="false" />
                         </el-select>
@@ -72,7 +72,7 @@
                     <el-input v-model="form.realName" placeholder="请输入真实姓名" />
                 </el-form-item>
                 <el-form-item label="角色">
-                    <el-select v-model="form.role" placeholder="请选择角色">
+                    <el-select v-model="form.role" placeholder="请选择角色" style="width: 200px">
                         <el-option label="管理员" value="admin" />
                         <el-option label="商户" value="merchant" />
                         <el-option label="用户" value="user" />

@@ -71,7 +71,7 @@
                     <el-input v-model="form.title" placeholder="请输入优惠券名称" />
                 </el-form-item>
                 <el-form-item label="优惠券类型">
-                    <el-select v-model="form.couponType" placeholder="请选择类型">
+                    <el-select v-model="form.couponType" placeholder="请选择类型" style="width: 200px">
                         <el-option label="满减券" value="discount" />
                         <el-option label="折扣券" value="percent" />
                         <el-option label="礼品券" value="gift" />
