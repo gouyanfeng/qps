@@ -122,3 +122,153 @@ export namespace User {
     pageSize: number;
   }
 }
+
+// 订单管理模块
+export namespace Order {
+  export interface ReqOrderParams {
+    OrderNo?: string;
+    Status?: string;
+    ShopId?: string;
+    RoomId?: string;
+    CustomerId?: string;
+    StartDate?: string;
+    EndDate?: string;
+    Page?: number;
+    PageSize?: number;
+    SortField?: string;
+    SortDirection?: string;
+  }
+  export interface ResOrderList {
+    id: string;
+    orderNo: string;
+    shopId: string;
+    shopName: string;
+    roomId: string;
+    roomNumber: string;
+    customerId: string;
+    customerName: string;
+    amount: number;
+    durationMinutes: number;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  export interface ReqOrderForm {
+    roomId: string;
+    amount: number;
+    durationMinutes: number;
+  }
+  export interface ResOrderPagination {
+    list: ResOrderList[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  }
+}
+
+// 标签管理模块
+export namespace Tag {
+  export interface ReqTagParams {
+    Name?: string;
+    Page?: number;
+    PageSize?: number;
+    SortField?: string;
+    SortDirection?: string;
+  }
+  export interface ResTagList {
+    id: string;
+    tagName: string;
+    color: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  export interface ReqTagForm {
+    tagName: string;
+    color?: string;
+  }
+  export interface ResTagPagination {
+    list: ResTagList[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  }
+}
+
+// 房间管理模块
+export namespace Room {
+  export interface ReqRoomParams {
+    RoomNumber?: string;
+    Status?: string;
+    IsEnabled?: boolean;
+    Page?: number;
+    PageSize?: number;
+    SortField?: string;
+    SortDirection?: string;
+  }
+  export interface ResRoomList {
+    id: string;
+    roomNumber: string;
+    shopId: string;
+    shopName?: string;
+    unitPrice: number;
+    images?: string[];
+    tags?: string[];
+    plans?: string[];
+    status: string;
+    isEnabled: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }
+  export interface ReqRoomForm {
+    roomNumber: string;
+    shopId: string;
+    unitPrice: number;
+    images?: string[];
+    tags?: string[];
+    isEnabled?: boolean;
+  }
+  export interface ResRoomPagination {
+    list: ResRoomList[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  }
+}
+
+// 门店管理模块
+export namespace Shop {
+  export interface ReqShopParams {
+    Name?: string;
+    Page?: number;
+    PageSize?: number;
+    SortField?: string;
+    SortDirection?: string;
+  }
+  export interface ResShopList {
+    id: string;
+    name: string;
+    images?: string[];
+    tags?: string[];
+    address: string;
+    phone: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  export interface ReqShopForm {
+    name: string;
+    images?: string[];
+    tags?: string[];
+    address: string;
+    phone: string;
+  }
+  export interface ResShopPagination {
+    list: ResShopList[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  }
+}

@@ -46,7 +46,6 @@
                     </el-table-column>
                     <el-table-column label="操作" align="center">
                         <template #default="{ row }">
-                            <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
                             <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
                             <el-button :type="row.isActive ? 'warning' : 'success'" link
                                 :icon="row.isActive ? Sunrise : Sunny" @click="toggleStatus(row)">

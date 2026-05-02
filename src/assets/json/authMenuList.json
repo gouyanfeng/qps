@@ -30,12 +30,12 @@
       }
     },
     {
-      "path": "/rooms",
-      "name": "rooms",
-      "component": "/rooms/index",
+      "path": "/shops",
+      "name": "shops",
+      "component": "/shops/index",
       "meta": {
-        "icon": "House",
-        "title": "房间管理",
+        "icon": "School",
+        "title": "门店管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -44,12 +44,12 @@
       }
     },
     {
-      "path": "/shops",
-      "name": "shops",
-      "component": "/shops/index",
+      "path": "/rooms",
+      "name": "rooms",
+      "component": "/rooms/index",
       "meta": {
-        "icon": "School",
-        "title": "门店管理",
+        "icon": "House",
+        "title": "房间管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -78,6 +78,34 @@
       "meta": {
         "icon": "CreditCard",
         "title": "套餐管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/orders",
+      "name": "orders",
+      "component": "/orders/index",
+      "meta": {
+        "icon": "List",
+        "title": "订单管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/tags",
+      "name": "tags",
+      "component": "/tags/index",
+      "meta": {
+        "icon": "Crop",
+        "title": "标签管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,

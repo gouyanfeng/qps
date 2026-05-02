@@ -25,7 +25,6 @@
                     <el-table-column prop="code" label="角色值" width="150" />
                     <el-table-column label="操作" align="center">
                         <template #default="{ row }">
-                            <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
                             <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
                             <el-button type="danger" link :icon="Delete" @click="deleteRole(row)">删除</el-button>
                         </template>

@@ -28,7 +28,6 @@
                     </el-table-column>
                     <el-table-column label="操作" align="center">
                         <template #default="{ row }">
-                            <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
                             <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
                             <el-button type="danger" link :icon="Delete" @click="deleteShop(row)">删除</el-button>
                         </template>
@@ -67,16 +66,13 @@ import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
 import { shopApi } from '@/api/modules/shop'
 import QueryPage from '@/components/QueryPage/index.vue'
 
-// 引用
 const queryPageRef = ref()
 
-// 状态管理
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const dialogType = ref('')
 const currentShopId = ref('')
 
-// 表单数据
 const searchForm = reactive({
     name: ''
 })
@@ -87,19 +83,16 @@ const form = reactive({
     phone: ''
 })
 
-// 工具函数
 const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
 }
 
-// 处理重置事件
 const handleReset = () => {
     Object.assign(searchForm, {
         name: ''
     })
 }
 
-// 事件处理
 const openDialog = (type: string, row?: any) => {
     dialogTitle.value = type
     dialogType.value = type

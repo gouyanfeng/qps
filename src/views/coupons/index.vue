@@ -8,7 +8,7 @@
                         <el-input v-model="searchForm.title" placeholder="请输入优惠券名称" />
                     </el-form-item>
                     <el-form-item label="优惠券类型">
-                        <el-select v-model="searchForm.couponType" placeholder="请选择类型">
+                        <el-select v-model="searchForm.couponType" placeholder="请选择类型" style="width: 200px">
                             <el-option label="满减券" value="discount" />
                             <el-option label="折扣券" value="percent" />
                             <el-option label="礼品券" value="gift" />
@@ -55,7 +55,6 @@
                     </el-table-column>
                     <el-table-column label="操作" align="center">
                         <template #default="{ row }">
-                            <el-button type="primary" link :icon="View" @click="openDialog('查看', row)">查看</el-button>
                             <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
                             <el-button type="danger" link :icon="Delete" @click="deleteCoupon(row)">删除</el-button>
                         </template>
