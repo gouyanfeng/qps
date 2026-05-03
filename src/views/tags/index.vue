@@ -19,12 +19,6 @@
             <template #table="{ tableData }">
                 <el-table :data="tableData" style="width: 100%" border>
                     <el-table-column prop="tagName" label="标签名称" width="180" />
-                    <el-table-column prop="color" label="颜色" width="150">
-                        <template #default="{ row }">
-                            <div class="color-box" :style="{ backgroundColor: row.color }"></div>
-                            <span class="color-value">{{ row.color }}</span>
-                        </template>
-                    </el-table-column>
                     <el-table-column prop="createdAt" label="创建时间" width="200">
                         <template #default="{ row }">
                             {{ formatDate(row.createdAt) }}
@@ -44,13 +38,7 @@
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="400px">
             <el-form :model="form" label-width="80px">
                 <el-form-item label="标签名称">
-                    <el-input v-model="form.name" placeholder="请输入标签名称" />
-                </el-form-item>
-                <el-form-item label="颜色">
-                    <div class="color-picker-wrapper">
-                        <el-input v-model="form.color" placeholder="选择颜色" />
-                        <input type="color" v-model="form.color" class="color-input" />
-                    </div>
+                    <el-input v-model="form.tagName" placeholder="请输入标签名称" />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -81,8 +69,7 @@ const searchForm = reactive({
 })
 
 const form = reactive({
-    name: '',
-    color: '#1890ff'
+    tagName: ''
 })
 
 const formatDate = (dateString: string) => {
@@ -98,12 +85,10 @@ const openDialog = (type: string, row?: any) => {
     dialogType.value = type
 
     if (type === '新增') {
-        form.name = ''
-        form.color = '#1890ff'
+        form.tagName = ''
         currentTagId.value = ''
     } else if (row) {
-        form.name = row.name || ''
-        form.color = row.color || '#1890ff'
+        form.tagName = row.tagName || ''
         currentTagId.value = row.id
     }
 
@@ -141,33 +126,4 @@ const deleteTag = async (row: any) => {
 }
 </script>
 
-<style scoped lang="scss">
-.color-box {
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    vertical-align: middle;
-    margin-right: 8px;
-    border: 1px solid #e0e0e0;
-}
-
-.color-value {
-    font-size: 12px;
-    color: #666;
-}
-
-.color-picker-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.color-input {
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-</style>
+<style scoped lang="scss"></style>

@@ -179,13 +179,11 @@ export namespace Tag {
   export interface ResTagList {
     id: string;
     tagName: string;
-    color: string;
     createdAt: string;
     updatedAt: string;
   }
   export interface ReqTagForm {
     tagName: string;
-    color?: string;
   }
   export interface ResTagPagination {
     list: ResTagList[];

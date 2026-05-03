@@ -24,41 +24,47 @@
                 </el-form>
             </template>
 
-            <!-- 功能按钮 -->
-            <template #headerButtons>
-                <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增订单</el-button>
-            </template>
-
             <!-- 表格 -->
             <template #table="{ tableData }">
                 <el-table :data="tableData" style="width: 100%" border>
-                    <el-table-column prop="orderNo" label="订单号" width="200" />
-                    <el-table-column prop="shopName" label="门店" width="150" />
-                    <el-table-column prop="roomNumber" label="房间号" width="120" />
-                    <el-table-column prop="customerName" label="客户名称" width="180" />
-                    <el-table-column prop="amount" label="订单金额" width="120">
+                    <!-- 展开行 -->
+                    <el-table-column type="expand">
                         <template #default="{ row }">
-                            ¥{{ row.amount }}
+                            <div class="expand-content">
+                                <h4 class="section-title">订单项</h4>
+                                <el-table :data="row.orderItems || []" style="width: 100%" border>
+                                    <el-table-column prop="itemName" label="商品名称" />
+                                    <el-table-column prop="quantity" label="数量" />
+                                    <el-table-column prop="unitPrice" label="单价">
+                                        <template #default="{ row }">¥{{ row.unitPrice }}</template>
+                                    </el-table-column>
+                                    <el-table-column prop="amount" label="金额">
+                                        <template #default="{ row }">¥{{ row.amount }}</template>
+                                    </el-table-column>
+                                </el-table>
+                                <div v-if="!row.orderItems?.length" class="no-data">暂无订单项</div>
+                            </div>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="durationMinutes" label="时长(分钟)" width="120" />
-                    <el-table-column prop="status" label="状态" width="100">
+                    <el-table-column prop="orderNo" label="订单号" width="200" />
+                    <el-table-column prop="shopName" label="门店" />
+                    <el-table-column prop="roomNumber" label="房间号" />
+                    <el-table-column prop="customerName" label="客户名称" />
+                    <el-table-column prop="actualAmount" label="订单金额">
+                        <template #default="{ row }">
+                            ¥{{ row.actualAmount }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态">
                         <template #default="{ row }">
                             <el-tag :type="getStatusTagType(row.status)">
                                 {{ getStatusLabel(row.status) }}
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="createdAt" label="创建时间" width="200">
+                    <el-table-column prop="createdAt" label="创建时间">
                         <template #default="{ row }">
                             {{ formatDate(row.createdAt) }}
-                        </template>
-                    </el-table-column>
-                    <el-table-column label="操作" align="center">
-                        <template #default="{ row }">
-                            <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
-                            <el-button v-if="row.status === 'paid'" type="success" link :icon="Check"
-                                @click="settleOrder(row)">结算</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -127,23 +133,21 @@ const formatDate = (dateString: string) => {
 }
 
 const getStatusLabel = (status: string) => {
-    const statusMap: Record<string, string> = {
-        pending: '待支付',
-        paid: '已支付',
-        completed: '已完成',
-        cancelled: '已取消'
-    }
-    return statusMap[status] || status
+    return status || ''
 }
 
 const getStatusTagType = (status: string) => {
     const typeMap: Record<string, string> = {
-        pending: 'warning',
-        paid: 'primary',
-        completed: 'success',
-        cancelled: 'danger'
+        '待支付': 'warning',
+        '已支付': 'primary',
+        '已完成': 'success',
+        '已取消': 'danger',
+        'pending': 'warning',
+        'paid': 'primary',
+        'completed': 'success',
+        'cancelled': 'danger'
     }
-    return typeMap[status] || 'default'
+    return typeMap[status] || typeMap[(status || '').toLowerCase()] || 'default'
 }
 
 // 处理重置事件
@@ -215,4 +219,21 @@ const settleOrder = async (row: any) => {
 
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.expand-content {
+    padding: 20px;
+}
+
+.section-title {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.no-data {
+    padding: 30px;
+    text-align: center;
+    color: #999;
+}
+</style>
