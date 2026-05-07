@@ -142,7 +142,7 @@ const deleteRole = async (row: any) => {
             cancelButtonText: '取消',
             type: 'warning'
         })
-        await roleApi.deleteRole(row.value)
+        await roleApi.deleteRole(row.id)
         ElMessage.success('删除角色成功')
         // 重新获取数据
         if (queryPageRef.value) {

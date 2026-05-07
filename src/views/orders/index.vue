@@ -1,6 +1,11 @@
 <template>
     <div class="list-page">
-        <QueryPage api="/admin/orders" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
+        <QueryPage
+            api="/admin/orders"
+            :searchParam="searchForm"
+            @reset="handleReset"
+            ref="queryPageRef"
+        >
             <!-- 搜索条件 -->
             <template #searchConditions>
                 <el-form :model="searchForm" :inline="true">

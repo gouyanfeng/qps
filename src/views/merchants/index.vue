@@ -17,10 +17,10 @@
                         </el-select>
                     </el-form-item>
                     <el-form-item label="创建日期">
-                        <el-date-picker v-model="searchForm.createDate" type="date" placeholder="选择创建日期" />
+                        <el-date-picker v-model="searchForm.startDate" type="date" placeholder="选择开始日期" />
                     </el-form-item>
                     <el-form-item label="过期日期">
-                        <el-date-picker v-model="searchForm.expiryDate" type="date" placeholder="选择过期日期" />
+                        <el-date-picker v-model="searchForm.endDate" type="date" placeholder="选择结束日期" />
                     </el-form-item>
                 </el-form>
             </template>
@@ -110,8 +110,8 @@ const searchForm = reactive({
     name: '',
     phone: '',
     isActive: undefined as boolean | undefined,
-    createDate: undefined as string | undefined,
-    expiryDate: undefined as string | undefined
+    startDate: undefined as string | undefined,
+    endDate: undefined as string | undefined
 })
 
 const form = reactive<Merchant.ReqMerchantForm>({
@@ -133,8 +133,8 @@ const handleReset = () => {
         name: '',
         phone: '',
         isActive: undefined,
-        createDate: undefined,
-        expiryDate: undefined
+        startDate: undefined,
+        endDate: undefined
     })
 }
 

@@ -87,7 +87,7 @@ const state = reactive({
 // 分页查询参数
 const pageParam = computed(() => {
     return {
-        pageNum: state.pageable.pageNum,
+        page: state.pageable.pageNum,
         pageSize: state.pageable.pageSize,
     }
 })

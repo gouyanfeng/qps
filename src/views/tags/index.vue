@@ -5,7 +5,7 @@
             <template #searchConditions>
                 <el-form :model="searchForm" :inline="true">
                     <el-form-item label="标签名称">
-                        <el-input v-model="searchForm.Name" placeholder="请输入标签名称" />
+                        <el-input v-model="searchForm.tagName" placeholder="请输入标签名称" />
                     </el-form-item>
                 </el-form>
             </template>
@@ -65,7 +65,7 @@ const dialogType = ref('')
 const currentTagId = ref('')
 
 const searchForm = reactive({
-    Name: ''
+    tagName: ''
 })
 
 const form = reactive({
@@ -77,7 +77,7 @@ const formatDate = (dateString: string) => {
 }
 
 const handleReset = () => {
-    searchForm.Name = ''
+    searchForm.tagName = ''
 }
 
 const openDialog = (type: string, row?: any) => {
