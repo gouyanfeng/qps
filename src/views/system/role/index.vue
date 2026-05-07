@@ -15,7 +15,7 @@
 
             <!-- 功能按钮 -->
             <template #headerButtons>
-                <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增角色</el-button>
+                <el-button v-if="BUTTONS.add" type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增角色</el-button>
             </template>
 
             <!-- 表格 -->
@@ -25,8 +25,8 @@
                     <el-table-column prop="code" label="角色值" width="150" />
                     <el-table-column label="操作" align="center">
                         <template #default="{ row }">
-                            <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
-                            <el-button type="danger" link :icon="Delete" @click="deleteRole(row)">删除</el-button>
+                            <el-button v-if="BUTTONS.edit" type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+                            <el-button v-if="BUTTONS.delete" type="danger" link :icon="Delete" @click="deleteRole(row)">删除</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -54,11 +54,14 @@
 </template>
 
 <script setup lang="ts" name="role">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
+import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
 import { roleApi } from '@/api/modules/role'
 import QueryPage from '@/components/QueryPage/index.vue'
+import { useAuthButtons } from '@/hooks/useAuthButtons'
+
+const { BUTTONS } = useAuthButtons()
 
 // 引用
 const queryPageRef = ref()
