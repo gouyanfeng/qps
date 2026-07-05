@@ -13,28 +13,14 @@
             </div>
         </div>
 
-        <!-- 右栏 -->
+        <!-- 中栏：权限树 -->
         <div class="perm-panel">
+            <div v-if="selectedRole" class="panel-header">{{ currentRoleName }} - 权限配置</div>
+            <div v-else class="panel-header">权限配置</div>
             <div v-if="!selectedRole" class="empty-tip">
                 <p>请从左侧选择一个角色进行权限设置</p>
             </div>
-
-            <template v-else>
-                <!-- 顶栏 -->
-                <div class="perm-header">
-                    <div class="perm-header-left">
-                        <span class="perm-title">{{ currentRoleName }} - 权限配置</span>
-                        <el-tag v-if="hasChanges" type="warning" size="small">有未保存的更改</el-tag>
-                    </div>
-                    <div class="perm-header-right">
-                        <el-button :icon="Refresh" @click="resetPerm">重置</el-button>
-                        <el-button type="primary" :icon="Check" :loading="saving" @click="savePerm">保存</el-button>
-                    </div>
-                </div>
-
-                <el-divider />
-
-                <!-- 权限树（只读勾选） -->
+            <div v-else class="perm-body">
                 <el-tree
                     ref="permTreeRef"
                     :data="permTreeData"
@@ -52,13 +38,48 @@
                                     v-model="data.checked"
                                     :indeterminate="hasChildren(data) && isPartial(data)"
                                     @change="(val: boolean) => onCheck(data, val)"
+                                    @click.stop
                                 >
-                                    <span class="node-label">{{ data.label }}</span>
+                                    <el-tooltip :content="data.code" placement="right" :show-after="300">
+                                        <span class="node-label">{{ data.label }}</span>
+                                    </el-tooltip>
                                 </el-checkbox>
                             </template>
                         </div>
                     </template>
                 </el-tree>
+            </div>
+        </div>
+
+        <!-- 右栏：修改记录 -->
+        <div class="changes-panel">
+            <div class="panel-header">修改记录</div>
+            <template v-if="!selectedRole">
+                <div class="empty-tip"><p>暂无修改</p></div>
+            </template>
+            <template v-else-if="!hasChanges">
+                <div class="empty-tip"><p>暂无修改</p></div>
+            </template>
+            <template v-else>
+                <div class="changes-summary">
+                    <el-tag size="small" type="success">+{{ changes.added.length }}</el-tag>
+                    <el-tag size="small" type="danger">-{{ changes.removed.length }}</el-tag>
+                    <span class="changes-spacer" />
+                    <el-button size="small" :icon="Refresh" @click="resetPerm">重置</el-button>
+                    <el-button size="small" type="primary" :icon="Check" :loading="saving" @click="savePerm">保存</el-button>
+                </div>
+                <div class="changes-scroll">
+                    <div v-for="item in changes.added" :key="item.code" class="change-item added">
+                        <el-icon><Plus /></el-icon>
+                        <span class="change-path">{{ item.path }}</span>
+                        <span class="change-code">{{ item.code }}</span>
+                    </div>
+                    <div v-for="item in changes.removed" :key="item.code" class="change-item removed">
+                        <el-icon><Minus /></el-icon>
+                        <span class="change-path">{{ item.path }}</span>
+                        <span class="change-code">{{ item.code }}</span>
+                    </div>
+                </div>
             </template>
         </div>
     </div>
@@ -67,7 +88,7 @@
 <script setup lang="ts" name="permission">
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, Check } from '@element-plus/icons-vue'
+import { Refresh, Check, Plus, Minus } from '@element-plus/icons-vue'
 import { permissionApi } from '@/api/modules/permission'
 
 // ── 类型 ──
@@ -104,6 +125,51 @@ const rolePerms = reactive<Record<string, string[]>>({})
 const hasChanges = ref(false)
 const saving = ref(false)
 let snapshot = ''
+let savedCodes: string[] = []
+
+// 根据 code 从树中查找层级路径（如 "商户管理 / 新增"）
+const getPathByCode = (code: string): string => {
+    const segs: string[] = []
+    const find = (nodes: PermNode[]): boolean => {
+        for (const n of nodes) {
+            if (n.code === code) { segs.unshift(n.label); return true }
+            if (n.children && find(n.children)) {
+                if (n.code !== '_root') segs.unshift(n.label)
+                return true
+            }
+        }
+        return false
+    }
+    find(permTreeData.value)
+    return segs.join(' / ')
+}
+
+// 判断 code 是否是父节点（有子节点）
+const isParentCode = (code: string): boolean => {
+    const find = (nodes: PermNode[]): boolean => {
+        for (const n of nodes) {
+            if (n.code === code) return !!n.children?.length
+            if (n.children && find(n.children)) return true
+        }
+        return false
+    }
+    return find(permTreeData.value)
+}
+
+// 变更清单（只记录叶子节点）
+const changes = computed(() => {
+    if (!hasChanges.value) return { added: [], removed: [], total: 0 }
+    const current = collectCodes()
+    const curSet = new Set(current)
+    const savSet = new Set(savedCodes)
+    const added = current
+        .filter(c => !savSet.has(c) && !isParentCode(c))
+        .map(c => ({ code: c, path: getPathByCode(c) }))
+    const removed = savedCodes
+        .filter(c => !curSet.has(c) && !isParentCode(c))
+        .map(c => ({ code: c, path: getPathByCode(c) }))
+    return { added, removed, total: added.length + removed.length }
+})
 
 // ============================================================
 //  工具
@@ -188,6 +254,7 @@ const applyPerm = (role: string) => {
     scan(permTreeData.value)
 
     snapshot = JSON.stringify([...collectCodes()].sort())
+    savedCodes = [...collectCodes()].sort()
     hasChanges.value = false
 }
 
@@ -204,7 +271,8 @@ const savePerm = async () => {
             permissions
         })
         rolePerms[selectedRole.value] = [...permissions]
-        snapshot = JSON.stringify([...permissions].sort())
+        savedCodes = [...permissions].sort()
+        snapshot = JSON.stringify(savedCodes)
         hasChanges.value = false
         ElMessage.success('保存成功')
     } catch {
@@ -296,33 +364,100 @@ onMounted(loadTree)
     }
 }
 
-// 右栏
+// 中栏：权限树
 .perm-panel {
     flex: 1;
+    min-width: 0;
     background: #fff;
     border-radius: 6px;
     border: 1px solid var(--el-border-color-light);
-    padding: 24px;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .panel-header {
+        padding: 16px;
+        font-size: 15px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--el-border-color-light);
+        background: var(--el-fill-color-light);
+    }
+
+    .perm-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 24px;
+    }
+}
+
+// 右栏：修改记录
+.changes-panel {
+    flex: 1;
+    min-width: 0;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid var(--el-border-color-light);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .panel-header {
+        padding: 16px;
+        font-size: 15px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--el-border-color-light);
+        background: var(--el-fill-color-light);
+    }
+
+    .changes-summary {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--el-border-color-light);
+
+        .changes-spacer { flex: 1; }
+    }
+
+    .changes-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+
+    .change-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        font-size: 13px;
+        line-height: 1.4;
+
+        .el-icon { font-size: 13px; flex-shrink: 0; }
+
+        .change-path { word-break: break-all; }
+        .change-code {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--el-text-color-placeholder);
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+
+        &.added { color: var(--el-color-success); }
+        &.removed { color: var(--el-color-danger); }
+    }
 }
 
 .empty-tip {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    flex: 1;
     color: var(--el-text-color-secondary);
     font-size: 14px;
 }
 
-.perm-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    .perm-header-left { display: flex; align-items: center; gap: 12px; }
-    .perm-title { font-size: 17px; font-weight: 600; }
-    .perm-header-right { display: flex; gap: 8px; }
-}
 
 // 树节点样式
 .custom-node {
