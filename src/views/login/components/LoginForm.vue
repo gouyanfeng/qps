@@ -75,6 +75,7 @@ const login = (formEl: FormInstance | undefined) => {
       });
       console.log("登录接口返回数据：", data);
       userStore.setToken(data.token);
+      userStore.setUserInfo({ name: data.realName });
 
       // 2.添加动态路由
       await initDynamicRouter();
