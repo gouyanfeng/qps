@@ -1,6 +1,6 @@
 <template>
     <el-select v-model="selectedValue" :placeholder="placeholder" :disabled="disabled" :clearable="clearable">
-        <el-option v-for="role in roles" :key="role.value" :label="role.label" :value="role.value" />
+        <el-option v-for="role in roles" :key="role.code" :label="role.name" :value="role.code" />
     </el-select>
 </template>
 

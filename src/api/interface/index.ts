@@ -90,14 +90,15 @@ export namespace User {
   export interface ReqUserParams extends ReqPage {
     username: string;
     realName: string;
-    role: string;
+    roleId: string;
     isActive: boolean;
   }
   export interface ResUserList {
     id: string;
     username: string;
     realName: string;
-    role: string;
+    roleId: string;
+    roleName: string;
     isActive: boolean;
     createdAt: string;
   }
@@ -105,13 +106,13 @@ export namespace User {
     username: string;
     password: string;
     realName: string;
-    role: string;
+    roleId: string;
     isActive: boolean;
   }
   export interface ReqUserUpdate {
     username: string;
     realName: string;
-    role: string;
+    roleId: string;
     isActive: boolean;
   }
   export interface ResUserPagination {
@@ -253,7 +254,7 @@ export namespace Permission {
   export interface TreeNode {
     id: string;
     code: string;
-    label: string;
+    name: string;
     children?: TreeNode[];
   }
 }

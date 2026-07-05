@@ -49,8 +49,9 @@ export interface TabsState {
 
 /* RoleType */
 export interface RoleType {
-  label: string;
-  value: string;
+  id: string;
+  name: string;
+  code: string;
 }
 
 /* AuthState */

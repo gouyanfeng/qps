@@ -29,10 +29,10 @@
                 <el-table :data="tableData" style="width: 100%" border>
                     <el-table-column prop="username" label="用户名" width="180" />
                     <el-table-column prop="realName" label="真实姓名" width="150" />
-                    <el-table-column prop="role" label="角色" width="120">
+                    <el-table-column prop="roleName" label="角色" width="120">
                         <template #default="{ row }">
-                            <el-tag :type="getRoleType(row.role)">
-                                {{ getRoleLabel(row.role) }}
+                            <el-tag :type="row.isActive ? 'success' : 'danger'">
+                                {{ row.roleName }}
                             </el-tag>
                         </template>
                     </el-table-column>
@@ -71,7 +71,7 @@
                     <el-input v-model="form.realName" placeholder="请输入真实姓名" />
                 </el-form-item>
                 <el-form-item label="角色">
-                    <el-select v-model="form.role" placeholder="请选择角色" style="width: 200px">
+                    <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 200px">
                         <el-option label="管理员" value="admin" />
                         <el-option label="商户" value="merchant" />
                         <el-option label="用户" value="user" />
@@ -113,7 +113,7 @@ const currentUserId = ref('')
 const searchForm = reactive({
     username: '',
     realName: '',
-    role: '',
+    roleId: '',
     isActive: undefined as boolean | undefined
 })
 
@@ -121,7 +121,7 @@ const form = reactive<User.ReqUserForm>({
     username: '',
     password: '',
     realName: '',
-    role: 'user',
+    roleId: '',
     isActive: true
 })
 
@@ -130,31 +130,13 @@ const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
 }
 
-const getRoleLabel = (role: string) => {
-    const roleMap = {
-        admin: '管理员',
-        merchant: '商户',
-        user: '用户'
-    }
-    return roleMap[role as keyof typeof roleMap] || role
-}
-
-const getRoleType = (role: string) => {
-    const typeMap = {
-        admin: 'primary',
-        merchant: 'success',
-        user: 'info'
-    }
-    return typeMap[role as keyof typeof typeMap] || 'default'
-}
-
 // 处理重置事件
 const handleReset = () => {
     // 重置搜索表单
     Object.assign(searchForm, {
         username: '',
         realName: '',
-        role: '',
+        roleId: '',
         isActive: undefined
     })
 }
@@ -170,7 +152,7 @@ const openDialog = (type: string, row?: any) => {
             username: '',
             password: '',
             realName: '',
-            role: 'user',
+            roleId: '',
             isActive: true
         })
         currentUserId.value = ''
@@ -180,7 +162,7 @@ const openDialog = (type: string, row?: any) => {
             username: row.username,
             password: '',
             realName: row.realName,
-            role: row.role,
+            roleId: row.roleId,
             isActive: row.isActive
         })
         currentUserId.value = row.id

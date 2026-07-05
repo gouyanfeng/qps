@@ -4,11 +4,11 @@
         <div class="role-panel">
             <div class="panel-header">角色列表</div>
             <div class="role-list">
-                <div v-for="role in roleList" :key="role.value"
+                <div v-for="role in roleList" :key="role.code"
                     class="role-item"
-                    :class="{ active: selectedRole === role.value }"
-                    @click="selectRole(role.value)">
-                    <span>{{ role.label }}</span>
+                    :class="{ active: selectedRole === role.code }"
+                    @click="selectRole(role.code)">
+                    <span>{{ role.name }}</span>
                 </div>
             </div>
         </div>
@@ -25,13 +25,13 @@
                     ref="permTreeRef"
                     :data="permTreeData"
                     node-key="id"
-                    :props="{ label: 'label', children: 'children' }"
+                    :props="{ label: 'name', children: 'children' }"
                     default-expand-all
                 >
                     <template #default="{ data }">
-                        <div class="custom-node" :class="{ 'is-root': data.code === '_root' }">
-                            <template v-if="data.code === '_root'">
-                                <span class="root-label">{{ data.label }}</span>
+                        <div class="custom-node" :class="{ 'is-root': data.code === 'root' }">
+                            <template v-if="data.code === 'root'">
+                                <span class="root-label">{{ data.name }}</span>
                             </template>
                             <template v-else>
                                 <el-checkbox
@@ -41,7 +41,7 @@
                                     @click.stop
                                 >
                                     <el-tooltip :content="data.code" placement="right" :show-after="300">
-                                        <span class="node-label">{{ data.label }}</span>
+                                        <span class="node-label">{{ data.name }}</span>
                                     </el-tooltip>
                                 </el-checkbox>
                             </template>
@@ -96,7 +96,7 @@ import { permissionApi } from '@/api/modules/permission'
 interface PermNode {
     id: string
     code: string
-    label: string
+    name: string
     checked: boolean
     children?: PermNode[]
 }
@@ -104,14 +104,14 @@ interface PermNode {
 // ── 角色 ──
 
 const roleList = [
-    { label: '管理员', value: 'admin' },
-    { label: '商户', value: 'merchant' },
-    { label: '用户', value: 'user' }
+    { id: '1', name: '管理员', code: 'admin' },
+    { id: '2', name: '商户', code: 'merchant' },
+    { id: '3', name: '用户', code: 'user' }
 ]
 
 const selectedRole = ref('')
 const currentRoleName = computed(() =>
-    roleList.find(r => r.value === selectedRole.value)?.label || ''
+    roleList.find(r => r.code === selectedRole.value)?.name || ''
 )
 
 // ── 树 ──
@@ -132,9 +132,9 @@ const getPathByCode = (code: string): string => {
     const segs: string[] = []
     const find = (nodes: PermNode[]): boolean => {
         for (const n of nodes) {
-            if (n.code === code) { segs.unshift(n.label); return true }
+            if (n.code === code) { segs.unshift(n.name); return true }
             if (n.children && find(n.children)) {
-                if (n.code !== '_root') segs.unshift(n.label)
+                if (n.code !== 'root') segs.unshift(n.name)
                 return true
             }
         }
@@ -193,7 +193,7 @@ const refreshParents = () => {
         for (const n of nodes) {
             if (n.children) {
                 sync(n.children)
-                if (n.code !== '_root') {
+                if (n.code !== 'root') {
                     n.checked = n.children.every(c => c.checked)
                 }
             }
@@ -207,7 +207,7 @@ const collectCodes = (): string[] => {
     const codes: string[] = []
     const scan = (nodes: PermNode[]) => {
         for (const n of nodes) {
-            if (n.code === '_root') { scan(n.children || []); continue }
+            if (n.code === 'root') { scan(n.children || []); continue }
             if (n.checked) codes.push(n.code)
             if (n.children) scan(n.children)
         }
@@ -247,7 +247,7 @@ const applyPerm = (role: string) => {
     const codes = new Set(rolePerms[role] || [])
     const scan = (nodes: PermNode[]) => {
         for (const n of nodes) {
-            if (n.code !== '_root' && codes.has(n.code)) n.checked = true
+            if (n.code !== 'root' && codes.has(n.code)) n.checked = true
             if (n.children) scan(n.children)
         }
     }
@@ -296,7 +296,7 @@ const loadTree = async () => {
         const res = await permissionApi.getPermissionTree()
         const inject = (nodes: any[]): PermNode[] =>
             nodes.map(n => ({
-                id: n.id, code: n.code, label: n.label,
+                id: n.id, code: n.code, name: n.name,
                 checked: false,
                 children: n.children ? inject(n.children) : undefined
             }))
@@ -309,7 +309,7 @@ const loadTree = async () => {
         }
 
         if (roleList.length > 0 && !selectedRole.value) {
-            selectedRole.value = roleList[0].value
+            selectedRole.value = roleList[0].code
         }
         if (selectedRole.value) {
             nextTick(() => applyPerm(selectedRole.value))

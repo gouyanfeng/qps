@@ -3,9 +3,9 @@ import { RoleType } from "@/stores/interface";
 
 // 默认角色列表
 const defaultRoles: RoleType[] = [
-  { label: "管理员", value: "admin" },
-  { label: "商户", value: "merchant" },
-  { label: "用户", value: "user" },
+  { id: "1", name: "管理员", code: "admin" },
+  { id: "2", name: "商户", code: "merchant" },
+  { id: "3", name: "用户", code: "user" },
 ];
 
 export const useRoleStore = defineStore("qps-role", {
@@ -29,12 +29,12 @@ export const useRoleStore = defineStore("qps-role", {
       this.roles.push(role);
     },
     // 删除角色
-    removeRole(value: string) {
-      this.roles = this.roles.filter((role) => role.value !== value);
+    removeRole(code: string) {
+      this.roles = this.roles.filter((role) => role.code !== code);
     },
     // 更新角色
     updateRole(role: RoleType) {
-      const index = this.roles.findIndex((r) => r.value === role.value);
+      const index = this.roles.findIndex((r) => r.code === role.code);
       if (index !== -1) {
         this.roles[index] = role;
       }
