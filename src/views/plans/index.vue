@@ -93,6 +93,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, View, Delete, Sunrise, Sunny } from '@element-plus/icons-vue'
 import { planApi } from '@/api/modules/plan'
 import QueryPage from '@/components/QueryPage/index.vue'
+import { formatDate } from '@/utils'
 
 // 引用
 const queryPageRef = ref()
@@ -116,11 +117,6 @@ const form = reactive({
     durationMinutes: 0,
     isActive: true
 })
-
-// 工具函数
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-}
 
 // 处理重置事件
 const handleReset = () => {

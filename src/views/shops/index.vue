@@ -65,6 +65,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
 import { shopApi } from '@/api/modules/shop'
 import QueryPage from '@/components/QueryPage/index.vue'
+import { formatDate } from '@/utils'
 
 const queryPageRef = ref()
 
@@ -82,10 +83,6 @@ const form = reactive({
     address: '',
     phone: ''
 })
-
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-}
 
 const handleReset = () => {
     Object.assign(searchForm, {

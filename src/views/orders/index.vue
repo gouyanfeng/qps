@@ -105,6 +105,7 @@ import { ElMessage } from 'element-plus'
 import { CirclePlus, EditPen, View, Check } from '@element-plus/icons-vue'
 import { orderApi } from '@/api/modules/order'
 import QueryPage from '@/components/QueryPage/index.vue'
+import { formatDate } from '@/utils'
 
 // 引用
 const queryPageRef = ref()
@@ -132,10 +133,6 @@ const form = reactive({
     durationMinutes: 60
 })
 
-// 工具函数
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-}
 
 const getStatusLabel = (status: string) => {
     return status || ''

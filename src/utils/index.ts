@@ -357,3 +357,20 @@ export function findItemNested(
       return findItemNested(current[children], callValue, value, children);
   }, null);
 }
+
+/**
+ * @description 格式化日期显示，避免 "Invalid Date"
+ * @param dateString 后端返回的日期字符串
+ * @param fallback 空值时的回退文案
+ * @returns 格式化后的日期字符串
+ */
+export function formatDate(dateString?: string | null, fallback = '-'): string {
+  if (!dateString) return fallback;
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return fallback;
+    return date.toLocaleString();
+  } catch {
+    return fallback;
+  }
+}

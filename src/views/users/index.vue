@@ -36,7 +36,6 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="merchantId" label="商户ID" width="150" />
                     <el-table-column prop="isActive" label="状态" width="100">
                         <template #default="{ row }">
                             <el-tag :type="row.isActive ? 'success' : 'danger'">
@@ -97,6 +96,7 @@ import { User } from '@/api/interface'
 import { CirclePlus, EditPen, View } from '@element-plus/icons-vue'
 import { userApi } from '@/api/modules/user'
 import { roleApi } from '@/api/modules/role'
+import { formatDate } from '@/utils'
 import QueryPage from '@/components/QueryPage/index.vue'
 
 // 引用
@@ -135,11 +135,6 @@ const form = reactive<User.ReqUserForm>({
     roleId: '',
     isActive: true
 })
-
-// 工具函数
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-}
 
 // 处理重置事件
 const handleReset = () => {

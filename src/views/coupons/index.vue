@@ -102,6 +102,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
 import { couponApi } from '@/api/modules/coupon'
 import QueryPage from '@/components/QueryPage/index.vue'
+import { formatDate } from '@/utils'
 
 // 引用
 const queryPageRef = ref()
@@ -126,10 +127,6 @@ const form = reactive({
     validTo: ''
 })
 
-// 工具函数
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-}
 
 const getTypeLabel = (type: string) => {
     const typeMap: Record<string, string> = {
