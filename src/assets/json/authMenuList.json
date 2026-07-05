@@ -168,6 +168,20 @@
             "isAffix": false,
             "isKeepAlive": true
           }
+        },
+        {
+          "path": "/system/dataDictionary",
+          "name": "dataDictionary",
+          "component": "/system/dataDictionary/index",
+          "meta": {
+            "icon": "BookOpen",
+            "title": "数据字典",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
         }
       ]
     }

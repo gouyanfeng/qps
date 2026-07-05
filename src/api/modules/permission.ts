@@ -1,4 +1,5 @@
 import http from "@/api";
+import { Permission } from "@/api/interface/index";
 
 /**
  * @description 权限管理模块

@@ -1,10 +1,35 @@
 {
   "code": 200,
   "data": {
-    "role": ["add", "edit", "delete"],
-    "useProTable": ["add", "batchAdd", "export", "batchDelete", "status"],
-    "authButton": ["add", "edit", "delete", "import", "export"],
-    "permission": ["add", "edit", "delete"]
+    "role": [
+      "add",
+      "edit",
+      "delete"
+    ],
+    "useProTable": [
+      "add",
+      "batchAdd",
+      "export",
+      "batchDelete",
+      "status"
+    ],
+    "authButton": [
+      "add",
+      "edit",
+      "delete",
+      "import",
+      "export"
+    ],
+    "permission": [
+      "add",
+      "edit",
+      "delete"
+    ],
+    "dataDictionary": [
+      "add",
+      "edit",
+      "delete"
+    ]
   },
   "msg": "成功"
 }
