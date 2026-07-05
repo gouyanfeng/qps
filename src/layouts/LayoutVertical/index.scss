@@ -10,14 +10,27 @@
     &::after {
       content: '';
       position: absolute;
-      bottom: -40px;
+      bottom: -60px;
       left: 50%;
       transform: translateX(-50%);
-      width: 200px;
-      height: 200px;
+      width: 300px;
+      height: 300px;
       border-radius: 50%;
       background: radial-gradient(circle, var(--el-color-primary) 0%, transparent 70%);
-      opacity: 0.06;
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+    &::before {
+      content: '';
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--el-color-primary-light-3) 0%, transparent 70%);
+      opacity: 0.08;
       pointer-events: none;
       z-index: 0;
     }
