@@ -1,0 +1,37 @@
+{
+  "code": 200,
+  "data": {
+    "admin": {
+      "roleName": "管理员",
+      "permissions": [
+        "home", "merchants", "merchants:add", "merchants:edit",
+        "shops", "shops:add", "shops:edit", "shops:delete",
+        "rooms", "rooms:add", "rooms:edit",
+        "coupons", "coupons:add", "coupons:edit", "coupons:delete",
+        "plans", "plans:add", "plans:edit", "plans:delete",
+        "orders", "orders:edit", "orders:view",
+        "tags", "tags:add", "tags:edit", "tags:delete",
+        "users", "users:add", "users:edit",
+        "role", "role:add", "role:edit", "role:delete",
+        "permission", "permission:add", "permission:edit", "permission:delete"
+      ]
+    },
+    "merchant": {
+      "roleName": "商户",
+      "permissions": [
+        "home",
+        "shops", "shops:add", "shops:edit",
+        "rooms", "rooms:add", "rooms:edit",
+        "orders", "orders:edit", "orders:view",
+        "coupons", "coupons:add", "coupons:edit",
+        "plans", "plans:edit",
+        "tags", "tags:add", "tags:edit", "tags:delete"
+      ]
+    },
+    "user": {
+      "roleName": "用户",
+      "permissions": ["home", "orders", "orders:view"]
+    }
+  },
+  "msg": "成功"
+}

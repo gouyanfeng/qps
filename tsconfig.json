@@ -4,6 +4,13 @@
    * 使用项目引用（Project References）管理多个 TypeScript 配置
    */
   
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  
   // 不直接包含任何文件
   "files": [],
   

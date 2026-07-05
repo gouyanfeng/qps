@@ -236,6 +236,28 @@ export namespace Room {
   }
 }
 
+// 权限管理模块
+export namespace Permission {
+  // 角色权限映射
+  export interface RolePermission {
+    role: string;
+    roleName: string;
+    permissions: string[];
+  }
+  // 更新角色权限请求
+  export interface ReqRolePermission {
+    role: string;
+    permissions: string[];
+  }
+  // 权限树节点
+  export interface TreeNode {
+    id: string;
+    code: string;
+    label: string;
+    children?: TreeNode[];
+  }
+}
+
 // 门店管理模块
 export namespace Shop {
   export interface ReqShopParams {

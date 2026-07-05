@@ -1,0 +1,95 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "id": "root_01",
+      "code": "_root",
+      "label": "权限管理",
+      "children": [
+        { "id": "perm_home", "code": "home", "label": "首页" },
+        {
+          "id": "perm_merchants", "code": "merchants", "label": "商户管理",
+          "children": [
+            { "id": "perm_merchants_add", "code": "merchants:add", "label": "新增" },
+            { "id": "perm_merchants_edit", "code": "merchants:edit", "label": "编辑" }
+          ]
+        },
+        {
+          "id": "perm_shops", "code": "shops", "label": "门店管理",
+          "children": [
+            { "id": "perm_shops_add", "code": "shops:add", "label": "新增" },
+            { "id": "perm_shops_edit", "code": "shops:edit", "label": "编辑" },
+            { "id": "perm_shops_delete", "code": "shops:delete", "label": "删除" }
+          ]
+        },
+        {
+          "id": "perm_rooms", "code": "rooms", "label": "房间管理",
+          "children": [
+            { "id": "perm_rooms_add", "code": "rooms:add", "label": "新增" },
+            { "id": "perm_rooms_edit", "code": "rooms:edit", "label": "编辑" }
+          ]
+        },
+        {
+          "id": "perm_coupons", "code": "coupons", "label": "优惠券管理",
+          "children": [
+            { "id": "perm_coupons_add", "code": "coupons:add", "label": "新增" },
+            { "id": "perm_coupons_edit", "code": "coupons:edit", "label": "编辑" },
+            { "id": "perm_coupons_delete", "code": "coupons:delete", "label": "删除" }
+          ]
+        },
+        {
+          "id": "perm_plans", "code": "plans", "label": "套餐管理",
+          "children": [
+            { "id": "perm_plans_add", "code": "plans:add", "label": "新增" },
+            { "id": "perm_plans_edit", "code": "plans:edit", "label": "编辑" },
+            { "id": "perm_plans_delete", "code": "plans:delete", "label": "删除" }
+          ]
+        },
+        {
+          "id": "perm_orders", "code": "orders", "label": "订单管理",
+          "children": [
+            { "id": "perm_orders_edit", "code": "orders:edit", "label": "编辑" },
+            { "id": "perm_orders_view", "code": "orders:view", "label": "查看" }
+          ]
+        },
+        {
+          "id": "perm_tags", "code": "tags", "label": "标签管理",
+          "children": [
+            { "id": "perm_tags_add", "code": "tags:add", "label": "新增" },
+            { "id": "perm_tags_edit", "code": "tags:edit", "label": "编辑" },
+            { "id": "perm_tags_delete", "code": "tags:delete", "label": "删除" }
+          ]
+        },
+        {
+          "id": "perm_users", "code": "users", "label": "用户管理",
+          "children": [
+            { "id": "perm_users_add", "code": "users:add", "label": "新增" },
+            { "id": "perm_users_edit", "code": "users:edit", "label": "编辑" }
+          ]
+        },
+        {
+          "id": "perm_system", "code": "system", "label": "系统设置",
+          "children": [
+            {
+              "id": "perm_role", "code": "role", "label": "角色设置",
+              "children": [
+                { "id": "perm_role_add", "code": "role:add", "label": "新增" },
+                { "id": "perm_role_edit", "code": "role:edit", "label": "编辑" },
+                { "id": "perm_role_delete", "code": "role:delete", "label": "删除" }
+              ]
+            },
+            {
+              "id": "perm_permission", "code": "permission", "label": "权限设置",
+              "children": [
+                { "id": "perm_perm_add", "code": "permission:add", "label": "新增" },
+                { "id": "perm_perm_edit", "code": "permission:edit", "label": "编辑" },
+                { "id": "perm_perm_delete", "code": "permission:delete", "label": "删除" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "msg": "成功"
+}

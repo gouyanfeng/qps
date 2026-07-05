@@ -154,6 +154,20 @@
             "isAffix": false,
             "isKeepAlive": true
           }
+        },
+        {
+          "path": "/system/permission",
+          "name": "permission",
+          "component": "/system/permission/index",
+          "meta": {
+            "icon": "Tools",
+            "title": "权限设置",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
         }
       ]
     }

@@ -56,7 +56,7 @@ import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CirclePlus, EditPen, View, Delete } from '@element-plus/icons-vue'
 import { tagApi } from '@/api/modules/tag'
-import QueryPage from '@/components/QueryPage/index.vue'
+import QueryPage from "@/components/QueryPage/index.vue"
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
