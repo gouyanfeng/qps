@@ -71,7 +71,7 @@
                     <el-input v-model="form.realName" placeholder="请输入真实姓名" />
                 </el-form-item>
                 <el-form-item label="角色">
-                    <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 200px">
+                    <el-select v-model="form.roleCode" placeholder="请选择角色" style="width: 200px">
                         <el-option label="管理员" value="admin" />
                         <el-option label="商户" value="merchant" />
                         <el-option label="用户" value="user" />
@@ -113,7 +113,7 @@ const currentUserId = ref('')
 const searchForm = reactive({
     username: '',
     realName: '',
-    roleId: '',
+    roleCode: '',
     isActive: undefined as boolean | undefined
 })
 
@@ -121,7 +121,7 @@ const form = reactive<User.ReqUserForm>({
     username: '',
     password: '',
     realName: '',
-    roleId: '',
+    roleCode: '',
     isActive: true
 })
 
@@ -136,7 +136,7 @@ const handleReset = () => {
     Object.assign(searchForm, {
         username: '',
         realName: '',
-        roleId: '',
+        roleCode: '',
         isActive: undefined
     })
 }
@@ -152,7 +152,7 @@ const openDialog = (type: string, row?: any) => {
             username: '',
             password: '',
             realName: '',
-            roleId: '',
+            roleCode: '',
             isActive: true
         })
         currentUserId.value = ''
@@ -162,7 +162,7 @@ const openDialog = (type: string, row?: any) => {
             username: row.username,
             password: '',
             realName: row.realName,
-            roleId: row.roleId,
+            roleCode: row.roleCode,
             isActive: row.isActive
         })
         currentUserId.value = row.id

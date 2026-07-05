@@ -90,14 +90,14 @@ export namespace User {
   export interface ReqUserParams extends ReqPage {
     username: string;
     realName: string;
-    roleId: string;
+    roleCode: string;
     isActive: boolean;
   }
   export interface ResUserList {
     id: string;
     username: string;
     realName: string;
-    roleId: string;
+    roleCode: string;
     roleName: string;
     isActive: boolean;
     createdAt: string;
@@ -106,13 +106,13 @@ export namespace User {
     username: string;
     password: string;
     realName: string;
-    roleId: string;
+    roleCode: string;
     isActive: boolean;
   }
   export interface ReqUserUpdate {
     username: string;
     realName: string;
-    roleId: string;
+    roleCode: string;
     isActive: boolean;
   }
   export interface ResUserPagination {
