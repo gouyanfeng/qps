@@ -12,12 +12,12 @@ const tagApi = {
   },
 
   // 创建标签
-  createTag(data: { tagName: string }) {
+  createTag(data: { tagName: string; category?: string }) {
     return http.post("/admin/tags", data);
   },
 
   // 更新标签
-  updateTag(id: string, data: { tagName?: string }) {
+  updateTag(id: string, data: { tagName?: string; category?: string }) {
     return http.put(`/admin/tags/${id}`, data);
   },
 

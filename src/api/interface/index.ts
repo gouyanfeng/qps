@@ -171,7 +171,8 @@ export namespace Order {
 // 标签管理模块
 export namespace Tag {
   export interface ReqTagParams {
-    Name?: string;
+    tagName?: string;
+    category?: string;
     Page?: number;
     PageSize?: number;
     SortField?: string;
@@ -180,11 +181,13 @@ export namespace Tag {
   export interface ResTagList {
     id: string;
     tagName: string;
+    category: string;
     createdAt: string;
     updatedAt: string;
   }
   export interface ReqTagForm {
     tagName: string;
+    category: string;
   }
   export interface ResTagPagination {
     list: ResTagList[];

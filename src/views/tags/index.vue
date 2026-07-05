@@ -7,6 +7,9 @@
                     <el-form-item label="标签名称">
                         <el-input v-model="searchForm.tagName" placeholder="请输入标签名称" />
                     </el-form-item>
+                    <el-form-item label="分类">
+                        <el-input v-model="searchForm.category" placeholder="请输入分类" />
+                    </el-form-item>
                 </el-form>
             </template>
 
@@ -19,6 +22,7 @@
             <template #table="{ tableData }">
                 <el-table :data="tableData" style="width: 100%" border>
                     <el-table-column prop="tagName" label="标签名称" width="180" />
+                    <el-table-column prop="category" label="分类" width="140" />
                     <el-table-column prop="createdAt" label="创建时间" width="200">
                         <template #default="{ row }">
                             {{ formatDate(row.createdAt) }}
@@ -39,6 +43,9 @@
             <el-form :model="form" label-width="80px">
                 <el-form-item label="标签名称">
                     <el-input v-model="form.tagName" placeholder="请输入标签名称" />
+                </el-form-item>
+                <el-form-item label="分类">
+                    <el-input v-model="form.category" placeholder="请输入分类" />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -66,15 +73,18 @@ const dialogType = ref('')
 const currentTagId = ref('')
 
 const searchForm = reactive({
-    tagName: ''
+    tagName: '',
+    category: ''
 })
 
 const form = reactive({
-    tagName: ''
+    tagName: '',
+    category: ''
 })
 
 const handleReset = () => {
     searchForm.tagName = ''
+    searchForm.category = ''
 }
 
 const openDialog = (type: string, row?: any) => {
@@ -83,9 +93,11 @@ const openDialog = (type: string, row?: any) => {
 
     if (type === '新增') {
         form.tagName = ''
+        form.category = ''
         currentTagId.value = ''
     } else if (row) {
         form.tagName = row.tagName || ''
+        form.category = row.category || ''
         currentTagId.value = row.id
     }
 
