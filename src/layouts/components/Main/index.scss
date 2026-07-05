@@ -3,6 +3,8 @@
   padding: 10px 12px;
   overflow-x: hidden;
   background-color: var(--el-bg-color-page);
+  background-image: url("@/assets/images/texture.svg");
+  background-repeat: repeat;
 }
 .el-footer {
   height: auto;
