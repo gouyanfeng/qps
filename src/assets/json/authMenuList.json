@@ -114,20 +114,6 @@
       }
     },
     {
-      "path": "/users",
-      "name": "users",
-      "component": "/users/index",
-      "meta": {
-        "icon": "User",
-        "title": "用户管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true
-      }
-    },
-    {
       "path": "/system",
       "name": "system",
       "redirect": "/system/role",
@@ -162,6 +148,20 @@
           "meta": {
             "icon": "Tools",
             "title": "权限设置",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/system/users",
+          "name": "systemUsers",
+          "component": "/users/index",
+          "meta": {
+            "icon": "User",
+            "title": "用户管理",
             "isLink": "",
             "isHide": false,
             "isFull": false,
