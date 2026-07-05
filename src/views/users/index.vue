@@ -71,10 +71,8 @@
                     <el-input v-model="form.realName" placeholder="请输入真实姓名" />
                 </el-form-item>
                 <el-form-item label="角色">
-                    <el-select v-model="form.roleCode" placeholder="请选择角色" style="width: 200px">
-                        <el-option label="管理员" value="admin" />
-                        <el-option label="商户" value="merchant" />
-                        <el-option label="用户" value="user" />
+                    <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 200px">
+                        <el-option v-for="r in roles" :key="r.id" :label="r.name" :value="r.id" />
                     </el-select>
                 </el-form-item>
 
@@ -93,11 +91,12 @@
 </template>
 
 <script setup lang="ts" name="users">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User } from '@/api/interface'
 import { CirclePlus, EditPen, View } from '@element-plus/icons-vue'
 import { userApi } from '@/api/modules/user'
+import { roleApi } from '@/api/modules/role'
 import QueryPage from '@/components/QueryPage/index.vue'
 
 // 引用
@@ -109,11 +108,23 @@ const dialogTitle = ref('')
 const dialogType = ref('')
 const currentUserId = ref('')
 
+// 角色列表（从 API 获取）
+const roles = ref<any[]>([])
+
+onMounted(async () => {
+  try {
+    const res = await roleApi.getRoleList({ page: 1, pageSize: 100 }) as any
+    roles.value = res.data?.list || res.data || []
+  } catch {
+    // 静默失败
+  }
+})
+
 // 表单数据
 const searchForm = reactive({
     username: '',
     realName: '',
-    roleCode: '',
+    roleId: '',
     isActive: undefined as boolean | undefined
 })
 
@@ -121,7 +132,7 @@ const form = reactive<User.ReqUserForm>({
     username: '',
     password: '',
     realName: '',
-    roleCode: '',
+    roleId: '',
     isActive: true
 })
 
@@ -136,7 +147,7 @@ const handleReset = () => {
     Object.assign(searchForm, {
         username: '',
         realName: '',
-        roleCode: '',
+        roleId: '',
         isActive: undefined
     })
 }
@@ -152,7 +163,7 @@ const openDialog = (type: string, row?: any) => {
             username: '',
             password: '',
             realName: '',
-            roleCode: '',
+            roleId: '',
             isActive: true
         })
         currentUserId.value = ''
@@ -162,7 +173,7 @@ const openDialog = (type: string, row?: any) => {
             username: row.username,
             password: '',
             realName: row.realName,
-            roleCode: row.roleCode,
+            roleId: row.roleId,
             isActive: row.isActive
         })
         currentUserId.value = row.id
