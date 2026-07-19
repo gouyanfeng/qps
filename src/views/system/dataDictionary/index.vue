@@ -12,7 +12,7 @@
                     </el-form-item>
                     <el-form-item label="父级字典">
                         <el-tree-select v-model="searchForm.parentId" :data="treeData" :props="treeProps" value-key="id"
-                            node-key="id" placeholder="请选择父级字典" clearable filterable />
+                            node-key="id" placeholder="请选择父级字典" clearable filterable check-strictly />
                     </el-form-item>
                     <el-form-item label="状态">
                         <el-select v-model="searchForm.isActive" placeholder="请选择状态">
@@ -76,7 +76,7 @@
                 </el-form-item>
                 <el-form-item label="父级字典">
                     <el-tree-select v-model="form.parentId" :data="treeData" :props="treeProps" value-key="id"
-                        node-key="id" placeholder="请选择父级字典" clearable filterable />
+                        node-key="id" placeholder="请选择父级字典" clearable filterable check-strictly />
                 </el-form-item>
                 <el-form-item label="描述">
                     <el-input v-model="form.description" placeholder="请输入描述" type="textarea" />
