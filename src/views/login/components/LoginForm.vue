@@ -88,7 +88,7 @@ const login = (formEl: FormInstance | undefined) => {
       router.push(HOME_URL);
       ElNotification({
         title: "登录成功",
-        message: "欢迎登录 Geeker-Admin",
+        message: "欢迎登录 QPS 棋室管理系统",
         type: "success",
         duration: 3000
       });

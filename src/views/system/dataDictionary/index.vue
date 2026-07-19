@@ -211,7 +211,6 @@ const submitForm = async () => {
                 isActive: form.isActive,
                 parentId: form.parentId || null
             })
-            ElMessage.success('新增成功')
         } else {
             await dataDictionaryApi.updateDataDictionary(form.id, {
                 parentId: form.parentId || null,
@@ -221,12 +220,17 @@ const submitForm = async () => {
                 sortOrder: form.sortOrder,
                 isActive: form.isActive
             })
-            ElMessage.success('更新成功')
         }
+
         dialogVisible.value = false
         await loadTreeData()
-        queryPageRef.value && queryPageRef.value.getList()
+        if (queryPageRef.value && typeof queryPageRef.value.getTableList === 'function') {
+            await queryPageRef.value.getTableList()
+        }
+
+        ElMessage.success(dialogType.value === '新增' ? '新增成功' : '更新成功')
     } catch (error) {
+        console.error('操作失败:', error)
         ElMessage.error('操作失败')
     }
 }
@@ -246,15 +250,17 @@ const deleteDataDictionary = async (row: any) => {
         await dataDictionaryApi.deleteDataDictionary(row.id)
         ElMessage.success('删除成功')
         await loadTreeData()
-        queryPageRef.value && queryPageRef.value.getList()
+        if (queryPageRef.value && typeof queryPageRef.value.getTableList === 'function') {
+            await queryPageRef.value.getTableList()
+        }
     } catch (error) {
         ElMessage.info('已取消删除')
     }
 }
 
 watch(() => searchForm.parentId, (newValue) => {
-    if (queryPageRef.value && typeof queryPageRef.value.getList === 'function') {
-        queryPageRef.value.getList()
+    if (queryPageRef.value && typeof queryPageRef.value.getTableList === 'function') {
+        queryPageRef.value.getTableList()
     }
 })
 

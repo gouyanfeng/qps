@@ -166,7 +166,8 @@ const toggleCollapsed = () => {
 
 // 暴露方法
 defineExpose({
-    getTableList
+    getTableList,
+    getList: getTableList
 })
 
 // 初始化
@@ -199,6 +200,29 @@ onMounted(() => {
     .search-conditions .el-form {
         display: flex;
         flex-wrap: wrap;
+    }
+
+    .search-conditions .el-form-item {
+        margin-right: 20px;
+        margin-bottom: 15px;
+    }
+
+    .search-conditions :deep(.el-form-item__label) {
+        width: 80px;
+        flex: none;
+        text-align: right;
+        padding-right: 8px;
+    }
+
+    .search-conditions :deep(.el-form-item__content) {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .search-conditions :deep(.el-input),
+    .search-conditions :deep(.el-select),
+    .search-conditions :deep(.el-tree-select) {
+        width: 200px;
     }
 
 
