@@ -3,17 +3,13 @@
   <el-container class="layout">
     <div class="aside-split">
       <div class="logo flx-center">
-        <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" />
+        <!-- <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" /> -->
       </div>
       <el-scrollbar>
         <div class="split-list">
-          <div
-            v-for="item in menuList"
-            :key="item.path"
-            class="split-item"
+          <div v-for="item in menuList" :key="item.path" class="split-item"
             :class="{ 'split-active': splitActive === item.path || `/${splitActive.split('/')[1]}` === item.path }"
-            @click="changeSubMenu(item)"
-          >
+            @click="changeSubMenu(item)">
             <el-icon>
               <component :is="item.meta.icon"></component>
             </el-icon>
@@ -27,13 +23,8 @@
         <span v-show="subMenuList.length" class="logo-text">{{ isCollapse ? "G" : title }}</span>
       </div>
       <el-scrollbar>
-        <el-menu
-          :router="false"
-          :default-active="activeMenu"
-          :collapse="isCollapse"
-          :unique-opened="accordion"
-          :collapse-transition="false"
-        >
+        <el-menu :router="false" :default-active="activeMenu" :collapse="isCollapse" :unique-opened="accordion"
+          :collapse-transition="false">
           <SubMenu :menu-list="subMenuList" />
         </el-menu>
       </el-scrollbar>

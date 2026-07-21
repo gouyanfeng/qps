@@ -2,33 +2,19 @@
   "code": 200,
   "data": {
     "role": [
-      "add",
-      "edit",
-      "delete"
-    ],
-    "useProTable": [
-      "add",
-      "batchAdd",
-      "export",
-      "batchDelete",
-      "status"
-    ],
-    "authButton": [
-      "add",
-      "edit",
-      "delete",
-      "import",
-      "export"
+      { "action": "add", "permissionCode": "role:add" },
+      { "action": "edit", "permissionCode": "role:edit" },
+      { "action": "delete", "permissionCode": "role:delete" }
     ],
     "permission": [
-      "add",
-      "edit",
-      "delete"
+      { "action": "add", "permissionCode": "permission:add" },
+      { "action": "edit", "permissionCode": "permission:edit" },
+      { "action": "delete", "permissionCode": "permission:delete" }
     ],
     "dataDictionary": [
-      "add",
-      "edit",
-      "delete"
+      { "action": "add", "permissionCode": "dataDictionary:add" },
+      { "action": "edit", "permissionCode": "dataDictionary:edit" },
+      { "action": "delete", "permissionCode": "dataDictionary:delete" }
     ]
   },
   "msg": "成功"

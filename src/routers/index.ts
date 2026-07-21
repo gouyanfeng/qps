@@ -1,7 +1,6 @@
 import {
   createRouter,
   createWebHashHistory,
-  createWebHistory,
 } from "vue-router";
 import { useUserStore } from "@/stores/modules/user";
 import { useAuthStore } from "@/stores/modules/auth";
@@ -9,13 +8,6 @@ import { LOGIN_URL, ROUTER_WHITE_LIST } from "@/config";
 import { initDynamicRouter } from "@/routers/modules/dynamicRouter";
 import { staticRouter, errorRouter } from "@/routers/modules/staticRouter";
 import NProgress from "@/config/nprogress";
-
-// const mode = import.meta.env.VITE_ROUTER_MODE;
-
-// const routerMode = {
-//   hash: () => createWebHashHistory(),
-//   history: () => createWebHistory()
-// };
 
 /**
  * @description 📚 路由参数配置简介
@@ -73,10 +65,7 @@ router.beforeEach(async (to, from, next) => {
     return next({ ...to, replace: true });
   }
 
-  // 7.存储 routerName 做按钮权限筛选
-  authStore.setRouteName(to.name as string);
-
-  // 8.正常访问页面
+  // 7.正常访问页面
   next();
 });
 

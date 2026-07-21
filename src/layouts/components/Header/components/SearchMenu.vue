@@ -42,7 +42,13 @@ import { useDebounceFn } from "@vueuse/core";
 
 const router = useRouter();
 const authStore = useAuthStore();
-const menuList = computed(() => authStore.flatMenuListGet.filter(item => !item.meta.isHide));
+const menuList = computed(() => authStore.flatMenuListGet.filter(item => {
+    if (item.meta.isHide) return false;
+    if (item.meta.permissionCode && authStore.userPermissions.length > 0) {
+        return authStore.userPermissions.includes(item.meta.permissionCode);
+    }
+    return true;
+}));
 
 const activePath = ref("");
 const mouseoverMenuItem = (menu: Menu.MenuOptions) => {

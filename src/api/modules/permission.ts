@@ -13,10 +13,6 @@ export const permissionApi = {
   getPermissionList: () => {
     return http.get("/admin/permissions");
   },
-  // 获取单个角色的权限
-  getRolePermission: (role: string) => {
-    return http.get(`/admin/permissions/${role}`);
-  },
   // 更新角色权限
   updateRolePermission: (params: Permission.ReqRolePermission) => {
     return http.put<any>("/admin/permissions", params);

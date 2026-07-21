@@ -4,17 +4,12 @@
     <el-aside>
       <div class="aside-box" :style="{ width: isCollapse ? '65px' : '210px' }">
         <div class="logo flx-center">
-          <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" />
+          <!-- <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" /> -->
           <span v-show="!isCollapse" class="logo-text">{{ title }}</span>
         </div>
         <el-scrollbar>
-          <el-menu
-            :router="false"
-            :default-active="activeMenu"
-            :collapse="isCollapse"
-            :unique-opened="accordion"
-            :collapse-transition="false"
-          >
+          <el-menu :router="false" :default-active="activeMenu" :collapse="isCollapse" :unique-opened="accordion"
+            :collapse-transition="false">
             <SubMenu :menu-list="menuList" />
           </el-menu>
         </el-scrollbar>

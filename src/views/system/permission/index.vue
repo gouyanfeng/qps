@@ -4,10 +4,8 @@
         <div class="role-panel">
             <div class="panel-header">角色列表</div>
             <div class="role-list">
-                <div v-for="role in roleList" :key="role.code"
-                    class="role-item"
-                    :class="{ active: selectedRole === role.code }"
-                    @click="selectRole(role.code)">
+                <div v-for="role in roleList" :key="role.code" class="role-item"
+                    :class="{ active: selectedRole === role.code }" @click="selectRole(role.code)">
                     <span>{{ role.name }}</span>
                 </div>
             </div>
@@ -21,25 +19,16 @@
                 <p>请从左侧选择一个角色进行权限设置</p>
             </div>
             <div v-else class="perm-body">
-                <el-tree
-                    ref="permTreeRef"
-                    :data="permTreeData"
-                    node-key="id"
-                    :props="{ label: 'name', children: 'children' }"
-                    default-expand-all
-                >
+                <el-tree ref="permTreeRef" :data="permTreeData" node-key="id"
+                    :props="{ label: 'name', children: 'children' }" default-expand-all>
                     <template #default="{ data }">
                         <div class="custom-node" :class="{ 'is-root': data.code === 'root' }">
                             <template v-if="data.code === 'root'">
                                 <span class="root-label">{{ data.name }}</span>
                             </template>
                             <template v-else>
-                                <el-checkbox
-                                    v-model="data.checked"
-                                    :indeterminate="hasChildren(data) && isPartial(data)"
-                                    @change="(val: boolean) => onCheck(data, val)"
-                                    @click.stop
-                                >
+                                <el-checkbox v-model="data.checked"
+                                    @change="(val: boolean) => onCheck(data, val)" @click.stop>
                                     <el-tooltip :content="data.code" placement="right" :show-after="300">
                                         <span class="node-label">{{ data.name }}</span>
                                     </el-tooltip>
@@ -55,10 +44,14 @@
         <div class="changes-panel">
             <div class="panel-header">修改记录</div>
             <template v-if="!selectedRole">
-                <div class="empty-tip"><p>暂无修改</p></div>
+                <div class="empty-tip">
+                    <p>暂无修改</p>
+                </div>
             </template>
             <template v-else-if="!hasChanges">
-                <div class="empty-tip"><p>暂无修改</p></div>
+                <div class="empty-tip">
+                    <p>暂无修改</p>
+                </div>
             </template>
             <template v-else>
                 <div class="changes-summary">
@@ -66,16 +59,21 @@
                     <el-tag size="small" type="danger">-{{ changes.removed.length }}</el-tag>
                     <span class="changes-spacer" />
                     <el-button size="small" :icon="Refresh" @click="resetPerm">重置</el-button>
-                    <el-button size="small" type="primary" :icon="Check" :loading="saving" @click="savePerm">保存</el-button>
+                    <el-button size="small" type="primary" :icon="Check" :loading="saving"
+                        @click="savePerm">保存</el-button>
                 </div>
                 <div class="changes-scroll">
                     <div v-for="item in changes.added" :key="item.code" class="change-item added">
-                        <el-icon><Plus /></el-icon>
+                        <el-icon>
+                            <Plus />
+                        </el-icon>
                         <span class="change-path">{{ item.path }}</span>
                         <span class="change-code">{{ item.code }}</span>
                     </div>
                     <div v-for="item in changes.removed" :key="item.code" class="change-item removed">
-                        <el-icon><Minus /></el-icon>
+                        <el-icon>
+                            <Minus />
+                        </el-icon>
                         <span class="change-path">{{ item.path }}</span>
                         <span class="change-code">{{ item.code }}</span>
                     </div>
@@ -90,6 +88,7 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Check, Plus, Minus } from '@element-plus/icons-vue'
 import { permissionApi } from '@/api/modules/permission'
+import { roleApi } from '@/api/modules/role'
 
 // ── 类型 ──
 
@@ -103,21 +102,21 @@ interface PermNode {
 
 // ── 角色 ──
 
-const roleList = [
-    { id: '1', name: '管理员', code: 'admin' },
-    { id: '2', name: '商户', code: 'merchant' },
-    { id: '3', name: '用户', code: 'user' }
-]
+interface RoleItem {
+    id: string
+    name: string
+    code: string
+}
 
+const roleList = ref<RoleItem[]>([])
 const selectedRole = ref('')
 const currentRoleName = computed(() =>
-    roleList.find(r => r.code === selectedRole.value)?.name || ''
+    roleList.value.find(r => r.code === selectedRole.value)?.name || ''
 )
 
 // ── 树 ──
 
 const permTreeData = ref<PermNode[]>([])
-const permTreeRef = ref()
 
 // 缓存角色权限（扁平 code 数组）
 const rolePerms = reactive<Record<string, string[]>>({})
@@ -144,62 +143,22 @@ const getPathByCode = (code: string): string => {
     return segs.join(' / ')
 }
 
-// 判断 code 是否是父节点（有子节点）
-const isParentCode = (code: string): boolean => {
-    const find = (nodes: PermNode[]): boolean => {
-        for (const n of nodes) {
-            if (n.code === code) return !!n.children?.length
-            if (n.children && find(n.children)) return true
-        }
-        return false
-    }
-    return find(permTreeData.value)
-}
-
-// 变更清单（只记录叶子节点）
 const changes = computed(() => {
     if (!hasChanges.value) return { added: [], removed: [], total: 0 }
     const current = collectCodes()
     const curSet = new Set(current)
     const savSet = new Set(savedCodes)
     const added = current
-        .filter(c => !savSet.has(c) && !isParentCode(c))
+        .filter(c => !savSet.has(c))
         .map(c => ({ code: c, path: getPathByCode(c) }))
     const removed = savedCodes
-        .filter(c => !curSet.has(c) && !isParentCode(c))
+        .filter(c => !curSet.has(c))
         .map(c => ({ code: c, path: getPathByCode(c) }))
     return { added, removed, total: added.length + removed.length }
 })
 
-// ============================================================
-//  工具
-// ============================================================
-
 const walk = (nodes: PermNode[], fn: (n: PermNode) => void) => {
     for (const n of nodes) { fn(n); if (n.children) walk(n.children, fn) }
-}
-
-const hasChildren = (n: PermNode) => !!n.children?.length
-
-const isPartial = (n: PermNode) => {
-    if (!n.children?.length) return false
-    const checked = n.children.filter(c => c.checked).length
-    return checked > 0 && checked < n.children.length
-}
-
-// 自底向上刷新所有父节点的 checked 状态
-const refreshParents = () => {
-    const sync = (nodes: PermNode[]): void => {
-        for (const n of nodes) {
-            if (n.children) {
-                sync(n.children)
-                if (n.code !== 'root') {
-                    n.checked = n.children.every(c => c.checked)
-                }
-            }
-        }
-    }
-    sync(permTreeData.value)
 }
 
 // 采集勾选的 code（扁平化）
@@ -226,10 +185,6 @@ const checkChanged = () => {
 // ============================================================
 
 const onCheck = (data: PermNode, val: boolean) => {
-    if (hasChildren(data)) {
-        walk(data.children!, c => { c.checked = val })
-    }
-    refreshParents()
     checkChanged()
 }
 
@@ -293,6 +248,16 @@ const resetPerm = () => {
 
 const loadTree = async () => {
     try {
+        // 从数据库加载角色列表
+        const roleRes = await roleApi.getRoleList({ page: 1, pageSize: 100 })
+        const roles = (roleRes as any).data?.list || []
+        roleList.value = roles.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            code: r.code
+        }))
+
+        // 加载权限树
         const res = await permissionApi.getPermissionTree()
         const inject = (nodes: any[]): PermNode[] =>
             nodes.map(n => ({
@@ -302,19 +267,21 @@ const loadTree = async () => {
             }))
         permTreeData.value = inject((res as any).data || [])
 
+        // 加载角色权限
         const permRes = await permissionApi.getPermissionList()
         const data = (permRes as any).data || {}
         for (const [role, p] of Object.entries(data)) {
             rolePerms[role] = (p as any).permissions || []
         }
 
-        if (roleList.length > 0 && !selectedRole.value) {
-            selectedRole.value = roleList[0].code
+        if (roleList.value.length > 0 && !selectedRole.value) {
+            selectedRole.value = roleList.value[0].code
         }
         if (selectedRole.value) {
             nextTick(() => applyPerm(selectedRole.value))
         }
-    } catch {
+    } catch (error) {
+        console.error('加载权限数据失败:', error)
         ElMessage.error('加载权限数据失败')
     }
 }
@@ -347,14 +314,22 @@ onMounted(loadTree)
         border-bottom: 1px solid var(--el-border-color-light);
         background: var(--el-fill-color-light);
     }
-    .role-list { flex: 1; padding: 8px 0; }
+
+    .role-list {
+        flex: 1;
+        padding: 8px 0;
+    }
 
     .role-item {
         padding: 12px 16px;
         cursor: pointer;
         font-size: 14px;
         border-left: 3px solid transparent;
-        &:hover { background: var(--el-fill-color-light); }
+
+        &:hover {
+            background: var(--el-fill-color-light);
+        }
+
         &.active {
             background: var(--el-color-primary-light-9);
             color: var(--el-color-primary);
@@ -416,7 +391,9 @@ onMounted(loadTree)
         padding: 10px 12px;
         border-bottom: 1px solid var(--el-border-color-light);
 
-        .changes-spacer { flex: 1; }
+        .changes-spacer {
+            flex: 1;
+        }
     }
 
     .changes-scroll {
@@ -433,9 +410,15 @@ onMounted(loadTree)
         font-size: 13px;
         line-height: 1.4;
 
-        .el-icon { font-size: 13px; flex-shrink: 0; }
+        .el-icon {
+            font-size: 13px;
+            flex-shrink: 0;
+        }
 
-        .change-path { word-break: break-all; }
+        .change-path {
+            word-break: break-all;
+        }
+
         .change-code {
             margin-left: auto;
             font-size: 11px;
@@ -444,8 +427,13 @@ onMounted(loadTree)
             flex-shrink: 0;
         }
 
-        &.added { color: var(--el-color-success); }
-        &.removed { color: var(--el-color-danger); }
+        &.added {
+            color: var(--el-color-success);
+        }
+
+        &.removed {
+            color: var(--el-color-danger);
+        }
     }
 }
 
@@ -465,14 +453,23 @@ onMounted(loadTree)
     align-items: center;
     padding: 4px 0;
 
-    .el-checkbox { margin-right: 4px; }
-    .node-label { font-size: 14px; }
+    .el-checkbox {
+        margin-right: 4px;
+    }
+
+    .node-label {
+        font-size: 14px;
+    }
 }
 
 .is-root {
     font-weight: 600;
     font-size: 15px;
     padding: 6px 0 2px 0;
-    .root-label { color: var(--el-text-color-primary); padding: 4px 0; }
+
+    .root-label {
+        color: var(--el-text-color-primary);
+        padding: 4px 0;
+    }
 }
 </style>

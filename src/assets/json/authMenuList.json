@@ -12,7 +12,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": true,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "home"
       }
     },
     {
@@ -26,7 +27,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "merchants"
       }
     },
     {
@@ -40,7 +42,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "shops"
       }
     },
     {
@@ -54,7 +57,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "rooms"
       }
     },
     {
@@ -68,7 +72,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "coupons"
       }
     },
     {
@@ -82,7 +87,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "plans"
       }
     },
     {
@@ -96,7 +102,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "orders"
       }
     },
     {
@@ -110,7 +117,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "tags"
       }
     },
     {
@@ -124,7 +132,8 @@
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true
+        "isKeepAlive": true,
+        "permissionCode": "system"
       },
       "children": [
         {
@@ -138,7 +147,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "role"
           }
         },
         {
@@ -152,7 +162,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "permission"
           }
         },
         {
@@ -166,7 +177,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "users"
           }
         },
         {
@@ -180,7 +192,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "dataDictionary"
           }
         }
       ]

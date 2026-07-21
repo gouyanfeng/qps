@@ -2,6 +2,7 @@ import { Login } from "@/api/interface/index";
 import authMenuList from "@/assets/json/authMenuList.json";
 import authButtonList from "@/assets/json/authButtonList.json";
 import http from "@/api";
+import { cacheGet, cacheSet } from "@/utils";
 
 /**
  * @name 登录模块
@@ -10,27 +11,38 @@ import http from "@/api";
 export const loginApi = (params: Login.ReqLoginForm) => {
   return http.post<Login.ResLogin>("admin/auth/login", params, {
     loading: false,
-  }); // 正常 post json 请求  ==>  application/json
-  // return http.post<Login.ResLogin>(PORT1 + `/login`, params, { loading: false }); // 控制当前请求不显示 loading
-  // return http.post<Login.ResLogin>(PORT1 + `/login`, {}, { params }); // post 请求携带 query 参数  ==>  ?username=admin&password=123456
-  // return http.post<Login.ResLogin>(PORT1 + `/login`, qs.stringify(params)); // post 请求携带表单参数  ==>  application/x-www-form-urlencoded
-  // return http.get<Login.ResLogin>(PORT1 + `/login?${qs.stringify(params, { arrayFormat: "repeat" })}`); // get 请求可以携带数组等复杂参数
+  });
 };
 
 // 获取菜单列表
 export const getAuthMenuListApi = () => {
-  // return http.get<Menu.MenuOptions[]>(PORT1 + `/menu/list`, {}, { loading: false });
-  // 如果想让菜单变为本地数据，注释上一行代码，并引入本地 authMenuList.json 数据
-
-  console.log("authMenuList", authMenuList);
   return authMenuList;
 };
 
 // 获取按钮权限
 export const getAuthButtonListApi = () => {
-  // return http.get<Login.ResAuthButtons>(PORT1 + `/auth/buttons`, {}, { loading: false });
-  // 如果想让按钮权限变为本地数据，注释上一行代码，并引入本地 authButtonList.json 数据
   return authButtonList;
+};
+
+// 获取当前登录用户权限代码列表（带 1 小时 localStorage 缓存）
+export const getUserPermissionsApi = async (): Promise<string[]> => {
+  const { useUserStore } = await import("@/stores/modules/user");
+  const userId = useUserStore().userInfo.userId || "anonymous";
+  const CACHE_KEY = `qps-user-permissions-${userId}`;
+  const TTL = 60; // 1 小时
+
+  // 检查缓存
+  const cached = cacheGet<string[]>(CACHE_KEY, TTL);
+  if (cached) return cached;
+
+  // 调后端 API
+  const res = await http.get<any>("/admin/auth/user-permissions");
+  const data = (res as any)?.data?.permissions || (res as any)?.permissions || [];
+
+  // 写入缓存
+  cacheSet(CACHE_KEY, data, TTL);
+
+  return data;
 };
 
 // 用户退出登录

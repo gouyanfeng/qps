@@ -3,7 +3,7 @@
   <el-container class="layout">
     <el-header>
       <div class="logo flx-center">
-        <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" />
+        <!-- <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" /> -->
         <span class="logo-text">{{ title }}</span>
       </div>
       <el-menu mode="horizontal" :router="false" :default-active="activeMenu">
@@ -18,7 +18,8 @@
             </template>
             <SubMenu :menu-list="subItem.children" />
           </el-sub-menu>
-          <el-menu-item v-else :key="subItem.path + 'el-menu-item'" :index="subItem.path" @click="handleClickMenu(subItem)">
+          <el-menu-item v-else :key="subItem.path + 'el-menu-item'" :index="subItem.path"
+            @click="handleClickMenu(subItem)">
             <el-icon>
               <component :is="subItem.meta.icon"></component>
             </el-icon>

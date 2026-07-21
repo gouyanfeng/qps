@@ -5,7 +5,7 @@ import piniaPersistConfig from "@/stores/helper/persist";
 export const useUserStore = defineStore("qps-user", {
   state: (): UserState => ({
     token: "",
-    userInfo: { name: "qps" },
+    userInfo: { name: "qps", userId: "" },
   }),
   getters: {},
   actions: {
