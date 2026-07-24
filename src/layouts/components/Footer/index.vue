@@ -1,6 +1,6 @@
 <template>
   <div class="footer flx-center">
-    <span> 2026 © QPS Chess Room Management System </span>
+    <span> 2026 QPS Management System </span>
   </div>
 </template>
 

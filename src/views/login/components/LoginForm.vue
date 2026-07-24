@@ -75,7 +75,7 @@ const login = (formEl: FormInstance | undefined) => {
       });
       console.log("登录接口返回数据：", data);
       userStore.setToken(data.token);
-      userStore.setUserInfo({ name: data.realName, userId: data.userId });
+      userStore.setUserInfo({ name: data.realName, userId: data.userId, role: data.role });
 
       // 2.添加动态路由
       await initDynamicRouter();
@@ -88,7 +88,7 @@ const login = (formEl: FormInstance | undefined) => {
       router.push(HOME_URL);
       ElNotification({
         title: "登录成功",
-        message: "欢迎登录 QPS 棋室管理系统",
+        message: "欢迎登录 QPS 管理系统",
         type: "success",
         duration: 3000
       });

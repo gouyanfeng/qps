@@ -1,6 +1,6 @@
 <!-- 💥 这里是异步加载 LayoutComponents -->
 <template>
-  <el-watermark id="watermark" :font="font" :content="watermark ? ['QPS Chess Room', 'Management System'] : ''">
+  <el-watermark id="watermark" :font="font" :content="watermark ? ['QPS', 'Management System'] : ''">
     <suspense>
       <template #default>
         <component :is="LayoutComponents[layout]" />
