@@ -7,7 +7,7 @@
       "component": "/home/index",
       "meta": {
         "icon": "HomeFilled",
-        "title": "Home",
+        "title": "首页",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -17,12 +17,117 @@
       }
     },
     {
+      "path": "/merchants",
+      "name": "merchants",
+      "component": "/merchants/index",
+      "meta": {
+        "icon": "Shop",
+        "title": "商户管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "merchants"
+      }
+    },
+    {
+      "path": "/shops",
+      "name": "shops",
+      "component": "/shops/index",
+      "meta": {
+        "icon": "School",
+        "title": "门店管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "shops"
+      }
+    },
+    {
+      "path": "/rooms",
+      "name": "rooms",
+      "component": "/rooms/index",
+      "meta": {
+        "icon": "House",
+        "title": "房间管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "rooms"
+      }
+    },
+    {
+      "path": "/coupons",
+      "name": "coupons",
+      "component": "/coupons/index",
+      "meta": {
+        "icon": "Ticket",
+        "title": "优惠券管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "coupons"
+      }
+    },
+    {
+      "path": "/plans",
+      "name": "plans",
+      "component": "/plans/index",
+      "meta": {
+        "icon": "CreditCard",
+        "title": "套餐管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "plans"
+      }
+    },
+    {
+      "path": "/orders",
+      "name": "orders",
+      "component": "/orders/index",
+      "meta": {
+        "icon": "List",
+        "title": "订单管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "orders"
+      }
+    },
+    {
+      "path": "/tags",
+      "name": "tags",
+      "component": "/tags/index",
+      "meta": {
+        "icon": "Crop",
+        "title": "标签管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "tags"
+      }
+    },
+    {
       "path": "/system",
       "name": "system",
       "redirect": "/system/role",
       "meta": {
         "icon": "Tools",
-        "title": "System",
+        "title": "系统设置",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -37,7 +142,7 @@
           "component": "/system/role/index",
           "meta": {
             "icon": "UserFilled",
-            "title": "Roles",
+            "title": "角色设置",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -52,7 +157,7 @@
           "component": "/system/permission/index",
           "meta": {
             "icon": "Tools",
-            "title": "Permissions",
+            "title": "权限设置",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -67,7 +172,7 @@
           "component": "/users/index",
           "meta": {
             "icon": "User",
-            "title": "Users",
+            "title": "用户管理",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -82,7 +187,7 @@
           "component": "/system/dataDictionary/index",
           "meta": {
             "icon": "BookOpen",
-            "title": "Data Dictionary",
+            "title": "数据字典",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -94,5 +199,5 @@
       ]
     }
   ],
-  "msg": "success"
+  "msg": "成功"
 }

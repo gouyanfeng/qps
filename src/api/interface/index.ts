@@ -36,6 +36,10 @@ export namespace Login {
     action: string;
     permissionCode?: string;
   }
+  export interface ChangePasswordRequest {
+    oldPassword: string;
+    newPassword: string;
+  }
 }
 
 export namespace User {

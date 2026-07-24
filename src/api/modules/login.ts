@@ -43,3 +43,10 @@ export const getUserPermissionsApi = async (): Promise<string[]> => {
 export const logoutApi = () => {
   return http.post("admin/auth/logout");
 };
+
+export const changePasswordApi = (oldPassword: string, newPassword: string) => {
+  return http.post<boolean>("admin/auth/change-password", {
+    oldPassword,
+    newPassword
+  });
+};
