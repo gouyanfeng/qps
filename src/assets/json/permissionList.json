@@ -20,12 +20,19 @@
         "dataDictionary",
         "dataDictionary:add",
         "dataDictionary:edit",
-        "dataDictionary:delete"
+        "dataDictionary:delete",
+        "crm",
+        "crm:customer",
+        "crm:customer:add",
+        "crm:customer:edit",
+        "crm:customer:delete"
       ]
     },
     "user": {
       "roleName": "User",
-      "permissions": ["home"]
+      "permissions": [
+        "home"
+      ]
     }
   },
   "msg": "success"

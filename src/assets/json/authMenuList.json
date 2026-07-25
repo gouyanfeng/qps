@@ -17,111 +17,6 @@
       }
     },
     {
-      "path": "/merchants",
-      "name": "merchants",
-      "component": "/merchants/index",
-      "meta": {
-        "icon": "Shop",
-        "title": "商户管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "merchants"
-      }
-    },
-    {
-      "path": "/shops",
-      "name": "shops",
-      "component": "/shops/index",
-      "meta": {
-        "icon": "School",
-        "title": "门店管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "shops"
-      }
-    },
-    {
-      "path": "/rooms",
-      "name": "rooms",
-      "component": "/rooms/index",
-      "meta": {
-        "icon": "House",
-        "title": "房间管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "rooms"
-      }
-    },
-    {
-      "path": "/coupons",
-      "name": "coupons",
-      "component": "/coupons/index",
-      "meta": {
-        "icon": "Ticket",
-        "title": "优惠券管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "coupons"
-      }
-    },
-    {
-      "path": "/plans",
-      "name": "plans",
-      "component": "/plans/index",
-      "meta": {
-        "icon": "CreditCard",
-        "title": "套餐管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "plans"
-      }
-    },
-    {
-      "path": "/orders",
-      "name": "orders",
-      "component": "/orders/index",
-      "meta": {
-        "icon": "List",
-        "title": "订单管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "orders"
-      }
-    },
-    {
-      "path": "/tags",
-      "name": "tags",
-      "component": "/tags/index",
-      "meta": {
-        "icon": "Crop",
-        "title": "标签管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "tags"
-      }
-    },
-    {
       "path": "/system",
       "name": "system",
       "redirect": "/system/role",
@@ -197,6 +92,21 @@
           }
         }
       ]
+    },
+    {
+      "path": "/crm/customer",
+      "name": "customer",
+      "component": "/crm/customer/index",
+      "meta": {
+        "icon": "User",
+        "title": "客户管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "crm:customer"
+      }
     }
   ],
   "msg": "成功"
