@@ -1,11 +1,11 @@
 import "@/styles/reset.scss";
+import "element-plus/dist/index.css";
+import "element-plus/theme-chalk/dark/css-vars.css";
 import "@/styles/common.scss";
 import "@/assets/iconfont/iconfont.scss";
 import "@/assets/fonts/font.scss";
 import "@/styles/element-dark.scss";
 import "@/styles/element.scss";
-import "element-plus/dist/index.css";
-import "element-plus/theme-chalk/dark/css-vars.css";
 
 import { createApp } from "vue";
 import * as Icons from "@element-plus/icons-vue";
