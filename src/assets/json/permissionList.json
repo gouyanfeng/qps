@@ -4,34 +4,39 @@
     "admin": {
       "roleName": "Administrator",
       "permissions": [
-        "home",
-        "system",
-        "users",
-        "users:add",
-        "users:edit",
-        "role",
-        "role:add",
-        "role:edit",
-        "role:delete",
-        "permission",
-        "permission:add",
-        "permission:edit",
-        "permission:delete",
-        "dataDictionary",
-        "dataDictionary:add",
-        "dataDictionary:edit",
-        "dataDictionary:delete",
-        "crm",
-        "crm:customer",
-        "crm:customer:add",
-        "crm:customer:edit",
-        "crm:customer:delete"
+        "HOME",
+        "SYSTEM",
+        "USERS",
+        "USERS_ADD",
+        "USERS_EDIT",
+        "ROLE",
+        "ROLE_ADD",
+        "ROLE_EDIT",
+        "ROLE_DELETE",
+        "PERMISSION",
+        "PERMISSION_ADD",
+        "PERMISSION_EDIT",
+        "PERMISSION_DELETE",
+        "DATA_DICTIONARY",
+        "DATA_DICTIONARY_ADD",
+        "DATA_DICTIONARY_EDIT",
+        "DATA_DICTIONARY_DELETE",
+        "REGION",
+        "REGION_ADD",
+        "REGION_EDIT",
+        "REGION_DELETE",
+        "OPERATION_LOG",
+        "CRM",
+        "CRM_CUSTOMER",
+        "CRM_CUSTOMER_ADD",
+        "CRM_CUSTOMER_EDIT",
+        "CRM_CUSTOMER_DELETE"
       ]
     },
     "user": {
       "roleName": "User",
       "permissions": [
-        "home"
+        "HOME"
       ]
     }
   },

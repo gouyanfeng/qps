@@ -2,19 +2,60 @@
   "code": 200,
   "data": {
     "role": [
-      { "action": "add", "permissionCode": "role:add" },
-      { "action": "edit", "permissionCode": "role:edit" },
-      { "action": "delete", "permissionCode": "role:delete" }
+      {
+        "action": "add",
+        "permissionCode": "ROLE_ADD"
+      },
+      {
+        "action": "edit",
+        "permissionCode": "ROLE_EDIT"
+      },
+      {
+        "action": "delete",
+        "permissionCode": "ROLE_DELETE"
+      }
     ],
     "permission": [
-      { "action": "add", "permissionCode": "permission:add" },
-      { "action": "edit", "permissionCode": "permission:edit" },
-      { "action": "delete", "permissionCode": "permission:delete" }
+      {
+        "action": "add",
+        "permissionCode": "PERMISSION_ADD"
+      },
+      {
+        "action": "edit",
+        "permissionCode": "PERMISSION_EDIT"
+      },
+      {
+        "action": "delete",
+        "permissionCode": "PERMISSION_DELETE"
+      }
     ],
     "dataDictionary": [
-      { "action": "add", "permissionCode": "dataDictionary:add" },
-      { "action": "edit", "permissionCode": "dataDictionary:edit" },
-      { "action": "delete", "permissionCode": "dataDictionary:delete" }
+      {
+        "action": "add",
+        "permissionCode": "DATA_DICTIONARY_ADD"
+      },
+      {
+        "action": "edit",
+        "permissionCode": "DATA_DICTIONARY_EDIT"
+      },
+      {
+        "action": "delete",
+        "permissionCode": "DATA_DICTIONARY_DELETE"
+      }
+    ],
+    "region": [
+      {
+        "action": "add",
+        "permissionCode": "REGION_ADD"
+      },
+      {
+        "action": "edit",
+        "permissionCode": "REGION_EDIT"
+      },
+      {
+        "action": "delete",
+        "permissionCode": "REGION_DELETE"
+      }
     ]
   },
   "msg": "成功"

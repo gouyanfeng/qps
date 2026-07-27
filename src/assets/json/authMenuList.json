@@ -13,7 +13,7 @@
         "isFull": false,
         "isAffix": true,
         "isKeepAlive": true,
-        "permissionCode": "home"
+        "permissionCode": "HOME"
       }
     },
     {
@@ -28,7 +28,7 @@
         "isFull": false,
         "isAffix": false,
         "isKeepAlive": true,
-        "permissionCode": "system"
+        "permissionCode": "SYSTEM"
       },
       "children": [
         {
@@ -43,7 +43,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "role"
+            "permissionCode": "ROLE"
           }
         },
         {
@@ -58,7 +58,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "permission"
+            "permissionCode": "PERMISSION"
           }
         },
         {
@@ -73,7 +73,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "users"
+            "permissionCode": "USERS"
           }
         },
         {
@@ -81,14 +81,44 @@
           "name": "dataDictionary",
           "component": "/system/dataDictionary/index",
           "meta": {
-            "icon": "BookOpen",
+            "icon": "Collection",
             "title": "数据字典",
             "isLink": "",
             "isHide": false,
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "dataDictionary"
+            "permissionCode": "DATA_DICTIONARY"
+          }
+        },
+        {
+          "path": "/system/region",
+          "name": "region",
+          "component": "/system/region/index",
+          "meta": {
+            "icon": "LocationFilled",
+            "title": "地址区域维护",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "REGION"
+          }
+        },
+        {
+          "path": "/system/operationLog",
+          "name": "operationLog",
+          "component": "/system/operationLog/index",
+          "meta": {
+            "icon": "Document",
+            "title": "操作日志",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "OPERATION_LOG"
           }
         }
       ]
@@ -105,7 +135,7 @@
         "isFull": false,
         "isAffix": false,
         "isKeepAlive": true,
-        "permissionCode": "crm:customer"
+        "permissionCode": "CRM_CUSTOMER"
       }
     }
   ],
