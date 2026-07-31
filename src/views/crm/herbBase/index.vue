@@ -203,7 +203,7 @@
           <div class="head-main">
             <div class="detail-kicker">基地详情</div>
             <div class="title-row">
-              <h2>{{ getBaseName(currentHerbBase) }}</h2>
+              <h2>{{ getDetailTitle(currentHerbBase) }}</h2>
               <el-tag :type="getStatusType(currentHerbBase.status)" effect="dark">{{ formatCustomerStatus(currentHerbBase.status) }}</el-tag>
             </div>
             <div class="head-meta">
@@ -463,7 +463,8 @@
 </template>
 
 <script setup lang="ts" name="customer">
-import { reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
+import { useRoute } from "vue-router";
 import { Edit, Phone, Plus, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
@@ -504,6 +505,7 @@ interface CustomerDetail {
 }
 
 const queryPageRef = ref();
+const route = useRoute();
 const { BUTTONS } = useAuthButtons();
 const dialogVisible = ref(false);
 const detailDrawerVisible = ref(false);
@@ -829,7 +831,8 @@ const formatGrade = (value?: string | null, fallback = "-") => formatEnumLabel(g
 const formatContactRole = (value?: string | null, fallback = "-") => formatEnumLabel(contactRoleLabels, value, fallback);
 const formatFollowType = (value?: string | null, fallback = "-") => formatEnumLabel(followTypeLabels, value, fallback);
 const formatFollowResult = (value?: string | null, fallback = "-") => formatEnumLabel(followResultLabels, value, fallback);
-const getBaseName = (row: Partial<CustomerDetail> | any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || row?.subjectName?.trim?.() || "";
+const getBaseName = (row: Partial<CustomerDetail> | any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || "";
+const getDetailTitle = (row: Partial<CustomerDetail> | any) => getBaseName(row) || row?.subjectName?.trim?.() || "";
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
 const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} -> ${toName || "未分配"}`;
 
@@ -1181,6 +1184,49 @@ const openFollowDialog = async (row: any) => {
   followForm.contactId = primaryContact?.id;
   followDialogVisible.value = true;
 };
+
+const getQueryValue = (value: unknown) => {
+  if (Array.isArray(value)) return value[0] || "";
+  return typeof value === "string" ? value : "";
+};
+
+const applyRouteEntrypoint = async () => {
+  const followQuery = getQueryValue(route.query.followFilter);
+  const gradeQuery = getQueryValue(route.query.grade);
+  const onlyOverdueQuery = getQueryValue(route.query.onlyOverdue);
+  const actionQuery = getQueryValue(route.query.action);
+  const detailId = getQueryValue(route.query.detailId);
+  const followId = getQueryValue(route.query.followId);
+
+  if (followQuery) {
+    followFilter.value = followQuery;
+    applyFollowFilter();
+    reloadList();
+  } else if (onlyOverdueQuery === "true") {
+    followFilter.value = "overdue";
+    applyFollowFilter();
+    reloadList();
+  }
+
+  if (gradeQuery) {
+    searchForm.grade = gradeQuery;
+    reloadList();
+  }
+
+  if (actionQuery === "add") {
+    await handleAdd();
+  }
+
+  if (followId) {
+    await openFollowDialog({ id: followId });
+  } else if (detailId) {
+    await openDetail({ id: detailId });
+  }
+};
+
+onMounted(() => {
+  void applyRouteEntrypoint();
+});
 
 const submitFollowRecord = async () => {
   if (!currentHerbBase.value) return;
