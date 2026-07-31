@@ -1,4 +1,4 @@
-import { Theme } from "@/hooks/interface";
+﻿import { Theme } from "@/hooks/interface";
 
 export const headerTheme: Record<Theme.ThemeType, { [key: string]: string }> = {
   light: {
@@ -23,3 +23,5 @@ export const headerTheme: Record<Theme.ThemeType, { [key: string]: string }> = {
     "--el-header-border-color": "#414243"
   }
 };
+
+

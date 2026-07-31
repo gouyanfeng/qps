@@ -1,4 +1,4 @@
-export default {
+﻿export default {
   home: {
     welcome: "欢迎使用"
   },
@@ -27,3 +27,5 @@ export default {
     logout: "退出登录"
   }
 };
+
+

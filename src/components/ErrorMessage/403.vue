@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="not-container">
     <img src="@/assets/images/403.png" class="not-img" alt="403" />
     <div class="not-detail">
@@ -17,3 +17,5 @@ const router = useRouter();
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+
+

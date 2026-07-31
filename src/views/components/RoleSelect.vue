@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <el-select v-model="selectedValue" :placeholder="placeholder" :disabled="disabled" :clearable="clearable">
         <el-option v-for="role in roles" :key="role.code" :label="role.name" :value="role.code" />
     </el-select>
@@ -55,3 +55,4 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 // 组件样式</style>
+

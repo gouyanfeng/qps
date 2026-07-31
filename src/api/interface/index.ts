@@ -1,4 +1,4 @@
-export interface Result {
+﻿export interface Result {
   code: string;
   msg: string;
 }
@@ -32,10 +32,6 @@ export namespace Login {
     role: string;
   }
 
-  export interface AuthButtonItem {
-    action: string;
-    permissionCode?: string;
-  }
   export interface ChangePasswordRequest {
     oldPassword: string;
     newPassword: string;
@@ -97,3 +93,5 @@ export namespace Permission {
     children?: TreeNode[];
   }
 }
+
+

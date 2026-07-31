@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @description: 判断值是否未某个类型
  */
 export function is(val: unknown, type: string) {
@@ -123,3 +123,5 @@ export function isNullOrUnDef(val: unknown): val is null | undefined {
 export const isHexColor = (str: string) => {
   return /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(str);
 };
+
+

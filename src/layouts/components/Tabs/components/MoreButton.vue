@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dropdown trigger="click" :teleported="false">
     <div class="more-button">
       <i :class="'iconfont icon-xiala'"></i>
@@ -79,3 +79,5 @@ const closeAllTab = () => {
 <style scoped lang="scss">
 @import "../index.scss";
 </style>
+
+

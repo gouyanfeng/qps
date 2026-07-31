@@ -1,4 +1,4 @@
-import { ElMessage } from "element-plus";
+﻿import { ElMessage } from "element-plus";
 
 /**
  * @description: 校验网络请求状态码
@@ -41,3 +41,5 @@ export const checkStatus = (status: number) => {
       ElMessage.error("请求失败！");
   }
 };
+
+

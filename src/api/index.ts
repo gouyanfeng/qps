@@ -1,4 +1,4 @@
-import axios, {
+﻿import axios, {
   AxiosInstance,
   AxiosError,
   AxiosRequestConfig,
@@ -136,3 +136,5 @@ class RequestHttp {
 }
 
 export default new RequestHttp(config);
+
+

@@ -1,4 +1,4 @@
-<!-- 横向布局 -->
+﻿<!-- 横向布局 -->
 <template>
   <el-container class="layout">
     <el-header>
@@ -60,3 +60,5 @@ const handleClickMenu = (subItem: Menu.MenuOptions) => {
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+
+

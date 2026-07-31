@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="permission-page">
         <!-- 左栏：角色列表 -->
         <div class="role-panel">
@@ -473,3 +473,4 @@ onMounted(loadTree)
     }
 }
 </style>
+

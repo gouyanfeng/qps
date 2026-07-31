@@ -1,4 +1,4 @@
-import { Theme } from "@/hooks/interface";
+﻿import { Theme } from "@/hooks/interface";
 
 export const menuTheme: Record<Theme.ThemeType, { [key: string]: string }> = {
   light: {
@@ -29,3 +29,5 @@ export const menuTheme: Record<Theme.ThemeType, { [key: string]: string }> = {
     "--el-menu-horizontal-sub-item-height": "50px"
   }
 };
+
+

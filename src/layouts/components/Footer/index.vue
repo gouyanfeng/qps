@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="footer flx-center">
     <span> 2026 QPS Management System </span>
   </div>
@@ -7,3 +7,5 @@
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+
+

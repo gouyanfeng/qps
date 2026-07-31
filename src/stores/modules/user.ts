@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+﻿import { defineStore } from "pinia";
 import { UserState } from "@/stores/interface";
 import piniaPersistConfig from "@/stores/helper/persist";
 
@@ -20,3 +20,5 @@ export const useUserStore = defineStore("qps-user", {
   },
   persist: piniaPersistConfig("qps-user"),
 });
+
+

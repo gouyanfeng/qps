@@ -1,4 +1,4 @@
-const mode = import.meta.env.VITE_ROUTER_MODE;
+﻿const mode = import.meta.env.VITE_ROUTER_MODE;
 
 /**
  * @description 缓存数据到 localStorage（带过期时间）
@@ -164,3 +164,5 @@ export function formatDate(dateString?: string | null, fallback = '-'): string {
     return fallback;
   }
 }
+
+

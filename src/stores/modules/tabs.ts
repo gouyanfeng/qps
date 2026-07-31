@@ -1,4 +1,4 @@
-import router from "@/routers";
+﻿import router from "@/routers";
 import { defineStore } from "pinia";
 import { getUrlWithParams } from "@/utils";
 import { useKeepAliveStore } from "./keepAlive";
@@ -73,3 +73,5 @@ export const useTabsStore = defineStore("qps-tabs", {
   },
   persist: piniaPersistConfig("qps-tabs")
 });
+
+

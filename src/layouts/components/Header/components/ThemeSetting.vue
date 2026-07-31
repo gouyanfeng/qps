@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="theme-setting">
     <i :class="'iconfont icon-zhuti'" class="toolBar-icon" @click="openDrawer"></i>
   </div>
@@ -10,3 +10,5 @@ const openDrawer = () => {
   mittBus.emit("openThemeDrawer");
 };
 </script>
+
+

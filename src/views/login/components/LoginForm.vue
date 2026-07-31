@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" size="large">
     <el-form-item prop="username">
       <el-input v-model="loginForm.username" placeholder="用户名：admin / user">
@@ -35,7 +35,7 @@ import { HOME_URL } from "@/config";
 // import { getTimeState } from "@/utils";
 import { Login } from "@/api/interface";
 import { ElNotification } from "element-plus";
-import { loginApi } from "@/api/modules/login";
+import { clearUserPermissionsCache, loginApi } from "@/api/modules/login";
 import { useUserStore } from "@/stores/modules/user";
 import { useTabsStore } from "@/stores/modules/tabs";
 import { useKeepAliveStore } from "@/stores/modules/keepAlive";
@@ -76,6 +76,7 @@ const login = (formEl: FormInstance | undefined) => {
       console.log("登录接口返回数据：", data);
       userStore.setToken(data.token);
       userStore.setUserInfo({ name: data.realName, userId: data.userId, role: data.role });
+      clearUserPermissionsCache(data.userId);
 
       // 2.添加动态路由
       await initDynamicRouter();
@@ -123,3 +124,5 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 @import "../index.scss";
 </style>
+
+

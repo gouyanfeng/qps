@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="maximize" @click="exitMaximize">
     <i :class="'iconfont icon-tuichu'"></i>
   </div>
@@ -37,3 +37,5 @@ const exitMaximize = () => {
   }
 }
 </style>
+
+

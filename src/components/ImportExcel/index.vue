@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog v-model="dialogVisible" :title="`批量添加${parameter.title}`" :destroy-on-close="true" width="580px" draggable>
     <el-form class="drawer-multiColumn-form" label-width="100px">
       <el-form-item label="模板下载 :">
@@ -147,3 +147,5 @@ defineExpose({
 <style lang="scss" scoped>
 @import "./index.scss";
 </style>
+
+

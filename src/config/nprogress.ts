@@ -1,4 +1,4 @@
-import NProgress from "nprogress";
+﻿import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 
 NProgress.configure({
@@ -10,3 +10,5 @@ NProgress.configure({
 });
 
 export default NProgress;
+
+

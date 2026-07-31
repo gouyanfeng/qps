@@ -1,4 +1,4 @@
-import { createI18n } from "vue-i18n";
+﻿import { createI18n } from "vue-i18n";
 import { getBrowserLang } from "@/utils";
 
 import zh from "./modules/zh";
@@ -16,3 +16,5 @@ const i18n = createI18n({
 });
 
 export default i18n;
+
+

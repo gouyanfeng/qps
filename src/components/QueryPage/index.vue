@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="query-page">
         <!-- 搜索表单 -->
         <div class="card table-search" v-show="isShowSearch">
@@ -101,6 +101,13 @@ const processSearchParam = () => {
     let nowSearchParam: any = {}
     for (let key in props.searchParam) {
         // 某些情况下参数为 false/0 也应该携带参数
+        if (Array.isArray(props.searchParam[key])) {
+            if (props.searchParam[key].length > 0) {
+                nowSearchParam[key] = props.searchParam[key].join(',')
+            }
+            continue
+        }
+
         if (
             props.searchParam[key] ||
             props.searchParam[key] === false ||
@@ -184,6 +191,7 @@ onMounted(() => {
 
     .table-main {
         width: 100%;
+        min-width: 0;
     }
 
     .search-container {
@@ -259,7 +267,23 @@ onMounted(() => {
     }
 
     .table-container {
+        min-width: 0;
+        overflow-x: auto;
         margin-bottom: 20px;
+    }
+
+    .table-container :deep(.el-table) {
+        min-width: 100%;
+    }
+
+    .table-container :deep(.wide-list-table) {
+        min-width: var(--table-min-width, 100%);
+    }
+
+    .table-container :deep(.el-table__body-wrapper) {
+        overflow-x: auto;
     }
 }
 </style>
+
+

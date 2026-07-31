@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message">
     <el-popover placement="bottom" :width="310" trigger="click">
       <template #reference>
@@ -114,3 +114,4 @@ const activeName = ref("first");
   }
 }
 </style>
+

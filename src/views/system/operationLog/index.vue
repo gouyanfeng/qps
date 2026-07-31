@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="list-page operation-log-page">
     <QueryPage api="/admin/operation-logs" :searchParam="searchForm" @reset="handleReset">
       <template #searchConditions>
@@ -36,7 +36,7 @@
       </template>
 
       <template #table="{ tableData }">
-        <el-table :data="tableData" style="width: 100%" border>
+        <el-table :data="tableData" :fit="true" style="width: 100%" border>
           <el-table-column prop="createdAt" label="操作时间" width="180">
             <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
           </el-table-column>
@@ -149,3 +149,5 @@ const openDetail = (row: any) => {
   detailVisible.value = true
 }
 </script>
+
+

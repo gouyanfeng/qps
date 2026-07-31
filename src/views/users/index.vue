@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="list-page">
         <QueryPage api="/admin/users" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->
@@ -26,10 +26,10 @@
 
             <!-- 表格 -->
             <template #table="{ tableData }">
-                <el-table :data="tableData" style="width: 100%" border>
-                    <el-table-column prop="username" label="用户名" width="180" />
-                    <el-table-column prop="realName" label="真实姓名" width="150" />
-                    <el-table-column prop="roleName" label="角色" width="120">
+                <el-table :data="tableData" :fit="true" style="width: 100%" border>
+                    <el-table-column prop="username" label="用户名" min-width="180" show-overflow-tooltip />
+                    <el-table-column prop="realName" label="真实姓名" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="roleName" label="角色" width="140">
                         <template #default="{ row }">
                             <el-tag :type="row.isActive ? 'success' : 'danger'">
                                 {{ row.roleName }}
@@ -43,12 +43,12 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="createdAt" label="创建时间" width="200">
+                    <el-table-column prop="createdAt" label="创建时间" width="180">
                         <template #default="{ row }">
                             {{ formatDate(row.createdAt) }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center">
+                    <el-table-column label="操作" align="center" width="120" fixed="right">
                         <template #default="{ row }">
                             <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
                         </template>
@@ -200,3 +200,5 @@ const submitForm = async () => {
 </script>
 
 <style scoped lang="scss"></style>
+
+

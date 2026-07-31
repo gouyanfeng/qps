@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @description：请求配置
  */
 export enum ResultEnum {
@@ -33,3 +33,5 @@ export enum ContentTypeEnum {
   // form-data 上传
   FORM_DATA = "multipart/form-data;charset=UTF-8"
 }
+
+

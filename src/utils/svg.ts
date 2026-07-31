@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @description Loading Svg
  */
 export const loadingSvg = `
@@ -11,3 +11,5 @@ export const loadingSvg = `
 	L 15 15
 " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
 `;
+
+

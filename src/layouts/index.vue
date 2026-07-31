@@ -1,4 +1,4 @@
-<!-- 💥 这里是一次性加载 LayoutComponents -->
+﻿<!-- 💥 这里是一次性加载 LayoutComponents -->
 <template>
   <el-watermark id="watermark" :font="font" :content="watermark ? ['QPS', 'Management System'] : ''">
     <component :is="LayoutComponents[layout]" />
@@ -26,3 +26,5 @@ const watermark = computed(() => globalStore.watermark);
 
 const font = reactive({ fontSize: 16 });
 </script>
+
+

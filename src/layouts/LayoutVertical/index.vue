@@ -1,4 +1,4 @@
-<!-- 纵向布局 -->
+﻿<!-- 纵向布局 -->
 <template>
   <el-container class="layout">
     <el-aside>
@@ -49,3 +49,4 @@ const activeMenu = computed(() => (route.meta.activeMenu ? route.meta.activeMenu
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+

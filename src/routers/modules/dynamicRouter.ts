@@ -1,4 +1,4 @@
-import router from "@/routers/index";
+﻿import router from "@/routers/index";
 import { LOGIN_URL } from "@/config";
 import { RouteRecordRaw } from "vue-router";
 import { ElNotification } from "element-plus";
@@ -16,9 +16,8 @@ export const initDynamicRouter = async () => {
   const authStore = useAuthStore();
 
   try {
-    // 1.获取菜单列表 && 按钮权限列表 && 当前用户权限
+    // 1.获取菜单列表 && 当前用户权限
     await authStore.getAuthMenuList();
-    await authStore.getAuthButtonList();
     await authStore.getUserPermissions();
 
     // 2.判断当前用户有没有菜单权限
@@ -53,3 +52,5 @@ export const initDynamicRouter = async () => {
     return Promise.reject(error);
   }
 };
+
+

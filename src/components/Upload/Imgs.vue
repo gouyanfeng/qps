@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="upload-box">
     <el-upload
       v-model:file-list="_fileList"
@@ -314,3 +314,5 @@ const handlePictureCardPreview: UploadProps["onPreview"] = file => {
   }
 }
 </style>
+
+

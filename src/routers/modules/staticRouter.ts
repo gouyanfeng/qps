@@ -1,4 +1,4 @@
-import { RouteRecordRaw } from "vue-router";
+﻿import { RouteRecordRaw } from "vue-router";
 import { HOME_URL, LOGIN_URL } from "@/config";
 
 /**
@@ -61,3 +61,5 @@ export const errorRouter = [
     component: () => import("@/components/ErrorMessage/404.vue")
   }
 ];
+
+

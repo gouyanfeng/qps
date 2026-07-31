@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="login-container flx-center">
     <div class="login-box">
       <SwitchDark class="dark" />
@@ -24,3 +24,5 @@ import SwitchDark from "@/components/SwitchDark/index.vue";
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+
+

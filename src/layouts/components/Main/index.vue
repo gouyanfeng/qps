@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Maximize v-show="maximize" />
   <Tabs v-show="tabs" />
   <el-main>
@@ -86,3 +86,5 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+
+

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="list-page">
         <QueryPage api="/admin/roles" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->
@@ -20,10 +20,10 @@
 
             <!-- 表格 -->
             <template #table="{ tableData }">
-                <el-table :data="tableData" style="width: 100% " border>
-                    <el-table-column prop="name" label="角色名称" width="180" />
-                    <el-table-column prop="code" label="角色值" width="150" />
-                    <el-table-column label="操作" align="center">
+                <el-table :data="tableData" :fit="true" style="width: 100% " border>
+                    <el-table-column prop="name" label="角色名称" min-width="180" show-overflow-tooltip />
+                    <el-table-column prop="code" label="角色值" min-width="160" show-overflow-tooltip />
+                    <el-table-column label="操作" align="center" width="180" fixed="right">
                         <template #default="{ row }">
                             <el-button v-if="BUTTONS.edit" type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
                             <el-button v-if="BUTTONS.delete" type="danger" link :icon="Delete" @click="deleteRole(row)">删除</el-button>
@@ -159,3 +159,5 @@ const deleteRole = async (row: any) => {
 </script>
 
 <style scoped lang="scss"></style>
+
+

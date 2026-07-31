@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-config-provider :locale="locale" :size="assemblySize" :button="buttonConfig">
     <router-view></router-view>
   </el-config-provider>
@@ -43,3 +43,5 @@ const assemblySize = computed(() => globalStore.assemblySize);
 // element button config
 const buttonConfig = reactive({ autoInsertSpace: false });
 </script>
+
+

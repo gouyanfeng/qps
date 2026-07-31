@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="list-page">
         <QueryPage api="/admin/data-dictionaries" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->
@@ -32,12 +32,12 @@
 
             <!-- 表格 -->
             <template #table="{ tableData }">
-                <el-table :data="tableData" style="width: 100% " border>
-                    <el-table-column prop="code" label="字典编码" width="180" />
-                    <el-table-column prop="name" label="字典名称" width="180" />
-                    <el-table-column prop="value" label="字典值" width="180" />
-                    <el-table-column prop="description" label="描述" />
-                    <el-table-column prop="parentName" label="父级" width="150">
+                <el-table :data="tableData" :fit="true" style="width: 100% " border>
+                    <el-table-column prop="code" label="字典编码" min-width="180" show-overflow-tooltip />
+                    <el-table-column prop="name" label="字典名称" min-width="160" show-overflow-tooltip />
+                    <el-table-column prop="value" label="字典值" min-width="160" show-overflow-tooltip />
+                    <el-table-column prop="description" label="描述" min-width="220" show-overflow-tooltip />
+                    <el-table-column prop="parentName" label="父级" min-width="150" show-overflow-tooltip>
                         <template #default="{ row }">
                             <span v-if="row.parentName">{{ row.parentName }}</span>
                             <span v-else class="text-gray">无</span>
@@ -50,7 +50,7 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center">
+                    <el-table-column label="操作" align="center" width="180" fixed="right">
                         <template #default="{ row }">
                             <el-button v-if="BUTTONS.edit" type="primary" link :icon="EditPen"
                                 @click="openDialog('编辑', row)">编辑</el-button>
@@ -268,3 +268,5 @@ onMounted(() => {
     loadTreeData()
 })
 </script>
+
+

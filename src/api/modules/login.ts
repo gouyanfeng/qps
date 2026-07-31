@@ -1,7 +1,5 @@
-import { Login } from "@/api/interface/index";
+﻿import { Login } from "@/api/interface/index";
 import authMenuList from "@/assets/json/authMenuList.json";
-import authButtonList from "@/assets/json/authButtonList.json";
-import permissionList from "@/assets/json/permissionList.json";
 import http from "@/api";
 import { cacheGet, cacheSet } from "@/utils";
 
@@ -15,16 +13,13 @@ export const getAuthMenuListApi = () => {
   return authMenuList;
 };
 
-export const getAuthButtonListApi = () => {
-  return authButtonList;
-};
+const getUserPermissionsCacheKey = (userId: string) => `qps-user-permissions-v4-${userId || "anonymous"}`;
 
 export const getUserPermissionsApi = async (): Promise<string[]> => {
   const { useUserStore } = await import("@/stores/modules/user");
   const userStore = useUserStore();
   const userId = userStore.userInfo.userId || "anonymous";
-  const role = userStore.userInfo.role || "user";
-  const cacheKey = `qps-user-permissions-${userId}`;
+  const cacheKey = getUserPermissionsCacheKey(userId);
   const ttlMinutes = 60;
 
   const cached = cacheGet(cacheKey, ttlMinutes) as string[] | null;
@@ -32,12 +27,15 @@ export const getUserPermissionsApi = async (): Promise<string[]> => {
     return cached;
   }
 
-  const permissionsByRole = permissionList.data as Record<string, { permissions: string[] }>;
-  const permissions = permissionsByRole[role]?.permissions || permissionsByRole.user.permissions;
-
+  const { data } = await http.get<{ permissions: string[] }>("/admin/auth/user-permissions", {}, { loading: false, cancel: false });
+  const permissions = data.permissions || [];
   cacheSet(cacheKey, permissions, ttlMinutes);
 
   return permissions;
+};
+
+export const clearUserPermissionsCache = (userId: string) => {
+  window.localStorage.removeItem(getUserPermissionsCacheKey(userId));
 };
 
 export const logoutApi = () => {
@@ -50,3 +48,5 @@ export const changePasswordApi = (oldPassword: string, newPassword: string) => {
     newPassword
   });
 };
+
+

@@ -1,4 +1,4 @@
-/* Menu */
+﻿/* Menu */
 declare namespace Menu {
   interface MenuOptions {
     path: string;
@@ -73,3 +73,5 @@ declare const __APP_INFO__: {
   };
   lastBuildTime: string;
 };
+
+

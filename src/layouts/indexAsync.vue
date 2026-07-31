@@ -1,4 +1,4 @@
-<!-- 💥 这里是异步加载 LayoutComponents -->
+﻿<!-- 💥 这里是异步加载 LayoutComponents -->
 <template>
   <el-watermark id="watermark" :font="font" :content="watermark ? ['QPS', 'Management System'] : ''">
     <suspense>
@@ -44,3 +44,5 @@ watch(isDark, () => (font.color = isDark.value ? "rgba(255, 255, 255, .15)" : "r
   min-width: 600px;
 }
 </style>
+
+

@@ -1,4 +1,4 @@
-import { Table } from "./interface";
+﻿import { Table } from "./interface";
 import { reactive, computed, toRefs } from "vue";
 
 /**
@@ -156,3 +156,5 @@ export const useTable = (
     updatedTotalParam,
   };
 };
+
+

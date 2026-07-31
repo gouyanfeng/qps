@@ -1,4 +1,4 @@
-export namespace Table {
+﻿export namespace Table {
   export interface Pageable {
     pageNum: number;
     pageSize: number;
@@ -30,3 +30,5 @@ export namespace Theme {
   export type ThemeType = "light" | "inverted" | "dark";
   export type GreyOrWeakType = "grey" | "weak";
 }
+
+

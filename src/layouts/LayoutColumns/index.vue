@@ -1,4 +1,4 @@
-<!-- 分栏布局 -->
+﻿<!-- 分栏布局 -->
 <template>
   <el-container class="layout">
     <div class="aside-split">
@@ -92,3 +92,5 @@ const changeSubMenu = (item: Menu.MenuOptions) => {
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
+
+

@@ -1,4 +1,4 @@
-import { ElMessage } from "element-plus";
+﻿import { ElMessage } from "element-plus";
 
 /**
  * @description hex颜色转rgb颜色
@@ -57,3 +57,5 @@ export function getLightColor(color: string, level: number) {
   for (let i = 0; i < 3; i++) rgb[i] = Math.round(255 * level + rgb[i] * (1 - level));
   return rgbToHex(rgb[0], rgb[1], rgb[2]);
 }
+
+

@@ -1,4 +1,4 @@
-// ? Element 常用表单校验规则
+﻿// ? Element 常用表单校验规则
 
 /**
  *  @rule 手机号
@@ -12,3 +12,5 @@ export function checkPhoneNumber(rule: any, value: any, callback: any) {
     return callback();
   }
 }
+
+

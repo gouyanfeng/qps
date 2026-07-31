@@ -1,4 +1,4 @@
-import http from "@/api";
+﻿import http from "@/api";
 import { Permission } from "@/api/interface/index";
 
 /**
@@ -20,3 +20,5 @@ export const permissionApi = {
 };
 
 export default permissionApi;
+
+

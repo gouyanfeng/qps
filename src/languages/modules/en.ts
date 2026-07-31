@@ -1,4 +1,4 @@
-export default {
+﻿export default {
   home: {
     welcome: "Welcome"
   },
@@ -27,3 +27,5 @@ export default {
     logout: "Logout"
   }
 };
+
+

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="list-page">
         <QueryPage api="/admin/regions" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <template #searchConditions>
@@ -32,15 +32,15 @@
             </template>
 
             <template #table="{ tableData }">
-                <el-table :data="tableData" style="width: 100%" border>
-                    <el-table-column prop="code" label="区域编码" width="160" />
-                    <el-table-column prop="name" label="区域名称" min-width="160" />
+                <el-table :data="tableData" :fit="true" style="width: 100%" border>
+                    <el-table-column prop="code" label="区域编码" min-width="160" show-overflow-tooltip />
+                    <el-table-column prop="name" label="区域名称" min-width="180" show-overflow-tooltip />
                     <el-table-column prop="level" label="层级" width="100">
                         <template #default="{ row }">
                             {{ levelText(row.level) }}
                         </template>
                     </el-table-column>
-                    <el-table-column prop="parentName" label="上级区域" min-width="140">
+                    <el-table-column prop="parentName" label="上级区域" min-width="160" show-overflow-tooltip>
                         <template #default="{ row }">
                             <span v-if="row.parentName">{{ row.parentName }}</span>
                             <span v-else class="text-gray">无</span>
@@ -54,7 +54,7 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center" width="180">
+                    <el-table-column label="操作" align="center" width="180" fixed="right">
                         <template #default="{ row }">
                             <el-button v-if="BUTTONS.edit" type="primary" link :icon="EditPen"
                                 @click="openDialog('编辑', row)">编辑</el-button>
@@ -251,3 +251,5 @@ onMounted(() => {
     loadParentOptions()
 })
 </script>
+
+

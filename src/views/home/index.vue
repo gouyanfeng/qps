@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="home">
     <section class="home-panel">
       <h1>System Console</h1>
@@ -41,3 +41,5 @@
   color: var(--el-text-color-regular);
 }
 </style>
+
+

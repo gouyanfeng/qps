@@ -1,4 +1,4 @@
-import { PersistenceOptions } from "pinia-plugin-persistedstate";
+﻿import { PersistenceOptions } from "pinia-plugin-persistedstate";
 
 /**
  * @description pinia 持久化参数配置
@@ -17,3 +17,5 @@ const piniaPersistConfig = (key: string, paths?: string[]) => {
 };
 
 export default piniaPersistConfig;
+
+

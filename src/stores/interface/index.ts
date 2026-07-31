@@ -1,4 +1,4 @@
-import { Login } from "@/api/interface";
+﻿import { Login } from "@/api/interface";
 
 export type LayoutType = "vertical" | "classic" | "transverse" | "columns";
 
@@ -58,9 +58,6 @@ export interface RoleType {
 
 /* AuthState */
 export interface AuthState {
-  authButtonList: {
-    [key: string]: Login.AuthButtonItem[];
-  };
   authMenuList: Menu.MenuOptions[];
   userPermissions: string[];
 }
@@ -69,3 +66,5 @@ export interface AuthState {
 export interface KeepAliveState {
   keepAliveName: string[];
 }
+
+

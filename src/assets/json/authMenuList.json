@@ -1,4 +1,4 @@
-{
+﻿{
   "code": 200,
   "data": [
     {
@@ -43,7 +43,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "ROLE"
+            "permissionCode": "SYSTEM_ROLE"
           }
         },
         {
@@ -58,7 +58,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "PERMISSION"
+            "permissionCode": "SYSTEM_PERMISSION"
           }
         },
         {
@@ -73,7 +73,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "USERS"
+            "permissionCode": "SYSTEM_USER"
           }
         },
         {
@@ -88,7 +88,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "DATA_DICTIONARY"
+            "permissionCode": "SYSTEM_DATA_DICTIONARY"
           }
         },
         {
@@ -103,7 +103,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "REGION"
+            "permissionCode": "SYSTEM_REGION"
           }
         },
         {
@@ -118,26 +118,43 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "OPERATION_LOG"
+            "permissionCode": "SYSTEM_OPERATION_LOG"
           }
         }
       ]
     },
     {
-      "path": "/crm/customer",
-      "name": "customer",
-      "component": "/crm/customer/index",
+      "path": "/crm/herb-base",
+      "name": "herbBase",
+      "component": "/crm/herbBase/index",
       "meta": {
         "icon": "User",
-        "title": "客户管理",
+        "title": "基地管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
         "isKeepAlive": true,
-        "permissionCode": "CRM_CUSTOMER"
+        "permissionCode": "CRM_HERB_BASE"
+      }
+    },
+    {
+      "path": "/crm/vendor",
+      "name": "vendor",
+      "component": "/crm/vendor/index",
+      "meta": {
+        "icon": "Shop",
+        "title": "厂商管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "CRM_VENDOR"
       }
     }
   ],
   "msg": "成功"
 }
+
+
