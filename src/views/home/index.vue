@@ -23,7 +23,6 @@
           @record-follow="recordFollow"
         />
         <div class="side-column">
-          <HomeQuickActions @go="handleQuickAction" />
           <RecentFollowRecords :records="dashboard.recentFollowRecords" @open-detail="openHerbBaseById" />
         </div>
       </div>
@@ -48,7 +47,6 @@ import dashboardApi, {
 } from "@/api/modules/dashboard";
 import HomeMetricCards from "./components/HomeMetricCards.vue";
 import TodayFollowTable from "./components/TodayFollowTable.vue";
-import HomeQuickActions from "./components/HomeQuickActions.vue";
 import RecentFollowRecords from "./components/RecentFollowRecords.vue";
 import FollowFunnelChart from "./components/FollowFunnelChart.vue";
 import MainProductDistributionChart from "./components/MainProductDistributionChart.vue";
@@ -107,21 +105,9 @@ const handleMetricClick = (type: string) => {
   } else if (type === "overdue") {
     goHerbBaseList({ onlyOverdue: "true" });
   } else if (type === "highIntent") {
-    goHerbBaseList({ grade: "高" });
+    goHerbBaseList({ status: "INTERESTED" });
   } else {
     goHerbBaseList();
-  }
-};
-
-const handleQuickAction = (action: string) => {
-  if (action === "addHerbBase") {
-    goHerbBaseList({ action: "add" });
-  } else if (action === "recordFollow") {
-    goHerbBaseList({ action: "recordFollow" });
-  } else if (action === "vendors") {
-    router.push("/crm/vendor");
-  } else if (action === "dictionary") {
-    router.push("/system/dataDictionary");
   }
 };
 

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="customer-page">
     <QueryPage api="/admin/crm/herb-bases" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
       <template #searchConditions>
@@ -7,7 +7,7 @@
             <el-input v-model="searchForm.keyword" clearable placeholder="基地 / 主体 / 联系人 / 电话" />
           </el-form-item>
           <el-form-item label="主营品类">
-            <el-select v-model="searchForm.mainProduct" multiple collapse-tags collapse-tags-tooltip clearable placeholder="主营品类">
+            <el-select v-model="searchForm.mainProducts" multiple collapse-tags collapse-tags-tooltip clearable placeholder="主营品类">
               <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -28,6 +28,7 @@
             <el-select v-model="searchForm.status" clearable placeholder="状态">
               <el-option label="待联系" value="PENDING" />
               <el-option label="跟进中" value="FOLLOWING" />
+              <el-option label="有意向" value="INTERESTED" />
               <el-option label="已成交" value="DEAL" />
               <el-option label="已流失" value="LOST" />
             </el-select>
@@ -44,8 +45,8 @@
       </template>
 
       <template #headerButtons>
-        <el-button v-if="BUTTONS.assign" :icon="Edit" @click="openAssignDialog()">分配</el-button>
-        <el-button v-if="BUTTONS.add" type="primary" :icon="Plus" @click="handleAdd">新增药材基地</el-button>
+        <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog()">分配</el-button></Permission>
+        <Permission code="CRM_HERB_BASE_ADD"><el-button type="primary" :icon="Plus" @click="handleAdd">新增药材基地</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -128,9 +129,9 @@
             <template #default="{ row }">
               <div class="table-actions">
                 <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
-                <el-button v-if="BUTTONS.assign" type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button>
-                <el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button>
-                <el-button v-if="BUTTONS.edit" type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+                <Permission code="CRM_HERB_BASE_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
+                <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
+                <Permission code="CRM_HERB_BASE_EDIT"><el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button></Permission>
               </div>
             </template>
           </el-table-column>
@@ -183,6 +184,7 @@
           <el-select v-model="form.status" placeholder="请选择状态">
             <el-option label="待联系" value="PENDING" />
             <el-option label="跟进中" value="FOLLOWING" />
+            <el-option label="有意向" value="INTERESTED" />
             <el-option label="已成交" value="DEAL" />
             <el-option label="已流失" value="LOST" />
           </el-select>
@@ -214,12 +216,13 @@
             </div>
           </div>
           <div class="head-actions">
-            <el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button>
-            <el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button>
-            <el-button v-if="BUTTONS.assign" :icon="Edit" @click="openAssignDialog([currentHerbBase])">分配</el-button>
-            <el-button v-if="BUTTONS.edit" :icon="Edit" @click="handleEdit(currentHerbBase)">编辑资料</el-button>
-            <el-button type="success" plain @click="markCustomerStatus('DEAL')">标记成交</el-button>
-            <el-button type="danger" plain @click="markCustomerStatus('LOST')">标记流失</el-button>
+            <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentHerbBase])">分配</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="handleEdit(currentHerbBase)">编辑资料</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="primary" plain @click="markCustomerStatus('INTERESTED')">标记有意向</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="success" plain @click="markCustomerStatus('DEAL')">标记成交</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="danger" plain @click="markCustomerStatus('LOST')">标记流失</el-button></Permission>
           </div>
         </section>
 
@@ -268,7 +271,7 @@
             <section class="detail-card detail-contacts-panel">
               <div class="section-title section-title-first">
                 <h3>联系人</h3>
-                <el-button type="primary" link :icon="Plus" @click="openContactDialog()">新增</el-button>
+                <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button type="primary" link :icon="Plus" @click="openContactDialog()">新增</el-button></Permission>
               </div>
               <el-table :data="contacts" border>
                 <el-table-column label="姓名" width="160">
@@ -292,9 +295,8 @@
                 <el-table-column label="操作" width="190" class-name="actions-column" header-class-name="actions-column">
                   <template #default="{ row }">
                     <div class="table-actions">
-                      <el-button type="primary" link :icon="Edit" @click="openContactDialog(row)">编辑</el-button>
-                      <el-button v-if="!row.isPrimary && row.status !== 'INVALID'" type="primary" link @click="setPrimaryContact(row)">设为主</el-button>
-                      <el-button type="danger" link @click="markContactInvalid(row)">无效</el-button>
+                      <Permission code="CRM_HERB_BASE_CONTACT_EDIT"><el-button type="primary" link :icon="Edit" @click="openContactDialog(row)">编辑</el-button></Permission>
+                      <Permission code="CRM_HERB_BASE_CONTACT_PRIMARY"><el-button v-if="!row.isPrimary && row.status !== 'INVALID'" type="primary" link @click="setPrimaryContact(row)">设为主</el-button></Permission>
                     </div>
                   </template>
                 </el-table-column>
@@ -306,7 +308,7 @@
             <section class="detail-card detail-follow-panel">
               <div class="section-title section-title-first">
                 <h3>沟通记录</h3>
-                <el-button type="primary" link :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录</el-button>
+                <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录</el-button></Permission>
               </div>
               <el-timeline>
                 <el-timeline-item
@@ -471,7 +473,7 @@ import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { userApi } from "@/api/modules/user";
-import { useAuthButtons } from "@/hooks/useAuthButtons";
+import Permission from "@/components/Permission/index.vue";
 
 interface CustomerDetail {
   id: string;
@@ -479,7 +481,6 @@ interface CustomerDetail {
   baseName?: string;
   subjectName?: string;
   herbBaseName: string;
-  mainProduct: string;
   mainProducts: string[];
   grade: string;
   score: number;
@@ -506,7 +507,7 @@ interface CustomerDetail {
 
 const queryPageRef = ref();
 const route = useRoute();
-const { BUTTONS } = useAuthButtons();
+
 const dialogVisible = ref(false);
 const detailDrawerVisible = ref(false);
 const contactDialogVisible = ref(false);
@@ -528,7 +529,7 @@ const searchForm = reactive({
   sourcePlatform: "",
   grade: "",
   status: "",
-  mainProduct: [] as string[],
+  mainProducts: [] as string[],
   onlyOverdue: undefined as boolean | undefined,
   onlyNoNextFollow: undefined as boolean | undefined,
   nextFollowFrom: "",
@@ -540,7 +541,6 @@ const form = reactive({
   baseName: "",
   subjectName: "",
   herbBaseName: "",
-  mainProduct: "",
   mainProducts: [] as string[],
   grade: "B",
   score: 0,
@@ -618,10 +618,12 @@ const sourcePlatformOptions = [
 const statusLabels: Record<string, string> = {
   PENDING: "待联系",
   FOLLOWING: "跟进中",
+  INTERESTED: "有意向",
   DEAL: "已成交",
   LOST: "已流失",
   待联系: "待联系",
   跟进中: "跟进中",
+  有意向: "有意向",
   已成交: "已成交",
   已流失: "已流失",
 };
@@ -629,10 +631,12 @@ const statusLabels: Record<string, string> = {
 const statusValues: Record<string, string> = {
   PENDING: "PENDING",
   FOLLOWING: "FOLLOWING",
+  INTERESTED: "INTERESTED",
   DEAL: "DEAL",
   LOST: "LOST",
   待联系: "PENDING",
   跟进中: "FOLLOWING",
+  有意向: "INTERESTED",
   已成交: "DEAL",
   已流失: "LOST",
 };
@@ -806,11 +810,7 @@ const toEnumValue = (values: Record<string, string>, value?: string | null, fall
 };
 
 const normalizeMainProducts = (row: Partial<CustomerDetail> | any): string[] => {
-  const rawValues: string[] = Array.isArray(row?.mainProducts) && row.mainProducts.length > 0
-    ? row.mainProducts
-    : String(row?.mainProduct || "")
-      .split(/[,，;；\/、]/)
-      .map((item: string) => item.trim());
+  const rawValues: string[] = Array.isArray(row?.mainProducts) ? row.mainProducts : [];
 
   return Array.from(new Set<string>(
     rawValues
@@ -840,10 +840,12 @@ const getStatusType = (status: string) => {
   const types: Record<string, string> = {
     PENDING: "info",
     FOLLOWING: "warning",
+    INTERESTED: "primary",
     DEAL: "success",
     LOST: "danger",
     待联系: "info",
     跟进中: "warning",
+    有意向: "primary",
     已成交: "success",
     已流失: "danger",
   };
@@ -932,7 +934,7 @@ const handleReset = () => {
     sourcePlatform: "",
     grade: "",
     status: "",
-    mainProduct: [],
+    mainProducts: [],
     onlyOverdue: undefined,
     onlyNoNextFollow: undefined,
     nextFollowFrom: "",
@@ -947,7 +949,6 @@ const resetCustomerForm = () => {
     baseName: "",
     subjectName: "",
     herbBaseName: "",
-    mainProduct: "",
     mainProducts: [],
     grade: "中",
     score: 0,
@@ -982,7 +983,6 @@ const handleEdit = async (row: any) => {
     baseName: getBaseName(row),
     subjectName: row.subjectName || "",
     herbBaseName: getBaseName(row),
-    mainProduct: row.mainProduct || "",
     mainProducts: normalizeMainProducts(row),
     grade: toEnumValue(gradeValues, row.grade, "中"),
     score: row.score || 0,
@@ -1045,7 +1045,6 @@ const handleSubmit = async () => {
   const request = {
     ...form,
     herbBaseName: form.baseName,
-    mainProduct: form.mainProducts.join(","),
     mainProducts: [...form.mainProducts],
     grade: toEnumValue(gradeValues, form.grade, "中"),
     sourcePlatform: toEnumValue(sourcePlatformValues, form.sourcePlatform, "BAIDU_MAP"),
@@ -1084,13 +1083,12 @@ const openAssignDialog = async (rows?: CustomerDetail[]) => {
 };
 
 const submitAssignOwner = async () => {
-  const updatedRes = await crmHerbBaseApi.assignOwner({
+  await crmHerbBaseApi.assignOwner({
     herbBaseIds: [...assignForm.herbBaseIds],
     ownerUserId: assignForm.ownerUserId || null,
     remark: assignForm.remark || undefined,
   });
-  const updatedCustomers = updatedRes.data || [];
-  if (currentHerbBase.value && updatedCustomers.some((customer: CustomerDetail) => customer.id === currentHerbBase.value?.id)) {
+  if (currentHerbBase.value && assignForm.herbBaseIds.includes(currentHerbBase.value.id)) {
     await loadCustomerDetail(currentHerbBase.value.id);
   }
   ElMessage.success("分配成功");
@@ -1152,14 +1150,6 @@ const setPrimaryContact = async (row: any) => {
   if (!currentHerbBase.value) return;
   await crmHerbBaseApi.setPrimaryContact(row.id);
   ElMessage.success("主联系人已更新");
-  await loadCustomerDetail(currentHerbBase.value.id);
-  reloadList();
-};
-
-const markContactInvalid = async (row: any) => {
-  if (!currentHerbBase.value) return;
-  await crmHerbBaseApi.updateContactStatus(row.id, { status: "INVALID", remark: row.remark || "标记为无效" });
-  ElMessage.success("联系人已标记无效");
   await loadCustomerDetail(currentHerbBase.value.id);
   reloadList();
 };
@@ -1570,6 +1560,19 @@ const markCustomerStatus = async (status: string) => {
   }
 }
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

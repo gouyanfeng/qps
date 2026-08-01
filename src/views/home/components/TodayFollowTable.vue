@@ -79,7 +79,7 @@ const followResultLabels: Record<string, string> = {
 };
 
 const formatMainProducts = (row: CrmDashboardFollowCustomer) => {
-  const values = row.mainProducts?.length ? row.mainProducts : row.mainProduct ? [row.mainProduct] : [];
+  const values = row.mainProducts || [];
   return values.map(value => mainProductLabels[value] || value).join("、") || "-";
 };
 

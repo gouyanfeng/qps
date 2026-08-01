@@ -39,8 +39,8 @@
       </template>
 
       <template #headerButtons>
-        <el-button v-if="BUTTONS.assign" :icon="Edit" @click="openAssignDialog()">分配</el-button>
-        <el-button v-if="BUTTONS.add" type="primary" :icon="Plus" @click="openCreateDialog">新增厂商</el-button>
+        <Permission code="CRM_VENDOR_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog()">分配</el-button></Permission>
+        <Permission code="CRM_VENDOR_ADD"><el-button type="primary" :icon="Plus" @click="openCreateDialog">新增厂商</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -98,8 +98,8 @@
           </el-table-column>
           <el-table-column label="操作" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button v-if="BUTTONS.assign" type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button>
-              <el-button v-if="BUTTONS.edit" type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button>
+              <Permission code="CRM_VENDOR_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
+              <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button></Permission>
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
             </template>
           </el-table-column>
@@ -127,8 +127,8 @@
             </div>
           </div>
           <div class="head-actions">
-            <el-button v-if="BUTTONS.assign" :icon="Edit" @click="openAssignDialog([currentVendor])">分配</el-button>
-            <el-button v-if="BUTTONS.edit" :icon="Edit" @click="openEditDialog(currentVendor)">编辑</el-button>
+            <Permission code="CRM_VENDOR_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentVendor])">分配</el-button></Permission>
+            <Permission code="CRM_VENDOR_EDIT"><el-button :icon="Edit" @click="openEditDialog(currentVendor)">编辑</el-button></Permission>
             <el-button :icon="Refresh" @click="refreshDetail">刷新</el-button>
           </div>
         </section>
@@ -295,7 +295,7 @@ import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 import { userApi } from "@/api/modules/user";
-import { useAuthButtons } from "@/hooks/useAuthButtons";
+import Permission from "@/components/Permission/index.vue";
 
 interface VendorDetail {
   id: string;
@@ -320,7 +320,7 @@ interface VendorDetail {
 }
 
 const queryPageRef = ref();
-const { BUTTONS } = useAuthButtons();
+
 const detailDrawerVisible = ref(false);
 const vendorDialogVisible = ref(false);
 const assignDialogVisible = ref(false);
@@ -848,5 +848,13 @@ const formatDate = (value?: string | null) => {
   }
 }
 </style>
+
+
+
+
+
+
+
+
 
 

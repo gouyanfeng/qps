@@ -59,8 +59,8 @@
                     <el-tag size="small" type="danger">-{{ changes.removed.length }}</el-tag>
                     <span class="changes-spacer" />
                     <el-button size="small" :icon="Refresh" @click="resetPerm">重置</el-button>
-                    <el-button size="small" type="primary" :icon="Check" :loading="saving"
-                        @click="savePerm">保存</el-button>
+                    <Permission code="SYSTEM_PERMISSION_EDIT"><el-button size="small" type="primary" :icon="Check" :loading="saving"
+                        @click="savePerm">保存</el-button></Permission>
                 </div>
                 <div class="changes-scroll">
                     <div v-for="item in changes.added" :key="item.code" class="change-item added">
@@ -89,6 +89,9 @@ import { ElMessage } from 'element-plus'
 import { Refresh, Check, Plus, Minus } from '@element-plus/icons-vue'
 import { permissionApi } from '@/api/modules/permission'
 import { roleApi } from '@/api/modules/role'
+import Permission from '@/components/Permission/index.vue'
+
+
 
 // ── 类型 ──
 
@@ -473,4 +476,10 @@ onMounted(loadTree)
     }
 }
 </style>
+
+
+
+
+
+
 

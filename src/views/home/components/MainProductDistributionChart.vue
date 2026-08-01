@@ -23,7 +23,29 @@ const props = defineProps<{
   items: CrmDashboardChartItem[];
 }>();
 
-const isEmpty = computed(() => props.items.length === 0 || props.items.every(item => item.value === 0));
+const chartItems = computed(() => {
+  const sortedItems = props.items
+    .filter(item => item.value > 0)
+    .slice()
+    .sort((a, b) => b.value - a.value);
+  const topItems = sortedItems.slice(0, 9);
+  const restValue = sortedItems.slice(9).reduce((sum, item) => sum + item.value, 0);
+
+  if (restValue > 0) {
+    return [
+      ...topItems,
+      {
+        code: "OTHER_GROUPED",
+        name: "其他",
+        value: restValue,
+      },
+    ];
+  }
+
+  return topItems;
+});
+
+const isEmpty = computed(() => chartItems.value.length === 0);
 
 const option = computed(() => ({
   tooltip: { trigger: "item" },
@@ -34,7 +56,7 @@ const option = computed(() => ({
       radius: ["48%", "70%"],
       center: ["50%", "45%"],
       label: { formatter: "{b} {c}" },
-      data: props.items.map(item => ({ name: item.name, value: item.value })),
+      data: chartItems.value.map(item => ({ name: item.name, value: item.value })),
     },
   ],
 }));

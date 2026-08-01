@@ -30,24 +30,6 @@ export default defineConfig({
     },
   },
 
-  // 开发服务器配置
-  server: {
-    // 代理配置
-    // proxy: {
-    //   // 配置 /api 路径的代理
-    //   "/api": {
-    //     // 代理目标地址
-    //     target: 'https://mock.mengxuegu.com/mock/629d727e6163854a32e8307e',
-    //     // 是否改变请求头中的 Origin
-    //     changeOrigin: true,
-    //     // 是否验证 SSL 证书
-    //     secure: false,
-    //     // 重写路径，将 /api 前缀移除
-    //     rewrite: (path) => path.replace(/^\/api/, "")
-    //   }
-    // }
-  },
-
   // CSS 配置
   css: {
     // 预处理器配置

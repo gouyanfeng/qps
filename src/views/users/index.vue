@@ -21,7 +21,7 @@
 
             <!-- 功能按钮 -->
             <template #headerButtons>
-                <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增用户</el-button>
+                <Permission code="SYSTEM_USER_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增用户</el-button></Permission>
             </template>
 
             <!-- 表格 -->
@@ -50,7 +50,7 @@
                     </el-table-column>
                     <el-table-column label="操作" align="center" width="120" fixed="right">
                         <template #default="{ row }">
-                            <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+                            <Permission code="SYSTEM_USER_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -98,9 +98,11 @@ import { userApi } from '@/api/modules/user'
 import { roleApi } from '@/api/modules/role'
 import { formatDate } from '@/utils'
 import QueryPage from '@/components/QueryPage/index.vue'
+import Permission from '@/components/Permission/index.vue'
 
 // 引用
 const queryPageRef = ref()
+
 
 // 状态管理
 const dialogVisible = ref(false)
@@ -200,5 +202,12 @@ const submitForm = async () => {
 </script>
 
 <style scoped lang="scss"></style>
+
+
+
+
+
+
+
 
 

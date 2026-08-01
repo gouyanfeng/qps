@@ -11,7 +11,6 @@ export interface CrmDashboardFollowCustomer {
   id: string;
   baseName: string;
   subjectName: string;
-  mainProduct: string;
   mainProducts: string[];
   grade: string;
   province: string;

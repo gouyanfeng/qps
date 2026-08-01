@@ -26,8 +26,8 @@
 
             <!-- 功能按钮 -->
             <template #headerButtons>
-                <el-button v-if="BUTTONS.add" type="primary" :icon="CirclePlus"
-                    @click="openDialog('新增')">新增字典</el-button>
+                <Permission code="SYSTEM_DATA_DICTIONARY_ADD"><el-button type="primary" :icon="CirclePlus"
+                    @click="openDialog('新增')">新增字典</el-button></Permission>
             </template>
 
             <!-- 表格 -->
@@ -52,10 +52,10 @@
                     </el-table-column>
                     <el-table-column label="操作" align="center" width="180" fixed="right">
                         <template #default="{ row }">
-                            <el-button v-if="BUTTONS.edit" type="primary" link :icon="EditPen"
-                                @click="openDialog('编辑', row)">编辑</el-button>
-                            <el-button v-if="BUTTONS.delete" type="danger" link :icon="Delete"
-                                @click="deleteDataDictionary(row)">删除</el-button>
+                            <Permission code="SYSTEM_DATA_DICTIONARY_EDIT"><el-button type="primary" link :icon="EditPen"
+                                @click="openDialog('编辑', row)">编辑</el-button></Permission>
+                            <Permission code="SYSTEM_DATA_DICTIONARY_DELETE"><el-button type="danger" link :icon="Delete"
+                                @click="deleteDataDictionary(row)">删除</el-button></Permission>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -104,9 +104,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
 import { dataDictionaryApi } from '@/api/modules/dataDictionary'
 import QueryPage from '@/components/QueryPage/index.vue'
-import { useAuthButtons } from '@/hooks/useAuthButtons'
+import Permission from '@/components/Permission/index.vue'
 
-const { BUTTONS } = useAuthButtons()
+
 
 // 引用
 const queryPageRef = ref()
@@ -268,5 +268,13 @@ onMounted(() => {
     loadTreeData()
 })
 </script>
+
+
+
+
+
+
+
+
 
 
