@@ -3,19 +3,16 @@ import http from "@/api";
 export interface CrmDashboardMetrics {
   todayFollowCount: number;
   overdueFollowCount: number;
-  myCustomerCount: number;
-  highIntentCustomerCount: number;
+  mySubjectCount: number;
+  highIntentSubjectCount: number;
 }
 
-export interface CrmDashboardFollowCustomer {
+export interface CrmDashboardFollowSubject {
   id: string;
-  baseName: string;
-  subjectName: string;
+  displayName: string;
   mainProducts: string[];
   grade: string;
-  province: string;
-  city: string;
-  area: string;
+  regions: string[];
   primaryContactName: string;
   primaryContactPhone: string;
   lastFollowResult: string;
@@ -24,8 +21,8 @@ export interface CrmDashboardFollowCustomer {
 
 export interface CrmDashboardRecentFollowRecord {
   id: string;
-  customerId: string;
-  baseName: string;
+  herbBaseSubjectId: string;
+  subjectName: string;
   followType: string;
   followResult: string;
   intentLevel: string;
@@ -48,7 +45,7 @@ export interface CrmDashboardTrendItem {
 
 export interface CrmDashboardData {
   metrics: CrmDashboardMetrics;
-  todayFollowCustomers: CrmDashboardFollowCustomer[];
+  todayFollowSubjects: CrmDashboardFollowSubject[];
   recentFollowRecords: CrmDashboardRecentFollowRecord[];
   followFunnel: CrmDashboardChartItem[];
   mainProductDistribution: CrmDashboardChartItem[];

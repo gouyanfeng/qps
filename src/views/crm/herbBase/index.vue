@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="customer-page">
-    <QueryPage api="/admin/crm/herb-bases" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
+    <QueryPage api="/admin/crm/herb-base-subjects" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
       <template #searchConditions>
         <el-form :model="searchForm" :inline="true">
           <el-form-item label="关键词">
@@ -59,23 +59,22 @@
           style="--table-min-width: 1860px"
           border
           @selection-change="handleSelectionChange"
-          @sort-change="handleSortChange"
         >
           <el-table-column type="selection" width="44" fixed="left" />
-          <el-table-column label="基地名称" min-width="200" fixed="left" show-overflow-tooltip>
+          <el-table-column label="基地主体" min-width="220" fixed="left" show-overflow-tooltip>
             <template #default="{ row }">
               <div class="cell-main">
                 <el-button type="primary" link class="customer-link" @click="openDetail(row)">
-                  {{ getBaseName(row) || "-" }}
+                  {{ row.displayName || row.subjectName || "-" }}
                 </el-button>
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="主体名称" min-width="160" show-overflow-tooltip>
-            <template #default="{ row }">{{ row.subjectName || "-" }}</template>
+          <el-table-column label="基地数" width="86" align="right">
+            <template #default="{ row }">{{ row.baseCount || 0 }}</template>
           </el-table-column>
-          <el-table-column label="来源" width="96" show-overflow-tooltip>
-            <template #default="{ row }">{{ formatSourcePlatform(row.sourcePlatform) }}</template>
+          <el-table-column label="来源" min-width="130" show-overflow-tooltip>
+            <template #default="{ row }">{{ formatSourcePlatforms(row.sourcePlatforms) }}</template>
           </el-table-column>
           <el-table-column label="主联系人 / 电话" width="150">
             <template #default="{ row }">
@@ -101,13 +100,13 @@
               <span v-else class="muted">-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="scale" label="规模(亩)" width="124" align="right" sortable="custom">
-            <template #default="{ row }">{{ formatScale(row.scale) }}</template>
+          <el-table-column label="总规模(亩)" width="124" align="right">
+            <template #default="{ row }">{{ formatScale(row.totalScale) }}</template>
           </el-table-column>
           <el-table-column label="地区" min-width="190" show-overflow-tooltip>
-            <template #default="{ row }">{{ formatRegion(row) }}</template>
+            <template #default="{ row }">{{ formatRegions(row.regions) }}</template>
           </el-table-column>
-          <el-table-column prop="score" label="评分 / 等级" width="132" sortable="custom">
+          <el-table-column label="评分 / 等级" width="132">
             <template #default="{ row }">
               <div class="score-cell">
                 <strong>{{ row.score ?? 0 }}</strong>
@@ -138,13 +137,12 @@
           <el-table-column label="跟进人" width="104" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "-" }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="300" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="230" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <div class="table-actions">
                 <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
                 <Permission code="CRM_HERB_BASE_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
                 <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
-                <Permission code="CRM_HERB_BASE_EDIT"><el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button></Permission>
               </div>
             </template>
           </el-table-column>
@@ -216,7 +214,7 @@
       <div v-if="currentHerbBase" class="drawer-layout">
         <section class="drawer-head">
           <div class="head-main">
-            <div class="detail-kicker">基地详情</div>
+            <div class="detail-kicker">基地主体详情</div>
             <div class="title-row">
               <h2>{{ getDetailTitle(currentHerbBase) }}</h2>
               <el-tag :type="getStatusType(currentHerbBase.status)" effect="dark">{{ formatCustomerStatus(currentHerbBase.status) }}</el-tag>
@@ -225,17 +223,13 @@
               <el-tag :type="getGradeType(currentHerbBase.grade)">等级 {{ formatGrade(currentHerbBase.grade) }}</el-tag>
               <span>评分 {{ currentHerbBase.score ?? 0 }}</span>
               <span>跟进人 {{ currentHerbBase.ownerUserName || "-" }}</span>
-              <span>{{ formatRegion(currentHerbBase) }}</span>
+              <span>{{ formatRegions(currentHerbBase.regions) }}</span>
             </div>
           </div>
           <div class="head-actions">
             <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
             <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
             <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentHerbBase])">分配</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="handleEdit(currentHerbBase)">编辑资料</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="primary" plain @click="markCustomerStatus('INTERESTED')">标记有意向</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="success" plain @click="markCustomerStatus('DEAL')">标记成交</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="danger" plain @click="markCustomerStatus('LOST')">标记流失</el-button></Permission>
           </div>
         </section>
 
@@ -253,7 +247,7 @@
               </el-tag>
             </div>
             <strong v-else>-</strong>
-            <span>{{ formatSourcePlatform(currentHerbBase.sourcePlatform) }}</span>
+            <span>{{ formatSourcePlatforms(currentHerbBase.sourcePlatforms) }}</span>
           </div>
           <div class="summary-card detail-summary-owner">
             <span class="label">主联系人</span>
@@ -277,11 +271,11 @@
           <div class="profile-panel detail-profile-panel">
             <section class="detail-card">
               <div class="section-title section-title-first">
-                <h3>药材基地资料</h3>
+                <h3>主体资料</h3>
               </div>
               <el-descriptions class="customer-profile-descriptions" :column="3" border>
-                <el-descriptions-item label="主体名称" :span="2">{{ currentHerbBase.subjectName || "-" }}</el-descriptions-item>
-                <el-descriptions-item label="来源">{{ formatSourcePlatform(currentHerbBase.sourcePlatform) }}</el-descriptions-item>
+                <el-descriptions-item label="主体名称" :span="2">{{ currentHerbBase.displayName || currentHerbBase.subjectName || "-" }}</el-descriptions-item>
+                <el-descriptions-item label="主体类型">{{ currentHerbBase.subjectType || "-" }}</el-descriptions-item>
                 <el-descriptions-item label="跟进人">{{ currentHerbBase.ownerUserName || "-" }}</el-descriptions-item>
                 <el-descriptions-item label="主营品类">
                   <div v-if="normalizeMainProducts(currentHerbBase).length" class="main-product-tags">
@@ -297,12 +291,32 @@
                   </div>
                   <span v-else>-</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="规模(亩)">{{ formatScale(currentHerbBase.scale) }}</el-descriptions-item>
+                <el-descriptions-item label="基地数">{{ currentHerbBase.baseCount || 0 }}</el-descriptions-item>
+                <el-descriptions-item label="总规模(亩)">{{ formatScale(currentHerbBase.totalScale) }}</el-descriptions-item>
                 <el-descriptions-item label="等级 / 评分">{{ formatGrade(currentHerbBase.grade) }} / {{ currentHerbBase.score ?? 0 }}</el-descriptions-item>
-                <el-descriptions-item label="地区" :span="3">{{ formatRegion(currentHerbBase) }}</el-descriptions-item>
-                <el-descriptions-item label="地址" :span="3">{{ currentHerbBase.address || "-" }}</el-descriptions-item>
+                <el-descriptions-item label="地区" :span="3">{{ formatRegions(currentHerbBase.regions) }}</el-descriptions-item>
+                <el-descriptions-item label="来源" :span="3">{{ formatSourcePlatforms(currentHerbBase.sourcePlatforms) }}</el-descriptions-item>
                 <el-descriptions-item label="备注" :span="3">{{ currentHerbBase.remark || "-" }}</el-descriptions-item>
               </el-descriptions>
+            </section>
+
+            <section class="detail-card">
+              <div class="section-title section-title-first"><h3>基地明细</h3></div>
+              <el-table :data="currentHerbBase.herbBases || []" border>
+                <el-table-column prop="baseName" label="基地名称" min-width="180" show-overflow-tooltip />
+                <el-table-column label="品类" min-width="150">
+                  <template #default="{ row }">{{ formatMainProducts(row) }}</template>
+                </el-table-column>
+                <el-table-column label="规模(亩)" width="110" align="right">
+                  <template #default="{ row }">{{ formatScale(row.scale) }}</template>
+                </el-table-column>
+                <el-table-column label="地区" min-width="160">
+                  <template #default="{ row }">{{ formatRegion(row) }}</template>
+                </el-table-column>
+                <el-table-column label="来源" width="100">
+                  <template #default="{ row }">{{ formatSourcePlatform(row.sourcePlatform) }}</template>
+                </el-table-column>
+              </el-table>
             </section>
 
             <section class="detail-card detail-contacts-panel">
@@ -371,28 +385,6 @@
               </el-timeline>
             </section>
 
-            <section class="detail-card detail-transfer-panel">
-              <div class="section-title section-title-first">
-                <h3>流转记录</h3>
-              </div>
-              <el-timeline>
-                <el-timeline-item
-                  v-for="record in transferRecords"
-                  :key="record.id"
-                  :timestamp="formatNullableDate(record.createdAt)"
-                  placement="top"
-                >
-                  <div class="follow-item">
-                    <div class="follow-title">
-                      <strong>{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
-                    </div>
-                    <p>{{ record.remark || "-" }}</p>
-                    <span class="muted">操作人 {{ record.operatorUserName || "-" }}</span>
-                  </div>
-                </el-timeline-item>
-                <el-empty v-if="transferRecords.length === 0" description="暂无流转记录" />
-              </el-timeline>
-            </section>
           </div>
         </section>
       </div>
@@ -513,24 +505,14 @@ import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
 
-interface CustomerDetail {
+interface HerbBaseSubjectDetail {
   id: string;
-  parentId?: string | null;
-  baseName?: string;
   subjectName?: string;
-  herbBaseName: string;
+  displayName: string;
+  subjectType?: string;
   mainProducts: string[];
   grade: string;
   score: number;
-  scale?: number | null;
-  province: string;
-  city: string;
-  area: string;
-  address: string;
-  lat?: number | null;
-  lng?: number | null;
-  sourcePlatform: string;
-  sourceId?: number | null;
   status: string;
   ownerUserId?: string | null;
   ownerUserName?: string | null;
@@ -540,6 +522,11 @@ interface CustomerDetail {
   lastFollowAt?: string | null;
   lastFollowResult: string;
   nextFollowAt?: string | null;
+  baseCount?: number;
+  totalScale?: number | null;
+  regions?: string[];
+  sourcePlatforms?: string[];
+  herbBases?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -554,11 +541,10 @@ const followDialogVisible = ref(false);
 const assignDialogVisible = ref(false);
 const isEdit = ref(false);
 const followFilter = ref("");
-const currentHerbBase = ref<CustomerDetail | null>(null);
+const currentHerbBase = ref<HerbBaseSubjectDetail | null>(null);
 const contacts = ref<any[]>([]);
 const followRecords = ref<any[]>([]);
-const transferRecords = ref<any[]>([]);
-const selectedHerbBases = ref<CustomerDetail[]>([]);
+const selectedHerbBases = ref<HerbBaseSubjectDetail[]>([]);
 const ownerOptions = ref<any[]>([]);
 const regionPath = ref<string[]>([]);
 
@@ -622,7 +608,7 @@ const followForm = reactive({
 });
 
 const assignForm = reactive({
-  herbBaseIds: [] as string[],
+  herbBaseSubjectIds: [] as string[],
   ownerUserId: "",
   remark: "",
 });
@@ -856,7 +842,7 @@ const toEnumValue = (values: Record<string, string>, value?: string | null, fall
   return values[value] || value;
 };
 
-const normalizeMainProducts = (row: Partial<CustomerDetail> | any): string[] => {
+const normalizeMainProducts = (row: any): string[] => {
   const rawValues: string[] = Array.isArray(row?.mainProducts) ? row.mainProducts : [];
 
   return Array.from(new Set<string>(
@@ -866,7 +852,7 @@ const normalizeMainProducts = (row: Partial<CustomerDetail> | any): string[] => 
   ));
 };
 
-const formatMainProducts = (row: Partial<CustomerDetail> | any, fallback = "-") => {
+const formatMainProducts = (row: any, fallback = "-") => {
   const values = normalizeMainProducts(row);
   if (values.length === 0) return fallback;
   return values.map(value => formatEnumLabel(mainProductLabels, value)).join("、");
@@ -878,8 +864,8 @@ const formatGrade = (value?: string | null, fallback = "-") => formatEnumLabel(g
 const formatContactRole = (value?: string | null, fallback = "-") => formatEnumLabel(contactRoleLabels, value, fallback);
 const formatFollowType = (value?: string | null, fallback = "-") => formatEnumLabel(followTypeLabels, value, fallback);
 const formatFollowResult = (value?: string | null, fallback = "-") => formatEnumLabel(followResultLabels, value, fallback);
-const getBaseName = (row: Partial<CustomerDetail> | any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || "";
-const getDetailTitle = (row: Partial<CustomerDetail> | any) => getBaseName(row) || row?.subjectName?.trim?.() || "";
+const getBaseName = (row: any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || "";
+const getDetailTitle = (row: Partial<HerbBaseSubjectDetail> | any) => row?.displayName?.trim?.() || row?.subjectName?.trim?.() || "";
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
 const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} -> ${toName || "未分配"}`;
 const formatScale = (value?: number | string | null) => {
@@ -924,6 +910,8 @@ const formatNullableDate = (date?: string | null) => {
 };
 
 const formatRegion = (row: any) => [row.province, row.city, row.area].filter(Boolean).join(" / ") || "-";
+const formatRegions = (regions?: string[]) => regions?.filter(Boolean).join(" / ") || "-";
+const formatSourcePlatforms = (sources?: string[]) => (sources || []).map(source => formatSourcePlatform(source)).join("、") || "-";
 
 const syncRegionPathFromForm = () => {
   regionPath.value = [form.province, form.city, form.area].filter(Boolean);
@@ -1063,9 +1051,9 @@ const reloadList = () => {
   queryPageRef.value?.getTableList();
 };
 
-const handleSortChange = ({ prop, order }: { prop: "scale" | "score"; order: "ascending" | "descending" | null }) => {
+const handleSortChange = ({ prop, order }: { prop: "totalScale" | "score"; order: "ascending" | "descending" | null }) => {
   const sortFieldMap = {
-    scale: "Scale",
+    totalScale: "TotalScale",
     score: "Score",
   };
 
@@ -1074,7 +1062,7 @@ const handleSortChange = ({ prop, order }: { prop: "scale" | "score"; order: "as
   reloadList();
 };
 
-const handleSelectionChange = (rows: CustomerDetail[]) => {
+const handleSelectionChange = (rows: HerbBaseSubjectDetail[]) => {
   selectedHerbBases.value = rows;
 };
 
@@ -1083,17 +1071,11 @@ const loadOwnerOptions = async () => {
   ownerOptions.value = (res.data?.list || []).filter((user: any) => user.isActive);
 };
 
-const loadCustomerDetail = async (herbBaseId: string) => {
-  const [customerRes, contactsRes, recordsRes, transferRecordsRes] = await Promise.all([
-    crmHerbBaseApi.getCustomer(herbBaseId),
-    crmHerbBaseApi.getContacts(herbBaseId),
-    crmHerbBaseApi.getFollowRecords(herbBaseId),
-    crmHerbBaseApi.getTransferRecords(herbBaseId),
-  ]);
-  currentHerbBase.value = customerRes.data;
-  contacts.value = contactsRes.data || [];
-  followRecords.value = recordsRes.data || [];
-  transferRecords.value = transferRecordsRes.data || [];
+const loadCustomerDetail = async (herbBaseSubjectId: string) => {
+  const response = await crmHerbBaseApi.getSubject(herbBaseSubjectId);
+  currentHerbBase.value = response.data;
+  contacts.value = response.data?.contacts || [];
+  followRecords.value = response.data?.followRecords || [];
 };
 
 const openDetail = async (row: any) => {
@@ -1126,12 +1108,9 @@ const handleSubmit = async () => {
 
   dialogVisible.value = false;
   reloadList();
-  if (currentHerbBase.value?.id === form.id) {
-    await loadCustomerDetail(form.id);
-  }
 };
 
-const openAssignDialog = async (rows?: CustomerDetail[]) => {
+const openAssignDialog = async (rows?: HerbBaseSubjectDetail[]) => {
   const customers = rows?.length ? rows : selectedHerbBases.value;
   if (customers.length === 0) {
     ElMessage.warning("请选择要分配的药材基地");
@@ -1139,7 +1118,7 @@ const openAssignDialog = async (rows?: CustomerDetail[]) => {
   }
 
   Object.assign(assignForm, {
-    herbBaseIds: customers.map(customer => customer.id),
+    herbBaseSubjectIds: customers.map(customer => customer.id),
     ownerUserId: customers.length === 1 ? customers[0].ownerUserId || "" : "",
     remark: "",
   });
@@ -1148,12 +1127,12 @@ const openAssignDialog = async (rows?: CustomerDetail[]) => {
 };
 
 const submitAssignOwner = async () => {
-  await crmHerbBaseApi.assignOwner({
-    herbBaseIds: [...assignForm.herbBaseIds],
+  await crmHerbBaseApi.assignSubjectOwner({
+    herbBaseSubjectIds: [...assignForm.herbBaseSubjectIds],
     ownerUserId: assignForm.ownerUserId || null,
     remark: assignForm.remark || undefined,
   });
-  if (currentHerbBase.value && assignForm.herbBaseIds.includes(currentHerbBase.value.id)) {
+  if (currentHerbBase.value && assignForm.herbBaseSubjectIds.includes(currentHerbBase.value.id)) {
     await loadCustomerDetail(currentHerbBase.value.id);
   }
   ElMessage.success("分配成功");
@@ -1202,7 +1181,7 @@ const submitContact = async () => {
   if (contactForm.id) {
     await crmHerbBaseApi.updateContact(contactForm.id, request);
   } else {
-    await crmHerbBaseApi.createContact(currentHerbBase.value.id, request);
+    await crmHerbBaseApi.createSubjectContact(currentHerbBase.value.id, request);
   }
 
   ElMessage.success("联系人已保存");
@@ -1290,7 +1269,7 @@ const submitFollowRecord = async () => {
     return;
   }
 
-  await crmHerbBaseApi.createFollowRecord(currentHerbBase.value.id, {
+  await crmHerbBaseApi.createSubjectFollowRecord(currentHerbBase.value.id, {
     ...followForm,
     followType: toEnumValue(followTypeValues, followForm.followType, "PHONE"),
     followResult: toEnumValue(followResultValues, followForm.followResult),

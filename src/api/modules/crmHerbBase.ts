@@ -4,6 +4,27 @@
  * @description CRM 药材基地管理模块
  */
 export const crmHerbBaseApi = {
+  getSubjectList: (params: any) => {
+    return http.get<any>("/admin/crm/herb-base-subjects", params);
+  },
+  getSubject: (id: string) => {
+    return http.get<any>(`/admin/crm/herb-base-subjects/${id}`);
+  },
+  assignSubjectOwner: (params: any) => {
+    return http.patch<any>("/admin/crm/herb-base-subjects/assign-owner", params);
+  },
+  getSubjectContacts: (herbBaseSubjectId: string) => {
+    return http.get<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts`);
+  },
+  createSubjectContact: (herbBaseSubjectId: string, params: any) => {
+    return http.post<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts`, params);
+  },
+  getSubjectFollowRecords: (herbBaseSubjectId: string) => {
+    return http.get<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/follow-records`);
+  },
+  createSubjectFollowRecord: (herbBaseSubjectId: string, params: any) => {
+    return http.post<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/follow-records`, params);
+  },
   getCustomerList: (params: any) => {
     return http.get<any>("/admin/crm/herb-bases", params);
   },

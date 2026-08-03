@@ -18,7 +18,7 @@
 
       <div class="main-grid">
         <TodayFollowTable
-          :customers="dashboard.todayFollowCustomers"
+          :customers="dashboard.todayFollowSubjects"
           @open-detail="openHerbBaseDetail"
           @record-follow="recordFollow"
         />
@@ -43,7 +43,7 @@ import { ElMessage } from "element-plus";
 import { Refresh } from "@element-plus/icons-vue";
 import dashboardApi, {
   type CrmDashboardData,
-  type CrmDashboardFollowCustomer,
+  type CrmDashboardFollowSubject,
 } from "@/api/modules/dashboard";
 import HomeMetricCards from "./components/HomeMetricCards.vue";
 import TodayFollowTable from "./components/TodayFollowTable.vue";
@@ -59,10 +59,10 @@ const dashboard = ref<CrmDashboardData>({
   metrics: {
     todayFollowCount: 0,
     overdueFollowCount: 0,
-    myCustomerCount: 0,
-    highIntentCustomerCount: 0,
+    mySubjectCount: 0,
+    highIntentSubjectCount: 0,
   },
-  todayFollowCustomers: [],
+  todayFollowSubjects: [],
   recentFollowRecords: [],
   followFunnel: [],
   mainProductDistribution: [],
@@ -87,16 +87,16 @@ const goHerbBaseList = (query: Record<string, string> = {}) => {
   router.push({ path: "/crm/herb-base", query });
 };
 
-const openHerbBaseDetail = (customer: CrmDashboardFollowCustomer) => {
-  goHerbBaseList({ detailId: customer.id });
+const openHerbBaseDetail = (subject: CrmDashboardFollowSubject) => {
+  goHerbBaseList({ detailId: subject.id });
 };
 
-const openHerbBaseById = (customerId: string) => {
-  goHerbBaseList({ detailId: customerId });
+const openHerbBaseById = (herbBaseSubjectId: string) => {
+  goHerbBaseList({ detailId: herbBaseSubjectId });
 };
 
-const recordFollow = (customer: CrmDashboardFollowCustomer) => {
-  goHerbBaseList({ followId: customer.id });
+const recordFollow = (subject: CrmDashboardFollowSubject) => {
+  goHerbBaseList({ followId: subject.id });
 };
 
 const handleMetricClick = (type: string) => {

@@ -9,9 +9,8 @@
       <el-table-column label="客户名称" min-width="170" show-overflow-tooltip>
         <template #default="{ row }">
           <el-button type="primary" link class="base-link" @click="$emit('open-detail', row)">
-            {{ row.baseName || "-" }}
+            {{ row.displayName || "-" }}
           </el-button>
-          <div class="sub-text">{{ row.subjectName || "-" }}</div>
         </template>
       </el-table-column>
       <el-table-column label="主营品类" width="120" show-overflow-tooltip>
@@ -51,15 +50,15 @@
 </template>
 
 <script setup lang="ts">
-import type { CrmDashboardFollowCustomer } from "@/api/modules/dashboard";
+import type { CrmDashboardFollowSubject } from "@/api/modules/dashboard";
 
 defineProps<{
-  customers: CrmDashboardFollowCustomer[];
+  customers: CrmDashboardFollowSubject[];
 }>();
 
 defineEmits<{
-  (event: "open-detail", customer: CrmDashboardFollowCustomer): void;
-  (event: "record-follow", customer: CrmDashboardFollowCustomer): void;
+  (event: "open-detail", customer: CrmDashboardFollowSubject): void;
+  (event: "record-follow", customer: CrmDashboardFollowSubject): void;
 }>();
 
 const mainProductLabels: Record<string, string> = {
@@ -78,13 +77,12 @@ const followResultLabels: Record<string, string> = {
   NOT_INTERESTED: "无意向",
 };
 
-const formatMainProducts = (row: CrmDashboardFollowCustomer) => {
+const formatMainProducts = (row: CrmDashboardFollowSubject) => {
   const values = row.mainProducts || [];
   return values.map(value => mainProductLabels[value] || value).join("、") || "-";
 };
 
-const formatRegion = (row: CrmDashboardFollowCustomer) =>
-  [row.province, row.city, row.area].filter(Boolean).join(" / ") || "-";
+const formatRegion = (row: CrmDashboardFollowSubject) => row.regions?.join(" / ") || "-";
 
 const formatDate = (date?: string | null) => {
   if (!date) return "-";

@@ -7,9 +7,9 @@
 
     <el-empty v-if="records.length === 0" description="暂无沟通记录" :image-size="72" />
     <div v-else class="record-list">
-      <button v-for="record in records" :key="record.id" class="record-item" type="button" @click="$emit('open-detail', record.customerId)">
+      <button v-for="record in records" :key="record.id" class="record-item" type="button" @click="$emit('open-detail', record.herbBaseSubjectId)">
         <span class="record-title">
-          <strong>{{ record.baseName || "-" }}</strong>
+          <strong>{{ record.subjectName || "-" }}</strong>
           <el-tag size="small" :type="getFollowResultType(record.followResult)">
             {{ formatFollowResult(record.followResult) }}
           </el-tag>
@@ -32,7 +32,7 @@ defineProps<{
 }>();
 
 defineEmits<{
-  (event: "open-detail", customerId: string): void;
+  (event: "open-detail", herbBaseSubjectId: string): void;
 }>();
 
 const followTypeLabels: Record<string, string> = {
