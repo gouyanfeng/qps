@@ -59,6 +59,7 @@
           style="--table-min-width: 1860px"
           border
           @selection-change="handleSelectionChange"
+          @sort-change="handleSortChange"
         >
           <el-table-column type="selection" width="44" fixed="left" />
           <el-table-column label="基地名称" min-width="200" fixed="left" show-overflow-tooltip>
@@ -84,17 +85,29 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="主营品类" width="112" show-overflow-tooltip>
+          <el-table-column label="主营品类" width="156">
             <template #default="{ row }">
-              <div class="cell-main">
-                <span class="muted">{{ formatMainProducts(row) }}</span>
+              <div v-if="normalizeMainProducts(row).length" class="main-product-tags">
+                <el-tag
+                  v-for="value in normalizeMainProducts(row)"
+                  :key="value"
+                  size="small"
+                  type="info"
+                  effect="plain"
+                >
+                  {{ formatEnumLabel(mainProductLabels, value) }}
+                </el-tag>
               </div>
+              <span v-else class="muted">-</span>
             </template>
+          </el-table-column>
+          <el-table-column prop="scale" label="规模(亩)" width="124" align="right" sortable="custom">
+            <template #default="{ row }">{{ formatScale(row.scale) }}</template>
           </el-table-column>
           <el-table-column label="地区" min-width="190" show-overflow-tooltip>
             <template #default="{ row }">{{ formatRegion(row) }}</template>
           </el-table-column>
-          <el-table-column label="评分 / 等级" width="112">
+          <el-table-column prop="score" label="评分 / 等级" width="132" sortable="custom">
             <template #default="{ row }">
               <div class="score-cell">
                 <strong>{{ row.score ?? 0 }}</strong>
@@ -229,7 +242,17 @@
         <section class="summary-band">
           <div class="summary-card detail-main-products">
             <span class="label">主营品类</span>
-            <strong>{{ formatMainProducts(currentHerbBase, "-") }}</strong>
+            <div v-if="normalizeMainProducts(currentHerbBase).length" class="main-product-tags">
+              <el-tag
+                v-for="value in normalizeMainProducts(currentHerbBase)"
+                :key="value"
+                type="info"
+                effect="plain"
+              >
+                {{ formatEnumLabel(mainProductLabels, value) }}
+              </el-tag>
+            </div>
+            <strong v-else>-</strong>
             <span>{{ formatSourcePlatform(currentHerbBase.sourcePlatform) }}</span>
           </div>
           <div class="summary-card detail-summary-owner">
@@ -260,7 +283,21 @@
                 <el-descriptions-item label="主体名称" :span="2">{{ currentHerbBase.subjectName || "-" }}</el-descriptions-item>
                 <el-descriptions-item label="来源">{{ formatSourcePlatform(currentHerbBase.sourcePlatform) }}</el-descriptions-item>
                 <el-descriptions-item label="跟进人">{{ currentHerbBase.ownerUserName || "-" }}</el-descriptions-item>
-                <el-descriptions-item label="主营品类">{{ formatMainProducts(currentHerbBase, "-") }}</el-descriptions-item>
+                <el-descriptions-item label="主营品类">
+                  <div v-if="normalizeMainProducts(currentHerbBase).length" class="main-product-tags">
+                    <el-tag
+                      v-for="value in normalizeMainProducts(currentHerbBase)"
+                      :key="value"
+                      size="small"
+                      type="info"
+                      effect="plain"
+                    >
+                      {{ formatEnumLabel(mainProductLabels, value) }}
+                    </el-tag>
+                  </div>
+                  <span v-else>-</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="规模(亩)">{{ formatScale(currentHerbBase.scale) }}</el-descriptions-item>
                 <el-descriptions-item label="等级 / 评分">{{ formatGrade(currentHerbBase.grade) }} / {{ currentHerbBase.score ?? 0 }}</el-descriptions-item>
                 <el-descriptions-item label="地区" :span="3">{{ formatRegion(currentHerbBase) }}</el-descriptions-item>
                 <el-descriptions-item label="地址" :span="3">{{ currentHerbBase.address || "-" }}</el-descriptions-item>
@@ -285,6 +322,7 @@
                 <el-table-column label="角色" width="150">
                   <template #default="{ row }">{{ formatContactRole(row.roleName) }}</template>
                 </el-table-column>
+                <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
                 <el-table-column label="状态" width="96">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.status === 'INVALID' ? 'danger' : 'success'">
@@ -484,6 +522,7 @@ interface CustomerDetail {
   mainProducts: string[];
   grade: string;
   score: number;
+  scale?: number | null;
   province: string;
   city: string;
   area: string;
@@ -534,6 +573,8 @@ const searchForm = reactive({
   onlyNoNextFollow: undefined as boolean | undefined,
   nextFollowFrom: "",
   nextFollowTo: "",
+  sortField: "CreatedAt",
+  sortDirection: "Descending",
 });
 
 const form = reactive({
@@ -588,10 +629,12 @@ const assignForm = reactive({
 
 const sourcePlatformLabels: Record<string, string> = {
   BAIDU_MAP: "百度地图",
+  GOV_HERB_BASE: "政府网站",
   MANUAL: "手工录入",
   EXCEL: "Excel导入",
   OTHER: "其他",
   百度地图: "百度地图",
+  政府网站: "政府网站",
   手工录入: "手工录入",
   Excel导入: "Excel导入",
   其他: "其他",
@@ -599,10 +642,13 @@ const sourcePlatformLabels: Record<string, string> = {
 
 const sourcePlatformValues: Record<string, string> = {
   BAIDU_MAP: "BAIDU_MAP",
+  GOV_HERB_BASE: "GOV_HERB_BASE",
   MANUAL: "MANUAL",
   EXCEL: "EXCEL",
   OTHER: "OTHER",
   百度地图: "BAIDU_MAP",
+  政府中药材基地: "GOV_HERB_BASE",
+  政府网站: "GOV_HERB_BASE",
   手工录入: "MANUAL",
   Excel导入: "EXCEL",
   其他: "OTHER",
@@ -610,6 +656,7 @@ const sourcePlatformValues: Record<string, string> = {
 
 const sourcePlatformOptions = [
   { label: "百度地图", value: "BAIDU_MAP" },
+  { label: "政府网站", value: "GOV_HERB_BASE" },
   { label: "手工录入", value: "MANUAL" },
   { label: "Excel导入", value: "EXCEL" },
   { label: "其他", value: "OTHER" },
@@ -835,6 +882,11 @@ const getBaseName = (row: Partial<CustomerDetail> | any) => row?.baseName?.trim?
 const getDetailTitle = (row: Partial<CustomerDetail> | any) => getBaseName(row) || row?.subjectName?.trim?.() || "";
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
 const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} -> ${toName || "未分配"}`;
+const formatScale = (value?: number | string | null) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : "-";
+};
 
 const getStatusType = (status: string) => {
   const types: Record<string, string> = {
@@ -939,6 +991,8 @@ const handleReset = () => {
     onlyNoNextFollow: undefined,
     nextFollowFrom: "",
     nextFollowTo: "",
+    sortField: "CreatedAt",
+    sortDirection: "Descending",
   });
   followFilter.value = "";
 };
@@ -1007,6 +1061,17 @@ const handleEdit = async (row: any) => {
 
 const reloadList = () => {
   queryPageRef.value?.getTableList();
+};
+
+const handleSortChange = ({ prop, order }: { prop: "scale" | "score"; order: "ascending" | "descending" | null }) => {
+  const sortFieldMap = {
+    scale: "Scale",
+    score: "Score",
+  };
+
+  searchForm.sortField = order ? sortFieldMap[prop] : "CreatedAt";
+  searchForm.sortDirection = order === "ascending" ? "Ascending" : "Descending";
+  reloadList();
 };
 
 const handleSelectionChange = (rows: CustomerDetail[]) => {
@@ -1437,6 +1502,13 @@ const markCustomerStatus = async (status: string) => {
     color: var(--el-text-color-secondary);
     font-size: 12px;
   }
+}
+
+.main-product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
 }
 
 .drawer-grid {
