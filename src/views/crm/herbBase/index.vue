@@ -582,7 +582,6 @@ const form = reactive({
   status: "PENDING",
   ownerUserId: undefined as string | undefined,
   remark: "",
-  parentId: undefined as string | undefined,
   primaryContactName: "",
   primaryContactPhone: "",
 });
@@ -1005,7 +1004,6 @@ const resetCustomerForm = () => {
     status: "PENDING",
     ownerUserId: undefined,
     remark: "",
-    parentId: undefined,
     primaryContactName: "",
     primaryContactPhone: "",
   });
@@ -1039,7 +1037,6 @@ const handleEdit = async (row: any) => {
     status: toEnumValue(statusValues, row.status, "PENDING"),
     ownerUserId: row.ownerUserId || undefined,
     remark: row.remark || "",
-    parentId: row.parentId || undefined,
     primaryContactName: row.primaryContactName || "",
     primaryContactPhone: row.primaryContactPhone || "",
   });
