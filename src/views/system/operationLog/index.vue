@@ -59,8 +59,13 @@
       </template>
     </QueryPage>
 
-    <el-dialog v-model="detailVisible" title="请求内容" width="720px">
-      <pre class="operation-detail">{{ detailContent || '-' }}</pre>
+    <el-dialog v-model="detailVisible" title="变更内容" width="820px">
+      <el-table v-if="detailRows.length" :data="detailRows" border max-height="460">
+        <el-table-column prop="field" label="字段" width="180" show-overflow-tooltip />
+        <el-table-column prop="oldValue" label="原值" min-width="260" show-overflow-tooltip />
+        <el-table-column prop="newValue" label="新值" min-width="260" show-overflow-tooltip />
+      </el-table>
+      <pre v-else class="operation-detail">{{ detailContent || '-' }}</pre>
     </el-dialog>
   </div>
 </template>
@@ -82,6 +87,7 @@ const searchForm = reactive({
 
 const detailVisible = ref(false)
 const detailContent = ref('')
+const detailRows = ref<any[]>([])
 
 const handleReset = () => {
   searchForm.entityType = ''
@@ -120,9 +126,27 @@ const formatDateTime = (value: string) => {
   return new Date(value).toLocaleString()
 }
 
+const formatValue = (value: any) => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
 const openDetail = (row: any) => {
+  detailRows.value = []
+  detailContent.value = ''
+
   try {
-    detailContent.value = JSON.stringify(JSON.parse(row.changeJson || '{}'), null, 2)
+    const changes = JSON.parse(row.changeJson || '{}')
+    detailRows.value = Object.keys(changes).map(field => ({
+      field,
+      oldValue: formatValue(changes[field]?.old),
+      newValue: formatValue(changes[field]?.new)
+    }))
+
+    if (!detailRows.value.length) {
+      detailContent.value = '-'
+    }
   } catch (error) {
     detailContent.value = row.changeJson || ''
   }
