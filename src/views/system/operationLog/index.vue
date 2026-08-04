@@ -59,12 +59,8 @@
       </template>
     </QueryPage>
 
-    <el-dialog v-model="detailVisible" title="变更内容" width="720px">
-      <el-table :data="detailRows" border max-height="420">
-        <el-table-column prop="field" label="字段" width="180" />
-        <el-table-column prop="oldValue" label="旧值" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="newValue" label="新值" min-width="220" show-overflow-tooltip />
-      </el-table>
+    <el-dialog v-model="detailVisible" title="请求内容" width="720px">
+      <pre class="operation-detail">{{ detailContent || '-' }}</pre>
     </el-dialog>
   </div>
 </template>
@@ -85,7 +81,7 @@ const searchForm = reactive({
 })
 
 const detailVisible = ref(false)
-const detailRows = ref<any[]>([])
+const detailContent = ref('')
 
 const handleReset = () => {
   searchForm.entityType = ''
@@ -124,30 +120,33 @@ const formatDateTime = (value: string) => {
   return new Date(value).toLocaleString()
 }
 
-const formatValue = (value: any) => {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
-
 const openDetail = (row: any) => {
   try {
-    const changes = JSON.parse(row.changeJson || '{}')
-    detailRows.value = Object.keys(changes).map(field => ({
-      field,
-      oldValue: formatValue(changes[field]?.old),
-      newValue: formatValue(changes[field]?.new)
-    }))
+    detailContent.value = JSON.stringify(JSON.parse(row.changeJson || '{}'), null, 2)
   } catch (error) {
-    detailRows.value = [{
-      field: 'ChangeJson',
-      oldValue: '',
-      newValue: row.changeJson || ''
-    }]
+    detailContent.value = row.changeJson || ''
   }
 
   detailVisible.value = true
 }
 </script>
+
+<style scoped lang="scss">
+.operation-detail {
+  max-height: 420px;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--el-text-color-regular);
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style>
 
 
