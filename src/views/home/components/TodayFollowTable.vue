@@ -9,7 +9,7 @@
       <el-table-column label="客户名称" min-width="170" show-overflow-tooltip>
         <template #default="{ row }">
           <el-button type="primary" link class="base-link" @click="$emit('open-detail', row)">
-            {{ row.displayName || "-" }}
+            {{ row.subjectName || "-" }}
           </el-button>
         </template>
       </el-table-column>

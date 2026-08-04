@@ -9,7 +9,7 @@ export interface CrmDashboardMetrics {
 
 export interface CrmDashboardFollowSubject {
   id: string;
-  displayName: string;
+  subjectName: string;
   mainProducts: string[];
   grade: string;
   regions: string[];

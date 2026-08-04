@@ -60,7 +60,7 @@
             <template #default="{ row }">
               <div class="cell-main">
                 <el-button type="primary" link class="customer-link" @click="openDetail(row)">
-                  {{ row.displayName || row.subjectName || "-" }}
+                  {{ row.subjectName || "-" }}
                 </el-button>
               </div>
             </template>
@@ -552,7 +552,6 @@ import Permission from "@/components/Permission/index.vue";
 interface HerbBaseSubjectDetail {
   id: string;
   subjectName?: string;
-  displayName: string;
   subjectType?: string;
   mainProducts: string[];
   grade: string;
@@ -636,7 +635,6 @@ const form = reactive({
 const subjectForm = reactive({
   id: "",
   subjectName: "",
-  displayName: "",
   subjectType: "",
   grade: "中",
   score: 0,
@@ -922,7 +920,7 @@ const formatContactRole = (value?: string | null, fallback = "-") => formatEnumL
 const formatFollowType = (value?: string | null, fallback = "-") => formatEnumLabel(followTypeLabels, value, fallback);
 const formatFollowResult = (value?: string | null, fallback = "-") => formatEnumLabel(followResultLabels, value, fallback);
 const getBaseName = (row: any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || "";
-const getDetailTitle = (row: Partial<HerbBaseSubjectDetail> | any) => row?.displayName?.trim?.() || row?.subjectName?.trim?.() || "";
+const getDetailTitle = (row: Partial<HerbBaseSubjectDetail> | any) => row?.subjectName?.trim?.() || "";
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
 const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} -> ${toName || "未分配"}`;
 const formatScale = (value?: number | string | null) => {
@@ -1111,7 +1109,6 @@ const openSubjectDialog = () => {
   Object.assign(subjectForm, {
     id: currentHerbBase.value.id,
     subjectName: currentHerbBase.value.subjectName || "",
-    displayName: currentHerbBase.value.displayName || "",
     subjectType: currentHerbBase.value.subjectType || "",
     grade: toEnumValue(gradeValues, currentHerbBase.value.grade, "中"),
     score: currentHerbBase.value.score || 0,
@@ -1191,14 +1188,13 @@ const handleSubmit = async () => {
 };
 
 const submitSubject = async () => {
-  if (!subjectForm.subjectName && !subjectForm.displayName) {
+  if (!subjectForm.subjectName) {
     ElMessage.error("请输入主体名称");
     return;
   }
 
   await crmHerbBaseApi.updateSubject(subjectForm.id, {
     subjectName: subjectForm.subjectName,
-    displayName: subjectForm.displayName || subjectForm.subjectName,
     subjectType: subjectForm.subjectType,
     status: toEnumValue(statusValues, subjectForm.status, "PENDING"),
     grade: toEnumValue(gradeValues, subjectForm.grade, "中"),
@@ -1397,7 +1393,6 @@ const markCustomerStatus = async (status: string) => {
   if (!currentHerbBase.value) return;
   await crmHerbBaseApi.updateSubject(currentHerbBase.value.id, {
     subjectName: currentHerbBase.value.subjectName || "",
-    displayName: currentHerbBase.value.displayName || "",
     subjectType: currentHerbBase.value.subjectType || "",
     status,
     grade: currentHerbBase.value.grade || "",
