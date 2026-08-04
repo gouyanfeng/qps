@@ -16,6 +16,7 @@
               <el-option label="删除" value="Delete" />
               <el-option label="状态变更" value="StatusChange" />
               <el-option label="分配负责人" value="AssignOwner" />
+              <el-option label="异常" value="Error" />
             </el-select>
           </el-form-item>
           <el-form-item label="操作人">
@@ -103,7 +104,8 @@ const getActionText = (actionType: string) => {
     Update: '修改',
     Delete: '删除',
     StatusChange: '状态变更',
-    AssignOwner: '分配负责人'
+    AssignOwner: '分配负责人',
+    Error: '异常'
   }
   return map[actionType] || actionType
 }
@@ -114,7 +116,8 @@ const getActionTagType = (actionType: string) => {
     Update: 'primary',
     Delete: 'danger',
     StatusChange: 'warning',
-    AssignOwner: 'info'
+    AssignOwner: 'info',
+    Error: 'danger'
   }
   return map[actionType] || 'info'
 }

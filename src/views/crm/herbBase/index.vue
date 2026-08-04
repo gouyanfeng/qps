@@ -142,13 +142,48 @@
       </template>
     </QueryPage>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑药材基地' : '新增药材基地'" width="680px">
+    <el-dialog v-model="subjectDialogVisible" title="编辑主体" width="560px">
+      <el-form :model="subjectForm" label-width="100px">
+        <el-form-item label="主体名称">
+          <el-input v-model="subjectForm.subjectName" placeholder="请输入主体名称" />
+        </el-form-item>
+        <el-form-item label="主体类型">
+          <el-input v-model="subjectForm.subjectType" placeholder="请输入主体类型" />
+        </el-form-item>
+        <el-form-item label="等级 / 评分">
+          <div class="inline-fields">
+            <el-select v-model="subjectForm.grade" placeholder="等级">
+              <el-option label="高" value="高" />
+              <el-option label="中" value="中" />
+              <el-option label="低" value="低" />
+              <el-option label="无效" value="INVALID" />
+            </el-select>
+            <el-input-number v-model="subjectForm.score" :min="0" :max="100" />
+          </div>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="subjectForm.status" placeholder="请选择状态">
+            <el-option label="待联系" value="PENDING" />
+            <el-option label="跟进中" value="FOLLOWING" />
+            <el-option label="有意向" value="INTERESTED" />
+            <el-option label="已成交" value="DEAL" />
+            <el-option label="已流失" value="LOST" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input type="textarea" v-model="subjectForm.remark" :rows="3" placeholder="请输入备注" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="subjectDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitSubject">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑基地' : '新增基地'" width="680px">
       <el-form :model="form" label-width="110px">
         <el-form-item label="基地名称">
           <el-input v-model="form.baseName" placeholder="请输入基地名称" />
-        </el-form-item>
-        <el-form-item label="主体名称">
-          <el-input v-model="form.subjectName" placeholder="请输入主体名称" />
         </el-form-item>
         <el-form-item label="主营品类">
           <el-select v-model="form.mainProducts" multiple collapse-tags collapse-tags-tooltip placeholder="请选择主营品类">
@@ -166,30 +201,18 @@
             <el-input-number v-model="form.score" :min="0" :max="100" />
           </div>
         </el-form-item>
+        <el-form-item label="规模(亩)">
+          <el-input-number v-model="form.scale" :min="0" :precision="2" />
+        </el-form-item>
         <el-form-item label="地区">
           <ChinaRegionCascader v-model="regionPath" @change="handleRegionChange" />
         </el-form-item>
         <el-form-item label="详细地址">
           <el-input v-model="form.address" placeholder="请输入详细地址" />
         </el-form-item>
-        <el-form-item label="主联系人">
-          <div class="inline-fields">
-            <el-input v-model="form.primaryContactName" placeholder="姓名" />
-            <el-input v-model="form.primaryContactPhone" placeholder="电话" />
-          </div>
-        </el-form-item>
         <el-form-item label="来源">
           <el-select v-model="form.sourcePlatform" placeholder="请选择来源">
             <el-option v-for="item in sourcePlatformOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status" placeholder="请选择状态">
-            <el-option label="待联系" value="PENDING" />
-            <el-option label="跟进中" value="FOLLOWING" />
-            <el-option label="有意向" value="INTERESTED" />
-            <el-option label="已成交" value="DEAL" />
-            <el-option label="已流失" value="LOST" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
@@ -224,7 +247,7 @@
             <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
             <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
             <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentHerbBase])">分配</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="handleEdit(currentHerbBase)">编辑资料</el-button></Permission>
+            <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="openSubjectDialog">编辑主体</el-button></Permission>
             <Permission code="CRM_HERB_BASE_STATUS"><el-button type="primary" plain @click="markCustomerStatus('INTERESTED')">标记有意向</el-button></Permission>
             <Permission code="CRM_HERB_BASE_STATUS"><el-button type="success" plain @click="markCustomerStatus('DEAL')">标记成交</el-button></Permission>
             <Permission code="CRM_HERB_BASE_STATUS"><el-button type="danger" plain @click="markCustomerStatus('LOST')">标记流失</el-button></Permission>
@@ -275,7 +298,10 @@
         <section class="drawer-grid">
           <div class="profile-panel detail-profile-panel">
             <section class="detail-card">
-              <div class="section-title section-title-first"><h3>基地明细</h3></div>
+              <div class="section-title section-title-first">
+                <h3>基地明细</h3>
+                <Permission code="CRM_HERB_BASE_ADD"><el-button type="primary" link :icon="Plus" @click="handleAdd">新增基地</el-button></Permission>
+              </div>
               <el-empty v-if="!currentHerbBase.herbBases?.length" description="暂无基地明细" />
               <div v-else class="base-card-list">
                 <article v-for="base in currentHerbBase.herbBases" :key="base.id || base.baseName" class="base-card">
@@ -298,6 +324,18 @@
                       <strong>{{ base.address || "-" }}</strong>
                     </div>
                   </div>
+                  <div class="base-card-actions">
+                    <Permission code="CRM_HERB_BASE_EDIT">
+                      <el-tooltip content="编辑基地" placement="top">
+                        <el-button circle :icon="Edit" @click="handleEdit(base)" />
+                      </el-tooltip>
+                    </Permission>
+                    <Permission code="CRM_HERB_BASE_DELETE">
+                      <el-tooltip content="删除基地" placement="top">
+                        <el-button circle type="danger" :icon="Delete" @click="deleteBase(base)" />
+                      </el-tooltip>
+                    </Permission>
+                  </div>
                 </article>
               </div>
             </section>
@@ -307,7 +345,7 @@
                 <h3>联系人</h3>
                 <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button type="primary" link :icon="Plus" @click="openContactDialog()">新增</el-button></Permission>
               </div>
-              <el-table :data="contacts" border>
+              <el-table :data="contacts" class="contacts-table" border>
                 <el-table-column label="姓名" width="160">
                   <template #default="{ row }">
                     <span>{{ row.contactName || "-" }}</span>
@@ -503,7 +541,7 @@
 <script setup lang="ts" name="customer">
 import { onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
-import { Edit, Phone, Plus, View } from "@element-plus/icons-vue";
+import { Delete, Edit, Phone, Plus, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
@@ -541,6 +579,7 @@ const queryPageRef = ref();
 const route = useRoute();
 
 const dialogVisible = ref(false);
+const subjectDialogVisible = ref(false);
 const detailDrawerVisible = ref(false);
 const contactDialogVisible = ref(false);
 const followDialogVisible = ref(false);
@@ -572,11 +611,13 @@ const searchForm = reactive({
 const form = reactive({
   id: "",
   baseName: "",
+  herbBaseSubjectId: undefined as string | undefined,
   subjectName: "",
   herbBaseName: "",
   mainProducts: [] as string[],
   grade: "B",
   score: 0,
+  scale: undefined as number | undefined,
   province: "",
   city: "",
   area: "",
@@ -590,6 +631,17 @@ const form = reactive({
   remark: "",
   primaryContactName: "",
   primaryContactPhone: "",
+});
+
+const subjectForm = reactive({
+  id: "",
+  subjectName: "",
+  displayName: "",
+  subjectType: "",
+  grade: "中",
+  score: 0,
+  status: "PENDING",
+  remark: "",
 });
 
 const contactForm = reactive({
@@ -994,11 +1046,13 @@ const resetCustomerForm = () => {
   Object.assign(form, {
     id: "",
     baseName: "",
+    herbBaseSubjectId: currentHerbBase.value?.id,
     subjectName: "",
     herbBaseName: "",
     mainProducts: [],
     grade: "中",
     score: 0,
+    scale: undefined,
     province: "",
     city: "",
     area: "",
@@ -1026,12 +1080,14 @@ const handleEdit = async (row: any) => {
   isEdit.value = true;
   Object.assign(form, {
     id: row.id,
-    baseName: getBaseName(row) || row.displayName || "",
-    subjectName: row.subjectName || "",
-    herbBaseName: getBaseName(row) || row.displayName || "",
+    baseName: getBaseName(row),
+    herbBaseSubjectId: row.herbBaseSubjectId || currentHerbBase.value?.id,
+    subjectName: row.subjectName || currentHerbBase.value?.subjectName || "",
+    herbBaseName: getBaseName(row),
     mainProducts: normalizeMainProducts(row),
     grade: toEnumValue(gradeValues, row.grade, "中"),
     score: row.score || 0,
+    scale: row.scale ?? undefined,
     province: row.province || "",
     city: row.city || "",
     area: row.area || "",
@@ -1048,6 +1104,21 @@ const handleEdit = async (row: any) => {
   });
   syncRegionPathFromForm();
   dialogVisible.value = true;
+};
+
+const openSubjectDialog = () => {
+  if (!currentHerbBase.value) return;
+  Object.assign(subjectForm, {
+    id: currentHerbBase.value.id,
+    subjectName: currentHerbBase.value.subjectName || "",
+    displayName: currentHerbBase.value.displayName || "",
+    subjectType: currentHerbBase.value.subjectType || "",
+    grade: toEnumValue(gradeValues, currentHerbBase.value.grade, "中"),
+    score: currentHerbBase.value.score || 0,
+    status: toEnumValue(statusValues, currentHerbBase.value.status, "PENDING"),
+    remark: currentHerbBase.value.remark || "",
+  });
+  subjectDialogVisible.value = true;
 };
 
 const reloadList = () => {
@@ -1088,14 +1159,16 @@ const openDetail = async (row: any) => {
 };
 
 const handleSubmit = async () => {
-  if (!form.baseName && !form.subjectName) {
-    ElMessage.error("请输入基地名称或主体名称");
+  if (!form.baseName) {
+    ElMessage.error("请输入基地名称");
     return;
   }
 
   const request = {
     ...form,
     herbBaseName: form.baseName,
+    herbBaseSubjectId: form.herbBaseSubjectId || currentHerbBase.value?.id,
+    subjectName: currentHerbBase.value?.subjectName || form.subjectName || "",
     mainProducts: [...form.mainProducts],
     grade: toEnumValue(gradeValues, form.grade, "中"),
     sourcePlatform: toEnumValue(sourcePlatformValues, form.sourcePlatform, "BAIDU_MAP"),
@@ -1103,15 +1176,7 @@ const handleSubmit = async () => {
   };
 
   if (isEdit.value) {
-    await crmHerbBaseApi.updateSubject(form.id, {
-      subjectName: form.subjectName,
-      displayName: form.subjectName || form.baseName,
-      subjectType: currentHerbBase.value?.subjectType || "",
-      status: toEnumValue(statusValues, form.status, "PENDING"),
-      grade: toEnumValue(gradeValues, form.grade, "中"),
-      score: form.score || 0,
-      remark: form.remark || "",
-    });
+    await crmHerbBaseApi.updateCustomer(form.id, request);
     ElMessage.success("保存成功");
   } else {
     await crmHerbBaseApi.createCustomer(request);
@@ -1119,6 +1184,40 @@ const handleSubmit = async () => {
   }
 
   dialogVisible.value = false;
+  if (currentHerbBase.value) {
+    await loadCustomerDetail(currentHerbBase.value.id);
+  }
+  reloadList();
+};
+
+const submitSubject = async () => {
+  if (!subjectForm.subjectName && !subjectForm.displayName) {
+    ElMessage.error("请输入主体名称");
+    return;
+  }
+
+  await crmHerbBaseApi.updateSubject(subjectForm.id, {
+    subjectName: subjectForm.subjectName,
+    displayName: subjectForm.displayName || subjectForm.subjectName,
+    subjectType: subjectForm.subjectType,
+    status: toEnumValue(statusValues, subjectForm.status, "PENDING"),
+    grade: toEnumValue(gradeValues, subjectForm.grade, "中"),
+    score: subjectForm.score || 0,
+    remark: subjectForm.remark || "",
+  });
+  ElMessage.success("主体已保存");
+  subjectDialogVisible.value = false;
+  await loadCustomerDetail(subjectForm.id);
+  reloadList();
+};
+
+const deleteBase = async (base: any) => {
+  if (!base?.id || !window.confirm("确定删除这个基地明细吗？")) return;
+  await crmHerbBaseApi.deleteCustomer(base.id);
+  ElMessage.success("基地已删除");
+  if (currentHerbBase.value) {
+    await loadCustomerDetail(currentHerbBase.value.id);
+  }
   reloadList();
 };
 
@@ -1391,6 +1490,7 @@ const markCustomerStatus = async (status: string) => {
   min-height: 100%;
   padding: 0;
   background: #ffffff;
+  overscroll-behavior: contain;
 }
 
 .drawer-head {
@@ -1576,15 +1676,31 @@ const markCustomerStatus = async (status: string) => {
   }
 }
 
+.detail-contacts-panel {
+  overflow-x: auto;
+}
+
+.detail-contacts-panel :deep(.contacts-table) {
+  min-width: 920px;
+}
+
+.detail-follow-panel,
+.detail-transfer-panel {
+  max-height: calc((100vh - 260px) / 2);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
 .base-card-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 300px);
-  gap: 12px;
-  justify-content: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .base-card {
-  width: 300px;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
   min-width: 0;
   padding: 14px;
   border: 1px solid var(--el-border-color-lighter);
@@ -1605,6 +1721,58 @@ const markCustomerStatus = async (status: string) => {
     line-height: 1.4;
     overflow-wrap: anywhere;
   }
+}
+
+.base-card-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+
+  :deep(.el-button) {
+    width: 26px;
+    height: 26px;
+    margin-left: 0;
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: none;
+    backdrop-filter: blur(6px);
+  }
+
+  :deep(.el-button:hover),
+  :deep(.el-button:focus) {
+    border-color: var(--el-color-primary-light-5);
+    color: var(--el-color-primary);
+    background: #ffffff;
+  }
+
+  :deep(.el-button--danger) {
+    border-color: rgba(248, 113, 113, 0.28);
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  :deep(.el-button--danger:hover),
+  :deep(.el-button--danger:focus) {
+    border-color: var(--el-color-danger-light-5);
+    color: var(--el-color-danger);
+    background: #fff7f7;
+  }
+}
+
+.base-card:hover .base-card-actions,
+.base-card:focus-within .base-card-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .base-card-products {
@@ -1637,16 +1805,6 @@ const markCustomerStatus = async (status: string) => {
     font-weight: 500;
     line-height: 1.5;
     overflow-wrap: anywhere;
-  }
-}
-
-@media (max-width: 520px) {
-  .base-card-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .base-card {
-    width: auto;
   }
 }
 
@@ -1702,6 +1860,25 @@ const markCustomerStatus = async (status: string) => {
   .drawer-grid {
     display: flex;
     flex-direction: column;
+  }
+
+  .detail-follow-panel,
+  .detail-transfer-panel {
+    max-height: none;
+  }
+
+  .base-card-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .base-card-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .base-card {
+    width: 100%;
   }
 }
 </style>
