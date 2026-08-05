@@ -357,7 +357,7 @@
                 <el-table-column label="角色" width="150">
                   <template #default="{ row }">{{ formatContactRole(row.roleName) }}</template>
                 </el-table-column>
-                <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
+                <el-table-column prop="remark" label="备注" min-width="240" show-overflow-tooltip />
                 <el-table-column label="状态" width="96">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.status === 'INVALID' ? 'danger' : 'success'">
@@ -1676,12 +1676,13 @@ const markCustomerStatus = async (status: string) => {
 }
 
 .detail-contacts-panel :deep(.contacts-table) {
-  min-width: 920px;
+  min-width: 980px;
 }
 
 .detail-follow-panel,
 .detail-transfer-panel {
-  max-height: calc((100vh - 260px) / 2);
+  min-height: 220px;
+  max-height: calc((100vh - 252px) / 2);
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -1697,10 +1698,15 @@ const markCustomerStatus = async (status: string) => {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  padding: 14px;
+  min-height: 178px;
+  padding: 14px 14px 42px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: #fbfdff;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .base-card-head {
@@ -1715,7 +1721,15 @@ const markCustomerStatus = async (status: string) => {
     font-size: 15px;
     line-height: 1.4;
     overflow-wrap: anywhere;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
+}
+
+.base-card-head :deep(.el-tag) {
+  flex: 0 0 auto;
 }
 
 .base-card-actions {
@@ -1724,9 +1738,7 @@ const markCustomerStatus = async (status: string) => {
   bottom: 10px;
   display: flex;
   gap: 4px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(4px);
+  opacity: 0.48;
   transition:
     opacity 0.15s ease,
     transform 0.15s ease;
@@ -1737,7 +1749,7 @@ const markCustomerStatus = async (status: string) => {
     margin-left: 0;
     border-color: rgba(148, 163, 184, 0.35);
     color: #64748b;
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.88);
     box-shadow: none;
     backdrop-filter: blur(6px);
   }
@@ -1752,7 +1764,7 @@ const markCustomerStatus = async (status: string) => {
   :deep(.el-button--danger) {
     border-color: rgba(248, 113, 113, 0.28);
     color: #94a3b8;
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.88);
   }
 
   :deep(.el-button--danger:hover),
@@ -1766,8 +1778,14 @@ const markCustomerStatus = async (status: string) => {
 .base-card:hover .base-card-actions,
 .base-card:focus-within .base-card-actions {
   opacity: 1;
-  pointer-events: auto;
   transform: translateY(0);
+}
+
+.base-card:hover,
+.base-card:focus-within {
+  border-color: var(--el-color-primary-light-7);
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.05);
 }
 
 .base-card-products {
@@ -1775,6 +1793,11 @@ const markCustomerStatus = async (status: string) => {
   color: var(--el-color-primary);
   font-size: 13px;
   line-height: 1.5;
+  display: -webkit-box;
+  min-height: 20px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .base-card-fields {
@@ -1801,6 +1824,13 @@ const markCustomerStatus = async (status: string) => {
     line-height: 1.5;
     overflow-wrap: anywhere;
   }
+
+  div:last-child strong {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
 
 .section-title {
@@ -1822,7 +1852,7 @@ const markCustomerStatus = async (status: string) => {
 }
 
 .follow-item {
-  padding: 0 0 10px;
+  padding: 0 0 12px;
   border-bottom: 1px solid var(--el-border-color-lighter);
   background: transparent;
 
@@ -1837,6 +1867,7 @@ const markCustomerStatus = async (status: string) => {
     margin: 0 0 6px;
     color: var(--el-text-color-primary);
     line-height: 1.55;
+    overflow-wrap: anywhere;
   }
 }
 
