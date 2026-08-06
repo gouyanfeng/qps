@@ -626,7 +626,6 @@ const form = reactive({
   sourcePlatform: "BAIDU_MAP",
   sourceId: undefined as number | undefined,
   status: "PENDING",
-  ownerUserId: undefined as string | undefined,
   remark: "",
   primaryContactName: "",
   primaryContactPhone: "",
@@ -1060,7 +1059,6 @@ const resetCustomerForm = () => {
     sourcePlatform: "BAIDU_MAP",
     sourceId: undefined,
     status: "PENDING",
-    ownerUserId: undefined,
     remark: "",
     primaryContactName: "",
     primaryContactPhone: "",
@@ -1095,7 +1093,6 @@ const handleEdit = async (row: any) => {
     sourcePlatform: toEnumValue(sourcePlatformValues, row.sourcePlatform, "BAIDU_MAP"),
     sourceId: row.sourceId ?? undefined,
     status: toEnumValue(statusValues, row.status, "PENDING"),
-    ownerUserId: row.ownerUserId || undefined,
     remark: row.remark || "",
     primaryContactName: row.primaryContactName || "",
     primaryContactPhone: row.primaryContactPhone || "",
@@ -1220,7 +1217,7 @@ const deleteBase = async (base: any) => {
 const openAssignDialog = async (rows?: HerbBaseSubjectDetail[]) => {
   const customers = rows?.length ? rows : selectedHerbBases.value;
   if (customers.length === 0) {
-    ElMessage.warning("请选择要分配的药材基地");
+    ElMessage.warning("请选择要分配的基地主体");
     return;
   }
 

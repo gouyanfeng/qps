@@ -40,9 +40,6 @@ export const crmHerbBaseApi = {
   updateCustomer: (id: string, params: any) => {
     return http.put<any>(`/admin/crm/herb-bases/${id}`, params);
   },
-  assignOwner: (params: any) => {
-    return http.patch<any>("/admin/crm/herb-bases/assign-owner", params);
-  },
   deleteCustomer: (id: string) => {
     return http.delete(`/admin/crm/herb-bases/${id}`);
   },
@@ -63,9 +60,6 @@ export const crmHerbBaseApi = {
   },
   getFollowRecords: (herbBaseId: string) => {
     return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/follow-records`);
-  },
-  getTransferRecords: (herbBaseId: string) => {
-    return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/owner-transfers`);
   },
   createFollowRecord: (herbBaseId: string, params: any) => {
     return http.post<any>(`/admin/crm/herb-bases/${herbBaseId}/follow-records`, params);
