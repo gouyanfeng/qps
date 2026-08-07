@@ -50,8 +50,11 @@ const difyBaseUrl = "http://192.168.0.105:8080";
 const assistantLoaded = ref(false);
 const assistantOpen = ref(false);
 let assistantWindowObserver: MutationObserver | null = null;
+let closeAssistantTimer: ReturnType<typeof setTimeout> | null = null;
 
 const syncAssistantOpenState = () => {
+  if (document.documentElement.classList.contains("data-assistant-closing")) return;
+
   const assistantWindow = document.getElementById("dify-chatbot-bubble-window");
   const isOpen = assistantWindow ? getComputedStyle(assistantWindow).display !== "none" : false;
   assistantOpen.value = isOpen;
@@ -71,7 +74,15 @@ const watchAssistantWindow = () => {
 };
 
 const openDataAssistant = () => {
+  if (closeAssistantTimer) {
+    clearTimeout(closeAssistantTimer);
+    closeAssistantTimer = null;
+  }
+  document.documentElement.classList.remove("data-assistant-closing");
+
   if (assistantLoaded.value) {
+    assistantOpen.value = true;
+    document.documentElement.classList.add("data-assistant-open");
     document.getElementById("dify-chatbot-bubble-button")?.click();
     setTimeout(syncAssistantOpenState, 100);
     return;
@@ -94,6 +105,8 @@ const openDataAssistant = () => {
   script.onload = () => {
     assistantLoaded.value = true;
     setTimeout(() => {
+      assistantOpen.value = true;
+      document.documentElement.classList.add("data-assistant-open");
       document.getElementById("dify-chatbot-bubble-button")?.click();
       watchAssistantWindow();
       syncAssistantOpenState();
@@ -103,13 +116,20 @@ const openDataAssistant = () => {
 };
 
 const closeDataAssistant = () => {
-  document.getElementById("dify-chatbot-bubble-button")?.click();
-  setTimeout(syncAssistantOpenState, 100);
+  document.documentElement.classList.add("data-assistant-closing");
+  closeAssistantTimer = setTimeout(() => {
+    document.getElementById("dify-chatbot-bubble-button")?.click();
+    document.documentElement.classList.remove("data-assistant-closing");
+    closeAssistantTimer = null;
+    syncAssistantOpenState();
+  }, 220);
 };
 
 onBeforeUnmount(() => {
+  if (closeAssistantTimer) clearTimeout(closeAssistantTimer);
   assistantWindowObserver?.disconnect();
   document.documentElement.classList.remove("data-assistant-open");
+  document.documentElement.classList.remove("data-assistant-closing");
 });
 </script>
 
@@ -117,7 +137,7 @@ onBeforeUnmount(() => {
 .data-assistant-tab {
   position: fixed;
   right: 0;
-  top: 50%;
+  top: 76%;
   z-index: 3000;
   width: 36px;
   min-height: 104px;
@@ -134,10 +154,11 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transform: translateY(-50%);
   transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    background 0.18s ease;
-  animation: data-assistant-tab-enter 0.22s ease-out;
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  animation: data-assistant-tab-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .data-assistant-tab:hover {
@@ -152,8 +173,8 @@ onBeforeUnmount(() => {
 
 .data-assistant-collapse {
   position: fixed;
-  right: min(420px, calc(100vw - 32px));
-  top: 50%;
+  right: 420px;
+  bottom: 308px;
   z-index: 2147483647;
   display: inline-flex;
   align-items: center;
@@ -172,24 +193,24 @@ onBeforeUnmount(() => {
   line-height: 1.2;
   writing-mode: vertical-rl;
   cursor: pointer;
-  transform: translateY(-50%);
   transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease,
-    color 0.16s ease,
-    background 0.16s ease;
-  animation: data-assistant-collapse-enter 0.2s ease-out;
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+  animation: data-assistant-collapse-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .data-assistant-collapse:hover {
   background: #f8fafc;
   box-shadow: -10px 16px 28px rgb(15 23 42 / 16%);
   color: #1e40af;
-  transform: translateY(-50%) translateX(-2px);
+  transform: translateX(-2px);
 }
 
 .data-assistant-collapse:active {
-  transform: translateY(-50%) scale(0.98);
+  transform: scale(0.98);
 }
 
 @keyframes data-assistant-tab-enter {
@@ -207,12 +228,12 @@ onBeforeUnmount(() => {
 @keyframes data-assistant-collapse-enter {
   from {
     opacity: 0;
-    transform: translateY(-50%) translateX(12px);
+    transform: translateX(12px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(-50%) translateX(0);
+    transform: translateX(0);
   }
 }
 </style>
@@ -230,42 +251,80 @@ onBeforeUnmount(() => {
 }
 
 .data-assistant-open #dify-chatbot-bubble-button {
-  right: min(420px, calc(100vw - 32px)) !important;
-  top: 50% !important;
-  bottom: auto !important;
+  right: 420px !important;
+  top: auto !important;
+  bottom: 322px !important;
 }
 
 #dify-chatbot-bubble-window {
-  top: 50% !important;
+  top: auto !important;
   right: 0 !important;
-  width: min(420px, calc(100vw - 32px)) !important;
+  bottom: 24px !important;
+  width: 420px !important;
   max-width: none !important;
-  height: min(640px, calc(100vh - 96px)) !important;
+  height: 640px !important;
   max-height: none !important;
   border-radius: 12px 0 0 12px !important;
   box-shadow: -18px 0 42px rgb(15 23 42 / 18%) !important;
-  transform: translateY(-50%);
 }
 
 .data-assistant-open #dify-chatbot-bubble-window {
-  animation: data-assistant-drawer-enter 0.22s ease-out;
+  animation: data-assistant-drawer-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: right center;
+  will-change: transform;
+}
+
+.data-assistant-closing #dify-chatbot-bubble-window {
+  animation: data-assistant-drawer-leave 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none !important;
+}
+
+.data-assistant-closing .data-assistant-collapse {
+  animation: data-assistant-collapse-leave 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
 }
 
 @keyframes data-assistant-drawer-enter {
   from {
-    transform: translateY(-50%) translateX(24px);
+    opacity: 0.96;
+    transform: translateX(24px);
   }
 
   to {
-    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes data-assistant-drawer-leave {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes data-assistant-collapse-leave {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(10px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .data-assistant-tab,
   .data-assistant-collapse,
-  .data-assistant-open #dify-chatbot-bubble-window {
+  .data-assistant-open #dify-chatbot-bubble-window,
+  .data-assistant-closing #dify-chatbot-bubble-window {
     animation: none !important;
     transition: none !important;
   }
@@ -274,7 +333,7 @@ onBeforeUnmount(() => {
   .data-assistant-collapse:hover,
   .data-assistant-tab:active,
   .data-assistant-collapse:active {
-    transform: translateY(-50%);
+    transform: none;
   }
 }
 </style>
