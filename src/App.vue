@@ -1,10 +1,8 @@
 ﻿<template>
   <el-config-provider :locale="locale" :size="assemblySize" :button="buttonConfig">
     <router-view></router-view>
-    <button v-show="!assistantOpen" class="data-assistant-button" type="button" @click="openDataAssistant">数据助手</button>
-    <button v-show="assistantOpen" class="data-assistant-close" type="button" aria-label="关闭数据助手" @click="closeDataAssistant">
-      ×
-    </button>
+    <button v-show="!assistantOpen" class="data-assistant-tab" type="button" @click="openDataAssistant">数据助手</button>
+    <button v-show="assistantOpen" class="data-assistant-collapse" type="button" @click="closeDataAssistant">收起</button>
   </el-config-provider>
 </template>
 
@@ -116,50 +114,106 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.data-assistant-button {
+.data-assistant-tab {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  right: 0;
+  top: 50%;
   z-index: 3000;
-  height: 44px;
-  padding: 0 18px;
+  width: 36px;
+  min-height: 104px;
+  padding: 12px 8px;
   border: 0;
-  border-radius: 22px;
+  border-radius: 12px 0 0 12px;
   background: #1c64f2;
-  box-shadow: 0 10px 24px rgb(28 100 242 / 28%);
+  box-shadow: -8px 12px 28px rgb(28 100 242 / 26%);
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
+  writing-mode: vertical-rl;
   cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+  animation: data-assistant-tab-enter 0.22s ease-out;
 }
 
-.data-assistant-button:hover {
+.data-assistant-tab:hover {
   background: #1557d8;
+  box-shadow: -10px 16px 32px rgb(28 100 242 / 34%);
+  transform: translateY(-50%) translateX(-2px);
 }
 
-.data-assistant-close {
+.data-assistant-tab:active {
+  transform: translateY(-50%) translateX(0) scale(0.98);
+}
+
+.data-assistant-collapse {
   position: fixed;
-  right: 16px;
-  bottom: calc(min(40rem, calc(100vh - 96px)) - 8px);
+  right: min(420px, calc(100vw - 32px));
+  top: 50%;
   z-index: 2147483647;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  min-height: 72px;
+  padding: 10px 6px;
   border: 1px solid rgb(226 232 240 / 90%);
-  border-radius: 50%;
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
   background: rgb(255 255 255 / 96%);
-  box-shadow: 0 10px 24px rgb(15 23 42 / 16%);
+  box-shadow: -8px 12px 24px rgb(15 23 42 / 12%);
   color: #334155;
-  font-size: 24px;
-  line-height: 1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  writing-mode: vertical-rl;
   cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease,
+    background 0.16s ease;
+  animation: data-assistant-collapse-enter 0.2s ease-out;
 }
 
-.data-assistant-close:hover {
+.data-assistant-collapse:hover {
   background: #f8fafc;
+  box-shadow: -10px 16px 28px rgb(15 23 42 / 16%);
   color: #1e40af;
+  transform: translateY(-50%) translateX(-2px);
+}
+
+.data-assistant-collapse:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+@keyframes data-assistant-tab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@keyframes data-assistant-collapse-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 </style>
 
@@ -176,12 +230,52 @@ onBeforeUnmount(() => {
 }
 
 .data-assistant-open #dify-chatbot-bubble-button {
-  bottom: min(40rem, calc(100vh - 96px)) !important;
+  right: min(420px, calc(100vw - 32px)) !important;
+  top: 50% !important;
+  bottom: auto !important;
 }
 
 #dify-chatbot-bubble-window {
-  width: min(24rem, calc(100vw - 32px)) !important;
-  height: min(40rem, calc(100vh - 96px)) !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: min(420px, calc(100vw - 32px)) !important;
+  max-width: none !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  border-radius: 0 !important;
+  box-shadow: -18px 0 42px rgb(15 23 42 / 18%) !important;
+}
+
+.data-assistant-open #dify-chatbot-bubble-window {
+  animation: data-assistant-drawer-enter 0.22s ease-out;
+  transform-origin: right center;
+}
+
+@keyframes data-assistant-drawer-enter {
+  from {
+    transform: translateX(24px);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-assistant-tab,
+  .data-assistant-collapse,
+  .data-assistant-open #dify-chatbot-bubble-window {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .data-assistant-tab:hover,
+  .data-assistant-collapse:hover,
+  .data-assistant-tab:active,
+  .data-assistant-collapse:active {
+    transform: translateY(-50%);
+  }
 }
 </style>
 
