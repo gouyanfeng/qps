@@ -143,6 +143,7 @@ onBeforeUnmount(() => {
 }
 
 .data-assistant-open #dify-chatbot-bubble-button {
+  bottom: min(40rem, calc(100vh - 96px)) !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
