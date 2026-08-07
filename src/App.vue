@@ -30,6 +30,7 @@ onMounted(() => {
   const language = globalStore.language ?? getBrowserLang();
   i18n.locale.value = language;
   globalStore.setGlobalState("language", language as LanguageType);
+  window.addEventListener("message", handleAssistantMessage);
 });
 
 // element language
@@ -51,6 +52,22 @@ const assistantLoaded = ref(false);
 const assistantOpen = ref(false);
 let assistantWindowObserver: MutationObserver | null = null;
 let closeAssistantTimer: ReturnType<typeof setTimeout> | null = null;
+let assistantReadyTimer: ReturnType<typeof setTimeout> | null = null;
+
+const handleAssistantMessage = (event: MessageEvent) => {
+  if (event.origin !== difyBaseUrl) return;
+  if (event.data?.type !== "dify-chatbot-iframe-ready") return;
+
+  markAssistantReady();
+};
+
+const markAssistantReady = () => {
+  if (assistantReadyTimer) {
+    clearTimeout(assistantReadyTimer);
+    assistantReadyTimer = null;
+  }
+  document.documentElement.classList.add("data-assistant-ready");
+};
 
 const syncAssistantOpenState = () => {
   if (document.documentElement.classList.contains("data-assistant-closing")) return;
@@ -88,6 +105,8 @@ const openDataAssistant = () => {
     return;
   }
 
+  document.documentElement.classList.remove("data-assistant-ready");
+
   (window as any).difyChatbotConfig = {
     token: difyToken,
     baseUrl: difyBaseUrl,
@@ -110,6 +129,7 @@ const openDataAssistant = () => {
       document.getElementById("dify-chatbot-bubble-button")?.click();
       watchAssistantWindow();
       syncAssistantOpenState();
+      assistantReadyTimer = setTimeout(markAssistantReady, 800);
     }, 100);
   };
   document.body.appendChild(script);
@@ -127,9 +147,12 @@ const closeDataAssistant = () => {
 
 onBeforeUnmount(() => {
   if (closeAssistantTimer) clearTimeout(closeAssistantTimer);
+  if (assistantReadyTimer) clearTimeout(assistantReadyTimer);
+  window.removeEventListener("message", handleAssistantMessage);
   assistantWindowObserver?.disconnect();
   document.documentElement.classList.remove("data-assistant-open");
   document.documentElement.classList.remove("data-assistant-closing");
+  document.documentElement.classList.remove("data-assistant-ready");
 });
 </script>
 
@@ -263,15 +286,27 @@ onBeforeUnmount(() => {
   width: 420px !important;
   max-width: none !important;
   height: 640px !important;
+  min-height: 0 !important;
   max-height: none !important;
   border-radius: 12px 0 0 12px !important;
   box-shadow: -18px 0 42px rgb(15 23 42 / 18%) !important;
+  transition: none !important;
 }
 
-.data-assistant-open #dify-chatbot-bubble-window {
+.data-assistant-open:not(.data-assistant-ready) #dify-chatbot-bubble-window,
+.data-assistant-open:not(.data-assistant-ready) .data-assistant-collapse {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.data-assistant-open.data-assistant-ready #dify-chatbot-bubble-window {
   animation: data-assistant-drawer-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: right center;
   will-change: transform;
+}
+
+.data-assistant-open.data-assistant-ready .data-assistant-collapse {
+  animation: data-assistant-collapse-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .data-assistant-closing #dify-chatbot-bubble-window {
