@@ -1,12 +1,12 @@
 ﻿<template>
   <el-config-provider :locale="locale" :size="assemblySize" :button="buttonConfig">
     <router-view></router-view>
-    <button class="data-assistant-button" type="button" @click="openDataAssistant">数据助手</button>
+    <button v-show="!assistantOpen" class="data-assistant-button" type="button" @click="openDataAssistant">数据助手</button>
   </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, computed, ref } from "vue";
+import { onBeforeUnmount, onMounted, reactive, computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { getBrowserLang } from "@/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -47,10 +47,32 @@ const buttonConfig = reactive({ autoInsertSpace: false });
 const difyToken = "SIEMfSwavwBX6Lsy";
 const difyBaseUrl = "http://192.168.0.105:8080";
 const assistantLoaded = ref(false);
+const assistantOpen = ref(false);
+let assistantWindowObserver: MutationObserver | null = null;
+
+const syncAssistantOpenState = () => {
+  const assistantWindow = document.getElementById("dify-chatbot-bubble-window");
+  const isOpen = assistantWindow ? getComputedStyle(assistantWindow).display !== "none" : false;
+  assistantOpen.value = isOpen;
+  document.documentElement.classList.toggle("data-assistant-open", isOpen);
+};
+
+const watchAssistantWindow = () => {
+  const assistantWindow = document.getElementById("dify-chatbot-bubble-window");
+  if (!assistantWindow || assistantWindowObserver) return;
+
+  syncAssistantOpenState();
+  assistantWindowObserver = new MutationObserver(syncAssistantOpenState);
+  assistantWindowObserver.observe(assistantWindow, {
+    attributes: true,
+    attributeFilter: ["style", "class"]
+  });
+};
 
 const openDataAssistant = () => {
   if (assistantLoaded.value) {
     document.getElementById("dify-chatbot-bubble-button")?.click();
+    setTimeout(syncAssistantOpenState, 100);
     return;
   }
 
@@ -70,10 +92,19 @@ const openDataAssistant = () => {
   script.defer = true;
   script.onload = () => {
     assistantLoaded.value = true;
-    setTimeout(() => document.getElementById("dify-chatbot-bubble-button")?.click(), 100);
+    setTimeout(() => {
+      document.getElementById("dify-chatbot-bubble-button")?.click();
+      watchAssistantWindow();
+      syncAssistantOpenState();
+    }, 100);
   };
   document.body.appendChild(script);
 };
+
+onBeforeUnmount(() => {
+  assistantWindowObserver?.disconnect();
+  document.documentElement.classList.remove("data-assistant-open");
+});
 </script>
 
 <style scoped>
@@ -109,6 +140,11 @@ const openDataAssistant = () => {
   opacity: 0 !important;
   pointer-events: none !important;
   background-color: #1c64f2 !important;
+}
+
+.data-assistant-open #dify-chatbot-bubble-button {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 #dify-chatbot-bubble-window {
