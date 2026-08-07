@@ -236,15 +236,15 @@ onBeforeUnmount(() => {
 }
 
 #dify-chatbot-bubble-window {
-  top: 0 !important;
+  top: 50% !important;
   right: 0 !important;
-  bottom: 0 !important;
   width: min(420px, calc(100vw - 32px)) !important;
   max-width: none !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
-  border-radius: 0 !important;
+  height: min(640px, calc(100vh - 96px)) !important;
+  max-height: none !important;
+  border-radius: 12px 0 0 12px !important;
   box-shadow: -18px 0 42px rgb(15 23 42 / 18%) !important;
+  transform: translateY(-50%);
 }
 
 .data-assistant-open #dify-chatbot-bubble-window {
@@ -254,11 +254,11 @@ onBeforeUnmount(() => {
 
 @keyframes data-assistant-drawer-enter {
   from {
-    transform: translateX(24px);
+    transform: translateY(-50%) translateX(24px);
   }
 
   to {
-    transform: translateX(0);
+    transform: translateY(-50%) translateX(0);
   }
 }
 
