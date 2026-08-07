@@ -58,7 +58,7 @@ const handleAssistantMessage = (event: MessageEvent) => {
   if (event.origin !== difyBaseUrl) return;
   if (event.data?.type !== "dify-chatbot-iframe-ready") return;
 
-  markAssistantReady();
+  scheduleAssistantReady(350);
 };
 
 const markAssistantReady = () => {
@@ -67,6 +67,11 @@ const markAssistantReady = () => {
     assistantReadyTimer = null;
   }
   document.documentElement.classList.add("data-assistant-ready");
+};
+
+const scheduleAssistantReady = (delay = 0) => {
+  if (assistantReadyTimer) clearTimeout(assistantReadyTimer);
+  assistantReadyTimer = setTimeout(markAssistantReady, delay);
 };
 
 const syncAssistantOpenState = () => {
@@ -129,7 +134,7 @@ const openDataAssistant = () => {
       document.getElementById("dify-chatbot-bubble-button")?.click();
       watchAssistantWindow();
       syncAssistantOpenState();
-      assistantReadyTimer = setTimeout(markAssistantReady, 800);
+      scheduleAssistantReady(1200);
     }, 100);
   };
   document.body.appendChild(script);
@@ -280,9 +285,11 @@ onBeforeUnmount(() => {
 }
 
 #dify-chatbot-bubble-window {
+  position: fixed !important;
   top: auto !important;
   right: 0 !important;
   bottom: 24px !important;
+  left: auto !important;
   width: 420px !important;
   max-width: none !important;
   height: 640px !important;
