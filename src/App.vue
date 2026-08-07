@@ -148,8 +148,8 @@ onBeforeUnmount(() => {
 }
 
 #dify-chatbot-bubble-window {
-  width: 24rem !important;
-  height: 40rem !important;
+  width: min(24rem, calc(100vw - 32px)) !important;
+  height: min(40rem, calc(100vh - 96px)) !important;
 }
 </style>
 
