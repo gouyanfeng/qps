@@ -58,6 +58,7 @@ const openDataAssistant = () => {
     token: difyToken,
     baseUrl: difyBaseUrl,
     routeSegment: "agent",
+    dynamicScript: true,
     inputs: {},
     systemVariables: {},
     userVariables: {}
