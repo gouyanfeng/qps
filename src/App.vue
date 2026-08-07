@@ -2,6 +2,9 @@
   <el-config-provider :locale="locale" :size="assemblySize" :button="buttonConfig">
     <router-view></router-view>
     <button v-show="!assistantOpen" class="data-assistant-button" type="button" @click="openDataAssistant">数据助手</button>
+    <button v-show="assistantOpen" class="data-assistant-close" type="button" aria-label="关闭数据助手" @click="closeDataAssistant">
+      ×
+    </button>
   </el-config-provider>
 </template>
 
@@ -101,6 +104,11 @@ const openDataAssistant = () => {
   document.body.appendChild(script);
 };
 
+const closeDataAssistant = () => {
+  document.getElementById("dify-chatbot-bubble-button")?.click();
+  setTimeout(syncAssistantOpenState, 100);
+};
+
 onBeforeUnmount(() => {
   assistantWindowObserver?.disconnect();
   document.documentElement.classList.remove("data-assistant-open");
@@ -128,6 +136,31 @@ onBeforeUnmount(() => {
 .data-assistant-button:hover {
   background: #1557d8;
 }
+
+.data-assistant-close {
+  position: fixed;
+  right: 16px;
+  bottom: calc(min(40rem, calc(100vh - 96px)) - 8px);
+  z-index: 2147483647;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgb(226 232 240 / 90%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 10px 24px rgb(15 23 42 / 16%);
+  color: #334155;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.data-assistant-close:hover {
+  background: #f8fafc;
+  color: #1e40af;
+}
 </style>
 
 <style>
@@ -144,8 +177,6 @@ onBeforeUnmount(() => {
 
 .data-assistant-open #dify-chatbot-bubble-button {
   bottom: min(40rem, calc(100vh - 96px)) !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
 }
 
 #dify-chatbot-bubble-window {
