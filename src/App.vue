@@ -101,7 +101,13 @@ const openDataAssistant = () => {
 
 <style>
 #dify-chatbot-bubble-button {
-  display: none !important;
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 24px !important;
+  width: 44px !important;
+  height: 44px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
   background-color: #1c64f2 !important;
 }
 
