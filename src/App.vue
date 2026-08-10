@@ -46,7 +46,7 @@ const assemblySize = computed(() => globalStore.assemblySize);
 // element button config
 const buttonConfig = reactive({ autoInsertSpace: false });
 
-const difyToken = "SIEMfSwavwBX6Lsy";
+const difyToken = "O9BNPIV1JQDEpOKG";
 const difyBaseUrl = "http://192.168.0.105:8080";
 const assistantLoaded = ref(false);
 const assistantOpen = ref(false);

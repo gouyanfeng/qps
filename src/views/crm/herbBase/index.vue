@@ -54,6 +54,7 @@
           style="--table-min-width: 1860px"
           border
           @selection-change="handleSelectionChange"
+          @sort-change="handleSortChange"
         >
           <el-table-column type="selection" width="44" fixed="left" />
           <el-table-column label="基地主体" min-width="220" fixed="left" show-overflow-tooltip>
@@ -92,13 +93,13 @@
               <span v-else class="muted">-</span>
             </template>
           </el-table-column>
-          <el-table-column label="总规模(亩)" width="124" align="right">
+          <el-table-column prop="totalScale" label="总规模(亩)" width="124" align="right" sortable="custom">
             <template #default="{ row }">{{ formatScale(row.totalScale) }}</template>
           </el-table-column>
           <el-table-column label="地区" min-width="190" show-overflow-tooltip>
             <template #default="{ row }">{{ formatRegions(row.regions) }}</template>
           </el-table-column>
-          <el-table-column label="评分 / 等级" width="132">
+          <el-table-column prop="score" label="评分 / 等级" width="132" sortable="custom">
             <template #default="{ row }">
               <div class="score-cell">
                 <strong>{{ row.score ?? 0 }}</strong>
@@ -326,14 +327,10 @@
                   </div>
                   <div class="base-card-actions">
                     <Permission code="CRM_HERB_BASE_EDIT">
-                      <el-tooltip content="编辑基地" placement="top">
-                        <el-button circle :icon="Edit" @click="handleEdit(base)" />
-                      </el-tooltip>
+                      <el-button type="primary" link @click="handleEdit(base)">编辑</el-button>
                     </Permission>
                     <Permission code="CRM_HERB_BASE_DELETE">
-                      <el-tooltip content="删除基地" placement="top">
-                        <el-button circle type="danger" :icon="Delete" @click="deleteBase(base)" />
-                      </el-tooltip>
+                      <el-button type="danger" link @click="deleteBase(base)">删除</el-button>
                     </Permission>
                   </div>
                 </article>
@@ -1269,15 +1266,24 @@ const openContactDialog = (row?: any) => {
   contactDialogVisible.value = true;
 };
 
+const isValidPhone = (phone: string) => /^1[3-9]\d{9}$/.test(phone) || /^0\d{2,3}-?\d{7,8}(-\d{1,6})?$/.test(phone);
+
 const submitContact = async () => {
   if (!currentHerbBase.value) return;
-  if (!contactForm.contactName && !contactForm.phone) {
+  const phone = contactForm.phone.trim();
+  if (!contactForm.contactName.trim() && !phone) {
     ElMessage.error("请填写联系人姓名或电话");
+    return;
+  }
+  if (phone && !isValidPhone(phone)) {
+    ElMessage.error("联系电话格式不正确");
     return;
   }
 
   const request = {
     ...contactForm,
+    contactName: contactForm.contactName.trim(),
+    phone,
     phoneType: toEnumValue(phoneTypeValues, contactForm.phoneType, "UNKNOWN"),
     roleName: toEnumValue(contactRoleValues, contactForm.roleName),
   };
@@ -1731,51 +1737,15 @@ const markCustomerStatus = async (status: string) => {
 
 .base-card-actions {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  right: 14px;
+  bottom: 12px;
   display: flex;
-  gap: 4px;
-  opacity: 0.48;
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
+  gap: 10px;
 
   :deep(.el-button) {
-    width: 26px;
-    height: 26px;
     margin-left: 0;
-    border-color: rgba(148, 163, 184, 0.35);
-    color: #64748b;
-    background: rgba(255, 255, 255, 0.88);
-    box-shadow: none;
-    backdrop-filter: blur(6px);
+    padding: 0;
   }
-
-  :deep(.el-button:hover),
-  :deep(.el-button:focus) {
-    border-color: var(--el-color-primary-light-5);
-    color: var(--el-color-primary);
-    background: #ffffff;
-  }
-
-  :deep(.el-button--danger) {
-    border-color: rgba(248, 113, 113, 0.28);
-    color: #94a3b8;
-    background: rgba(255, 255, 255, 0.88);
-  }
-
-  :deep(.el-button--danger:hover),
-  :deep(.el-button--danger:focus) {
-    border-color: var(--el-color-danger-light-5);
-    color: var(--el-color-danger);
-    background: #fff7f7;
-  }
-}
-
-.base-card:hover .base-card-actions,
-.base-card:focus-within .base-card-actions {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .base-card:hover,
