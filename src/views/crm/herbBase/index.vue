@@ -51,7 +51,7 @@
           :row-class-name="getRowClassName"
           :fit="true"
           class="wide-list-table"
-          style="--table-min-width: 1860px"
+          style="--table-min-width: 2010px"
           border
           @selection-change="handleSelectionChange"
           @sort-change="handleSortChange"
@@ -67,7 +67,9 @@
             </template>
           </el-table-column>
           <el-table-column label="基地数" width="86" align="right">
-            <template #default="{ row }">{{ row.baseCount || 0 }}</template>
+            <template #default="{ row }">
+              <span class="count-cell">{{ row.baseCount || 0 }}</span>
+            </template>
           </el-table-column>
           <el-table-column label="主联系人 / 电话" width="150">
             <template #default="{ row }">
@@ -94,7 +96,9 @@
             </template>
           </el-table-column>
           <el-table-column prop="totalScale" label="总规模(亩)" width="124" align="right" sortable="custom">
-            <template #default="{ row }">{{ formatScale(row.totalScale) }}</template>
+            <template #default="{ row }">
+              <span class="scale-cell">{{ formatListScale(row.totalScale) }}</span>
+            </template>
           </el-table-column>
           <el-table-column label="地区" min-width="190" show-overflow-tooltip>
             <template #default="{ row }">{{ formatRegions(row.regions) }}</template>
@@ -129,6 +133,9 @@
           </el-table-column>
           <el-table-column label="跟进人" width="104" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "-" }}</template>
+          </el-table-column>
+          <el-table-column prop="createdAt" label="创建时间" width="150" sortable="custom">
+            <template #default="{ row }">{{ formatNullableDate(row.createdAt) }}</template>
           </el-table-column>
           <el-table-column label="操作" width="230" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
@@ -918,11 +925,16 @@ const formatFollowResult = (value?: string | null, fallback = "-") => formatEnum
 const getBaseName = (row: any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || "";
 const getDetailTitle = (row: Partial<HerbBaseSubjectDetail> | any) => row?.subjectName?.trim?.() || "";
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
-const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} -> ${toName || "未分配"}`;
+const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} 至 ${toName || "未分配"}`;
 const formatScale = (value?: number | string | null) => {
   if (value === null || value === undefined || value === "") return "-";
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : "-";
+};
+const formatListScale = (value?: number | string | null) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? Math.round(numberValue).toLocaleString("zh-CN") : "-";
 };
 
 const getStatusType = (status: string) => {
@@ -1116,10 +1128,11 @@ const reloadList = () => {
   queryPageRef.value?.getTableList();
 };
 
-const handleSortChange = ({ prop, order }: { prop: "totalScale" | "score"; order: "ascending" | "descending" | null }) => {
+const handleSortChange = ({ prop, order }: { prop: "totalScale" | "score" | "createdAt"; order: "ascending" | "descending" | null }) => {
   const sortFieldMap = {
     totalScale: "TotalScale",
     score: "Score",
+    createdAt: "CreatedAt",
   };
 
   searchForm.sortField = order ? sortFieldMap[prop] : "CreatedAt";
@@ -1458,6 +1471,14 @@ const markCustomerStatus = async (status: string) => {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .scale-cell {
+    font-weight: 700;
+  }
+
+  .count-cell {
+    font-weight: 700;
   }
 
   .overdue {
