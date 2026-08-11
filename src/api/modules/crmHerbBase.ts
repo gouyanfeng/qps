@@ -64,6 +64,9 @@ export const crmHerbBaseApi = {
   createFollowRecord: (herbBaseId: string, params: any) => {
     return http.post<any>(`/admin/crm/herb-bases/${herbBaseId}/follow-records`, params);
   },
+  getBusinessEntityAttributeOptions: (params: any) => {
+    return http.get<any>("/admin/crm/business-entity-attributes/options", params, { loading: false, cancel: false });
+  },
 };
 
 export default crmHerbBaseApi;

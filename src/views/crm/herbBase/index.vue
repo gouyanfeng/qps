@@ -7,7 +7,20 @@
             <el-input v-model="searchForm.keyword" clearable placeholder="基地 / 主体 / 联系人 / 电话" />
           </el-form-item>
           <el-form-item label="主营品类">
-            <el-select v-model="searchForm.mainProducts" multiple collapse-tags collapse-tags-tooltip clearable placeholder="主营品类">
+            <el-select
+              v-model="searchForm.mainProducts"
+              multiple
+              collapse-tags
+              collapse-tags-tooltip
+              clearable
+              filterable
+              remote
+              reserve-keyword
+              :remote-method="loadMainProductOptions"
+              :loading="mainProductLoading"
+              placeholder="主营品类"
+              @visible-change="handleMainProductVisibleChange"
+            >
               <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -194,7 +207,19 @@
           <el-input v-model="form.baseName" placeholder="请输入基地名称" />
         </el-form-item>
         <el-form-item label="主营品类">
-          <el-select v-model="form.mainProducts" multiple collapse-tags collapse-tags-tooltip placeholder="请选择主营品类">
+          <el-select
+            v-model="form.mainProducts"
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            filterable
+            remote
+            reserve-keyword
+            :remote-method="loadMainProductOptions"
+            :loading="mainProductLoading"
+            placeholder="请选择主营品类"
+            @visible-change="handleMainProductVisibleChange"
+          >
             <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
@@ -790,13 +815,15 @@ const mainProductValues: Record<string, string> = {
   其他: "OTHER",
 };
 
-const mainProductOptions = [
+const fallbackMainProductOptions = [
   { label: "黄芪", value: "HUANG_QI" },
   { label: "当归", value: "DANG_GUI" },
   { label: "党参", value: "DANG_SHEN" },
   { label: "天麻", value: "TIAN_MA" },
   { label: "其他", value: "OTHER" },
 ];
+const mainProductOptions = ref([...fallbackMainProductOptions]);
+const mainProductLoading = ref(false);
 
 const phoneTypeValues: Record<string, string> = {
   MOBILE: "MOBILE",
@@ -908,6 +935,45 @@ const normalizeMainProducts = (row: any): string[] => {
       .map((item: string) => toEnumValue(mainProductValues, item))
       .filter(Boolean)
   ));
+};
+
+const toMainProductOption = (item: any) => {
+  const value = String(item?.value || item?.attributeValue || "").trim();
+  return value ? { label: formatEnumLabel(mainProductLabels, value, value), value } : null;
+};
+
+const loadMainProductOptions = async (keyword = "") => {
+  mainProductLoading.value = true;
+  try {
+    const trimmedKeyword = keyword.trim();
+    const fallbackMatch = trimmedKeyword
+      ? fallbackMainProductOptions.find(option =>
+          option.label.includes(trimmedKeyword) || option.value.includes(trimmedKeyword)
+        )
+      : undefined;
+    const searchKeyword = trimmedKeyword
+      ? toEnumValue(mainProductValues, trimmedKeyword, fallbackMatch?.value || trimmedKeyword)
+      : "";
+    const response = await crmHerbBaseApi.getBusinessEntityAttributeOptions({
+      entityType: "CRM_HERB_BASE",
+      attributeCode: "CRM_MAIN_PRODUCT",
+      keyword: searchKeyword,
+      pageSize: 100,
+    });
+    const options = (response.data || [])
+      .map(toMainProductOption)
+      .filter(Boolean) as Array<{ label: string; value: string }>;
+
+    mainProductOptions.value = options.length ? options : trimmedKeyword ? [] : fallbackMainProductOptions;
+  } finally {
+    mainProductLoading.value = false;
+  }
+};
+
+const handleMainProductVisibleChange = (visible: boolean) => {
+  if (visible) {
+    void loadMainProductOptions();
+  }
 };
 
 const formatMainProducts = (row: any, fallback = "-") => {
@@ -1382,6 +1448,7 @@ const applyRouteEntrypoint = async () => {
 };
 
 onMounted(() => {
+  void loadMainProductOptions();
   void applyRouteEntrypoint();
 });
 

@@ -305,6 +305,7 @@ export async function mockCrmHerbBaseApi(page: Page) {
           fullName: "甘肃省",
           level: 1,
           parentCode: "",
+          sortOrder: 1,
           isActive: true
         },
         {
@@ -313,6 +314,7 @@ export async function mockCrmHerbBaseApi(page: Page) {
           fullName: "甘肃省定西市",
           level: 2,
           parentCode: "620000",
+          sortOrder: 1,
           isActive: true
         },
         {
@@ -321,6 +323,7 @@ export async function mockCrmHerbBaseApi(page: Page) {
           fullName: "甘肃省定西市陇西县",
           level: 3,
           parentCode: "621100",
+          sortOrder: 1,
           isActive: true
         }
       ]))
