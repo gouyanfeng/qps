@@ -43,6 +43,11 @@ export interface CrmDashboardTrendItem {
   effectiveFollowCount: number;
 }
 
+export interface CrmDashboardNewBaseTrendItem {
+  date: string;
+  newBaseCount: number;
+}
+
 export interface CrmDashboardData {
   metrics: CrmDashboardMetrics;
   todayFollowSubjects: CrmDashboardFollowSubject[];
@@ -50,6 +55,7 @@ export interface CrmDashboardData {
   followFunnel: CrmDashboardChartItem[];
   mainProductDistribution: CrmDashboardChartItem[];
   followTrend: CrmDashboardTrendItem[];
+  newBaseTrend: CrmDashboardNewBaseTrendItem[];
 }
 
 export const dashboardApi = {

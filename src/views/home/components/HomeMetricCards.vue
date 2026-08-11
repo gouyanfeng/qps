@@ -67,15 +67,15 @@ const metricItems = computed(() => [
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .metric-card {
   display: flex;
   align-items: center;
   min-width: 0;
-  min-height: 88px;
-  padding: 16px;
+  min-height: 76px;
+  padding: 14px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color);
@@ -95,12 +95,12 @@ const metricItems = computed(() => [
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   margin-right: 12px;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .metric-icon.is-blue {
@@ -135,8 +135,8 @@ const metricItems = computed(() => [
 }
 
 strong {
-  margin-top: 6px;
-  font-size: 28px;
+  margin-top: 5px;
+  font-size: 24px;
   line-height: 1;
 }
 

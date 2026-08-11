@@ -1,23 +1,26 @@
 ﻿<template>
   <el-config-provider :locale="locale" :size="assemblySize" :button="buttonConfig">
     <router-view></router-view>
-    <button v-show="!assistantOpen" class="data-assistant-tab" type="button" @click="openDataAssistant">数据助手</button>
-    <button v-show="assistantOpen" class="data-assistant-collapse" type="button" @click="closeDataAssistant">收起</button>
+    <button v-show="assistantVisible && !assistantOpen" class="data-assistant-tab" type="button" @click="openDataAssistant">数据助手</button>
+    <button v-show="assistantVisible && assistantOpen" class="data-assistant-collapse" type="button" @click="closeDataAssistant">收起</button>
   </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, computed, ref } from "vue";
+import { onBeforeUnmount, onMounted, reactive, computed, ref, watchEffect } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { getBrowserLang } from "@/utils";
 import { useTheme } from "@/hooks/useTheme";
 import { ElConfigProvider } from "element-plus";
 import { LanguageType } from "@/stores/interface";
 import { useGlobalStore } from "@/stores/modules/global";
+import { LOGIN_URL } from "@/config";
 import en from "element-plus/es/locale/lang/en";
 import zhCn from "element-plus/es/locale/lang/zh-cn";
 
 const globalStore = useGlobalStore();
+const route = useRoute();
 
 // init theme
 const { initTheme } = useTheme();
@@ -50,9 +53,14 @@ const difyToken = "O9BNPIV1JQDEpOKG";
 const difyBaseUrl = "http://192.168.0.105:8080";
 const assistantLoaded = ref(false);
 const assistantOpen = ref(false);
+const assistantVisible = computed(() => route.path.toLocaleLowerCase() !== LOGIN_URL);
 let assistantWindowObserver: MutationObserver | null = null;
 let closeAssistantTimer: ReturnType<typeof setTimeout> | null = null;
 let assistantReadyTimer: ReturnType<typeof setTimeout> | null = null;
+
+watchEffect(() => {
+  document.documentElement.classList.toggle("data-assistant-hidden", !assistantVisible.value);
+});
 
 const handleAssistantMessage = (event: MessageEvent) => {
   if (event.origin !== difyBaseUrl) return;
@@ -158,6 +166,7 @@ onBeforeUnmount(() => {
   document.documentElement.classList.remove("data-assistant-open");
   document.documentElement.classList.remove("data-assistant-closing");
   document.documentElement.classList.remove("data-assistant-ready");
+  document.documentElement.classList.remove("data-assistant-hidden");
 });
 </script>
 
@@ -298,6 +307,11 @@ onBeforeUnmount(() => {
   border-radius: 12px 0 0 12px !important;
   box-shadow: -18px 0 42px rgb(15 23 42 / 18%) !important;
   transition: none !important;
+}
+
+.data-assistant-hidden #dify-chatbot-bubble-button,
+.data-assistant-hidden #dify-chatbot-bubble-window {
+  display: none !important;
 }
 
 .data-assistant-open:not(.data-assistant-ready) #dify-chatbot-bubble-window,

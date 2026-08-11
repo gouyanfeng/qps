@@ -5,7 +5,7 @@
       <span>{{ customers.length }} 条</span>
     </div>
 
-    <el-table :data="customers" height="360" border empty-text="今天没有待跟进客户">
+    <el-table :data="customers" height="300" border empty-text="今天没有待跟进客户">
       <el-table-column label="客户名称" min-width="170" show-overflow-tooltip>
         <template #default="{ row }">
           <el-button type="primary" link class="base-link" @click="$emit('open-detail', row)">
@@ -108,9 +108,12 @@ const getFollowResultType = (value?: string | null) => {
 
 <style scoped lang="scss">
 .workbench-block {
+  min-width: 0;
+  height: 350px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color);
+  overflow: hidden;
 }
 
 .block-header {
@@ -120,6 +123,12 @@ const getFollowResultType = (value?: string | null) => {
   height: 48px;
   padding: 0 16px;
   border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.el-table th.el-table__cell) {
+  background: #f8fafc;
+  color: var(--el-text-color-secondary);
+  font-weight: 600;
 }
 
 h2 {

@@ -72,13 +72,15 @@ const getFollowResultType = (value?: string | null) => {
 
 <style scoped lang="scss">
 .side-block {
+  min-width: 0;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color);
+  overflow: hidden;
 }
 
 .recent-block {
-  min-height: 286px;
+  height: 350px;
 }
 
 .block-header {
@@ -104,7 +106,9 @@ h2 {
 .record-list {
   display: flex;
   flex-direction: column;
+  max-height: 300px;
   padding: 8px 14px 14px;
+  overflow: auto;
 }
 
 .record-item {

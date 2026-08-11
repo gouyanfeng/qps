@@ -1,12 +1,5 @@
 <template>
   <div class="home-dashboard">
-    <div class="page-heading">
-      <div>
-        <h1>我的 CRM 工作台</h1>
-      </div>
-      <el-button :icon="Refresh" :loading="loading" @click="loadDashboard">刷新</el-button>
-    </div>
-
     <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
       <template #default>
         <el-button type="danger" link @click="loadDashboard">重试</el-button>
@@ -31,6 +24,7 @@
         <FollowFunnelChart :items="dashboard.followFunnel" />
         <MainProductDistributionChart :items="dashboard.mainProductDistribution" />
         <FollowTrendChart :items="dashboard.followTrend" />
+        <NewBaseTrendChart :items="dashboard.newBaseTrend" />
       </div>
     </div>
   </div>
@@ -40,7 +34,6 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
-import { Refresh } from "@element-plus/icons-vue";
 import dashboardApi, {
   type CrmDashboardData,
   type CrmDashboardFollowSubject,
@@ -51,6 +44,7 @@ import RecentFollowRecords from "./components/RecentFollowRecords.vue";
 import FollowFunnelChart from "./components/FollowFunnelChart.vue";
 import MainProductDistributionChart from "./components/MainProductDistributionChart.vue";
 import FollowTrendChart from "./components/FollowTrendChart.vue";
+import NewBaseTrendChart from "./components/NewBaseTrendChart.vue";
 
 const router = useRouter();
 const loading = ref(false);
@@ -67,6 +61,7 @@ const dashboard = ref<CrmDashboardData>({
   followFunnel: [],
   mainProductDistribution: [],
   followTrend: [],
+  newBaseTrend: [],
 });
 
 const loadDashboard = async () => {
@@ -117,36 +112,23 @@ onMounted(loadDashboard);
 <style scoped lang="scss">
 .home-dashboard {
   min-height: calc(100vh - 96px);
-  padding: 18px;
+  padding: 18px 20px 28px;
   background: var(--el-bg-color-page);
-}
-
-.page-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 650;
-  color: var(--el-text-color-primary);
 }
 
 .dashboard-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+  max-width: 1680px;
   min-height: 420px;
+  margin: 0 auto;
 }
 
 .main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 2.25fr) minmax(300px, 0.75fr);
+  gap: 14px;
   align-items: start;
 }
 
@@ -159,13 +141,18 @@ h1 {
 
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 @media (max-width: 1280px) {
-  .main-grid,
   .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1080px) {
+  .main-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -173,11 +160,6 @@ h1 {
 @media (max-width: 640px) {
   .home-dashboard {
     padding: 12px;
-  }
-
-  .page-heading {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }
 </style>
