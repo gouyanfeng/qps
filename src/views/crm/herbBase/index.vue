@@ -24,12 +24,28 @@
               <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item label="等级">
+          <el-form-item>
+            <template #label>
+              <span class="grade-filter-label">
+                <span>等级</span>
+                <el-tooltip placement="top" effect="light" :show-after="150">
+                  <template #content>
+                    <div class="grade-rule-tooltip">
+                      <div>高：80-100 分</div>
+                      <div>中：60-79 分</div>
+                      <div>低：30-59 分</div>
+                      <div>无效：0-29 分</div>
+                    </div>
+                  </template>
+                  <el-icon class="grade-help-icon" title="查看等级分数区间"><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </span>
+            </template>
             <el-select v-model="searchForm.grade" clearable placeholder="等级">
               <el-option label="高" value="高" />
               <el-option label="中" value="中" />
               <el-option label="低" value="低" />
-              <el-option label="无效" value="INVALID" />
+              <el-option label="无效" value="无效" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
@@ -116,7 +132,29 @@
           <el-table-column label="地区" min-width="190" show-overflow-tooltip>
             <template #default="{ row }">{{ formatRegions(row.regions) }}</template>
           </el-table-column>
-          <el-table-column prop="score" label="评分 / 等级" width="132" sortable="custom">
+          <el-table-column prop="score" width="160" sortable="custom">
+            <template #header>
+              <span class="score-column-header">
+                <span>评分 / 等级</span>
+                <el-tooltip placement="top" effect="light" :show-after="150">
+                  <template #content>
+                    <div class="score-rule-tooltip">
+                      <strong>主体评分规则（满分 100 分）</strong>
+                      <div>规模：&gt;0 为 10 分，&ge;100 为 15 分，&ge;200 为 20 分，&ge;500 为 25 分</div>
+                      <div>基地数：1 个 5 分，2 个 8 分，&ge;3 个 10 分</div>
+                      <div>主营品类：1 个 10 分，&ge;2 个 15 分</div>
+                      <div>联系人：姓名 4 分，主体电话 12 分，有效联系人电话 4 分，无电话 2 分，最高 20 分</div>
+                      <div>跟进：已成交 20 分，有意向 18 分，近 30 天有效跟进 14 分，跟进中 10 分</div>
+                      <div>资料：地区 2 分，地址 2 分，备注 1 分</div>
+                      <div>来源：人工录入/政府公示 5 分，行业平台 4 分，百度地图 3 分，其他 2 分（取最高来源分）</div>
+                      <div>等级：高 80-100 分，中 60-79 分，低 30-59 分，无效 0-29 分</div>
+                      <div>限制：无基地最高 59 分；无主体主要联系人电话最高 79 分；已流失为 0 分/无效</div>
+                    </div>
+                  </template>
+                  <el-icon class="score-help-icon" title="查看评分规则"><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </span>
+            </template>
             <template #default="{ row }">
               <div class="score-cell">
                 <strong>{{ row.score ?? 0 }}</strong>
@@ -177,7 +215,7 @@
               <el-option label="高" value="高" />
               <el-option label="中" value="中" />
               <el-option label="低" value="低" />
-              <el-option label="无效" value="INVALID" />
+              <el-option label="无效" value="无效" />
             </el-select>
             <el-input-number v-model="subjectForm.score" :min="0" :max="100" />
           </div>
@@ -537,6 +575,7 @@
             v-model="followForm.nextFollowAt"
             type="datetime"
             value-format="YYYY-MM-DDTHH:mm:ss"
+            :disabled-date="disablePastFollowDate"
             placeholder="选择时间"
           />
         </el-form-item>
@@ -570,7 +609,7 @@
 <script setup lang="ts" name="customer">
 import { onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
-import { Delete, Edit, Phone, Plus, View } from "@element-plus/icons-vue";
+import { Delete, Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
@@ -643,7 +682,7 @@ const form = reactive({
   subjectName: "",
   herbBaseName: "",
   mainProducts: [] as string[],
-  grade: "B",
+  grade: "中",
   score: 0,
   scale: undefined as number | undefined,
   province: "",
@@ -761,10 +800,6 @@ const gradeLabels: Record<string, string> = {
   高: "高",
   中: "中",
   低: "低",
-  A: "高",
-  B: "中",
-  C: "低",
-  INVALID: "无效",
   无效: "无效",
 };
 
@@ -772,11 +807,7 @@ const gradeValues: Record<string, string> = {
   高: "高",
   中: "中",
   低: "低",
-  A: "高",
-  B: "中",
-  C: "低",
-  INVALID: "INVALID",
-  无效: "INVALID",
+  无效: "无效",
 };
 
 const mainProductLabels: Record<string, string> = {
@@ -1024,10 +1055,6 @@ const getGradeType = (grade: string) => {
     高: "danger",
     中: "warning",
     低: "info",
-    A: "danger",
-    B: "warning",
-    C: "info",
-    INVALID: "danger",
     无效: "danger",
   };
   return types[grade] || "info";
@@ -1064,7 +1091,6 @@ const formatDateParam = (date: Date) => {
 };
 
 const getRowClassName = ({ row }: any) => {
-  if (row.status === "LOST" || row.status === "已流失" || row.grade === "INVALID" || row.grade === "无效") return "row-disabled";
   if (isOverdue(row.nextFollowAt)) return "row-overdue";
   return "";
 };
@@ -1432,7 +1458,7 @@ const applyRouteEntrypoint = async () => {
   }
 
   if (gradeQuery) {
-    searchForm.grade = gradeQuery;
+    searchForm.grade = toEnumValue(gradeValues, gradeQuery);
     reloadList();
   }
 
@@ -1458,6 +1484,10 @@ const submitFollowRecord = async () => {
     ElMessage.error("请选择沟通结果");
     return;
   }
+  if (followForm.nextFollowAt && new Date(followForm.nextFollowAt).getTime() <= Date.now()) {
+    ElMessage.error("下次跟进时间必须晚于当前时间");
+    return;
+  }
 
   await crmHerbBaseApi.createSubjectFollowRecord(currentHerbBase.value.id, {
     ...followForm,
@@ -1471,6 +1501,8 @@ const submitFollowRecord = async () => {
   await loadCustomerDetail(currentHerbBase.value.id);
   reloadList();
 };
+
+const disablePastFollowDate = (date: Date) => date.getTime() < new Date().setHours(0, 0, 0, 0);
 
 const markCustomerStatus = async (status: string) => {
   if (!currentHerbBase.value) return;
@@ -1540,6 +1572,47 @@ const markCustomerStatus = async (status: string) => {
     gap: 8px;
   }
 
+  .score-column-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .grade-filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .grade-help-icon {
+    color: var(--el-text-color-secondary);
+    cursor: help;
+    font-size: 14px;
+  }
+
+  .score-help-icon {
+    color: var(--el-text-color-secondary);
+    cursor: help;
+    font-size: 18px;
+  }
+
+  .score-rule-tooltip {
+    max-width: 520px;
+    line-height: 1.7;
+    white-space: normal;
+  }
+
+  .score-rule-tooltip strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--el-text-color-primary);
+  }
+
+  .grade-rule-tooltip {
+    line-height: 1.8;
+    white-space: nowrap;
+  }
+
   .scale-cell {
     font-weight: 700;
   }
@@ -1562,11 +1635,6 @@ const markCustomerStatus = async (status: string) => {
       flex: 1;
     }
   }
-
-  :deep(.row-disabled) {
-    opacity: 0.58;
-  }
-
   :deep(.row-overdue) {
     background: #fff7f7;
   }
