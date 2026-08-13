@@ -49,12 +49,12 @@ const isEmpty = computed(() => chartItems.value.length === 0);
 
 const option = computed(() => ({
   tooltip: { trigger: "item" },
-  legend: { bottom: 0, type: "scroll" },
+  legend: { top: 8, left: "center", type: "scroll" },
   series: [
     {
       type: "pie",
       radius: ["48%", "70%"],
-      center: ["50%", "45%"],
+      center: ["50%", "56%"],
       label: { formatter: "{b} {c}" },
       data: chartItems.value.map(item => ({ name: item.name, value: item.value })),
     },
@@ -87,6 +87,6 @@ h2 {
 
 .chart {
   width: 100%;
-  height: 300px;
+  height: 310px;
 }
 </style>

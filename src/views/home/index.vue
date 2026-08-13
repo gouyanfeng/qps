@@ -22,9 +22,9 @@
 
       <div class="chart-grid">
         <FollowFunnelChart :items="dashboard.followFunnel" />
-        <MainProductDistributionChart :items="dashboard.mainProductDistribution" />
         <FollowTrendChart :items="dashboard.followTrend" />
         <NewBaseTrendChart :items="dashboard.newBaseTrend" />
+        <MainProductDistributionChart :items="dashboard.mainProductDistribution" />
       </div>
     </div>
   </div>

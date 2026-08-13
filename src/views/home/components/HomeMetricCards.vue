@@ -95,12 +95,17 @@ const metricItems = computed(() => [
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 38px;
-  width: 38px;
-  height: 38px;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   margin-right: 12px;
-  font-size: 20px;
+  font-size: 28px;
+
+  :deep(svg) {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 .metric-icon.is-blue {

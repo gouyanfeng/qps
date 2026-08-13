@@ -5,7 +5,7 @@
       <span>{{ customers.length }} 条</span>
     </div>
 
-    <el-table :data="customers" height="300" border empty-text="今天没有待跟进客户">
+    <el-table :data="customers" max-height="300" border empty-text="今天没有待跟进客户">
       <el-table-column label="客户名称" min-width="170" show-overflow-tooltip>
         <template #default="{ row }">
           <el-button type="primary" link class="base-link" @click="$emit('open-detail', row)">
@@ -37,7 +37,7 @@
           <span :class="{ overdue: isOverdue(row.nextFollowAt) }">{{ formatDate(row.nextFollowAt) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160" fixed="right" header-class-name="actions-column" class-name="actions-column">
+      <el-table-column label="操作" width="160" header-class-name="actions-column" class-name="actions-column">
         <template #default="{ row }">
           <div class="table-actions">
             <el-button type="primary" link @click="$emit('open-detail', row)">详情</el-button>

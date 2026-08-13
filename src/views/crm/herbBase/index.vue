@@ -209,17 +209,6 @@
         <el-form-item label="主体类型">
           <el-input v-model="subjectForm.subjectType" placeholder="请输入主体类型" />
         </el-form-item>
-        <el-form-item label="等级 / 评分">
-          <div class="inline-fields">
-            <el-select v-model="subjectForm.grade" placeholder="等级">
-              <el-option label="高" value="高" />
-              <el-option label="中" value="中" />
-              <el-option label="低" value="低" />
-              <el-option label="无效" value="无效" />
-            </el-select>
-            <el-input-number v-model="subjectForm.score" :min="0" :max="100" />
-          </div>
-        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="subjectForm.status" placeholder="请选择状态">
             <el-option label="待联系" value="PENDING" />
@@ -260,17 +249,6 @@
           >
             <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="等级 / 评分">
-          <div class="inline-fields">
-            <el-select v-model="form.grade" placeholder="等级">
-              <el-option label="高" value="高" />
-              <el-option label="中" value="中" />
-              <el-option label="低" value="低" />
-              <el-option label="无效" value="INVALID" />
-            </el-select>
-            <el-input-number v-model="form.score" :min="0" :max="100" />
-          </div>
         </el-form-item>
         <el-form-item label="规模(亩)">
           <el-input-number v-model="form.scale" :min="0" :precision="2" />
@@ -682,8 +660,6 @@ const form = reactive({
   subjectName: "",
   herbBaseName: "",
   mainProducts: [] as string[],
-  grade: "中",
-  score: 0,
   scale: undefined as number | undefined,
   province: "",
   city: "",
@@ -703,8 +679,6 @@ const subjectForm = reactive({
   id: "",
   subjectName: "",
   subjectType: "",
-  grade: "中",
-  score: 0,
   status: "PENDING",
   remark: "",
 });
@@ -794,20 +768,6 @@ const statusValues: Record<string, string> = {
   有意向: "INTERESTED",
   已成交: "DEAL",
   已流失: "LOST",
-};
-
-const gradeLabels: Record<string, string> = {
-  高: "高",
-  中: "中",
-  低: "低",
-  无效: "无效",
-};
-
-const gradeValues: Record<string, string> = {
-  高: "高",
-  中: "中",
-  低: "低",
-  无效: "无效",
 };
 
 const mainProductLabels: Record<string, string> = {
@@ -1015,7 +975,7 @@ const formatMainProducts = (row: any, fallback = "-") => {
 
 const formatSourcePlatform = (value?: string | null, fallback = "-") => formatEnumLabel(sourcePlatformLabels, value, fallback);
 const formatCustomerStatus = (value?: string | null, fallback = "-") => formatEnumLabel(statusLabels, value, fallback);
-const formatGrade = (value?: string | null, fallback = "-") => formatEnumLabel(gradeLabels, value, fallback);
+const formatGrade = (value?: string | null, fallback = "-") => value || fallback;
 const formatContactRole = (value?: string | null, fallback = "-") => formatEnumLabel(contactRoleLabels, value, fallback);
 const formatFollowType = (value?: string | null, fallback = "-") => formatEnumLabel(followTypeLabels, value, fallback);
 const formatFollowResult = (value?: string | null, fallback = "-") => formatEnumLabel(followResultLabels, value, fallback);
@@ -1148,8 +1108,6 @@ const resetCustomerForm = () => {
     subjectName: "",
     herbBaseName: "",
     mainProducts: [],
-    grade: "中",
-    score: 0,
     scale: undefined,
     province: "",
     city: "",
@@ -1182,8 +1140,6 @@ const handleEdit = async (row: any) => {
     subjectName: row.subjectName || currentHerbBase.value?.subjectName || "",
     herbBaseName: getBaseName(row),
     mainProducts: normalizeMainProducts(row),
-    grade: toEnumValue(gradeValues, row.grade, "中"),
-    score: row.score || 0,
     scale: row.scale ?? undefined,
     province: row.province || "",
     city: row.city || "",
@@ -1200,20 +1156,6 @@ const handleEdit = async (row: any) => {
   });
   syncRegionPathFromForm();
   dialogVisible.value = true;
-};
-
-const openSubjectDialog = () => {
-  if (!currentHerbBase.value) return;
-  Object.assign(subjectForm, {
-    id: currentHerbBase.value.id,
-    subjectName: currentHerbBase.value.subjectName || "",
-    subjectType: currentHerbBase.value.subjectType || "",
-    grade: toEnumValue(gradeValues, currentHerbBase.value.grade, "中"),
-    score: currentHerbBase.value.score || 0,
-    status: toEnumValue(statusValues, currentHerbBase.value.status, "PENDING"),
-    remark: currentHerbBase.value.remark || "",
-  });
-  subjectDialogVisible.value = true;
 };
 
 const reloadList = () => {
@@ -1254,6 +1196,18 @@ const openDetail = async (row: any) => {
   detailDrawerVisible.value = true;
 };
 
+const openSubjectDialog = () => {
+  if (!currentHerbBase.value) return;
+  Object.assign(subjectForm, {
+    id: currentHerbBase.value.id,
+    subjectName: currentHerbBase.value.subjectName || "",
+    subjectType: currentHerbBase.value.subjectType || "",
+    status: toEnumValue(statusValues, currentHerbBase.value.status, "PENDING"),
+    remark: currentHerbBase.value.remark || "",
+  });
+  subjectDialogVisible.value = true;
+};
+
 const handleSubmit = async () => {
   if (!form.baseName) {
     ElMessage.error("请输入基地名称");
@@ -1266,7 +1220,6 @@ const handleSubmit = async () => {
     herbBaseSubjectId: form.herbBaseSubjectId || currentHerbBase.value?.id,
     subjectName: currentHerbBase.value?.subjectName || form.subjectName || "",
     mainProducts: [...form.mainProducts],
-    grade: toEnumValue(gradeValues, form.grade, "中"),
     sourcePlatform: toEnumValue(sourcePlatformValues, form.sourcePlatform, "BAIDU_MAP"),
     status: toEnumValue(statusValues, form.status, "PENDING"),
   };
@@ -1283,26 +1236,6 @@ const handleSubmit = async () => {
   if (currentHerbBase.value) {
     await loadCustomerDetail(currentHerbBase.value.id);
   }
-  reloadList();
-};
-
-const submitSubject = async () => {
-  if (!subjectForm.subjectName) {
-    ElMessage.error("请输入主体名称");
-    return;
-  }
-
-  await crmHerbBaseApi.updateSubject(subjectForm.id, {
-    subjectName: subjectForm.subjectName,
-    subjectType: subjectForm.subjectType,
-    status: toEnumValue(statusValues, subjectForm.status, "PENDING"),
-    grade: toEnumValue(gradeValues, subjectForm.grade, "中"),
-    score: subjectForm.score || 0,
-    remark: subjectForm.remark || "",
-  });
-  ElMessage.success("主体已保存");
-  subjectDialogVisible.value = false;
-  await loadCustomerDetail(subjectForm.id);
   reloadList();
 };
 
@@ -1458,7 +1391,7 @@ const applyRouteEntrypoint = async () => {
   }
 
   if (gradeQuery) {
-    searchForm.grade = toEnumValue(gradeValues, gradeQuery);
+    searchForm.grade = gradeQuery;
     reloadList();
   }
 
@@ -1493,7 +1426,7 @@ const submitFollowRecord = async () => {
     ...followForm,
     followType: toEnumValue(followTypeValues, followForm.followType, "PHONE"),
     followResult: toEnumValue(followResultValues, followForm.followResult),
-    intentLevel: toEnumValue(gradeValues, followForm.intentLevel),
+    intentLevel: followForm.intentLevel,
     nextFollowAt: followForm.nextFollowAt || null,
   });
   ElMessage.success("沟通记录已保存");
@@ -1504,14 +1437,30 @@ const submitFollowRecord = async () => {
 
 const disablePastFollowDate = (date: Date) => date.getTime() < new Date().setHours(0, 0, 0, 0);
 
+const submitSubject = async () => {
+  if (!subjectForm.subjectName) {
+    ElMessage.error("请输入主体名称");
+    return;
+  }
+
+  await crmHerbBaseApi.updateSubject(subjectForm.id, {
+    subjectName: subjectForm.subjectName,
+    subjectType: subjectForm.subjectType,
+    status: toEnumValue(statusValues, subjectForm.status, "PENDING"),
+    remark: subjectForm.remark || "",
+  });
+  ElMessage.success("主体已保存");
+  subjectDialogVisible.value = false;
+  await loadCustomerDetail(subjectForm.id);
+  reloadList();
+};
+
 const markCustomerStatus = async (status: string) => {
   if (!currentHerbBase.value) return;
   await crmHerbBaseApi.updateSubject(currentHerbBase.value.id, {
     subjectName: currentHerbBase.value.subjectName || "",
     subjectType: currentHerbBase.value.subjectType || "",
     status,
-    grade: currentHerbBase.value.grade || "",
-    score: currentHerbBase.value.score || 0,
     remark: currentHerbBase.value.remark || "",
   });
   ElMessage.success("药材基地状态已更新");
