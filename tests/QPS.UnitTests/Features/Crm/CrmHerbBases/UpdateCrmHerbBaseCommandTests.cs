@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Domain.Entities.Crm;
@@ -30,7 +30,7 @@ public class UpdateCrmHerbBaseCommandTests
         dbContext.CrmHerbBases.Add(customer);
         await dbContext.SaveChangesAsync();
 
-        var handler = new UpdateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreatePublisher());
+        var handler = new UpdateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreateDispatcher());
 
         var result = await handler.Handle(new UpdateCrmHerbBaseCommand
         {

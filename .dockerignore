@@ -1,0 +1,34 @@
+# Build outputs
+bin/
+obj/
+*/bin/*
+*/obj/*
+
+# IDE / OS files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+*.tmp
+CodexTemp/
+
+# Local database files
+*.db
+*.db-shm
+*.db-wal
+
+# Source control
+.git/
+.gitignore
+
+# Docs
+docs/
+*.md

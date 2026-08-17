@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Domain.Entities.Crm;
@@ -13,7 +13,7 @@ public class CrmHerbBaseCommandTests
     public async Task Create_ShouldPersistMainProductAttributes()
     {
         await using var dbContext = TestDbContextFactory.Create();
-        var handler = new CreateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreatePublisher());
+        var handler = new CreateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreateDispatcher());
 
         var result = await handler.Handle(new CreateCrmHerbBaseCommand
         {
@@ -55,7 +55,7 @@ public class CrmHerbBaseCommandTests
     public async Task GetList_ShouldFilterByBusinessEntityMainProductAttributes()
     {
         await using var dbContext = TestDbContextFactory.Create();
-        var createHandler = new CreateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreatePublisher());
+        var createHandler = new CreateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreateDispatcher());
         await createHandler.Handle(new CreateCrmHerbBaseCommand
         {
             Request = CreateCustomerRequest("Dang Gui Customer")
@@ -107,7 +107,7 @@ public class CrmHerbBaseCommandTests
         dbContext.CrmHerbBases.Add(customer);
         await dbContext.SaveChangesAsync();
 
-        var deleteHandler = new DeleteCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreatePublisher());
+        var deleteHandler = new DeleteCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreateDispatcher());
         await deleteHandler.Handle(new DeleteCrmHerbBaseCommand { Id = customer.Id }, CancellationToken.None);
 
         var list = await new GetCrmHerbBasesHandler(dbContext).Handle(new GetCrmHerbBasesQuery

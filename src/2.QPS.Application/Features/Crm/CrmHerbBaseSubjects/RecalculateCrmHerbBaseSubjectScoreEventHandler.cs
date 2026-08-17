@@ -1,13 +1,17 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Application.EventDispatch;
 using QPS.Application.Features.Crm;
 using QPS.Application.Interfaces;
 using QPS.Domain.Events.Crm;
 
 namespace QPS.Application.Features.Crm.CrmHerbBaseSubjects;
 
+/// <summary>
+/// 药材基地主体评分重算事件处理器
+/// </summary>
 public sealed class RecalculateCrmHerbBaseSubjectScoreEventHandler
-    : INotificationHandler<CrmHerbBaseSubjectScoreAffectedEvent>
+    : INotificationHandler<DomainEventNotification<CrmHerbBaseSubjectScoreAffectedEvent>>
 {
     private readonly IDbContext _dbContext;
 
@@ -16,11 +20,12 @@ public sealed class RecalculateCrmHerbBaseSubjectScoreEventHandler
         _dbContext = dbContext;
     }
 
-    public async Task Handle(CrmHerbBaseSubjectScoreAffectedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(DomainEventNotification<CrmHerbBaseSubjectScoreAffectedEvent> notification, CancellationToken cancellationToken)
     {
+        var subjectId = notification.DomainEvent.SubjectId;
         var scoreInput = await CrmHerbBaseSubjectScoreInputBuilder.BuildAsync(
             _dbContext,
-            notification.SubjectId,
+            subjectId,
             cancellationToken);
 
         if (scoreInput == null)
@@ -29,7 +34,7 @@ public sealed class RecalculateCrmHerbBaseSubjectScoreEventHandler
         }
 
         var subject = await _dbContext.CrmHerbBaseSubjects
-            .FirstOrDefaultAsync(item => item.Id == notification.SubjectId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == subjectId, cancellationToken);
 
         if (subject == null)
         {

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
@@ -22,12 +22,12 @@ public class UpdateCrmContactStatusHandler : IRequestHandler<UpdateCrmContactSta
     private const string InvalidStatus = "INVALID";
 
     private readonly IDbContext _dbContext;
-    private readonly IPublisher _publisher;
+    private readonly IDomainEventDispatcher _dispatcher;
 
-    public UpdateCrmContactStatusHandler(IDbContext dbContext, IPublisher publisher)
+    public UpdateCrmContactStatusHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
-        _publisher = publisher;
+        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(UpdateCrmContactStatusCommand request, CancellationToken cancellationToken)
@@ -60,7 +60,7 @@ public class UpdateCrmContactStatusHandler : IRequestHandler<UpdateCrmContactSta
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (subject != null)
         {
-            await _publisher.Publish(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
         }
 
         return true;

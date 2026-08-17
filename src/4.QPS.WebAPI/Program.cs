@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MediatR;
 
 using QPS.Application.Behaviours;
+using QPS.Application.EventDispatch;
 using QPS.Application.Interfaces;
 using QPS.Infrastructure;
 using QPS.Infrastructure.Identity;
@@ -87,7 +88,7 @@ builder.Services.AddSwaggerGen(c =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Server=localhost;Database=QPS_CRM;User Id=sa;Password=123456;TrustServerCertificate=True;Encrypt=False;";
 builder.Services.AddDbContext<AppDbContext>(options =>
-    // 使用SQLite数据库，连接字符串从配置中获取
+    // 使用 SQL Server 数据库，连接字符串从配置中获取
     options.UseSqlServer(connectionString));
 
 /// <summary>
@@ -121,6 +122,9 @@ builder.Services.AddHttpContextAccessor(); // 添加HTTP上下文访问器
 
 // 添加基础设施服务（数据库、身份认证等）
 builder.Services.AddInfrastructure();
+
+// 注册领域事件派发器（包装 MediatR 的 IPublisher，避免 Domain 层直接依赖 MediatR）
+builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
 // 注册JWT生成器
 builder.Services.AddScoped<IJwtGenerator>(_ => new JwtGenerator(
@@ -167,11 +171,21 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    // 确保数据库已创建
-    dbContext.Database.EnsureCreated();
 
-    // 初始化测试数据
-    TestDataInitializer.Initialize(dbContext);
+    // 仅在开发环境创建数据库并初始化测试数据，避免污染生产库
+    if (app.Environment.IsDevelopment())
+    {
+        // 确保数据库已创建
+        dbContext.Database.EnsureCreated();
+
+        // 初始化测试数据
+        TestDataInitializer.Initialize(dbContext);
+    }
+    else
+    {
+        // 生产环境：验证数据库连接可用，不自动建库、不写入测试数据
+        await dbContext.Database.CanConnectAsync();
+    }
 }
 
 #endregion

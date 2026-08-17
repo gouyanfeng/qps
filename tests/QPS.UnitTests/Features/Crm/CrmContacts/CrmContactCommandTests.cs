@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmContacts;
 using QPS.Domain.Entities.Crm;
@@ -17,7 +17,7 @@ public class CrmContactCommandTests
         dbContext.CrmHerbBaseSubjects.Add(subject);
         await dbContext.SaveChangesAsync();
 
-        var handler = new CreateCrmContactHandler(dbContext, TestDbContextFactory.CreatePublisher());
+        var handler = new CreateCrmContactHandler(dbContext, TestDbContextFactory.CreateDispatcher());
 
         var result = await handler.Handle(new CreateCrmContactCommand
         {
@@ -72,7 +72,7 @@ public class CrmContactCommandTests
         dbContext.CrmContacts.AddRange(primary, replacement);
         await dbContext.SaveChangesAsync();
 
-        var handler = new UpdateCrmContactStatusHandler(dbContext, TestDbContextFactory.CreatePublisher());
+        var handler = new UpdateCrmContactStatusHandler(dbContext, TestDbContextFactory.CreateDispatcher());
 
         await handler.Handle(new UpdateCrmContactStatusCommand
         {

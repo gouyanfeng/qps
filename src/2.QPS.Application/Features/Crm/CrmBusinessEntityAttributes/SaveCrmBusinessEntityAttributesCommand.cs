@@ -15,12 +15,12 @@ public class SaveCrmBusinessEntityAttributesCommand : IRequest<bool>
 public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBusinessEntityAttributesCommand, bool>
 {
     private readonly IDbContext _dbContext;
-    private readonly IPublisher _publisher;
+    private readonly IDomainEventDispatcher _dispatcher;
 
-    public SaveCrmBusinessEntityAttributesHandler(IDbContext dbContext, IPublisher publisher)
+    public SaveCrmBusinessEntityAttributesHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
-        _publisher = publisher;
+        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(SaveCrmBusinessEntityAttributesCommand request, CancellationToken cancellationToken)
@@ -37,7 +37,7 @@ public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBus
         var subjectId = await GetSubjectIdIfNeeded(request.Request, cancellationToken);
         if (subjectId.HasValue)
         {
-            await _publisher.Publish(new CrmHerbBaseSubjectScoreAffectedEvent(subjectId.Value), cancellationToken);
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subjectId.Value), cancellationToken);
         }
 
         return true;

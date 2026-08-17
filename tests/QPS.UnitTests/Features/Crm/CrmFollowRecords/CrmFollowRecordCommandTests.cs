@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmFollowRecords;
 using QPS.Domain.Entities.Crm;
@@ -50,7 +50,7 @@ public class CrmFollowRecordCommandTests
         var handler = new CreateCrmFollowRecordHandler(
             dbContext,
             new TestCurrentUserService(operatorUserId.ToString()),
-            TestDbContextFactory.CreatePublisher());
+            TestDbContextFactory.CreateDispatcher());
 
         var result = await handler.Handle(new CreateCrmFollowRecordCommand
         {
@@ -102,7 +102,7 @@ public class CrmFollowRecordCommandTests
         var handler = new CreateCrmFollowRecordHandler(
             dbContext,
             new TestCurrentUserService(operatorUserId.ToString()),
-            TestDbContextFactory.CreatePublisher());
+            TestDbContextFactory.CreateDispatcher());
 
         await Assert.ThrowsAsync<BusinessException>(() => handler.Handle(new CreateCrmFollowRecordCommand
         {

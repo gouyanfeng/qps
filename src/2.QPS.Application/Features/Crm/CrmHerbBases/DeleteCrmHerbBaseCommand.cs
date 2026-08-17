@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Interfaces;
 using QPS.Domain.Entities.Crm;
@@ -15,12 +15,12 @@ public class DeleteCrmHerbBaseCommand : IRequest<bool>
 public class DeleteCrmHerbBaseHandler : IRequestHandler<DeleteCrmHerbBaseCommand, bool>
 {
     private readonly IDbContext _dbContext;
-    private readonly IPublisher _publisher;
+    private readonly IDomainEventDispatcher _dispatcher;
 
-    public DeleteCrmHerbBaseHandler(IDbContext dbContext, IPublisher publisher)
+    public DeleteCrmHerbBaseHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
-        _publisher = publisher;
+        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(DeleteCrmHerbBaseCommand request, CancellationToken cancellationToken)
@@ -33,7 +33,7 @@ public class DeleteCrmHerbBaseHandler : IRequestHandler<DeleteCrmHerbBaseCommand
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (customer.HerbBaseSubjectId.HasValue)
         {
-            await _publisher.Publish(new CrmHerbBaseSubjectScoreAffectedEvent(customer.HerbBaseSubjectId.Value), cancellationToken);
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(customer.HerbBaseSubjectId.Value), cancellationToken);
         }
 
         return true;

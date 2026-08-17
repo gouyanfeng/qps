@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
@@ -20,12 +20,12 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
     private const string HerbBaseSubjectEntityType = CrmCodes.HerbBaseSubjectEntityType;
 
     private readonly IDbContext _dbContext;
-    private readonly IPublisher _publisher;
+    private readonly IDomainEventDispatcher _dispatcher;
 
-    public CreateCrmContactHandler(IDbContext dbContext, IPublisher publisher)
+    public CreateCrmContactHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
-        _publisher = publisher;
+        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(CreateCrmContactCommand request, CancellationToken cancellationToken)
@@ -38,7 +38,7 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
         _dbContext.CrmContacts.Add(contact);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _publisher.Publish(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
+        await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
 
         return true;
     }

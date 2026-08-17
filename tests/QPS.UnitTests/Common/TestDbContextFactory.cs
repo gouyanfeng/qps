@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Interfaces;
 using QPS.Infrastructure.Database;
@@ -16,9 +15,9 @@ internal static class TestDbContextFactory
         return new AppDbContext(options, currentUserService ?? new TestCurrentUserService());
     }
 
-    public static IPublisher CreatePublisher()
+    public static IDomainEventDispatcher CreateDispatcher()
     {
-        return new TestPublisher();
+        return new TestDomainEventDispatcher();
     }
 }
 

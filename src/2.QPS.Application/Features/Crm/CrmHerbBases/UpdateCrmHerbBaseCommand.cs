@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
@@ -17,12 +17,12 @@ public class UpdateCrmHerbBaseCommand : IRequest<bool>
 public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand, bool>
 {
     private readonly IDbContext _dbContext;
-    private readonly IPublisher _publisher;
+    private readonly IDomainEventDispatcher _dispatcher;
 
-    public UpdateCrmHerbBaseHandler(IDbContext dbContext, IPublisher publisher)
+    public UpdateCrmHerbBaseHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
-        _publisher = publisher;
+        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(UpdateCrmHerbBaseCommand request, CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (customer.HerbBaseSubjectId.HasValue)
         {
-            await _publisher.Publish(new CrmHerbBaseSubjectScoreAffectedEvent(customer.HerbBaseSubjectId.Value), cancellationToken);
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(customer.HerbBaseSubjectId.Value), cancellationToken);
         }
 
         return true;

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
@@ -23,13 +23,13 @@ public class CreateCrmFollowRecordHandler : IRequestHandler<CreateCrmFollowRecor
 
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IPublisher _publisher;
+    private readonly IDomainEventDispatcher _dispatcher;
 
-    public CreateCrmFollowRecordHandler(IDbContext dbContext, ICurrentUserService currentUserService, IPublisher publisher)
+    public CreateCrmFollowRecordHandler(IDbContext dbContext, ICurrentUserService currentUserService, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
-        _publisher = publisher;
+        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(CreateCrmFollowRecordCommand request, CancellationToken cancellationToken)
@@ -46,7 +46,7 @@ public class CreateCrmFollowRecordHandler : IRequestHandler<CreateCrmFollowRecor
         subject.UpdateFollowSummary(DateTime.Now, request.Request.FollowResult, request.Request.NextFollowAt);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _publisher.Publish(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
+        await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
 
         return true;
     }
