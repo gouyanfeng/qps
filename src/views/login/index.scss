@@ -1,295 +1,220 @@
-// ============ 浅色科技感登录页 ============
+// ============ 登录页样式 ============
 
-// 登录页整体
 .login-page {
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-width: 1200px;
   height: 100vh;
-  min-height: 640px;
   overflow: hidden;
-  background: linear-gradient(180deg, #f0fdfa 0%, #f8fafc 45%, #f1f5f9 100%);
-
-  // 科技网格层 —— 极淡透视网格
-  &::before {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 55%;
-    content: "";
-    pointer-events: none;
-    background:
-      repeating-linear-gradient(
-        90deg,
-        transparent 0,
-        transparent 79px,
-        rgba(20, 184, 166, 0.07) 79px,
-        rgba(20, 184, 166, 0.07) 80px
-      ),
-      repeating-linear-gradient(
-        0deg,
-        transparent 0,
-        transparent 39px,
-        rgba(20, 184, 166, 0.06) 39px,
-        rgba(20, 184, 166, 0.06) 40px
-      );
-    mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 30%, #000 100%);
-    -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 30%, #000 100%);
-    z-index: 1;
-  }
-
-  // 淡光晕层（去掉星点粒子，浅色背景下只留柔光）
-  &::after {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    content: "";
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse 600px 400px at 15% 15%, rgba(20, 184, 166, 0.1) 0%, transparent 70%),
-      radial-gradient(ellipse 500px 350px at 85% 80%, rgba(13, 148, 136, 0.08) 0%, transparent 70%);
-    z-index: 1;
-  }
+  background: #f4f5f7;
 }
 
-// 顶部导航（已移除，样式保留兼容）
-.login-header {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-  height: 72px;
-  padding: 0 48px;
-
-  .header-left {
-    display: flex;
-    align-items: center;
-
-    .header-logo {
-      width: 42px;
-      height: 36px;
-      margin-right: 14px;
-    }
-
-    .header-title {
-      font-size: 20px;
-      font-weight: 600;
-      color: #0f172a;
-      letter-spacing: 1px;
-    }
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-
-    .header-link {
-      font-size: 14px;
-      color: #475569;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:hover {
-        color: #0d9488;
-      }
-    }
-  }
-}
-
-// 主体区域
 .login-main {
   position: relative;
-  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   flex: 1;
-
-  .login-card {
-    display: flex;
-    width: 980px;
-    height: 560px;
-    border-radius: 16px;
-    box-shadow:
-      0 0 0 1px rgba(20, 184, 166, 0.12),
-      0 20px 60px rgba(15, 118, 110, 0.1),
-      0 8px 24px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-    background: #ffffff;
-  }
+  padding: 40px 0;
 }
 
-// 左侧：浅色展示区
+.login-card {
+  display: flex;
+  width: 860px;
+  height: 480px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+// 左侧：深色品牌区
 .login-showcase {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46%;
-  padding: 40px;
-  background: linear-gradient(160deg, #f0fdfa 0%, #ffffff 100%);
-
-  // 右边缘科技光线
-  &::before {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 1px;
-    height: 100%;
-    content: "";
-    background: linear-gradient(180deg, transparent 0%, rgba(20, 184, 166, 0.5) 30%, rgba(20, 184, 166, 0.5) 70%, transparent 100%);
-  }
-
-  // 角落装饰
-  &::after {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 40px;
-    height: 40px;
-    content: "";
-    border-top: 2px solid rgba(20, 184, 166, 0.4);
-    border-left: 2px solid rgba(20, 184, 166, 0.4);
-    border-radius: 4px 0 0 0;
-  }
+  width: 45%;
+  padding: 48px 40px;
+  background: #1a2332;
+  overflow: hidden;
 
   .showcase-inner {
     position: relative;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
+  }
 
-    .showcase-logo {
+  .brand-title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 8px;
+  }
+
+  .brand-subtitle {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 4px;
+  }
+
+  .brand-slogan {
+    margin: 20px 0 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+  }
+
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 28px;
+
+    .feature-item {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      margin-bottom: 28px;
+      gap: 10px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
 
-      img {
-        width: 60px;
-        height: 52px;
-        margin-bottom: 10px;
-        filter: drop-shadow(0 2px 8px rgba(20, 184, 166, 0.25));
+      span {
+        letter-spacing: 0.5px;
       }
+    }
+  }
 
-      p {
-        margin: 0;
-        font-size: 14px;
-        color: #0d9488;
-        letter-spacing: 3px;
-      }
+  .deco-shape {
+    position: absolute;
+    z-index: 1;
+    border-radius: 50%;
+
+    &--1 {
+      width: 240px;
+      height: 240px;
+      top: -80px;
+      right: -60px;
+      background: radial-gradient(circle, rgba(65, 184, 131, 0.12) 0%, transparent 70%);
+    }
+
+    &--2 {
+      width: 160px;
+      height: 160px;
+      bottom: -40px;
+      left: -30px;
+      background: radial-gradient(circle, rgba(65, 184, 131, 0.08) 0%, transparent 70%);
+    }
+
+    &--3 {
+      width: 80px;
+      height: 80px;
+      bottom: 40px;
+      right: 40px;
+      border: 1px solid rgba(65, 184, 131, 0.15);
+      background: transparent;
     }
   }
 }
 
-// 右侧：登录表单（白色面板）
+// 右侧：登录表单
 .login-form-wrap {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 54%;
-  padding: 48px 60px;
-  background: #ffffff;
-
-  // 左边缘科技光线
-  &::before {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 100%;
-    content: "";
-    background: linear-gradient(180deg, transparent 0%, rgba(20, 184, 166, 0.25) 50%, transparent 100%);
-  }
+  width: 55%;
+  padding: 48px 56px;
 
   .login-form-content {
     width: 100%;
-
-    .form-title {
-      margin-bottom: 24px;
-      font-size: 24px;
-      font-weight: 600;
-      color: #0f172a;
-      letter-spacing: 1px;
-    }
+    max-width: 320px;
   }
 }
 
-// Element Plus 表单样式覆盖 —— 浅色适配
+// Tabs
 :deep(.login-tabs) {
   .el-tabs__header {
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
 
   .el-tabs__nav-wrap::after {
     height: 1px;
-    background-color: rgba(20, 184, 166, 0.15);
+    background-color: #f0f0f0;
   }
 
   .el-tabs__item {
-    font-size: 15px;
-    color: #64748b;
+    font-size: 14px;
+    color: #8c8c8c;
+    font-weight: 400;
 
     &.is-active {
-      color: #0d9488;
-      font-weight: 600;
+      color: #1a2332;
+      font-weight: 500;
     }
 
     &:hover {
-      color: rgba(20, 184, 166, 0.8);
+      color: #41b883;
     }
   }
 
   .el-tabs__active-bar {
-    background: linear-gradient(90deg, #14b8a6, #0d9488);
+    background-color: #41b883;
+    height: 2px;
   }
 }
 
+// Form
 :deep(.el-form) {
   .el-form-item {
-    margin-bottom: 22px;
+    margin-bottom: 18px;
   }
 
   .el-input__wrapper {
     background: #ffffff !important;
-    border: 1px solid rgba(20, 184, 166, 0.25) !important;
+    border: none !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
-    border-radius: 8px;
-    transition: all 0.3s;
+    padding: 4px 0 !important;
+    transition: border-color 0.2s;
 
     &:hover {
-      border-color: rgba(20, 184, 166, 0.5) !important;
+      border-bottom-color: #41b883 !important;
     }
 
     &.is-focus {
-      border-color: #14b8a6 !important;
-      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12) !important;
+      border-bottom-color: #41b883 !important;
     }
   }
 
   .el-input__inner {
-    height: 46px;
-    color: #1e293b !important;
+    height: 38px;
+    color: #1a2332 !important;
+    font-size: 14px;
 
     &::placeholder {
-      color: rgba(100, 116, 139, 0.7);
+      color: #bfbfbf;
     }
   }
 
   .el-input__prefix {
-    color: rgba(20, 184, 166, 0.7);
+    color: #bfbfbf;
   }
 }
 
 .remember-row {
+  margin-top: 4px;
+
   :deep(.el-form-item__content) {
     display: flex;
     align-items: center;
@@ -298,104 +223,97 @@
   }
 
   :deep(.el-checkbox__label) {
-    color: #475569;
+    color: #8c8c8c;
+    font-size: 13px;
   }
 
   :deep(.el-checkbox__inner) {
     background: #ffffff;
-    border-color: rgba(20, 184, 166, 0.4);
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
   }
 
   :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background: #14b8a6;
-    border-color: #14b8a6;
+    background: #41b883;
+    border-color: #41b883;
   }
 
   .forgot-link {
     font-size: 13px;
-    color: #0d9488;
+    color: #8c8c8c;
     cursor: pointer;
+    transition: color 0.2s;
 
     &:hover {
-      color: #14b8a6;
+      color: #41b883;
     }
   }
 }
 
 .login-submit {
   width: 100%;
-  height: 46px;
-  font-size: 16px;
-  font-weight: 600;
+  height: 44px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
   letter-spacing: 4px;
   color: #ffffff;
-  background: linear-gradient(90deg, #14b8a6 0%, #0d9488 50%, #14b8a6 100%);
-  background-size: 200% auto;
+  background: #41b883;
   border: none;
-  border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.28);
-  transition: all 0.3s;
+  border-radius: 6px;
+  transition: background 0.2s;
 
   &:hover,
   &:focus {
+    background: #379e6e;
     color: #ffffff;
-    background-position: right center;
-    box-shadow: 0 8px 24px rgba(20, 184, 166, 0.4);
+  }
+
+  &:active {
+    background: #2d8a5e;
   }
 }
 
-// 微信登录占位
 .wechat-login {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 240px;
+  height: 200px;
 
   .qr-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #64748b;
+    color: #8c8c8c;
 
     p {
-      margin-top: 16px;
-      font-size: 14px;
+      margin-top: 14px;
+      font-size: 13px;
     }
   }
 }
 
-// 底部版权
 .login-footer {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 52px;
+  margin-top: 24px;
 
   p {
     margin: 0;
     font-size: 12px;
-    color: #94a3b8;
+    color: #bfbfbf;
+    letter-spacing: 0.5px;
   }
 }
 
-// 响应式适配
-@media screen and (width <= 1250px) {
+@media screen and (width <= 920px) {
   .login-page {
     min-width: auto;
   }
 
-  .login-main .login-card {
-    width: 90%;
-    max-width: 980px;
-  }
-}
-
-@media screen and (width <= 860px) {
-  .login-main .login-card {
-    flex-direction: column;
+  .login-card {
+    width: 92%;
+    max-width: 520px;
     height: auto;
+    flex-direction: column;
 
     .login-showcase {
       display: none;
@@ -403,7 +321,7 @@
 
     .login-form-wrap {
       width: 100%;
-      padding: 36px 32px;
+      padding: 40px 32px;
     }
   }
 }

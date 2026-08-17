@@ -1,7 +1,5 @@
 <template>
   <div class="login-form-content">
-    <div class="form-title">欢迎登录</div>
-
     <el-tabs v-model="activeTab" class="login-tabs" stretch>
       <el-tab-pane label="账号密码登录" name="account">
         <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" size="large" @keyup.enter="login(loginFormRef)">
