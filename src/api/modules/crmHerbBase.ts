@@ -58,12 +58,6 @@ export const crmHerbBaseApi = {
   updateContactStatus: (id: string, params: any) => {
     return http.patch<any>(`/admin/crm/contacts/${id}/status`, params);
   },
-  getFollowRecords: (herbBaseId: string) => {
-    return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/follow-records`);
-  },
-  createFollowRecord: (herbBaseId: string, params: any) => {
-    return http.post<any>(`/admin/crm/herb-bases/${herbBaseId}/follow-records`, params);
-  },
   getBusinessEntityAttributeOptions: (params: any) => {
     return http.get<any>("/admin/crm/business-entity-attributes/options", params, { loading: false, cancel: false });
   },

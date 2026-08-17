@@ -1,30 +1,48 @@
-﻿<template>
-  <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" size="large">
-    <el-form-item prop="username">
-      <el-input v-model="loginForm.username" placeholder="用户名：admin / user">
-        <template #prefix>
-          <el-icon class="el-input__icon">
-            <user />
-          </el-icon>
-        </template>
-      </el-input>
-    </el-form-item>
-    <el-form-item prop="password">
-      <el-input v-model="loginForm.password" type="password" placeholder="密码：123456" show-password
-        autocomplete="new-password">
-        <template #prefix>
-          <el-icon class="el-input__icon">
-            <lock />
-          </el-icon>
-        </template>
-      </el-input>
-    </el-form-item>
-  </el-form>
-  <div class="login-btn">
-    <el-button :icon="CircleClose" round size="large" @click="resetForm(loginFormRef)"> 重置 </el-button>
-    <el-button :icon="UserFilled" round size="large" type="primary" :loading="loading" @click="login(loginFormRef)">
-      登录
-    </el-button>
+<template>
+  <div class="login-form-content">
+    <div class="form-title">欢迎登录</div>
+
+    <el-tabs v-model="activeTab" class="login-tabs" stretch>
+      <el-tab-pane label="账号密码登录" name="account">
+        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" size="large" @keyup.enter="login(loginFormRef)">
+          <el-form-item prop="username">
+            <el-input v-model="loginForm.username" placeholder="请输入账号 / 手机号" maxlength="32">
+              <template #prefix>
+                <el-icon class="el-input__icon"><User /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item prop="password">
+            <el-input v-model="loginForm.password" type="password" placeholder="请输入登录密码" show-password autocomplete="new-password" maxlength="20">
+              <template #prefix>
+                <el-icon class="el-input__icon"><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item class="remember-row">
+            <el-checkbox v-model="rememberMe">记住账号</el-checkbox>
+            <span class="forgot-link">忘记密码?</span>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button class="login-submit" type="primary" size="large" :loading="loading" @click="login(loginFormRef)">
+              登 录
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+
+      <el-tab-pane label="微信登录" name="wechat">
+        <div class="wechat-login">
+          <div class="qr-placeholder">
+            <el-icon :size="48" color="#07c160"><ChatDotSquare /></el-icon>
+            <p>请使用微信扫一扫登录</p>
+          </div>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -32,7 +50,6 @@
 import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { HOME_URL } from "@/config";
-// import { getTimeState } from "@/utils";
 import { Login } from "@/api/interface";
 import { ElNotification } from "element-plus";
 import { clearUserPermissionsCache, loginApi } from "@/api/modules/login";
@@ -40,7 +57,7 @@ import { useUserStore } from "@/stores/modules/user";
 import { useTabsStore } from "@/stores/modules/tabs";
 import { useKeepAliveStore } from "@/stores/modules/keepAlive";
 import { initDynamicRouter } from "@/routers/modules/dynamicRouter";
-import { CircleClose, UserFilled } from "@element-plus/icons-vue";
+import { User, Lock, ChatDotSquare } from "@element-plus/icons-vue";
 import type { ElForm } from "element-plus";
 import md5 from "md5";
 
@@ -49,10 +66,13 @@ const userStore = useUserStore();
 const tabsStore = useTabsStore();
 const keepAliveStore = useKeepAliveStore();
 
+const activeTab = ref("account");
+const rememberMe = ref(false);
+
 type FormInstance = InstanceType<typeof ElForm>;
 const loginFormRef = ref<FormInstance>();
 const loginRules = reactive({
-  username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
+  username: [{ required: true, message: "请输入账号", trigger: "blur" }],
   password: [{ required: true, message: "请输入密码", trigger: "blur" }]
 });
 
@@ -62,55 +82,42 @@ const loginForm = reactive<Login.ReqLoginForm>({
   password: "123456"
 });
 
-// login
 const login = (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   formEl.validate(async valid => {
     if (!valid) return;
     loading.value = true;
     try {
-      // 1.执行登录接口
       const { data } = await loginApi({
-        ...loginForm, password: loginForm.password
+        ...loginForm,
+        password: loginForm.password
       });
       console.log("登录接口返回数据：", data);
       userStore.setToken(data.token);
       userStore.setUserInfo({ name: data.realName, userId: data.userId, role: data.role });
       clearUserPermissionsCache(data.userId);
 
-      // 2.添加动态路由
       await initDynamicRouter();
-
-      // 3.清空 tabs、keepAlive 数据
       tabsStore.setTabs([]);
       keepAliveStore.setKeepAliveName([]);
-
-      // 4.跳转到首页
       router.push(HOME_URL);
+
       ElNotification({
         title: "登录成功",
-        message: "欢迎登录 QPS 管理系统",
+        message: "欢迎登录 QPS 客户关系管理系统",
         type: "success",
         duration: 3000
       });
-
     } finally {
       loading.value = false;
     }
   });
 };
 
-// resetForm
-const resetForm = (formEl: FormInstance | undefined) => {
-  if (!formEl) return;
-  formEl.resetFields();
-};
-
 onMounted(() => {
-  // 监听 enter 事件（调用登录）
   document.onkeydown = (e: KeyboardEvent) => {
     if (e.code === "Enter" || e.code === "enter" || e.code === "NumpadEnter") {
-      if (loading.value) return;
+      if (loading.value || activeTab.value !== "account") return;
       login(loginFormRef.value);
     }
   };
@@ -124,5 +131,3 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 @import "../index.scss";
 </style>
-
-

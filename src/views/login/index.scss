@@ -1,83 +1,409 @@
-.login-container {
-  height: 100%;
-  min-height: 550px;
-  background-color: #eeeeee;
-  background-image: url("@/assets/images/login_bg.svg");
-  background-size: 100% 100%;
-  background-size: cover;
-  .login-box {
-    position: relative;
-    box-sizing: border-box;
+// ============ 浅色科技感登录页 ============
+
+// 登录页整体
+.login-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 1200px;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f0fdfa 0%, #f8fafc 45%, #f1f5f9 100%);
+
+  // 科技网格层 —— 极淡透视网格
+  &::before {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    content: "";
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 79px,
+        rgba(20, 184, 166, 0.07) 79px,
+        rgba(20, 184, 166, 0.07) 80px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 39px,
+        rgba(20, 184, 166, 0.06) 39px,
+        rgba(20, 184, 166, 0.06) 40px
+      );
+    mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 30%, #000 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 30%, #000 100%);
+    z-index: 1;
+  }
+
+  // 淡光晕层（去掉星点粒子，浅色背景下只留柔光）
+  &::after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    content: "";
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 600px 400px at 15% 15%, rgba(20, 184, 166, 0.1) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 350px at 85% 80%, rgba(13, 148, 136, 0.08) 0%, transparent 70%);
+    z-index: 1;
+  }
+}
+
+// 顶部导航（已移除，样式保留兼容）
+.login-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: 72px;
+  padding: 0 48px;
+
+  .header-left {
     display: flex;
     align-items: center;
-    justify-content: space-around;
-    width: 96.5%;
-    height: 94%;
-    padding: 0 50px;
-    background-color: rgb(255 255 255 / 80%);
-    border-radius: 10px;
-    .dark {
-      position: absolute;
-      top: 13px;
-      right: 18px;
+
+    .header-logo {
+      width: 42px;
+      height: 36px;
+      margin-right: 14px;
     }
-    .login-left {
-      width: 800px;
-      margin-right: 10px;
-      .login-left-img {
-        width: 100%;
-        height: 100%;
-      }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: 1px;
     }
-    .login-form {
-      width: 420px;
-      padding: 50px 40px 45px;
-      background-color: var(--el-bg-color);
-      border-radius: 10px;
-      box-shadow: rgb(0 0 0 / 10%) 0 2px 10px 2px;
-      .login-logo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 45px;
-        .login-icon {
-          width: 60px;
-          height: 52px;
-        }
-        .logo-text {
-          padding: 0 0 0 25px;
-          margin: 0;
-          font-size: 42px;
-          font-weight: bold;
-          color: #34495e;
-          white-space: nowrap;
-        }
-      }
-      .el-form-item {
-        margin-bottom: 40px;
-      }
-      .login-btn {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        margin-top: 40px;
-        white-space: nowrap;
-        .el-button {
-          width: 185px;
-        }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+
+    .header-link {
+      font-size: 14px;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        color: #0d9488;
       }
     }
   }
 }
 
+// 主体区域
+.login-main {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+
+  .login-card {
+    display: flex;
+    width: 980px;
+    height: 560px;
+    border-radius: 16px;
+    box-shadow:
+      0 0 0 1px rgba(20, 184, 166, 0.12),
+      0 20px 60px rgba(15, 118, 110, 0.1),
+      0 8px 24px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    background: #ffffff;
+  }
+}
+
+// 左侧：浅色展示区
+.login-showcase {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46%;
+  padding: 40px;
+  background: linear-gradient(160deg, #f0fdfa 0%, #ffffff 100%);
+
+  // 右边缘科技光线
+  &::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    content: "";
+    background: linear-gradient(180deg, transparent 0%, rgba(20, 184, 166, 0.5) 30%, rgba(20, 184, 166, 0.5) 70%, transparent 100%);
+  }
+
+  // 角落装饰
+  &::after {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    content: "";
+    border-top: 2px solid rgba(20, 184, 166, 0.4);
+    border-left: 2px solid rgba(20, 184, 166, 0.4);
+    border-radius: 4px 0 0 0;
+  }
+
+  .showcase-inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+
+    .showcase-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 28px;
+
+      img {
+        width: 60px;
+        height: 52px;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 2px 8px rgba(20, 184, 166, 0.25));
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: #0d9488;
+        letter-spacing: 3px;
+      }
+    }
+  }
+}
+
+// 右侧：登录表单（白色面板）
+.login-form-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54%;
+  padding: 48px 60px;
+  background: #ffffff;
+
+  // 左边缘科技光线
+  &::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 100%;
+    content: "";
+    background: linear-gradient(180deg, transparent 0%, rgba(20, 184, 166, 0.25) 50%, transparent 100%);
+  }
+
+  .login-form-content {
+    width: 100%;
+
+    .form-title {
+      margin-bottom: 24px;
+      font-size: 24px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: 1px;
+    }
+  }
+}
+
+// Element Plus 表单样式覆盖 —— 浅色适配
+:deep(.login-tabs) {
+  .el-tabs__header {
+    margin-bottom: 28px;
+  }
+
+  .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: rgba(20, 184, 166, 0.15);
+  }
+
+  .el-tabs__item {
+    font-size: 15px;
+    color: #64748b;
+
+    &.is-active {
+      color: #0d9488;
+      font-weight: 600;
+    }
+
+    &:hover {
+      color: rgba(20, 184, 166, 0.8);
+    }
+  }
+
+  .el-tabs__active-bar {
+    background: linear-gradient(90deg, #14b8a6, #0d9488);
+  }
+}
+
+:deep(.el-form) {
+  .el-form-item {
+    margin-bottom: 22px;
+  }
+
+  .el-input__wrapper {
+    background: #ffffff !important;
+    border: 1px solid rgba(20, 184, 166, 0.25) !important;
+    box-shadow: none !important;
+    border-radius: 8px;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: rgba(20, 184, 166, 0.5) !important;
+    }
+
+    &.is-focus {
+      border-color: #14b8a6 !important;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12) !important;
+    }
+  }
+
+  .el-input__inner {
+    height: 46px;
+    color: #1e293b !important;
+
+    &::placeholder {
+      color: rgba(100, 116, 139, 0.7);
+    }
+  }
+
+  .el-input__prefix {
+    color: rgba(20, 184, 166, 0.7);
+  }
+}
+
+.remember-row {
+  :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    line-height: 1;
+  }
+
+  :deep(.el-checkbox__label) {
+    color: #475569;
+  }
+
+  :deep(.el-checkbox__inner) {
+    background: #ffffff;
+    border-color: rgba(20, 184, 166, 0.4);
+  }
+
+  :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+    background: #14b8a6;
+    border-color: #14b8a6;
+  }
+
+  .forgot-link {
+    font-size: 13px;
+    color: #0d9488;
+    cursor: pointer;
+
+    &:hover {
+      color: #14b8a6;
+    }
+  }
+}
+
+.login-submit {
+  width: 100%;
+  height: 46px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: #ffffff;
+  background: linear-gradient(90deg, #14b8a6 0%, #0d9488 50%, #14b8a6 100%);
+  background-size: 200% auto;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.28);
+  transition: all 0.3s;
+
+  &:hover,
+  &:focus {
+    color: #ffffff;
+    background-position: right center;
+    box-shadow: 0 8px 24px rgba(20, 184, 166, 0.4);
+  }
+}
+
+// 微信登录占位
+.wechat-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 240px;
+
+  .qr-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #64748b;
+
+    p {
+      margin-top: 16px;
+      font-size: 14px;
+    }
+  }
+}
+
+// 底部版权
+.login-footer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+}
+
+// 响应式适配
 @media screen and (width <= 1250px) {
-  .login-left {
-    display: none;
+  .login-page {
+    min-width: auto;
+  }
+
+  .login-main .login-card {
+    width: 90%;
+    max-width: 980px;
   }
 }
 
-@media screen and (width <= 600px) {
-  .login-form {
-    width: 97% !important;
+@media screen and (width <= 860px) {
+  .login-main .login-card {
+    flex-direction: column;
+    height: auto;
+
+    .login-showcase {
+      display: none;
+    }
+
+    .login-form-wrap {
+      width: 100%;
+      padding: 36px 32px;
+    }
   }
 }

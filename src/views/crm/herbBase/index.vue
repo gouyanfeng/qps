@@ -19,7 +19,6 @@
               :remote-method="loadMainProductOptions"
               :loading="mainProductLoading"
               placeholder="主营品类"
-              @visible-change="handleMainProductVisibleChange"
             >
               <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
@@ -245,7 +244,6 @@
             :remote-method="loadMainProductOptions"
             :loading="mainProductLoading"
             placeholder="请选择主营品类"
-            @visible-change="handleMainProductVisibleChange"
           >
             <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
@@ -933,38 +931,37 @@ const toMainProductOption = (item: any) => {
   return value ? { label: formatEnumLabel(mainProductLabels, value, value), value } : null;
 };
 
-const loadMainProductOptions = async (keyword = "") => {
-  mainProductLoading.value = true;
-  try {
-    const trimmedKeyword = keyword.trim();
-    const fallbackMatch = trimmedKeyword
-      ? fallbackMainProductOptions.find(option =>
-          option.label.includes(trimmedKeyword) || option.value.includes(trimmedKeyword)
-        )
-      : undefined;
-    const searchKeyword = trimmedKeyword
-      ? toEnumValue(mainProductValues, trimmedKeyword, fallbackMatch?.value || trimmedKeyword)
-      : "";
-    const response = await crmHerbBaseApi.getBusinessEntityAttributeOptions({
-      entityType: "CRM_HERB_BASE",
-      attributeCode: "CRM_MAIN_PRODUCT",
-      keyword: searchKeyword,
-      pageSize: 100,
-    });
-    const options = (response.data || [])
-      .map(toMainProductOption)
-      .filter(Boolean) as Array<{ label: string; value: string }>;
+let mainProductTimer: ReturnType<typeof setTimeout> | undefined;
 
-    mainProductOptions.value = options.length ? options : trimmedKeyword ? [] : fallbackMainProductOptions;
-  } finally {
-    mainProductLoading.value = false;
-  }
-};
+const loadMainProductOptions = (keyword = "") => {
+  if (mainProductTimer) clearTimeout(mainProductTimer);
+  mainProductTimer = setTimeout(async () => {
+    mainProductLoading.value = true;
+    try {
+      const trimmedKeyword = keyword.trim();
+      const fallbackMatch = trimmedKeyword
+        ? fallbackMainProductOptions.find(option =>
+            option.label.includes(trimmedKeyword) || option.value.includes(trimmedKeyword)
+          )
+        : undefined;
+      const searchKeyword = trimmedKeyword
+        ? toEnumValue(mainProductValues, trimmedKeyword, fallbackMatch?.value || trimmedKeyword)
+        : "";
+      const response = await crmHerbBaseApi.getBusinessEntityAttributeOptions({
+        entityType: "CRM_HERB_BASE",
+        attributeCode: "CRM_MAIN_PRODUCT",
+        keyword: searchKeyword,
+        pageSize: 100,
+      });
+      const options = (response.data || [])
+        .map(toMainProductOption)
+        .filter(Boolean) as Array<{ label: string; value: string }>;
 
-const handleMainProductVisibleChange = (visible: boolean) => {
-  if (visible) {
-    void loadMainProductOptions();
-  }
+      mainProductOptions.value = options.length ? options : trimmedKeyword ? [] : fallbackMainProductOptions;
+    } finally {
+      mainProductLoading.value = false;
+    }
+  }, 250);
 };
 
 const formatMainProducts = (row: any, fallback = "-") => {

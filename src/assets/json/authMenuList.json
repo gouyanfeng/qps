@@ -17,6 +17,36 @@
       }
     },
     {
+      "path": "/crm/herb-base",
+      "name": "herbBase",
+      "component": "/crm/herbBase/index",
+      "meta": {
+        "icon": "User",
+        "title": "基地管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "CRM_HERB_BASE"
+      }
+    },
+    {
+      "path": "/crm/vendor",
+      "name": "vendor",
+      "component": "/crm/vendor/index",
+      "meta": {
+        "icon": "Shop",
+        "title": "厂商管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true,
+        "permissionCode": "CRM_VENDOR"
+      }
+    },
+    {
       "path": "/system",
       "name": "system",
       "redirect": "/system/role",
@@ -137,36 +167,6 @@
           }
         }
       ]
-    },
-    {
-      "path": "/crm/herb-base",
-      "name": "herbBase",
-      "component": "/crm/herbBase/index",
-      "meta": {
-        "icon": "User",
-        "title": "基地管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "CRM_HERB_BASE"
-      }
-    },
-    {
-      "path": "/crm/vendor",
-      "name": "vendor",
-      "component": "/crm/vendor/index",
-      "meta": {
-        "icon": "Shop",
-        "title": "厂商管理",
-        "isLink": "",
-        "isHide": false,
-        "isFull": false,
-        "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "CRM_VENDOR"
-      }
     }
   ],
   "msg": "成功"

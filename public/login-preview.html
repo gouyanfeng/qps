@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QPS 登录页 - 浅色预览</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }
+
+    .login-page {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 1200px;
+      height: 100vh;
+      min-height: 640px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(180deg, #f0fdfa 0%, #f8fafc 45%, #f1f5f9 100%);
+    }
+
+    /* 极淡透视网格 */
+    .login-page::before {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 55%;
+      content: "";
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(90deg, transparent 0, transparent 79px, rgba(20,184,166,0.07) 79px, rgba(20,184,166,0.07) 80px),
+        repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(20,184,166,0.06) 39px, rgba(20,184,166,0.06) 40px);
+      -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.8) 30%, #000 100%);
+      mask-image: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.8) 30%, #000 100%);
+      z-index: 1;
+    }
+
+    /* 淡光晕（去掉星点粒子） */
+    .login-page::after {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      content: "";
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 600px 400px at 15% 15%, rgba(20,184,166,0.1) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 350px at 85% 80%, rgba(13,148,136,0.08) 0%, transparent 70%);
+      z-index: 1;
+    }
+
+    .login-main {
+      position: relative; z-index: 10;
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      display: flex;
+      width: 980px; height: 560px;
+      border-radius: 16px;
+      box-shadow: 0 0 0 1px rgba(20,184,166,0.12), 0 20px 60px rgba(15,118,110,0.1), 0 8px 24px rgba(0,0,0,0.04);
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .login-showcase {
+      position: relative;
+      width: 46%; padding: 40px;
+      background: linear-gradient(160deg, #f0fdfa 0%, #ffffff 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-showcase::before {
+      position: absolute; content: "";
+      top: 0; right: 0; width: 1px; height: 100%;
+      background: linear-gradient(180deg, transparent 0%, rgba(20,184,166,0.5) 30%, rgba(20,184,166,0.5) 70%, transparent 100%);
+    }
+    .login-showcase::after {
+      position: absolute; content: "";
+      top: 20px; left: 20px; width: 40px; height: 40px;
+      border-top: 2px solid rgba(20,184,166,0.4);
+      border-left: 2px solid rgba(20,184,166,0.4);
+      border-radius: 4px 0 0 0;
+    }
+    .showcase-inner { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .showcase-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; }
+    .showcase-logo .logo-img {
+      width: 60px; height: 52px; margin-bottom: 10px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 261.76 226.69'%3E%3Cpath d='M161.096.001l-30.225 52.351L100.647.001H-.005l130.877 226.688L261.749.001z' fill='%2314b8a6'/%3E%3Cpath d='M161.096.001l-30.225 52.351L100.647.001H52.346l78.526 136.01L209.398.001z' fill='%230d9488'/%3E%3C/svg%3E") no-repeat center/contain;
+      filter: drop-shadow(0 2px 8px rgba(20,184,166,0.25));
+    }
+    .showcase-logo p { font-size: 14px; color: #0d9488; letter-spacing: 3px; }
+
+    .pentagon-svg { width: 100%; max-width: 360px; height: auto; overflow: visible; }
+    .connect-lines line { stroke: rgba(20,184,166,0.4); stroke-width: 1.5; }
+    .center-node circle { fill: rgba(20,184,166,0.12); stroke: rgba(20,184,166,0.5); stroke-width: 1.5; }
+    .center-text { font-size: 18px; font-weight: 700; fill: #0d9488; letter-spacing: 1px; }
+    .feature-node circle { fill: rgba(20,184,166,0.1); stroke: rgba(20,184,166,0.45); stroke-width: 1.5; transition: all 0.3s; }
+    .feature-node:hover circle { fill: rgba(20,184,166,0.25); stroke: #14b8a6; }
+    .feature-node .node-icon { display: flex; align-items: center; justify-content: center; width: 68px; height: 68px; }
+    .feature-node text { font-size: 13px; fill: #334155; font-weight: 500; }
+
+    .login-form-wrap {
+      position: relative;
+      width: 54%; padding: 48px 60px;
+      display: flex; align-items: center; justify-content: center;
+      background: #ffffff;
+    }
+    .login-form-wrap::before {
+      position: absolute; content: "";
+      top: 0; left: 0; width: 1px; height: 100%;
+      background: linear-gradient(180deg, transparent 0%, rgba(20,184,166,0.25) 50%, transparent 100%);
+    }
+    .login-form-content { width: 100%; position: relative; }
+    .form-title { margin-bottom: 24px; font-size: 24px; font-weight: 600; color: #0f172a; letter-spacing: 1px; }
+
+    .tabs { display: flex; border-bottom: 1px solid rgba(20,184,166,0.15); margin-bottom: 28px; }
+    .tab {
+      position: relative; padding: 12px 0; margin-right: 32px;
+      font-size: 15px; color: #64748b; cursor: pointer;
+      transition: color 0.2s;
+    }
+    .tab.active { color: #0d9488; font-weight: 600; }
+    .tab.active::after {
+      content: "";
+      position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 2px; background: linear-gradient(90deg, #14b8a6, #0d9488); border-radius: 2px;
+    }
+
+    .form-group { margin-bottom: 22px; }
+    .form-input {
+      width: 100%; height: 46px; padding: 0 15px 0 42px;
+      border: 1px solid rgba(20,184,166,0.25); border-radius: 8px;
+      font-size: 14px; color: #1e293b;
+      background: #ffffff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input::placeholder { color: rgba(100,116,139,0.7); }
+    .form-input:focus { outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,0.12); }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; color: rgba(20,184,166,0.7);
+    }
+
+    .remember-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 22px; font-size: 13px; color: #475569;
+    }
+    .remember-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .remember-row input { width: 14px; height: 14px; accent-color: #14b8a6; }
+    .forgot-link { color: #0d9488; cursor: pointer; }
+    .forgot-link:hover { color: #14b8a6; }
+
+    .login-submit {
+      width: 100%; height: 46px;
+      font-size: 16px; font-weight: 600; letter-spacing: 4px; color: #ffffff;
+      background: linear-gradient(90deg, #14b8a6 0%, #0d9488 50%, #14b8a6 100%);
+      background-size: 200% auto;
+      border: none; border-radius: 8px; cursor: pointer;
+      box-shadow: 0 6px 18px rgba(20,184,166,0.28);
+      transition: all 0.3s;
+    }
+    .login-submit:hover { background-position: right center; box-shadow: 0 8px 24px rgba(20,184,166,0.4); }
+
+    .wechat-login {
+      display: none; align-items: center; justify-content: center;
+      height: 240px; color: #64748b; text-align: center;
+    }
+    .wechat-login.active { display: flex; }
+    .qr-box {
+      width: 160px; height: 160px; margin: 0 auto 16px;
+      border: 1px solid rgba(20,184,166,0.2); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: #f8fafc;
+    }
+    .qr-box svg { width: 64px; height: 64px; color: #07c160; }
+
+    .login-footer {
+      position: relative; z-index: 10;
+      height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <main class="login-main">
+      <div class="login-card">
+        <div class="login-showcase">
+          <div class="showcase-inner">
+            <div class="showcase-logo">
+              <div class="logo-img"></div>
+              <p>客户管理 · 销售协同 · 数据驱动</p>
+            </div>
+
+            <svg class="pentagon-svg" viewBox="0 0 400 380">
+              <g class="connect-lines">
+                <line x1="200" y1="190" x2="200" y2="50" />
+                <line x1="200" y1="190" x2="78" y2="138" />
+                <line x1="200" y1="190" x2="322" y2="138" />
+                <line x1="200" y1="190" x2="114" y2="292" />
+                <line x1="200" y1="190" x2="286" y2="292" />
+              </g>
+              <g class="center-node">
+                <circle cx="200" cy="190" r="44" />
+                <text class="center-text" x="200" y="198" text-anchor="middle">QPS</text>
+              </g>
+              <g class="feature-node" transform="translate(200,50)">
+                <circle r="34" />
+                <foreignObject x="-34" y="-34" width="68" height="68">
+                  <div class="node-icon" xmlns="http://www.w3.org/1999/xhtml">
+                    <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#14b8a6"><path d="M512 512c141.4 0 256-114.6 256-256S653.4 0 512 0 256 114.6 256 256s114.6 256 256 256zm0 64c-170.7 0-512 85.3-512 256v64h1024v-64c0-170.7-341.3-256-512-256z"/></svg>
+                  </div>
+                </foreignObject>
+                <text y="54" text-anchor="middle">客户管理</text>
+              </g>
+              <g class="feature-node" transform="translate(78,138)">
+                <circle r="34" />
+                <foreignObject x="-34" y="-34" width="68" height="68">
+                  <div class="node-icon" xmlns="http://www.w3.org/1999/xhtml">
+                    <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#14b8a6"><path d="M128 896h64V416L320 512V416L160 288 0 416v96l128-96zM512 256h320v64H512zM512 448h320v64H512zM512 640h320v64H512zM512 832h320v64H512z"/></svg>
+                  </div>
+                </foreignObject>
+                <text y="54" text-anchor="middle">商机管理</text>
+              </g>
+              <g class="feature-node" transform="translate(322,138)">
+                <circle r="34" />
+                <foreignObject x="-34" y="-34" width="68" height="68">
+                  <div class="node-icon" xmlns="http://www.w3.org/1999/xhtml">
+                    <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#14b8a6"><path d="M896 288H128v512h768V288z m-64 448H192V352h640v384z"/><path d="M320 448h384v64H320zM320 576h256v64H320z"/></svg>
+                  </div>
+                </foreignObject>
+                <text y="54" text-anchor="middle">基地档案</text>
+              </g>
+              <g class="feature-node" transform="translate(114,292)">
+                <circle r="34" />
+                <foreignObject x="-34" y="-34" width="68" height="68">
+                  <div class="node-icon" xmlns="http://www.w3.org/1999/xhtml">
+                    <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#14b8a6"><path d="M768 128H256c-35.3 0-64 28.7-64 64v640c0 35.3 28.7 64 64 64h512c35.3 0 64-28.7 64-64V192c0-35.3-28.7-64-64-64zM384 768H320V384h64v384zm160 0H480V384h64v384zm160 0h-64V384h64v384z"/></svg>
+                  </div>
+                </foreignObject>
+                <text y="54" text-anchor="middle">跟进记录</text>
+              </g>
+              <g class="feature-node" transform="translate(286,292)">
+                <circle r="34" />
+                <foreignObject x="-34" y="-34" width="68" height="68">
+                  <div class="node-icon" xmlns="http://www.w3.org/1999/xhtml">
+                    <svg viewBox="0 0 1024 1024" width="22" height="22" fill="#14b8a6"><path d="M512 64L64 256v512l448 192 448-192V256L512 64zm0 95.3L862.9 256 512 352.7 161.1 256 512 159.3zM128 299.3l320 102.4v358.3L128 657.7V299.3zm384 460.7V401.7l384-102.4v358.3L512 760z"/></svg>
+                  </div>
+                </foreignObject>
+                <text y="54" text-anchor="middle">数据分析</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="login-form-wrap">
+          <div class="login-form-content">
+            <div class="form-title">欢迎登录</div>
+            <div class="tabs">
+              <div class="tab active" data-target="account" onclick="switchTab(this)">账号密码登录</div>
+              <div class="tab" data-target="wechat" onclick="switchTab(this)">微信登录</div>
+            </div>
+
+            <div id="account" class="panel active">
+              <div class="form-group">
+                <div class="input-wrap">
+                  <svg class="input-icon" viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 512c141.4 0 256-114.6 256-256S653.4 0 512 0 256 114.6 256 256s114.6 256 256 256zm0 64c-170.7 0-512 85.3-512 256v64h1024v-64c0-170.7-341.3-256-512-256z"/></svg>
+                  <input class="form-input" type="text" placeholder="请输入账号 / 手机号" value="admin">
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-wrap">
+                  <svg class="input-icon" viewBox="0 0 1024 1024" fill="currentColor"><path d="M832 384h-64V288c0-159-129-288-288-288S192 129 192 288v96H128c-35.4 0-64 28.6-64 64v384c0 35.4 28.6 64 64 64h704c35.4 0 64-28.6 64-64V448c0-35.4-28.6-64-64-64zM544 725.3V800c0 17.7-14.3 32-32 32s-32-14.3-32-32v-74.7c-18.6-10.9-32-31-32-54.7 0-35.4 28.6-64 64-64s64 28.6 64 64c0 23.7-13.4 43.8-32 54.7zM704 384H320V288c0-106 86-192 192-192s192 86 192 192v96z"/></svg>
+                  <input class="form-input" type="password" placeholder="请输入登录密码" value="123456">
+                </div>
+              </div>
+              <div class="remember-row">
+                <label><input type="checkbox" checked> 记住账号</label>
+                <span class="forgot-link">忘记密码?</span>
+              </div>
+              <button class="login-submit">登 录</button>
+            </div>
+
+            <div id="wechat" class="wechat-login panel">
+              <div>
+                <div class="qr-box">
+                  <svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M668.8 554.9c-9.8 0-19.4 1-28.7 2.8-8.5-46.4-51.4-81.7-102.8-81.7-57.4 0-104 41.4-104 92.4 0 15.6 4.4 30.3 12 43.2-8.9 2.8-18.3 4.3-28 4.3-61.9 0-112.1-44.2-112.1-98.7 0-54.5 50.2-98.7 112.1-98.7 13.8 0 27 2.3 39.2 6.4 16.7-52.7 67.8-91.1 128.2-91.1 79.6 0 144.1 58.9 144.1 131.5 0 16.7-3.6 32.6-10 47.2 28.8 10.6 49.2 36.2 49.2 66 0 39.4-38.9 71.4-86.8 71.4-9.1 0-17.9-1.2-26.2-3.3-9.1 16.5-29.3 28-52.8 28-25.6 0-47.7-13.4-56.5-32.5 7.5 1.5 15.2 2.3 23.1 2.3 61.9 0 112.1-44.2 112.1-98.7 0-44.6-34.8-82.3-82.8-95zM416 448c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm256-64c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48z"/></svg>
+                </div>
+                <p>请使用微信扫一扫登录</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="login-footer">
+      <p>Copyright 2018-2026 QPS Technology Co.,Ltd. All Rights Reserved 京ICP备XXXXXXXX号</p>
+    </footer>
+  </div>
+
+  <style>
+    .panel { display: none; }
+    .panel.active { display: block; }
+  </style>
+  <script>
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      const target = el.dataset.target;
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      if (target === 'wechat') {
+        document.getElementById('wechat').classList.add('active');
+      } else {
+        document.getElementById('account').classList.add('active');
+      }
+    }
+    document.getElementById('account').classList.add('active');
+  </script>
+</body>
+</html>

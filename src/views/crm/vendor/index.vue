@@ -160,6 +160,9 @@
           <div class="detail-column detail-card">
             <div class="section-title section-title-first">
               <h3>联系人</h3>
+              <Permission code="CRM_VENDOR_EDIT">
+                <el-button type="primary" link :icon="Plus" @click="openContactDialog">新增联系人</el-button>
+              </Permission>
             </div>
             <el-table :data="currentVendor.contacts || []" border>
               <el-table-column label="姓名" width="130" show-overflow-tooltip>
@@ -183,22 +186,46 @@
                   </el-tag>
                 </template>
               </el-table-column>
+              <el-table-column label="操作" width="210" class-name="actions-column" header-class-name="actions-column">
+                <template #default="{ row }">
+                  <div class="table-actions">
+                    <Permission code="CRM_VENDOR_EDIT">
+                      <el-button type="primary" link :icon="Edit" @click="openContactDialog(row)">编辑</el-button>
+                    </Permission>
+                    <Permission code="CRM_VENDOR_EDIT">
+                      <el-button v-if="!row.isPrimary && row.status !== 'INVALID'" type="primary" link @click="setPrimaryContact(row)">设为主</el-button>
+                    </Permission>
+                    <Permission code="CRM_VENDOR_EDIT">
+                      <el-button type="primary" link @click="toggleContactStatus(row)">
+                        {{ row.status === "INVALID" ? "启用" : "停用" }}
+                      </el-button>
+                    </Permission>
+                  </div>
+                </template>
+              </el-table-column>
             </el-table>
 
             <div class="section-title">
               <h3>采购品类</h3>
+              <Permission code="CRM_VENDOR_EDIT">
+                <el-button type="primary" link :icon="Plus" @click="openProductDialog">新增品类</el-button>
+              </Permission>
             </div>
             <div v-if="currentVendor.products?.length" class="product-tags">
               <el-tooltip v-for="item in currentVendor.products" :key="item.id" :content="item.remark || item.productName" placement="top">
-                <el-tag effect="plain">{{ item.productName }}</el-tag>
+                <el-tag effect="plain" closable @close="removeProduct(item.productName)">{{ item.productName }}</el-tag>
               </el-tooltip>
             </div>
             <el-empty v-else description="暂无品类" />
           </div>
 
-          <div class="detail-column detail-card">
+          <div class="detail-column">
+            <section class="detail-card">
             <div class="section-title section-title-first">
               <h3>采购计划</h3>
+              <Permission code="CRM_VENDOR_EDIT">
+                <el-button type="primary" link :icon="Plus" @click="openPurchasePlanDialog">新增计划</el-button>
+              </Permission>
             </div>
             <el-table :data="purchasePlans" v-loading="purchasePlanLoading" border>
               <el-table-column label="计划名称" min-width="220" show-overflow-tooltip>
@@ -216,6 +243,14 @@
                   <span v-else>-</span>
                 </template>
               </el-table-column>
+              <el-table-column label="操作" width="120" class-name="actions-column" header-class-name="actions-column">
+                <template #default="{ row }">
+                  <div class="table-actions">
+                    <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openPurchasePlanDialog(row)">编辑</el-button></Permission>
+                    <Permission code="CRM_VENDOR_EDIT"><el-button type="danger" link @click="deletePurchasePlan(row)">删除</el-button></Permission>
+                  </div>
+                </template>
+              </el-table-column>
             </el-table>
             <div class="table-footer">
               <el-pagination
@@ -229,6 +264,29 @@
                 @current-change="handlePurchasePlanPageChange"
               />
             </div>
+            </section>
+
+            <section class="detail-card follow-card">
+              <div class="section-title section-title-first">
+                <h3>沟通记录</h3>
+                <Permission code="CRM_VENDOR_EDIT">
+                  <el-button type="primary" link :icon="Phone" @click="openFollowDialog">记录</el-button>
+                </Permission>
+              </div>
+              <el-timeline v-if="followRecords.length" class="follow-timeline">
+                <el-timeline-item v-for="record in followRecords" :key="record.id" :timestamp="formatDate(record.createdAt)" placement="top">
+                  <div class="follow-item">
+                    <div class="follow-title">
+                      <strong>{{ formatFollowResult(record.followResult, "沟通") }}</strong>
+                      <el-tag size="small">{{ formatFollowType(record.followType) }}</el-tag>
+                    </div>
+                    <p>{{ record.content || "-" }}</p>
+                    <span class="muted">{{ record.contactName || "未指定联系人" }} · 下次 {{ formatDate(record.nextFollowAt) }}</span>
+                  </div>
+                </el-timeline-item>
+              </el-timeline>
+              <el-empty v-else description="暂无沟通记录" />
+            </section>
           </div>
         </section>
       </div>
@@ -286,12 +344,141 @@
         <el-button type="primary" @click="submitAssignOwner">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="contactDialogVisible" :title="contactForm.id ? '编辑联系人' : '新增联系人'" width="520px">
+      <el-form :model="contactForm" label-width="100px">
+        <el-form-item label="姓名">
+          <el-input v-model="contactForm.contactName" clearable placeholder="联系人姓名" />
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="contactForm.phone" clearable placeholder="联系电话" />
+        </el-form-item>
+        <el-form-item label="电话类型">
+          <el-select v-model="contactForm.phoneType">
+            <el-option label="手机" value="MOBILE" />
+            <el-option label="座机" value="LANDLINE" />
+            <el-option label="未知" value="UNKNOWN" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="微信">
+          <el-input v-model="contactForm.wechat" clearable placeholder="微信号" />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="contactForm.roleName" clearable placeholder="请选择角色">
+            <el-option label="负责人" value="OWNER" />
+            <el-option label="采购" value="PURCHASE" />
+            <el-option label="财务" value="FINANCE" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="主联系人">
+          <el-switch v-model="contactForm.isPrimary" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="contactForm.remark" type="textarea" :rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="contactDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitContact">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="productDialogVisible" title="新增采购品类" width="520px">
+      <el-form label-width="90px">
+        <el-form-item label="品类">
+          <el-select
+            v-model="productForm.productName"
+            filterable
+            remote
+            allow-create
+            default-first-option
+            clearable
+            placeholder="输入品类名称"
+            :remote-method="loadProductOptions"
+          >
+            <el-option v-for="item in productOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="productDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitProduct">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="followDialogVisible" title="记录沟通" width="560px">
+      <el-form :model="followForm" label-width="100px">
+        <el-form-item label="联系人">
+          <el-select v-model="followForm.contactId" clearable placeholder="可不指定">
+            <el-option v-for="contact in currentVendor?.contacts || []" :key="contact.id" :label="contact.contactName || contact.phone" :value="contact.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="沟通方式">
+          <el-select v-model="followForm.followType">
+            <el-option label="电话" value="PHONE" />
+            <el-option label="微信" value="WECHAT" />
+            <el-option label="拜访" value="VISIT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="沟通结果" required>
+          <el-select v-model="followForm.followResult" placeholder="请选择结果">
+            <el-option label="已接通" value="CONNECTED" />
+            <el-option label="未接" value="MISSED" />
+            <el-option label="空号" value="EMPTY_NUMBER" />
+            <el-option label="有意向" value="INTERESTED" />
+            <el-option label="无意向" value="NOT_INTERESTED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="意向等级">
+          <el-select v-model="followForm.intentLevel" clearable placeholder="意向等级">
+            <el-option label="A" value="A" />
+            <el-option label="B" value="B" />
+            <el-option label="C" value="C" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="沟通内容">
+          <el-input v-model="followForm.content" type="textarea" :rows="4" placeholder="记录沟通要点" />
+        </el-form-item>
+        <el-form-item label="下次跟进">
+          <el-date-picker v-model="followForm.nextFollowAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="请选择时间" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="followDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitFollowRecord">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="purchasePlanDialogVisible" :title="purchasePlanForm.id ? '编辑采购计划' : '新增采购计划'" width="560px">
+      <el-form :model="purchasePlanForm" label-width="110px">
+        <el-form-item label="计划名称" required>
+          <el-input v-model="purchasePlanForm.purchasePlanName" clearable placeholder="请输入计划名称" />
+        </el-form-item>
+        <el-form-item label="采购时间">
+          <el-date-picker v-model="purchasePlanForm.purchaseTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="请选择时间" />
+        </el-form-item>
+        <el-form-item label="品类数量">
+          <el-input v-model="purchasePlanForm.products" clearable placeholder="例如：黄芪 10 吨、当归 5 吨" />
+        </el-form-item>
+        <el-form-item label="网页">
+          <el-input v-model="purchasePlanForm.pageUrl" clearable placeholder="来源网页地址" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="purchasePlanForm.remark" type="textarea" :rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="purchasePlanDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitPurchasePlan">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts" name="vendor">
 import { reactive, ref } from "vue";
-import { Edit, Link, Plus, QuestionFilled, Refresh, View } from "@element-plus/icons-vue";
+import { Edit, Link, Phone, Plus, QuestionFilled, Refresh, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
@@ -325,6 +512,10 @@ const queryPageRef = ref();
 const detailDrawerVisible = ref(false);
 const vendorDialogVisible = ref(false);
 const assignDialogVisible = ref(false);
+const contactDialogVisible = ref(false);
+const purchasePlanDialogVisible = ref(false);
+const productDialogVisible = ref(false);
+const followDialogVisible = ref(false);
 const isEdit = ref(false);
 const currentVendor = ref<VendorDetail | null>(null);
 const selectedVendors = ref<VendorDetail[]>([]);
@@ -334,6 +525,8 @@ const purchasePlanLoading = ref(false);
 const purchasePlanPage = ref(1);
 const purchasePlanPageSize = ref(10);
 const purchasePlanTotal = ref(0);
+const productOptions = ref<any[]>([]);
+const followRecords = ref<any[]>([]);
 
 const searchForm = reactive({
   keyword: "",
@@ -356,6 +549,39 @@ const assignForm = reactive({
   vendorIds: [] as string[],
   ownerUserId: "",
   remark: "",
+});
+
+const contactForm = reactive({
+  id: "",
+  contactName: "",
+  phone: "",
+  phoneType: "UNKNOWN",
+  wechat: "",
+  roleName: "",
+  isPrimary: false,
+  remark: "",
+});
+
+const purchasePlanForm = reactive({
+  id: "",
+  purchasePlanName: "",
+  purchaseTime: "",
+  products: "",
+  pageUrl: "",
+  remark: "",
+});
+
+const productForm = reactive({
+  productName: "",
+});
+
+const followForm = reactive({
+  contactId: undefined as string | undefined,
+  followType: "PHONE",
+  followResult: "",
+  intentLevel: "",
+  content: "",
+  nextFollowAt: "",
 });
 
 const priorityLabels: Record<string, string> = {
@@ -390,6 +616,20 @@ const contactStatusLabels: Record<string, string> = {
   UNVERIFIED: "未验证",
   VALID: "有效",
   INVALID: "无效",
+};
+
+const followTypeLabels: Record<string, string> = {
+  PHONE: "电话",
+  WECHAT: "微信",
+  VISIT: "拜访",
+};
+
+const followResultLabels: Record<string, string> = {
+  CONNECTED: "已接通",
+  MISSED: "未接",
+  EMPTY_NUMBER: "空号",
+  INTERESTED: "有意向",
+  NOT_INTERESTED: "无意向",
 };
 
 const handleReset = () => {
@@ -518,20 +758,243 @@ const submitAssignOwner = async () => {
   }
 };
 
+const resetContactForm = () => {
+  Object.assign(contactForm, {
+    id: "",
+    contactName: "",
+    phone: "",
+    phoneType: "UNKNOWN",
+    wechat: "",
+    roleName: "",
+    isPrimary: false,
+    remark: "",
+  });
+};
+
+const openContactDialog = (row?: any) => {
+  resetContactForm();
+  if (row) {
+    Object.assign(contactForm, { ...row });
+  }
+  contactDialogVisible.value = true;
+};
+
+const isValidPhone = (phone: string) => /^1[3-9]\d{9}$/.test(phone) || /^0\d{2,3}-?\d{7,8}(-\d{1,6})?$/.test(phone);
+
+const submitContact = async () => {
+  if (!currentVendor.value) return;
+  const phone = contactForm.phone.trim();
+  if (!contactForm.contactName.trim() && !phone) {
+    ElMessage.error("请填写联系人姓名或电话");
+    return;
+  }
+  if (phone && !isValidPhone(phone)) {
+    ElMessage.error("联系电话格式不正确");
+    return;
+  }
+
+  const request = {
+    ...contactForm,
+    contactName: contactForm.contactName.trim(),
+    phone,
+  };
+
+  if (contactForm.id) {
+    await crmVendorApi.updateContact(contactForm.id, request);
+  } else {
+    await crmVendorApi.createContact(currentVendor.value.id, request);
+  }
+
+  ElMessage.success("联系人已保存");
+  contactDialogVisible.value = false;
+  await refreshDetail();
+  reloadList();
+};
+
+const setPrimaryContact = async (row: any) => {
+  if (!currentVendor.value) return;
+  await crmVendorApi.setPrimaryContact(row.id);
+  ElMessage.success("主联系人已更新");
+  await refreshDetail();
+  reloadList();
+};
+
+const toggleContactStatus = async (row: any) => {
+  if (!currentVendor.value) return;
+  const status = row.status === "INVALID" ? "VALID" : "INVALID";
+  await crmVendorApi.updateContactStatus(row.id, {
+    status,
+    remark: row.remark || "",
+  });
+  ElMessage.success(status === "INVALID" ? "联系人已停用" : "联系人已启用");
+  await refreshDetail();
+  reloadList();
+};
+
+const getProductValues = () => (currentVendor.value?.products || []).map((item: any) => item.productName).filter(Boolean);
+
+const saveProductValues = async (values: string[]) => {
+  if (!currentVendor.value) return;
+  await crmVendorApi.saveBusinessEntityAttributes({
+    entityType: "CRM_VENDOR",
+    entityId: currentVendor.value.id,
+    attributeCode: "PURCHASE_PRODUCT",
+    values,
+  });
+  await refreshDetail(false);
+  reloadList();
+};
+
+const openProductDialog = async () => {
+  productForm.productName = "";
+  productDialogVisible.value = true;
+  await loadProductOptions("");
+};
+
+const loadProductOptions = async (keyword: string) => {
+  const result = await crmVendorApi.getBusinessEntityAttributeOptions({
+    entityType: "CRM_VENDOR",
+    attributeCode: "PURCHASE_PRODUCT",
+    keyword,
+    pageSize: 30,
+  });
+  productOptions.value = result.data || [];
+};
+
+const submitProduct = async () => {
+  const productName = productForm.productName.trim();
+  if (!productName) {
+    ElMessage.error("请输入采购品类");
+    return;
+  }
+
+  const values = Array.from(new Set([...getProductValues(), productName]));
+  await saveProductValues(values);
+  ElMessage.success("采购品类已保存");
+  productDialogVisible.value = false;
+};
+
+const removeProduct = async (productName: string) => {
+  const values = getProductValues().filter(value => value !== productName);
+  await saveProductValues(values);
+  ElMessage.success("采购品类已删除");
+};
+
+const resetPurchasePlanForm = () => {
+  Object.assign(purchasePlanForm, {
+    id: "",
+    purchasePlanName: "",
+    purchaseTime: "",
+    products: "",
+    pageUrl: "",
+    remark: "",
+  });
+};
+
+const openPurchasePlanDialog = (row?: any) => {
+  resetPurchasePlanForm();
+  if (row) {
+    Object.assign(purchasePlanForm, {
+      id: row.id,
+      purchasePlanName: row.purchasePlanName || "",
+      purchaseTime: toDateTimeInputValue(row.purchaseTime),
+      products: row.products || "",
+      pageUrl: row.pageUrl || "",
+      remark: row.remark || "",
+    });
+  }
+  purchasePlanDialogVisible.value = true;
+};
+
+const submitPurchasePlan = async () => {
+  if (!currentVendor.value) return;
+  if (!purchasePlanForm.purchasePlanName.trim()) {
+    ElMessage.error("请输入采购计划名称");
+    return;
+  }
+
+  const request = {
+    ...purchasePlanForm,
+    purchasePlanName: purchasePlanForm.purchasePlanName.trim(),
+    purchaseTime: purchasePlanForm.purchaseTime || null,
+  };
+
+  if (purchasePlanForm.id) {
+    await crmVendorApi.updateVendorPurchasePlan(currentVendor.value.id, purchasePlanForm.id, request);
+  } else {
+    await crmVendorApi.createVendorPurchasePlan(currentVendor.value.id, request);
+  }
+
+  ElMessage.success("采购计划已保存");
+  purchasePlanDialogVisible.value = false;
+  purchasePlanPage.value = 1;
+  await refreshDetail();
+  reloadList();
+};
+
+const deletePurchasePlan = async (row: any) => {
+  if (!currentVendor.value) return;
+  await crmVendorApi.deleteVendorPurchasePlan(currentVendor.value.id, row.id);
+  ElMessage.success("采购计划已删除");
+  purchasePlanPage.value = 1;
+  await refreshDetail();
+  reloadList();
+};
+
+const resetFollowForm = () => {
+  Object.assign(followForm, {
+    contactId: undefined,
+    followType: "PHONE",
+    followResult: "",
+    intentLevel: "",
+    content: "",
+    nextFollowAt: "",
+  });
+};
+
+const openFollowDialog = () => {
+  if (!currentVendor.value) return;
+  resetFollowForm();
+  const primaryContact = currentVendor.value.contacts?.find((contact: any) => contact.isPrimary);
+  followForm.contactId = primaryContact?.id;
+  followDialogVisible.value = true;
+};
+
+const submitFollowRecord = async () => {
+  if (!currentVendor.value) return;
+  if (!followForm.followResult) {
+    ElMessage.error("请选择沟通结果");
+    return;
+  }
+
+  await crmVendorApi.createFollowRecord(currentVendor.value.id, {
+    ...followForm,
+    contactId: followForm.contactId || null,
+    nextFollowAt: followForm.nextFollowAt || null,
+  });
+  ElMessage.success("沟通记录已保存");
+  followDialogVisible.value = false;
+  await loadFollowRecords();
+};
+
 const openDetail = async (row: any) => {
   const result = await crmVendorApi.getVendor(row.id);
   currentVendor.value = result.data;
   detailDrawerVisible.value = true;
   purchasePlanPage.value = 1;
   await loadPurchasePlans();
+  await loadFollowRecords();
 };
 
-const refreshDetail = async () => {
+const refreshDetail = async (showMessage = true) => {
   if (!currentVendor.value) return;
   const result = await crmVendorApi.getVendor(currentVendor.value.id);
   currentVendor.value = result.data;
   await loadPurchasePlans();
-  ElMessage.success("厂商详情已刷新");
+  await loadFollowRecords();
+  if (showMessage) {
+    ElMessage.success("厂商详情已刷新");
+  }
 };
 
 const loadPurchasePlans = async () => {
@@ -550,6 +1013,12 @@ const loadPurchasePlans = async () => {
   } finally {
     purchasePlanLoading.value = false;
   }
+};
+
+const loadFollowRecords = async () => {
+  if (!currentVendor.value) return;
+  const result = await crmVendorApi.getFollowRecords(currentVendor.value.id);
+  followRecords.value = result.data || [];
 };
 
 const handlePurchasePlanPageChange = async (page: number) => {
@@ -597,6 +1066,16 @@ const formatRole = (value?: string | null) => {
 const formatContactStatus = (value?: string | null) => {
   if (!value) return "-";
   return contactStatusLabels[value] || value;
+};
+
+const formatFollowType = (value?: string | null, fallback = "-") => {
+  if (!value) return fallback;
+  return followTypeLabels[value] || value;
+};
+
+const formatFollowResult = (value?: string | null, fallback = "-") => {
+  if (!value) return fallback;
+  return followResultLabels[value] || value;
 };
 
 const formatDate = (value?: string | null) => {
@@ -779,6 +1258,10 @@ const formatDate = (value?: string | null) => {
     min-width: 0;
   }
 
+  .detail-column > .detail-card + .detail-card {
+    margin-top: 16px;
+  }
+
   .detail-card {
     padding: 16px;
     border: 1px solid var(--el-border-color-light);
@@ -822,6 +1305,44 @@ const formatDate = (value?: string | null) => {
     gap: 8px;
     min-height: 40px;
     padding: 2px 0 4px;
+  }
+
+  .follow-card {
+    .follow-timeline {
+      padding-top: 4px;
+    }
+
+    .follow-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 8px;
+      background: #fbfdff;
+
+      p {
+        margin: 0;
+        color: var(--el-text-color-primary);
+        line-height: 1.55;
+      }
+    }
+
+    .follow-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+
+      strong {
+        color: #111827;
+      }
+    }
+
+    .muted {
+      color: var(--el-text-color-secondary);
+      font-size: 12px;
+    }
   }
 
   .table-footer {
