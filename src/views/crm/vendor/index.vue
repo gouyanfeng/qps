@@ -49,19 +49,19 @@
           :row-key="'id'"
           :fit="true"
           class="wide-list-table"
-          style="--table-min-width: 1500px"
+          style="--table-min-width: 1560px"
           border
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="44" fixed="left" />
-          <el-table-column label="厂商名称" min-width="200" fixed="left" show-overflow-tooltip>
+          <el-table-column label="厂商名称" min-width="220" fixed="left" show-overflow-tooltip>
             <template #default="{ row }">
               <el-button type="primary" link class="vendor-link" @click="openDetail(row)">
                 {{ row.vendorName || "-" }}
               </el-button>
             </template>
           </el-table-column>
-          <el-table-column label="优先级" width="92">
+          <el-table-column label="优先级" width="88">
             <template #default="{ row }">
               <el-tooltip :content="getPriorityRule(row.priorityLevel)" placement="top">
                 <el-tag :type="getPriorityType(row.priorityLevel)" :title="getPriorityRule(row.priorityLevel)">
@@ -70,7 +70,7 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column label="主联系人 / 电话" width="156">
+          <el-table-column label="主联系人 / 电话" width="160">
             <template #default="{ row }">
               <div class="cell-main">
                 <span>{{ row.primaryContactName || "-" }}</span>
@@ -78,29 +78,29 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="负责人" width="104" show-overflow-tooltip>
+          <el-table-column label="负责人" width="96" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "未分配" }}</template>
           </el-table-column>
-          <el-table-column label="采购计划" width="88" align="right">
+          <el-table-column label="采购计划" width="84" align="right">
             <template #default="{ row }">{{ row.purchasePlanCount || 0 }}</template>
           </el-table-column>
           <el-table-column label="品类" width="72" align="right">
             <template #default="{ row }">{{ row.productCount || 0 }}</template>
           </el-table-column>
-          <el-table-column label="最近采购时间" width="160">
+          <el-table-column label="最近采购时间" width="150">
             <template #default="{ row }">{{ formatDate(row.latestPurchaseTime) }}</template>
           </el-table-column>
-          <el-table-column label="最近采购计划" min-width="280" show-overflow-tooltip>
+          <el-table-column label="最近采购计划" min-width="260" show-overflow-tooltip>
             <template #default="{ row }">{{ row.latestPurchasePlanName || "-" }}</template>
           </el-table-column>
-          <el-table-column label="更新时间" width="160">
+          <el-table-column label="更新时间" width="150">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="240" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <Permission code="CRM_VENDOR_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
-              <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button></Permission>
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
+              <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button></Permission>
+              <Permission code="CRM_VENDOR_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -266,27 +266,52 @@
             </div>
             </section>
 
-            <section class="detail-card follow-card">
-              <div class="section-title section-title-first">
-                <h3>沟通记录</h3>
-                <Permission code="CRM_VENDOR_EDIT">
-                  <el-button type="primary" link :icon="Phone" @click="openFollowDialog">记录</el-button>
-                </Permission>
-              </div>
-              <el-timeline v-if="followRecords.length" class="follow-timeline">
-                <el-timeline-item v-for="record in followRecords" :key="record.id" :timestamp="formatDate(record.createdAt)" placement="top">
-                  <div class="follow-item">
-                    <div class="follow-title">
-                      <strong>{{ formatFollowResult(record.followResult, "沟通") }}</strong>
-                      <el-tag size="small">{{ formatFollowType(record.followType) }}</el-tag>
+            <div class="activity-row">
+              <section class="detail-card follow-card activity-panel">
+                <div class="section-title section-title-first">
+                  <h3>沟通记录</h3>
+                  <Permission code="CRM_VENDOR_EDIT">
+                    <el-button type="primary" link :icon="Phone" @click="openFollowDialog">记录</el-button>
+                  </Permission>
+                </div>
+                <el-timeline v-if="followRecords.length" class="follow-timeline">
+                  <el-timeline-item v-for="record in followRecords" :key="record.id" :timestamp="formatDate(record.createdAt)" placement="top">
+                    <div class="follow-item">
+                      <div class="follow-title">
+                        <strong>{{ formatFollowResult(record.followResult, "沟通") }}</strong>
+                        <el-tag size="small">{{ formatFollowType(record.followType) }}</el-tag>
+                      </div>
+                      <p>{{ record.content || "-" }}</p>
+                      <span class="muted">{{ record.contactName || "未指定联系人" }} · 下次 {{ formatDate(record.nextFollowAt) }}</span>
                     </div>
-                    <p>{{ record.content || "-" }}</p>
-                    <span class="muted">{{ record.contactName || "未指定联系人" }} · 下次 {{ formatDate(record.nextFollowAt) }}</span>
-                  </div>
-                </el-timeline-item>
-              </el-timeline>
-              <el-empty v-else description="暂无沟通记录" />
-            </section>
+                  </el-timeline-item>
+                </el-timeline>
+                <el-empty v-else description="暂无沟通记录" />
+              </section>
+
+              <section class="detail-card follow-card activity-panel">
+                <div class="section-title section-title-first">
+                  <h3>流转记录</h3>
+                </div>
+                <el-timeline v-if="currentVendor.transferRecords?.length">
+                  <el-timeline-item
+                    v-for="record in currentVendor.transferRecords"
+                    :key="record.id"
+                    :timestamp="formatDate(record.createdAt)"
+                    placement="top"
+                  >
+                    <div class="follow-item">
+                      <div class="follow-title">
+                        <strong>{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
+                      </div>
+                      <p v-if="record.remark">{{ record.remark }}</p>
+                      <span class="muted">操作人 {{ record.operatorUserName || "-" }}</span>
+                    </div>
+                  </el-timeline-item>
+                </el-timeline>
+                <el-empty v-else description="暂无流转记录" />
+              </section>
+            </div>
           </div>
         </section>
       </div>
@@ -505,6 +530,7 @@ interface VendorDetail {
   contacts: any[];
   products: any[];
   purchasePlans: any[];
+  transferRecords: any[];
 }
 
 const queryPageRef = ref();
@@ -1078,6 +1104,8 @@ const formatFollowResult = (value?: string | null, fallback = "-") => {
   return followResultLabels[value] || value;
 };
 
+const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} 至 ${toName || "未分配"}`;
+
 const formatDate = (value?: string | null) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -1093,6 +1121,21 @@ const formatDate = (value?: string | null) => {
   .vendor-link {
     padding: 0;
     font-weight: 600;
+  }
+
+  :deep(.wide-list-table .el-table__fixed-right) {
+    box-shadow: -8px 0 14px -12px rgba(15, 23, 42, 0.28);
+  }
+
+  :deep(.wide-list-table .el-table__fixed-right::before) {
+    display: none;
+  }
+
+  :deep(.wide-list-table .actions-column .cell) {
+    gap: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
   }
 
   .cell-main {
@@ -1307,6 +1350,17 @@ const formatDate = (value?: string | null) => {
     padding: 2px 0 4px;
   }
 
+  .activity-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .activity-panel {
+    flex: 1;
+    min-width: 0;
+  }
+
   .follow-card {
     .follow-timeline {
       padding-top: 4px;
@@ -1367,11 +1421,13 @@ const formatDate = (value?: string | null) => {
     .detail-grid {
       grid-template-columns: 1fr;
     }
+
+    .activity-row {
+      flex-direction: column;
+    }
   }
 }
 </style>
-
-
 
 
 

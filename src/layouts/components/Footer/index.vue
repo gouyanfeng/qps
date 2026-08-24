@@ -1,6 +1,6 @@
-﻿<template>
+﻿﻿<template>
   <div class="footer flx-center">
-    <span> 2026 QPS Management System </span>
+    <span> 2026 JUNAN Management System </span>
   </div>
 </template>
 

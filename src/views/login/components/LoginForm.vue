@@ -102,7 +102,7 @@ const login = (formEl: FormInstance | undefined) => {
 
       ElNotification({
         title: "登录成功",
-        message: "欢迎登录 QPS 客户关系管理系统",
+        message: "欢迎登录 JUNAN 客户关系管理系统",
         type: "success",
         duration: 3000
       });

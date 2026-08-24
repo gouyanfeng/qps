@@ -4,7 +4,7 @@
       <div class="login-card">
         <div class="login-showcase">
           <div class="showcase-inner">
-            <h2 class="brand-title">QPS</h2>
+            <h2 class="brand-title">JUNAN</h2>
             <p class="brand-subtitle">智能客户关系管理平台</p>
             <p class="brand-slogan">让销售更高效 · 让决策更智能</p>
             <div class="feature-list">
@@ -33,7 +33,7 @@
       </div>
 
       <footer class="login-footer">
-        <p>Copyright 2018-2026 QPS Technology Co.,Ltd.</p>
+        <p>Copyright 2018-2026 JUNAN Technology Co.,Ltd.</p>
       </footer>
     </main>
   </div>

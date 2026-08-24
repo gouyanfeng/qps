@@ -1,6 +1,6 @@
-﻿<!-- 💥 这里是一次性加载 LayoutComponents -->
+﻿﻿<!-- 💥 这里是一次性加载 LayoutComponents -->
 <template>
-  <el-watermark id="watermark" :font="font" :content="watermark ? ['QPS', 'Management System'] : ''">
+  <el-watermark id="watermark" :font="font" :content="watermark ? ['JUNAN', 'Management System'] : ''">
     <component :is="LayoutComponents[layout]" />
     <ThemeDrawer />
   </el-watermark>

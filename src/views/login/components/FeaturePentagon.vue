@@ -19,7 +19,7 @@
       <g class="center-node">
         <circle cx="200" cy="190" r="50" />
         <circle cx="200" cy="190" r="38" />
-        <text x="200" y="198" text-anchor="middle" class="center-text">QPS</text>
+        <text x="200" y="198" text-anchor="middle" class="center-text">JUNAN</text>
       </g>
 
       <g v-for="(item, i) in features" :key="i" class="feature-node" :transform="`translate(${item.x}, ${item.y})`">
