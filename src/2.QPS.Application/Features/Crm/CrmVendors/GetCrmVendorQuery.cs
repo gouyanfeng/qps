@@ -78,6 +78,12 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             })
             .ToListAsync(cancellationToken);
 
+        var transferRecords = await CrmTransferRecords.GetAsync(
+            _dbContext,
+            VendorEntityType,
+            vendor.Id,
+            cancellationToken);
+
         var dto = new CrmVendorDto
         {
             Id = vendor.Id,
@@ -101,7 +107,8 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             CreatedAt = vendor.CreatedAt,
             UpdatedAt = vendor.UpdatedAt,
             Contacts = contacts,
-            Products = products
+            Products = products,
+            TransferRecords = transferRecords
         };
 
         await CrmVendorOwners.FillAsync(_dbContext, new List<CrmVendorDto> { dto }, cancellationToken);

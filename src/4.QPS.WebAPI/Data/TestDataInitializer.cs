@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Domain.Entities.System;
 using QPS.Application.Features.Crm;
 using QPS.Domain.Entities.Crm;
@@ -34,6 +34,7 @@ public static class TestDataInitializer
         NormalizeCrmMainProducts(dbContext);
         EnsureDefaultCrmOwner(dbContext);
         EnsureDefaultCrmSubjectTransferRecords(dbContext);
+        EnsureDefaultCrmVendorTransferRecords(dbContext);
     }
 
     private static void EnsureCrmHerbBaseLegacyTables(AppDbContext dbContext)
@@ -1858,9 +1859,51 @@ public static class TestDataInitializer
                 );
             """);
     }
+
+    private static void EnsureDefaultCrmVendorTransferRecords(AppDbContext dbContext)
+    {
+        dbContext.Database.ExecuteSqlRaw("""
+            IF OBJECT_ID(N'[CrmVendors]', N'U') IS NULL
+                OR OBJECT_ID(N'[CrmTransferRecords]', N'U') IS NULL
+            BEGIN
+                RETURN;
+            END;
+
+            INSERT INTO [CrmTransferRecords](
+                [Id],
+                [EntityType],
+                [EntityId],
+                [FromOwnerUserId],
+                [ToOwnerUserId],
+                [OperatorUserId],
+                [Remark],
+                [CreatedAt],
+                [UpdatedAt],
+                [CreatedBy],
+                [UpdatedBy],
+                [IsDeleted])
+            SELECT
+                NEWID(),
+                N'CRM_VENDOR',
+                [Vendor].[Id],
+                NULL,
+                [Vendor].[OwnerUserId],
+                NULL,
+                N'系统回填初始分配记录',
+                [Vendor].[CreatedAt],
+                [Vendor].[CreatedAt],
+                N'System',
+                N'System',
+                0
+            FROM [CrmVendors] AS [Vendor]
+            WHERE [Vendor].[IsDeleted] = 0
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM [CrmTransferRecords] AS [Record]
+                    WHERE [Record].[EntityType] = N'CRM_VENDOR'
+                        AND [Record].[EntityId] = [Vendor].[Id]
+                        AND [Record].[IsDeleted] = 0
+                );
+            """);
+    }
 }
-
-
-
-
-

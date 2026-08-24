@@ -39,6 +39,8 @@ public class CrmVendorDto
     public List<CrmVendorProductDto> Products { get; set; } = new();
 
     public List<CrmVendorPurchasePlanDto> PurchasePlans { get; set; } = new();
+
+    public List<CrmTransferRecordDto> TransferRecords { get; set; } = new();
 }
 
 public class CrmVendorProductDto

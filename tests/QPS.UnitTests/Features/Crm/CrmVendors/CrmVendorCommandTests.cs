@@ -43,4 +43,40 @@ public class CrmVendorCommandTests
         Assert.Equal(operatorUserId, transferRecord.OperatorUserId);
         Assert.Equal("Created by unit test", transferRecord.Remark);
     }
+
+    [Fact]
+    public async Task Get_ShouldIncludeTransferRecordsFromGenericTable()
+    {
+        var operatorUser = SystemUser.Create("operator", "password", "Operator", Guid.NewGuid());
+        var owner = SystemUser.Create("owner", "password", "Owner", Guid.NewGuid());
+        await using var dbContext = TestDbContextFactory.Create(new TestCurrentUserService(operatorUser.Id.ToString()));
+        dbContext.SystemUsers.AddRange(operatorUser, owner);
+        await dbContext.SaveChangesAsync();
+
+        var createHandler = new CreateCrmVendorHandler(
+            dbContext,
+            new TestCurrentUserService(operatorUser.Id.ToString()));
+        await createHandler.Handle(new CreateCrmVendorCommand
+        {
+            Request = new CrmVendorCreateRequest
+            {
+                VendorName = "Transfer History Vendor",
+                PriorityLevel = "High",
+                OwnerUserId = owner.Id,
+                Remark = "Initial assignment"
+            }
+        }, CancellationToken.None);
+
+        var vendor = await dbContext.CrmVendors.SingleAsync(item => item.VendorName == "Transfer History Vendor");
+        var detail = await new GetCrmVendorHandler(dbContext).Handle(
+            new GetCrmVendorQuery { Id = vendor.Id },
+            CancellationToken.None);
+
+        var transferRecord = Assert.Single(detail.TransferRecords);
+        Assert.Null(transferRecord.FromOwnerUserId);
+        Assert.Equal(owner.Id, transferRecord.ToOwnerUserId);
+        Assert.Equal("Owner", transferRecord.ToOwnerUserName);
+        Assert.Equal("Operator", transferRecord.OperatorUserName);
+        Assert.Equal("Initial assignment", transferRecord.Remark);
+    }
 }
