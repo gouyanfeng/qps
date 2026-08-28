@@ -1,0 +1,47 @@
+﻿using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using QPS.Application.Interfaces;
+
+namespace QPS.Infrastructure.Identity;
+
+public class JwtGenerator : IJwtGenerator
+{
+    private readonly string _secretKey;
+    private readonly string _issuer;
+    private readonly string _audience;
+
+    public JwtGenerator(string secretKey, string issuer, string audience)
+    {
+        _secretKey = secretKey ?? throw new ArgumentNullException(nameof(secretKey));
+        _issuer = issuer ?? throw new ArgumentNullException(nameof(issuer));
+        _audience = audience ?? throw new ArgumentNullException(nameof(audience));
+    }
+
+    public string GenerateToken(Guid userId, string username, string role)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim("userId", userId.ToString()),
+            new Claim("username", username),
+            new Claim("role", role)
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            _issuer,
+            _audience,
+            claims,
+            expires: DateTime.Now.AddDays(10),
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
+
+

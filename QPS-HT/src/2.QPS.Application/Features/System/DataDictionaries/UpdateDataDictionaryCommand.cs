@@ -1,0 +1,60 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using QPS.Application.Contracts.System.DataDictionaries;
+using QPS.Application.Interfaces;
+using QPS.Domain.Entities.System;
+using QPS.Domain.Exceptions;
+
+namespace QPS.Application.Features.System.DataDictionaries;
+
+public record UpdateDataDictionaryCommand : IRequest<bool>
+{
+    public Guid Id { get; set; }
+    public DataDictionaryUpdateRequest Request { get; set; }
+}
+
+public class UpdateDataDictionaryCommandHandler : IRequestHandler<UpdateDataDictionaryCommand, bool>
+{
+    private readonly IDbContext _dbContext;
+
+    public UpdateDataDictionaryCommandHandler(IDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<bool> Handle(UpdateDataDictionaryCommand request, CancellationToken cancellationToken)
+    {
+        var dataDictionary = await _dbContext.SystemDataDictionaries
+            .FirstOrDefaultAsync(d => d.Id == request.Id, cancellationToken);
+
+        if (dataDictionary == null)
+        {
+            throw new BusinessException(404, "Data dictionary does not exist.");
+        }
+
+        if (request.Request.ParentId.HasValue)
+        {
+            var parentExists = await _dbContext.SystemDataDictionaries
+                .AnyAsync(d => d.Id == request.Request.ParentId.Value, cancellationToken);
+
+            if (!parentExists)
+            {
+                throw new BusinessException(404, "Parent data dictionary does not exist.");
+            }
+        }
+
+        dataDictionary.Update(
+            request.Request.Name,
+            request.Request.Value,
+            request.Request.Description,
+            request.Request.SortOrder,
+            request.Request.IsActive,
+            request.Request.ParentId);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+}
+
+

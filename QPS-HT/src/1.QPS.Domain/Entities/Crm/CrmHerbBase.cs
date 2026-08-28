@@ -1,0 +1,273 @@
+using QPS.Domain.Common;
+
+namespace QPS.Domain.Entities.Crm;
+
+/// <summary>
+/// CRM药材基地，来源于清洗后的线索并用于后续药材基地管理。
+/// </summary>
+public class CrmHerbBase : BaseEntity
+{
+    private const string PendingContactStatus = "PENDING";
+    private const string FollowingUpStatus = "FOLLOWING";
+    private const string InterestedStatus = "INTERESTED";
+
+    public Guid? HerbBaseSubjectId { get; private set; }
+
+    public virtual CrmHerbBaseSubject? HerbBaseSubject { get; private set; }
+
+    /// <summary>
+    /// 基地名称，对应清洗线索名称，导入CRM使用。
+    /// </summary>
+    public string BaseName { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 兼容旧接口字段，等同于基地名称。
+    /// </summary>
+    public string HerbBaseName => BaseName;
+
+    /// <summary>
+    /// 主体名称，用于记录客户对应的工商或经营主体。
+    /// </summary>
+    public string SubjectName { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 药材基地等级，例如高、中、低、无效。
+    /// </summary>
+    public string Grade { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 线索评分，用于排序和筛选。
+    /// </summary>
+    public int Score { get; private set; }
+
+    /// <summary>
+    /// 种植规模，单位：亩。
+    /// </summary>
+    public decimal? Scale { get; private set; }
+
+    /// <summary>
+    /// 省份。
+    /// </summary>
+    public string Province { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 城市。
+    /// </summary>
+    public string City { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 区县。
+    /// </summary>
+    public string Area { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 详细地址，限制200字符。
+    /// </summary>
+    public string Address { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 纬度。
+    /// </summary>
+    public decimal? Lat { get; private set; }
+
+    /// <summary>
+    /// 经度。
+    /// </summary>
+    public decimal? Lng { get; private set; }
+
+    /// <summary>
+    /// 数据来源平台，默认BAIDU_MAP。
+    /// </summary>
+    public string SourcePlatform { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 来源表记录ID，对应BaiduPoiHerbBase.Id。
+    /// </summary>
+    public long? SourceId { get; private set; }
+
+    /// <summary>
+    /// 药材基地处理状态，例如PENDING、FOLLOWING、INTERESTED、DEAL、LOST。
+    /// </summary>
+    public string Status { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 负责人用户ID。
+    /// </summary>
+    public Guid? OwnerUserId { get; private set; }
+
+    /// <summary>
+    /// 备注，例如疑似药房、电话需二次确认、合作社但无品类。
+    /// </summary>
+    public string Remark { get; private set; } = string.Empty;
+
+    public string PrimaryContactName { get; private set; } = string.Empty;
+
+    public string PrimaryContactPhone { get; private set; } = string.Empty;
+
+    public DateTime? LastFollowAt { get; private set; }
+
+    public string LastFollowResult { get; private set; } = string.Empty;
+
+    public DateTime? NextFollowAt { get; private set; }
+
+    private CrmHerbBase() { }
+
+    private CrmHerbBase(
+        string herbBaseName,
+        string grade,
+        int score,
+        string province,
+        string city,
+        string area,
+        string address,
+        decimal? lat,
+        decimal? lng,
+        string sourcePlatform,
+        long? sourceId,
+        Guid? ownerUserId,
+        string remark,
+        string subjectName,
+        decimal? scale = null)
+    {
+        BaseName = herbBaseName;
+        SubjectName = subjectName;
+        Grade = CrmHerbBaseSubjectScorePolicy.NormalizeGrade(grade);
+        Score = score;
+        Province = province;
+        City = city;
+        Area = area;
+        Address = address;
+        Scale = scale;
+        Lat = lat;
+        Lng = lng;
+        SourcePlatform = sourcePlatform;
+        SourceId = sourceId;
+        OwnerUserId = ownerUserId;
+        Remark = remark;
+        Status = PendingContactStatus;
+    }
+
+    public static CrmHerbBase Create(
+        string herbBaseName,
+        string grade,
+        int score,
+        string province,
+        string city,
+        string area,
+        string address,
+        decimal? lat,
+        decimal? lng,
+        string sourcePlatform,
+        long? sourceId,
+        Guid? ownerUserId,
+        string remark,
+        string subjectName = "",
+        decimal? scale = null)
+    {
+        return new CrmHerbBase(
+            herbBaseName,
+            grade,
+            score,
+            province,
+            city,
+            area,
+            address,
+            lat,
+            lng,
+            sourcePlatform,
+            sourceId,
+            ownerUserId,
+            remark,
+            subjectName,
+            scale);
+    }
+
+    public void UpdateBasicInfo(
+        string herbBaseName,
+        string grade,
+        int score,
+        string province,
+        string city,
+        string area,
+        string address,
+        decimal? scale,
+        decimal? lat,
+        decimal? lng,
+        string remark,
+        string subjectName = "")
+    {
+        BaseName = herbBaseName;
+        SubjectName = subjectName;
+        Grade = CrmHerbBaseSubjectScorePolicy.NormalizeGrade(grade);
+        Score = score;
+        Province = province;
+        City = city;
+        Area = area;
+        Address = address;
+        Scale = scale;
+        Lat = lat;
+        Lng = lng;
+        Remark = remark;
+    }
+
+    public void RenameSubject(string subjectName)
+    {
+        SubjectName = subjectName;
+    }
+
+    /// <summary>
+    /// 绑定药材基地主体。
+    /// </summary>
+    public void SetHerbBaseSubject(Guid? herbBaseSubjectId)
+    {
+        HerbBaseSubjectId = herbBaseSubjectId;
+    }
+
+    public void AssignOwner(Guid? ownerUserId)
+    {
+        OwnerUserId = ownerUserId;
+    }
+
+    public void UpdatePrimaryContact(string contactName, string phone)
+    {
+        PrimaryContactName = contactName;
+        PrimaryContactPhone = phone;
+    }
+
+    public void UpdateSource(string sourcePlatform, long? sourceId)
+    {
+        SourcePlatform = sourcePlatform;
+        SourceId = sourceId;
+    }
+
+    public void ClearPrimaryContact()
+    {
+        PrimaryContactName = string.Empty;
+        PrimaryContactPhone = string.Empty;
+    }
+
+    public void UpdateFollowSummary(DateTime followAt, string followResult, DateTime? nextFollowAt)
+    {
+        LastFollowAt = followAt;
+        LastFollowResult = followResult;
+        NextFollowAt = nextFollowAt;
+
+        if (followResult == InterestedStatus || followResult == "有意向")
+        {
+            Status = InterestedStatus;
+        }
+        else if (Status == PendingContactStatus)
+        {
+            Status = FollowingUpStatus;
+        }
+    }
+
+    public void UpdateStatus(string status, string remark)
+    {
+        Status = status;
+        Remark = remark;
+    }
+}
+
+
+

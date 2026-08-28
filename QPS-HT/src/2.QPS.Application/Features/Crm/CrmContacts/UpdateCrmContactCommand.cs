@@ -1,0 +1,237 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using QPS.Application.Contracts.Crm;
+using QPS.Application.Interfaces;
+using QPS.Domain.Entities.Crm;
+using QPS.Domain.Events.Crm;
+using QPS.Domain.Exceptions;
+
+namespace QPS.Application.Features.Crm.CrmContacts;
+
+public class UpdateCrmContactCommand : IRequest<bool>
+{
+    public Guid Id { get; set; }
+
+    public CrmContactUpdateRequest Request { get; set; } = null!;
+}
+
+public class UpdateCrmContactHandler : IRequestHandler<UpdateCrmContactCommand, bool>
+{
+    private const string HerbBaseSubjectEntityType = CrmCodes.HerbBaseSubjectEntityType;
+    private const string VendorEntityType = CrmCodes.VendorEntityType;
+    private const string InvalidStatus = "INVALID";
+
+    private readonly IDbContext _dbContext;
+    private readonly IDomainEventDispatcher _dispatcher;
+
+    public UpdateCrmContactHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
+    {
+        _dbContext = dbContext;
+        _dispatcher = dispatcher;
+    }
+
+    public async Task<bool> Handle(UpdateCrmContactCommand request, CancellationToken cancellationToken)
+    {
+        var contact = await GetContact(request.Id, cancellationToken);
+        EnsureCanSetPrimary(request.Request, contact);
+        var subject = contact.EntityType == HerbBaseSubjectEntityType
+            ? await GetSubject(contact, cancellationToken)
+            : null;
+        if (contact.EntityType == VendorEntityType)
+        {
+            await EnsureVendorExists(contact.EntityId, cancellationToken);
+        }
+        else if (subject == null)
+        {
+            throw new BusinessException(400, "不支持的联系人类型");
+        }
+
+        var wasPrimary = contact.IsPrimary;
+
+        await EnsurePhoneNotDuplicated(contact, request.Request.Phone, cancellationToken);
+        UpdateContact(contact, request.Request);
+        if (subject != null)
+        {
+            await ApplyPrimaryContactChange(subject, contact, wasPrimary, cancellationToken);
+        }
+        else
+        {
+            await ApplyVendorPrimaryContactChange(contact, wasPrimary, cancellationToken);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (subject != null)
+        {
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
+        }
+
+        return true;
+    }
+
+    private async Task<CrmContact> GetContact(Guid contactId, CancellationToken cancellationToken)
+    {
+        var contact = await _dbContext.CrmContacts.FirstOrDefaultAsync(c => c.Id == contactId, cancellationToken);
+        if (contact == null)
+        {
+            throw new BusinessException(404, "联系人不存在");
+        }
+
+        return contact;
+    }
+
+    private static void EnsureCanSetPrimary(CrmContactUpdateRequest request, CrmContact contact)
+    {
+        if (request.IsPrimary && contact.Status == InvalidStatus)
+        {
+            throw new BusinessException(400, "无效联系人不能设为主联系人");
+        }
+    }
+
+    private async Task<CrmHerbBaseSubject> GetSubject(CrmContact contact, CancellationToken cancellationToken)
+    {
+        var subject = await _dbContext.CrmHerbBaseSubjects.FirstOrDefaultAsync(
+            item => item.Id == contact.EntityId &&
+                contact.EntityType == HerbBaseSubjectEntityType,
+            cancellationToken);
+
+        if (subject == null)
+        {
+            throw new BusinessException(404, "药材基地主体不存在");
+        }
+
+        return subject;
+    }
+
+    private async Task EnsureVendorExists(Guid vendorId, CancellationToken cancellationToken)
+    {
+        var exists = await _dbContext.CrmVendors.AnyAsync(
+            item => item.Id == vendorId && !item.IsDeleted,
+            cancellationToken);
+
+        if (!exists)
+        {
+            throw new BusinessException(404, "厂商不存在");
+        }
+    }
+
+    private async Task EnsurePhoneNotDuplicated(CrmContact contact, string phone, CancellationToken cancellationToken)
+    {
+        var normalizedPhone = phone?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            return;
+        }
+
+        var duplicated = await _dbContext.CrmContacts.AnyAsync(
+            item =>
+                item.EntityType == contact.EntityType &&
+                item.EntityId == contact.EntityId &&
+                item.Id != contact.Id &&
+                item.Phone == normalizedPhone,
+            cancellationToken);
+
+        if (duplicated)
+        {
+            throw new BusinessException(400, "该主体下已存在相同联系电话");
+        }
+    }
+
+    private static void UpdateContact(CrmContact contact, CrmContactUpdateRequest request)
+    {
+        contact.Update(
+            request.ContactName,
+            request.Phone,
+            request.PhoneType,
+            request.Wechat,
+            request.RoleName,
+            request.IsPrimary,
+            request.Remark);
+    }
+
+    private async Task ApplyPrimaryContactChange(
+        CrmHerbBaseSubject subject,
+        CrmContact contact,
+        bool wasPrimary,
+        CancellationToken cancellationToken)
+    {
+        if (contact.IsPrimary)
+        {
+            await UnmarkSiblingPrimaryContacts(contact.EntityType, contact.EntityId, contact.Id, cancellationToken);
+            subject.UpdatePrimaryContact(contact.ContactName, contact.Phone);
+            return;
+        }
+
+        if (wasPrimary)
+        {
+            await PromoteOldestValidContactOrClear(subject, contact.Id, cancellationToken);
+        }
+    }
+
+    private async Task UnmarkSiblingPrimaryContacts(string entityType, Guid entityId, Guid contactId, CancellationToken cancellationToken)
+    {
+        var siblings = await _dbContext.CrmContacts
+            .Where(c =>
+                c.EntityType == entityType &&
+                c.EntityId == entityId &&
+                c.Id != contactId &&
+                c.IsPrimary)
+            .ToListAsync(cancellationToken);
+
+        foreach (var sibling in siblings)
+        {
+            sibling.UnmarkPrimary();
+        }
+    }
+
+    private async Task PromoteOldestValidContactOrClear(CrmHerbBaseSubject subject, Guid excludedContactId, CancellationToken cancellationToken)
+    {
+        var replacement = await _dbContext.CrmContacts
+            .Where(c =>
+                c.EntityType == HerbBaseSubjectEntityType &&
+                c.EntityId == subject.Id &&
+                c.Id != excludedContactId &&
+                c.Status != InvalidStatus)
+            .OrderBy(c => c.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (replacement == null)
+        {
+            subject.ClearPrimaryContact();
+            return;
+        }
+
+        replacement.MarkPrimary();
+        subject.UpdatePrimaryContact(replacement.ContactName, replacement.Phone);
+    }
+
+    private async Task ApplyVendorPrimaryContactChange(
+        CrmContact contact,
+        bool wasPrimary,
+        CancellationToken cancellationToken)
+    {
+        if (contact.IsPrimary)
+        {
+            await UnmarkSiblingPrimaryContacts(contact.EntityType, contact.EntityId, contact.Id, cancellationToken);
+            return;
+        }
+
+        if (wasPrimary)
+        {
+            await PromoteOldestValidVendorContact(contact.EntityId, contact.Id, cancellationToken);
+        }
+    }
+
+    private async Task PromoteOldestValidVendorContact(Guid vendorId, Guid excludedContactId, CancellationToken cancellationToken)
+    {
+        var replacement = await _dbContext.CrmContacts
+            .Where(c =>
+                c.EntityType == VendorEntityType &&
+                c.EntityId == vendorId &&
+                c.Id != excludedContactId &&
+                c.Status != InvalidStatus)
+            .OrderBy(c => c.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        replacement?.MarkPrimary();
+    }
+}
