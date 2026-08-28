@@ -5,5 +5,5 @@
 /.codex/
 /.trae/
 /.workbuddy/
-/QPS_UI_TESTS/playwright-report*/
-/QPS_UI_TESTS/test-results/
+/qps-ui-tests/playwright-report*/
+/qps-ui-tests/test-results/

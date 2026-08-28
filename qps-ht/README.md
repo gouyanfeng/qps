@@ -1,8 +1,14 @@
 # QPS Backend
 
-QPS Backend is an ASP.NET Core 8 service that now keeps only the system
-administration surface: authentication, users, roles, permissions, data
-dictionaries, and error logging.
+## 项目定位
+
+本项目服务中药材基地卖方与药厂买方，通过供给信息、采购需求和业务跟进管理，支持中药材供需撮合与交易推进。
+
+完整的项目背景和业务链路见 [项目背景与业务链路](../docs/product/项目背景与业务链路.md)。
+
+QPS Backend is an ASP.NET Core 8 service that provides CRM and system
+administration capabilities, including authentication, users, roles,
+permissions, CRM business data, data dictionaries, and error logging.
 
 ## Tech Stack
 
