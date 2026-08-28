@@ -20,29 +20,29 @@ http://localhost:5000/swagger/v1/swagger.json
 后端发布目录固定为：
 
 ```powershell
-E:\Code\QPS\QPS-HT\CodexTemp\publish\QPS.WebAPI
+E:\Code\QPS\CodexTemp\publish\QPS.WebAPI
 ```
 
 发布前先构建验证：
 
 ```powershell
-dotnet build "E:\Code\QPS\QPS-HT\QPS.sln" --no-restore
-dotnet test "E:\Code\QPS\QPS-HT\QPS.sln" --no-build --logger "console;verbosity=minimal"
+dotnet build "E:\Code\QPS\qps-ht\QPS.sln" --no-restore
+dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=minimal"
 ```
 
 正常发布命令：
 
 ```powershell
-dotnet publish "E:\Code\QPS\QPS-HT\src\4.QPS.WebAPI\QPS.WebAPI.csproj" -c Release -o "E:\Code\QPS\QPS-HT\CodexTemp\publish\QPS.WebAPI"
+dotnet publish "E:\Code\QPS\qps-ht\src\4.QPS.WebAPI\QPS.WebAPI.csproj" -c Release -o "E:\Code\QPS\CodexTemp\publish\QPS.WebAPI"
 ```
 
 如果发布时报 `w3wp.exe` 锁定 DLL，不要杀 IIS 进程。先在发布目录放置 `app_offline.htm` 让 IIS 自动卸载应用，等待几秒后重新 publish，发布成功后必须删除 `app_offline.htm` 恢复站点。
 
 ```powershell
-New-Item -ItemType File -Force -Path "E:\Code\QPS\QPS-HT\CodexTemp\publish\QPS.WebAPI\app_offline.htm" | Out-Null
+New-Item -ItemType File -Force -Path "E:\Code\QPS\CodexTemp\publish\QPS.WebAPI\app_offline.htm" | Out-Null
 Start-Sleep -Seconds 3
-dotnet publish "E:\Code\QPS\QPS-HT\src\4.QPS.WebAPI\QPS.WebAPI.csproj" -c Release -o "E:\Code\QPS\QPS-HT\CodexTemp\publish\QPS.WebAPI"
-Remove-Item -LiteralPath "E:\Code\QPS\QPS-HT\CodexTemp\publish\QPS.WebAPI\app_offline.htm" -Force
+dotnet publish "E:\Code\QPS\qps-ht\src\4.QPS.WebAPI\QPS.WebAPI.csproj" -c Release -o "E:\Code\QPS\CodexTemp\publish\QPS.WebAPI"
+Remove-Item -LiteralPath "E:\Code\QPS\CodexTemp\publish\QPS.WebAPI\app_offline.htm" -Force
 ```
 
 发布后至少验证：
@@ -86,8 +86,8 @@ Invoke-WebRequest -Uri "http://localhost:20004/api/admin/crm/herb-bases?page=1&p
 - 后端改动至少跑：
 
 ```powershell
-dotnet build "E:\Code\QPS\QPS-HT\QPS.sln" --no-restore
-dotnet test "E:\Code\QPS\QPS-HT\QPS.sln" --no-build --logger "console;verbosity=minimal"
+dotnet build "E:\Code\QPS\qps-ht\QPS.sln" --no-restore
+dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=minimal"
 ```
 
 - 前端改动至少跑：
