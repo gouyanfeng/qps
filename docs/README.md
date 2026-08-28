@@ -9,7 +9,6 @@ docs/
   product/       产品定位、业务链路和需求说明
   domain/        领域模型、实体和业务术语
   architecture/  权限、系统设计和技术决策
-  data/          数据模型、导入规则和数据脚本
   engineering/   研发方案、实施计划、技术规格和测试清单
   operations/    本地开发、发布和运行维护说明
 ```
