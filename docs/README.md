@@ -11,6 +11,7 @@ docs/
   architecture/  权限、系统设计和技术决策
   data/          数据模型、导入规则和数据脚本
   engineering/   研发方案、实施计划、技术规格和测试清单
+  operations/    本地开发、发布和运行维护说明
 ```
 
 ## 当前文档
@@ -18,6 +19,7 @@ docs/
 - [项目背景与业务链路](product/项目背景与业务链路.md)
 - [实体说明](domain/实体说明.md)
 - [权限设计](architecture/权限设计.md)
+- [本地启动与发布](operations/本地启动与发布.md)
 - [研发方案与实施计划](engineering/plans/)
 - [技术规格](engineering/specs/)
 - [测试清单](engineering/testing/)

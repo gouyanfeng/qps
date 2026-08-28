@@ -2,7 +2,7 @@
 
 QPS 面向中药材基地卖方与药厂买方，统一管理供给信息、采购需求、业务跟进和供需撮合过程。
 
-完整的产品定位和业务链路见 [docs/product/项目背景与业务链路.md](docs/product/项目背景与业务链路.md)。
+完整的产品定位和业务链路见 [docs/product/项目背景与业务链路.md](docs/product/项目背景与业务链路.md)，本地启动与发布见 [docs/operations/本地启动与发布.md](docs/operations/本地启动与发布.md)。
 
 ## 目录
 
@@ -14,6 +14,8 @@ docs/           共享产品与研发文档
 ```
 
 ## 本地启动
+
+以下命令启动后端调试服务和前端开发服务。管理端默认连接本地 IIS 的 `20004`；需要联调 `5000` 调试后端时，按 [本地启动与发布](docs/operations/本地启动与发布.md) 配置本机 `.env.local`。
 
 ```powershell
 dotnet run --project .\qps-ht\src\4.QPS.WebAPI\QPS.WebAPI.csproj -- --urls http://localhost:5000
