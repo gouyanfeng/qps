@@ -1,0 +1,412 @@
+// ============ 登录页样式 - Glassmorphism 玻璃拟态 ============
+
+// ---- 整体背景：深色渐变 + 多色光晕 ----
+.login-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 1200px;
+  height: 100vh;
+  overflow: hidden;
+  background: #0b1220;
+
+  // 彩色光晕背景层
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 18% 28%, rgba(65, 184, 131, 0.32), transparent 45%),
+      radial-gradient(circle at 82% 72%, rgba(64, 158, 255, 0.28), transparent 50%),
+      radial-gradient(circle at 72% 18%, rgba(236, 110, 200, 0.22), transparent 45%),
+      radial-gradient(circle at 28% 78%, rgba(255, 184, 77, 0.18), transparent 50%),
+      linear-gradient(135deg, #0b1220 0%, #131b2e 60%, #0f1726 100%);
+    filter: blur(0px);
+  }
+
+  // 顶部到底部的微弱暗角，增加层次
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.35) 100%);
+    pointer-events: none;
+  }
+}
+
+.login-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
+  padding: 40px 0;
+}
+
+// ---- 卡片：玻璃磨砂 ----
+.login-card {
+  position: relative;
+  display: flex;
+  width: 880px;
+  height: 500px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+
+  // 顶部高光线
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
+    z-index: 3;
+  }
+}
+
+// ---- 左侧：深色玻璃品牌区 ----
+.login-showcase {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  padding: 48px 40px;
+  background: linear-gradient(135deg, rgba(15, 23, 38, 0.55) 0%, rgba(20, 30, 48, 0.35) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  overflow: hidden;
+
+  // 左右分隔光晕线
+  &::after {
+    content: "";
+    position: absolute;
+    top: 8%;
+    bottom: 8%;
+    right: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.18) 50%, transparent 100%);
+  }
+
+  .showcase-inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .brand-title {
+    margin: 0;
+    font-size: 36px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 8px;
+    text-shadow: 0 0 32px rgba(65, 184, 131, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .brand-subtitle {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 4px;
+  }
+
+  .brand-slogan {
+    margin: 20px 0 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 1px;
+  }
+
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 32px;
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      transition: all 0.25s ease;
+
+      span {
+        letter-spacing: 0.5px;
+      }
+
+      &:hover {
+        background: rgba(65, 184, 131, 0.1);
+        border-color: rgba(65, 184, 131, 0.3);
+        transform: translateX(2px);
+      }
+    }
+  }
+
+  // 装饰光晕（替换原 deco-shape）
+  .deco-shape {
+    position: absolute;
+    z-index: 1;
+    border-radius: 50%;
+    pointer-events: none;
+
+    &--1 {
+      width: 280px;
+      height: 280px;
+      top: -100px;
+      right: -80px;
+      background: radial-gradient(circle, rgba(65, 184, 131, 0.28) 0%, transparent 70%);
+      filter: blur(4px);
+    }
+
+    &--2 {
+      width: 200px;
+      height: 200px;
+      bottom: -60px;
+      left: -40px;
+      background: radial-gradient(circle, rgba(64, 158, 255, 0.22) 0%, transparent 70%);
+      filter: blur(4px);
+    }
+
+    &--3 {
+      width: 90px;
+      height: 90px;
+      bottom: 40px;
+      right: 40px;
+      border: 1px solid rgba(65, 184, 131, 0.25);
+      background: rgba(65, 184, 131, 0.04);
+    }
+  }
+}
+
+// ---- 右侧：登录表单（保留白色，不动表单元素） ----
+.login-form-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  padding: 48px 56px;
+  // 显式给右侧白色背景，与原视觉一致；遵守"不改表单区"
+  background: rgba(255, 255, 255, 0.96);
+
+  .login-form-content {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+// Tabs
+:deep(.login-tabs) {
+  .el-tabs__header {
+    margin-bottom: 24px;
+  }
+
+  .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #f0f0f0;
+  }
+
+  .el-tabs__item {
+    font-size: 14px;
+    color: #8c8c8c;
+    font-weight: 400;
+
+    &.is-active {
+      color: #1a2332;
+      font-weight: 500;
+    }
+
+    &:hover {
+      color: #41b883;
+    }
+  }
+
+  .el-tabs__active-bar {
+    background-color: #41b883;
+    height: 2px;
+  }
+}
+
+// Form
+:deep(.el-form) {
+  .el-form-item {
+    margin-bottom: 18px;
+  }
+
+  .el-input__wrapper {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    padding: 4px 12px !important;
+    transition: all 0.25s ease !important;
+
+    &:hover {
+      border-color: #41b883 !important;
+      background: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    &.is-focus {
+      border-color: #41b883 !important;
+      background: #ffffff !important;
+      box-shadow: 0 0 0 3px rgba(65, 184, 131, 0.15) !important;
+    }
+  }
+
+  .el-input__inner {
+    height: 38px;
+    color: #1a2332 !important;
+    font-size: 14px;
+
+    &::placeholder {
+      color: #bfbfbf;
+    }
+  }
+
+  .el-input__prefix {
+    color: #bfbfbf;
+  }
+}
+
+.remember-row {
+  margin-top: 4px;
+
+  :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    line-height: 1;
+  }
+
+  :deep(.el-checkbox__label) {
+    color: #8c8c8c;
+    font-size: 13px;
+  }
+
+  :deep(.el-checkbox__inner) {
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+  }
+
+  :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+    background: #41b883;
+    border-color: #41b883;
+  }
+
+  .forgot-link {
+    font-size: 13px;
+    color: #8c8c8c;
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #41b883;
+    }
+  }
+}
+
+.login-submit {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  color: #ffffff;
+  background: #41b883;
+  border: none;
+  border-radius: 6px;
+  transition: background 0.2s;
+
+  &:hover,
+  &:focus {
+    background: #379e6e;
+    color: #ffffff;
+  }
+
+  &:active {
+    background: #2d8a5e;
+  }
+}
+
+.wechat-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+
+  .qr-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #8c8c8c;
+
+    p {
+      margin-top: 14px;
+      font-size: 13px;
+    }
+  }
+}
+
+.login-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: 32px;
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.5px;
+  }
+}
+
+// ---- 响应式 ----
+@media screen and (width <= 920px) {
+  .login-page {
+    min-width: auto;
+  }
+
+  .login-card {
+    width: 92%;
+    max-width: 520px;
+    height: auto;
+    flex-direction: column;
+
+    .login-showcase {
+      display: none;
+    }
+
+    .login-form-wrap {
+      width: 100%;
+      padding: 40px 32px;
+    }
+  }
+}

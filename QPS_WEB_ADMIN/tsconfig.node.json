@@ -1,0 +1,58 @@
+{
+  /*
+   * Vite 配置文件的 TypeScript 配置
+   * 专门用于编译 vite.config.ts 文件
+   */
+  
+  "compilerOptions": {
+    // TypeScript 构建信息文件位置，用于加速增量编译
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    
+    // 目标 ES 版本
+    "target": "es2023",
+    
+    // 包含的库文件
+    "lib": ["ES2023"],
+    
+    // 模块系统
+    "module": "esnext",
+    
+    // 包含的类型定义文件
+    "types": ["node"],
+    
+    // 跳过库文件的类型检查
+    "skipLibCheck": true,
+
+    /* 打包工具模式 */
+    // 模块解析策略，使用打包工具的解析策略
+    "moduleResolution": "bundler",
+    
+    // 允许导入 .ts 文件时使用 .ts 扩展名
+    "allowImportingTsExtensions": true,
+    
+    // 启用严格的模块语法检查
+    "verbatimModuleSyntax": true,
+    
+    // 强制模块检测，即使文件没有 import/export 也视为模块
+    "moduleDetection": "force",
+    
+    // 不生成编译输出文件
+    "noEmit": true,
+
+    /* 代码检查选项 */
+    // 报告未使用的局部变量
+    "noUnusedLocals": true,
+    
+    // 报告未使用的参数
+    "noUnusedParameters": true,
+    
+    // 只允许使用可擦除的语法
+    "erasableSyntaxOnly": true,
+    
+    // 报告 switch 语句中的 fallthrough 情况
+    "noFallthroughCasesInSwitch": true
+  },
+  
+  // 只包含 Vite 配置文件
+  "include": ["vite.config.ts"]
+}

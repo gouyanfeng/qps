@@ -1,0 +1,24 @@
+{
+  /*
+   * TypeScript 主配置文件
+   * 使用项目引用（Project References）管理多个 TypeScript 配置
+   */
+  
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  
+  // 不直接包含任何文件
+  "files": [],
+  
+  // 项目引用数组
+  "references": [
+    // 应用代码配置
+    { "path": "./tsconfig.app.json" },
+    // Vite 配置文件配置
+    { "path": "./tsconfig.node.json" }
+  ]
+}
