@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "name": "QPS",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "git.autoRepositoryDetection": "subFolders",
+    "git.openRepositoryInParentFolders": "never"
+  }
+}
