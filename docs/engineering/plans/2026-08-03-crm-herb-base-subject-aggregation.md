@@ -1,0 +1,576 @@
+# CRM 药材基地主体聚合 Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 将 CRM 药材基地改为主体跟进、基地明细、品类归基地，并让列表按主体聚合。
+
+**Architecture:** 新增 `CrmSubjects` 承接负责人、状态、联系人和跟进；`CrmHerbBases` 仅代表实际基地，通过 `SubjectId` 关联主体。品类继续写在 `CrmBusinessEntityAttributes`，实体类型保持 `CRM_HERB_BASE`，主体列表查询时聚合显示。
+
+**Tech Stack:** ASP.NET Core、MediatR、EF Core、SQL Server、Vue 3、TypeScript、Element Plus、xUnit。
+
+## Global Constraints
+
+- `CrmSubjects.SubjectName`、`DisplayName` 不加非空数据库约束，但应用层必须保证 `DisplayName` 有值。
+- 有主体时用主体名显示；没有主体时创建 `SubjectType = BASE_ONLY` 的主体，显示名等于基地名。
+- 不在主体表保存药材品类；品类只属于 `CRM_HERB_BASE` 基地属性。
+- 保留 `CrmHerbBases.ParentId` 作为历史兼容列，不再用于新增、导入、列表聚合或跟进归属。
+- 绝不清空或删除现有 CRM 主数据。临时 SQL、备份报告、迁移核验结果写入 `D:\数据抓取\CodexTemp`。
+- 后端 `QPS-HT` 和前端 `QPS_WEB_ADMIN` 均已有未提交改动；实施前后逐个确认差异，不能回滚既有改动。
+
+## File Structure
+
+- 新建 `QPS-HT/src/1.QPS.Domain/Entities/Crm/CrmSubject.cs`：主体领域实体。
+- 修改 `QPS-HT/src/1.QPS.Domain/Entities/Crm/CrmHerbBase.cs`：新增 `SubjectId`，基地只保留资产明细。
+- 修改 `QPS-HT/src/1.QPS.Domain/Entities/Crm/CrmFollowRecord.cs`：主体归属加可选基地上下文。
+- 修改 `QPS-HT/src/2.QPS.Application/Interfaces/IDbContext.cs`、`QPS-HT/src/3.QPS.Infrastructure/Database/AppDbContext.cs`：注册实体、关系与索引。
+- 新建 `QPS-HT/src/2.QPS.Application/Contracts/Crm/CrmSubjectDtos.cs`、`CrmSubjectRequests.cs`。
+- 新建 `QPS-HT/src/2.QPS.Application/Features/Crm/CrmSubjects/`：主体列表、详情、创建、更新和负责人分配。
+- 修改现有 `CrmHerbBases`、`CrmContacts`、`CrmFollowRecords` handlers：将跟进相关能力迁到主体。
+- 修改 `QPS-HT/src/4.QPS.WebAPI/Controllers/Admin/Crm/`：增加主体 API。
+- 修改 `QPS_WEB_ADMIN/src/api/modules/crmHerbBase.ts`、`QPS_WEB_ADMIN/src/views/crm/herbBase/index.vue`：主体列表和可展开基地。
+- 新建 `D:\数据抓取\CodexTemp\crm-subject-schema-and-data-migration.sql`：在现有 `EnsureCreated()` 项目中一次性建立主体表、补 `SubjectId` 并迁移旧数据。
+- 修改 `C:\Users\Dust\.codex\skills\qps-gov-web-herb-base-import\` 与 `qps-crm-qhyp-import\`：改为“主体 upsert，再基地 upsert”。
+
+### Task 1: 备份并迁移数据库结构
+
+**Files:**
+- Create: `D:\数据抓取\CodexTemp\crm-subject-migration-precheck.sql`
+- Create: `D:\数据抓取\CodexTemp\crm-subject-migration-backup.sql`
+- Create: `D:\数据抓取\CodexTemp\crm-subject-schema-and-data-migration.sql`
+- Modify: `QPS-HT/src/3.QPS.Infrastructure/Database/AppDbContext.cs`
+
+**Interfaces:**
+- Produces: `CrmSubjects` 表、`CrmHerbBases.SubjectId`、`CrmFollowRecords.SubjectId` 和 `CrmFollowRecords.HerbBaseId`。
+- Invariant: 每条未删除基地必须关联一个未删除主体。
+
+- [ ] **Step 1: 写迁移前盘点和备份 SQL**
+
+```sql
+SELECT COUNT(*) AS BaseCount,
+       SUM(CASE WHEN ParentId IS NULL THEN 1 ELSE 0 END) AS RootCount,
+       SUM(CASE WHEN ParentId IS NOT NULL THEN 1 ELSE 0 END) AS ChildCount,
+       SUM(CASE WHEN NULLIF(LTRIM(RTRIM(SubjectName)), '') IS NULL THEN 1 ELSE 0 END) AS BlankSubjectCount
+FROM dbo.CrmHerbBases
+WHERE IsDeleted = 0;
+
+SELECT EntityType, COUNT(*) AS Count
+FROM dbo.CrmContacts
+WHERE IsDeleted = 0
+GROUP BY EntityType;
+```
+
+备份脚本先检查 `OBJECT_ID('dbo.CrmHerbBases_Backup_20260803') IS NULL`，再对 `CrmHerbBases`、`CrmContacts`、`CrmFollowRecords` 执行 `SELECT * INTO`。若备份表已存在，抛错并停止，禁止覆盖。
+
+- [ ] **Step 2: 运行盘点和备份，保存输出**
+
+Run:
+
+```powershell
+sqlcmd -S localhost -d QPS_CRM -U sa -P 123456 -C -i D:\数据抓取\CodexTemp\crm-subject-migration-precheck.sql
+sqlcmd -S localhost -d QPS_CRM -U sa -P 123456 -C -i D:\数据抓取\CodexTemp\crm-subject-migration-backup.sql
+```
+
+Expected: 输出基地根/子记录数量、空主体数量和联系人归属分布，且三个带日期的备份表存在。
+
+- [ ] **Step 3: 编写一次性 schema 迁移脚本**
+
+```sql
+SET XACT_ABORT ON;
+BEGIN TRANSACTION;
+
+CREATE TABLE dbo.CrmSubjects (
+    Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    SubjectName NVARCHAR(200) NULL,
+    NormalizedSubjectName NVARCHAR(500) NOT NULL,
+    DisplayName NVARCHAR(200) NULL,
+    SubjectType NVARCHAR(32) NULL,
+    OwnerUserId UNIQUEIDENTIFIER NULL,
+    Status NVARCHAR(32) NULL,
+    Grade NVARCHAR(32) NULL,
+    Score INT NOT NULL DEFAULT(0),
+    PrimaryContactName NVARCHAR(200) NULL,
+    PrimaryContactPhone NVARCHAR(100) NULL,
+    Remark NVARCHAR(MAX) NULL,
+    CreatedAt DATETIME2 NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL,
+    IsDeleted BIT NOT NULL DEFAULT(0)
+);
+ALTER TABLE dbo.CrmHerbBases ADD SubjectId UNIQUEIDENTIFIER NULL;
+ALTER TABLE dbo.CrmFollowRecords ADD SubjectId UNIQUEIDENTIFIER NULL, HerbBaseId UNIQUEIDENTIFIER NULL;
+```
+
+脚本开头先用 `OBJECT_ID`、`COL_LENGTH` 验证表/列不存在；若目标已存在则 `THROW`，防止误对已迁移环境重复执行。脚本末尾经过全部校验后 `COMMIT`，任一异常 `ROLLBACK`。
+```
+
+- [ ] **Step 4: 在 SQL 脚本事务内迁移历史行**
+
+```sql
+-- 有 SubjectName：规范键 = UPPER(LTRIM(RTRIM(SubjectName)))，同键只创建一个主体。
+-- 无 SubjectName：规范键 = BASE_ONLY|UPPER(BaseName)|UPPER(Area)|UPPER(Address)。
+-- 有 ParentId 时优先继承根基地所属主体；找不到根时按本行规则生成。
+-- DisplayName 有主体时为 SubjectName；无主体时为 BaseName。
+-- 旧联系人/负责人/状态/跟进汇总迁移到主体；品类属性保留在基地。
+```
+
+为迁移后的基地更新 `SubjectId`；为旧跟进记录更新 `SubjectId = 原 CustomerId 对应基地的 SubjectId` 和 `HerbBaseId = 原 CustomerId`。联系人更新为 `EntityType = 'CRM_SUBJECT'`、`EntityId = 基地对应 SubjectId`，同主体多个主联系人保留 `UpdatedAt DESC, CreatedAt DESC` 的第一条为主联系人。
+
+- [ ] **Step 5: 建索引、外键并验证**
+
+```sql
+CREATE UNIQUE INDEX UX_CrmSubjects_NormalizedSubjectName ON dbo.CrmSubjects(NormalizedSubjectName);
+CREATE INDEX IX_CrmHerbBases_SubjectId ON dbo.CrmHerbBases(SubjectId);
+ALTER TABLE dbo.CrmHerbBases ADD CONSTRAINT FK_CrmHerbBases_CrmSubjects_SubjectId
+    FOREIGN KEY (SubjectId) REFERENCES dbo.CrmSubjects(Id);
+COMMIT TRANSACTION;
+```
+
+Run:
+
+```sql
+SELECT COUNT(*) AS UnassignedBases
+FROM dbo.CrmHerbBases
+WHERE IsDeleted = 0 AND SubjectId IS NULL;
+```
+
+Expected: `UnassignedBases = 0`。
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git -C E:\Code\QPS\QPS-HT add src/3.QPS.Infrastructure/Database/AppDbContext.cs
+git -C E:\Code\QPS\QPS-HT commit -m "feat(crm): add subject aggregation schema"
+```
+
+### Task 2: 建立主体和基地领域边界
+
+**Files:**
+- Create: `QPS-HT/src/1.QPS.Domain/Entities/Crm/CrmSubject.cs`
+- Modify: `QPS-HT/src/1.QPS.Domain/Entities/Crm/CrmHerbBase.cs`
+- Modify: `QPS-HT/src/1.QPS.Domain/Entities/Crm/CrmFollowRecord.cs`
+- Modify: `QPS-HT/src/2.QPS.Application/Interfaces/IDbContext.cs`
+- Modify: `QPS-HT/src/3.QPS.Infrastructure/Database/AppDbContext.cs`
+- Test: `D:\数据抓取\CodexTemp\CrmSubjectDomainTests.cs`
+
+**Interfaces:**
+- Produces: `CrmSubject.Create`、`AssignOwner`、`UpdateFollowSummary` 和 `CrmHerbBase.SetSubject`。
+- Invariant: 主体没有品类字段；`CrmBusinessEntityAttributes.EntityType = CRM_HERB_BASE`。
+
+- [ ] **Step 1: 写失败的领域测试**
+
+```csharp
+[Theory]
+[InlineData("维西百心中药材有限责任公司", "木香GAP基地", "COMPANY")]
+[InlineData("", "某村黄芪种植基地", "BASE_ONLY")]
+public void Create_ShouldChooseExpectedDisplayName(string subjectName, string baseName, string subjectType)
+{
+    var subject = CrmSubject.Create(subjectName, baseName, subjectType, null, "PENDING", "", 0, "");
+    Assert.Equal(string.IsNullOrWhiteSpace(subjectName) ? baseName : subjectName, subject.DisplayName);
+    Assert.Equal(subjectType, subject.SubjectType);
+}
+```
+
+- [ ] **Step 2: 运行测试确认失败**
+
+Run:
+
+```powershell
+dotnet test tests/QPS.UnitTests/QPS.UnitTests.csproj --filter FullyQualifiedName~CrmSubjectDomainTests
+```
+
+Expected: FAIL，因为 `CrmSubject` 尚未定义。
+
+- [ ] **Step 3: 实现 `CrmSubject` 和关系**
+
+```csharp
+public class CrmSubject : BaseEntity
+{
+    public string SubjectName { get; private set; } = string.Empty;
+    public string NormalizedSubjectName { get; private set; } = string.Empty;
+    public string DisplayName { get; private set; } = string.Empty;
+    public string SubjectType { get; private set; } = "UNKNOWN";
+    public Guid? OwnerUserId { get; private set; }
+    public string Status { get; private set; } = "PENDING";
+    public string Grade { get; private set; } = string.Empty;
+    public int Score { get; private set; }
+    public string PrimaryContactName { get; private set; } = string.Empty;
+    public string PrimaryContactPhone { get; private set; } = string.Empty;
+    public ICollection<CrmHerbBase> HerbBases { get; private set; } = new List<CrmHerbBase>();
+}
+```
+
+`CrmHerbBase` 增加 `Guid? SubjectId` 与 `CrmSubject? Subject`；保留规模、地区、地址、经纬度、来源、备注和历史 `ParentId`。跟进记录增加必填业务归属 `SubjectId` 与可空 `HerbBaseId`，旧 `CustomerId` 仅在 migration 过渡期保留。
+
+- [ ] **Step 4: 注册 EF Core 关系和精度**
+
+```csharp
+modelBuilder.Entity<CrmHerbBase>()
+    .HasOne(item => item.Subject)
+    .WithMany(item => item.HerbBases)
+    .HasForeignKey(item => item.SubjectId)
+    .OnDelete(DeleteBehavior.Restrict);
+modelBuilder.Entity<CrmSubject>().HasIndex(item => item.DisplayName);
+modelBuilder.Entity<CrmSubject>().HasIndex(item => new { item.SubjectType, item.IsDeleted });
+```
+
+- [ ] **Step 5: 运行测试**
+
+Run:
+
+```powershell
+dotnet test tests/QPS.UnitTests/QPS.UnitTests.csproj --filter "FullyQualifiedName~CrmSubjectDomainTests|FullyQualifiedName~CrmHerbBaseCommandTests"
+```
+
+Expected: PASS；无主体基地生成 `BASE_ONLY`，并且主体实体中不存在 `MainProducts`。
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git -C E:\Code\QPS\QPS-HT add src/1.QPS.Domain/Entities/Crm src/2.QPS.Application/Interfaces/IDbContext.cs src/3.QPS.Infrastructure/Database/AppDbContext.cs
+git -C E:\Code\QPS\QPS-HT commit -m "feat(crm): separate subjects from herb bases"
+```
+
+### Task 3: 新增主体聚合列表和详情 API
+
+**Files:**
+- Create: `QPS-HT/src/2.QPS.Application/Contracts/Crm/CrmSubjectDtos.cs`
+- Create: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmSubjects/GetCrmSubjectsQuery.cs`
+- Create: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmSubjects/GetCrmSubjectQuery.cs`
+- Modify: `QPS-HT/src/4.QPS.WebAPI/Controllers/Admin/Crm/CrmHerbBaseController.cs`
+- Test: `D:\数据抓取\CodexTemp\CrmSubjectQueryTests.cs`
+
+**Interfaces:**
+- Produces: `GET /api/admin/crm/subjects`、`GET /api/admin/crm/subjects/{id}`。
+- `CrmSubjectListItemDto`: `Id`、`DisplayName`、`SubjectType`、负责人、状态、等级、评分、主联系人、`BaseCount`、`MainProducts`、`TotalScale`、`Regions`、`SourcePlatforms`、最近/下次跟进时间。
+- `CrmSubjectDetailDto`: 列表字段加 `List<CrmHerbBaseItemDto> HerbBases`、联系人和跟进记录。
+
+- [ ] **Step 1: 写失败的聚合查询测试**
+
+```csharp
+[Fact]
+public async Task List_ShouldReturnOneSubjectForTwoBases()
+{
+    var result = await handler.Handle(new GetCrmSubjectsQuery { Page = 1, PageSize = 10 }, CancellationToken.None);
+    var subject = Assert.Single(result.List);
+    Assert.Equal(2, subject.BaseCount);
+    Assert.Equal(new[] { "MU_XIANG", "QIN_JIAO" }, subject.MainProducts);
+}
+```
+
+- [ ] **Step 2: 运行测试确认失败**
+
+Run:
+
+```powershell
+dotnet test tests/QPS.UnitTests/QPS.UnitTests.csproj --filter FullyQualifiedName~CrmSubjectQueryTests
+```
+
+Expected: FAIL，因为 `GetCrmSubjectsQuery` 尚未定义。
+
+- [ ] **Step 3: 实现主体分页和基地维度筛选**
+
+```csharp
+query = query.Where(subject => subject.HerbBases.Any(@base =>
+    !@base.IsDeleted && _dbContext.CrmBusinessEntityAttributes.Any(attribute =>
+        !attribute.IsDeleted &&
+        attribute.EntityType == CrmCodes.HerbBaseEntityType &&
+        attribute.EntityId == @base.Id &&
+        attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
+        mainProducts.Contains(attribute.AttributeValue))));
+```
+
+关键词匹配主体显示名、主体名称、主体主联系人/电话和任意子基地名称、地区、地址；先确定主体分页集合，再批量读取并聚合品类、规模、地区和来源，禁止 N+1 查询。
+
+- [ ] **Step 4: 实现详情和路由**
+
+```csharp
+[HttpGet("/api/admin/crm/subjects")]
+public async Task<ActionResult<PaginationResponse<CrmSubjectListItemDto>>> GetSubjects([FromQuery] GetCrmSubjectsQuery query)
+    => Ok(await _mediator.Send(query));
+
+[HttpGet("/api/admin/crm/subjects/{id:guid}")]
+public async Task<ActionResult<CrmSubjectDetailDto>> GetSubject(Guid id)
+    => Ok(await _mediator.Send(new GetCrmSubjectQuery { Id = id }));
+```
+
+详情包含全部未删除基地及各自品类；旧 `/herb-bases` 接口暂时保留，但只做兼容，返回值增加 `SubjectId`。
+
+- [ ] **Step 5: 运行查询测试并编译**
+
+Run:
+
+```powershell
+dotnet test tests/QPS.UnitTests/QPS.UnitTests.csproj --filter FullyQualifiedName~CrmSubjectQueryTests
+dotnet build src/4.QPS.WebAPI/QPS.WebAPI.csproj --no-restore
+```
+
+Expected: PASS，同主体的多基地只返回一条主体，品类为所有基地品类去重并集。
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git -C E:\Code\QPS\QPS-HT add src/2.QPS.Application/Contracts/Crm src/2.QPS.Application/Features/Crm/CrmSubjects src/4.QPS.WebAPI/Controllers/Admin/Crm
+git -C E:\Code\QPS\QPS-HT commit -m "feat(crm): add aggregated subject queries"
+```
+
+### Task 4: 将联系人、负责人和跟进切换到主体
+
+**Files:**
+- Create: `QPS-HT/src/2.QPS.Application/Contracts/Crm/CrmSubjectRequests.cs`
+- Create: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmSubjects/CreateCrmSubjectCommand.cs`
+- Create: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmSubjects/UpdateCrmSubjectCommand.cs`
+- Create: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmSubjects/AssignCrmSubjectOwnerCommand.cs`
+- Modify: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmContacts/CreateCrmContactCommand.cs`
+- Modify: `QPS-HT/src/2.QPS.Application/Features/Crm/CrmFollowRecords/CreateCrmFollowRecordCommand.cs`
+- Test: `D:\数据抓取\CodexTemp\CrmSubjectCommandTests.cs`
+
+**Interfaces:**
+- Produces: 主体创建、编辑、负责人分配、联系人、跟进 API；跟进请求新增可选 `HerbBaseId`。
+
+- [ ] **Step 1: 写失败的命令测试**
+
+```csharp
+[Fact]
+public async Task CreateFollowRecord_ShouldUpdateSubjectAndKeepBaseContext()
+{
+    // 一个主体下两个基地；对第一个基地发起跟进。
+    // 断言 Subject 的状态/下次跟进更新，record.HerbBaseId 为第一个基地。
+}
+```
+
+- [ ] **Step 2: 运行测试确认失败**
+
+Run:
+
+```powershell
+dotnet test tests/QPS.UnitTests/QPS.UnitTests.csproj --filter FullyQualifiedName~CrmSubjectCommandTests
+```
+
+Expected: FAIL，因为主体命令尚未定义。
+
+- [ ] **Step 3: 实现主体编辑和负责人分配**
+
+```csharp
+var transfer = CrmTransferRecord.Create(
+    CrmCodes.SubjectEntityType,
+    subject.Id,
+    oldOwnerUserId,
+    request.OwnerUserId,
+    operatorUserId,
+    request.Remark ?? string.Empty);
+```
+
+新增 `CRM_SUBJECT` 常量；负责人、状态、等级、评分、主联系人摘要和备注只更新 `CrmSubjects`。
+
+- [ ] **Step 4: 联系人和跟进写入主体**
+
+```csharp
+var contact = CrmContact.Create("CRM_SUBJECT", subjectId, contactName, phone, phoneType, wechat, roleName, isPrimary, remark);
+var record = CrmFollowRecord.Create(subjectId, request.HerbBaseId, request.ContactId,
+    request.FollowType, request.FollowResult, request.IntentLevel,
+    request.Content, request.NextFollowAt, operatorUserId);
+```
+
+写跟进前验证 `HerbBaseId` 为空或其 `SubjectId == subjectId`；否则抛出 `BusinessException(400, "基地不属于当前主体")`。联系人只允许同一主体一条主联系人。
+
+- [ ] **Step 5: 运行测试**
+
+Run:
+
+```powershell
+dotnet test tests/QPS.UnitTests/QPS.UnitTests.csproj --filter "FullyQualifiedName~CrmSubjectCommandTests|FullyQualifiedName~CrmHerbBaseCommandTests"
+```
+
+Expected: PASS；所有新联系人、负责人变更和跟进记录均归属主体，品类仍归基地。
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git -C E:\Code\QPS\QPS-HT add src/2.QPS.Application/Contracts/Crm src/2.QPS.Application/Features/Crm/CrmSubjects src/2.QPS.Application/Features/Crm/CrmContacts src/2.QPS.Application/Features/Crm/CrmFollowRecords
+git -C E:\Code\QPS\QPS-HT commit -m "feat(crm): move follow-up ownership to subjects"
+```
+
+### Task 5: 改造前端为主体聚合列表
+
+**Files:**
+- Modify: `QPS_WEB_ADMIN/src/api/modules/crmHerbBase.ts`
+- Modify: `QPS_WEB_ADMIN/src/views/crm/herbBase/index.vue`
+- Test: `D:\数据抓取\CodexTemp\crm-subject-list-manual-check.md`
+
+**Interfaces:**
+- Consumes: `/admin/crm/subjects`、`/admin/crm/subjects/{id}` 和主体联系人/跟进接口。
+- Produces: 主体一行、可展开基地的管理页。
+
+- [ ] **Step 1: 新增主体 API 方法**
+
+```ts
+getSubjectList: (params: any) => http.get<any>("/admin/crm/subjects", params),
+getSubject: (id: string) => http.get<any>(`/admin/crm/subjects/${id}`),
+createSubject: (params: any) => http.post<any>("/admin/crm/subjects", params),
+updateSubject: (id: string, params: any) => http.put<any>(`/admin/crm/subjects/${id}`, params),
+```
+
+旧基地 API 暂不删除，避免外部入口在迁移期失效。
+
+- [ ] **Step 2: 主列表切为主体数据源**
+
+主列显示 `displayName`，展示主体类型、基地数、聚合品类、总规模、主要地区、来源、主联系人、负责人、状态和最近跟进。搜索同时传递主体名、基地名、品类和地区条件；不使用 `parentId` 构树。
+
+- [ ] **Step 3: 增加基地展开明细**
+
+```vue
+<el-table-column type="expand">
+  <template #default="{ row }">
+    <el-table :data="row.herbBases" size="small">
+      <el-table-column prop="baseName" label="基地名称" />
+      <el-table-column prop="mainProducts" label="种植品类" />
+      <el-table-column prop="scale" label="规模(亩)" />
+      <el-table-column prop="sourcePlatform" label="来源" />
+    </el-table>
+  </template>
+</el-table-column>
+```
+
+列表仅有摘要时，展开该行才拉取主体详情并缓存，避免首屏加载所有基地。
+
+- [ ] **Step 4: 将详情和操作入口指向主体**
+
+详情抽屉标题取 `displayName`，基地作为独立明细区块。新增联系人、负责人、状态和沟通记录调用主体 API；从某基地发起沟通时传递 `herbBaseId`，时间线仍显示在主体下，并标明关联基地。
+
+- [ ] **Step 5: 构建和人工验收**
+
+Run:
+
+```powershell
+npm --prefix E:\Code\QPS\QPS_WEB_ADMIN run build
+```
+
+Expected: PASS。手工记录必须确认：一个主体两个基地只显示一行；展开可见两个基地及各自品类；`BASE_ONLY` 可正常编辑、分配、添加联系人和跟进；品类筛选能命中任意子基地。
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git -C E:\Code\QPS\QPS_WEB_ADMIN add src/api/modules/crmHerbBase.ts src/views/crm/herbBase/index.vue
+git -C E:\Code\QPS\QPS_WEB_ADMIN commit -m "feat(crm): display herb bases by subject"
+```
+
+### Task 6: 更新政府和百度导入逻辑
+
+**Files:**
+- Modify: `C:\Users\Dust\.codex\skills\qps-gov-web-herb-base-import\SKILL.md`
+- Modify: `C:\Users\Dust\.codex\skills\qps-gov-web-herb-base-import\references\data-contract.md`
+- Modify: `C:\Users\Dust\.codex\skills\qps-crm-qhyp-import\SKILL.md`
+- Create: `D:\数据抓取\CodexTemp\crm-subject-import-preview.sql`
+- Create: `D:\数据抓取\CodexTemp\crm-subject-import-verify.sql`
+
+**Interfaces:**
+- Consumes: `QHYP.dbo.GovHerbBaseSource`、`QHYP.dbo.CrmLeadClean`。
+- Produces: “主体幂等 upsert -> 基地幂等 upsert -> 基地品类 upsert”的导入流程。
+
+- [ ] **Step 1: 写入导入预览 SQL**
+
+```sql
+SELECT SourcePlatform, SourceId, SubjectName, BaseName, MainProduct,
+       CASE WHEN NULLIF(LTRIM(RTRIM(SubjectName)), '') IS NULL
+            THEN 'BASE_ONLY' ELSE 'SUBJECT' END AS SubjectResolution
+FROM dbo.ImportCandidateView;
+```
+
+预览必须统计新增/复用主体、`BASE_ONLY`、新增/已有基地及拒绝行；拒绝空基地名、空 `SourcePlatform` 或空 `SourceId`，不生成不可幂等的数据。
+
+- [ ] **Step 2: 实现主体与基地幂等键**
+
+```sql
+-- 有主体：UPPER(LTRIM(RTRIM(SubjectName)))
+-- 无主体：BASE_ONLY|UPPER(BaseName)|UPPER(Area)|UPPER(Address)
+-- 基地：SourcePlatform + SourceId
+```
+
+事务内先按 `NormalizedSubjectName` 更新或插入 `CrmSubjects`，再按来源键更新或插入 `CrmHerbBases.SubjectId`。绝不写入 `ParentId`。
+
+- [ ] **Step 3: 品类只写基地属性**
+
+```sql
+INSERT INTO dbo.CrmBusinessEntityAttributes
+    (Id, EntityType, EntityId, AttributeCode, AttributeValue, SortOrder, Remark, CreatedAt, UpdatedAt, IsDeleted)
+SELECT NEWID(), 'CRM_HERB_BASE', b.Id, 'CRM_MAIN_PRODUCT', p.ProductCode, 0, '', GETDATE(), GETDATE(), 0
+FROM #ImportedBases b
+JOIN #ImportedProducts p ON p.SourceKey = b.SourceKey
+WHERE NOT EXISTS (
+    SELECT 1 FROM dbo.CrmBusinessEntityAttributes a
+    WHERE a.IsDeleted = 0 AND a.EntityType = 'CRM_HERB_BASE'
+      AND a.EntityId = b.Id AND a.AttributeCode = 'CRM_MAIN_PRODUCT'
+      AND a.AttributeValue = p.ProductCode);
+```
+
+- [ ] **Step 4: 两次执行验证幂等**
+
+Run:
+
+```powershell
+sqlcmd -S localhost -d QPS_CRM -U sa -P 123456 -C -i D:\数据抓取\CodexTemp\crm-subject-import-preview.sql
+sqlcmd -S localhost -d QPS_CRM -U sa -P 123456 -C -i D:\数据抓取\CodexTemp\crm-subject-import-verify.sql
+```
+
+Expected: 第二次执行新增主体、基地和品类属性均为 `0`；两个 skill 仅以中文说明新模型，不再提“根基地/子基地”关系。
+
+### Task 7: 全量验收并收口 ParentId 依赖
+
+**Files:**
+- Create: `D:\数据抓取\CodexTemp\crm-subject-post-migration-check.sql`
+- Modify: `QPS-HT/src/4.QPS.WebAPI/Data/TestDataInitializer.cs`（仅当初始化仍写旧模型）
+- Modify: `QPS-HT/src/2.QPS.Application/Features/Crm/GetCrmDashboardQuery.cs`（仅当仪表盘仍按基地平铺统计）
+
+**Interfaces:**
+- Produces: 迁移完成报告和 `ParentId` 运行时依赖清单。
+
+- [ ] **Step 1: 运行数据完整性 SQL**
+
+```sql
+SELECT COUNT(*) AS UnassignedBases FROM dbo.CrmHerbBases WHERE IsDeleted = 0 AND SubjectId IS NULL;
+SELECT COUNT(*) AS InvalidFollowRecords
+FROM dbo.CrmFollowRecords f
+LEFT JOIN dbo.CrmSubjects s ON s.Id = f.SubjectId AND s.IsDeleted = 0
+WHERE f.IsDeleted = 0 AND s.Id IS NULL;
+SELECT COUNT(*) AS SubjectMainProductAttributes
+FROM dbo.CrmBusinessEntityAttributes
+WHERE IsDeleted = 0 AND EntityType = 'CRM_SUBJECT' AND AttributeCode = 'CRM_MAIN_PRODUCT';
+```
+
+Expected: 三项均为 `0`。
+
+- [ ] **Step 2: 全量构建与测试**
+
+Run:
+
+```powershell
+dotnet test E:\Code\QPS\QPS-HT\tests\QPS.UnitTests\QPS.UnitTests.csproj
+dotnet build E:\Code\QPS\QPS-HT\src\4.QPS.WebAPI\QPS.WebAPI.csproj --no-restore
+npm --prefix E:\Code\QPS\QPS_WEB_ADMIN run build
+```
+
+Expected: 全部 PASS。`quick_validate.py` 若仍因缺少 `yaml` 失败，单独记录为环境依赖问题，不将其判为本功能回归。
+
+- [ ] **Step 3: 搜索并关闭运行时 ParentId 依赖**
+
+Run:
+
+```powershell
+rg -n "ParentId|ParentHerbBase|Children" E:\Code\QPS\QPS-HT E:\Code\QPS\QPS_WEB_ADMIN
+```
+
+Expected: 仅保留实体历史字段、数据库迁移与兼容 DTO；列表、导入、联系人、负责人、跟进和统计不能依赖 `ParentId`。
+
+- [ ] **Step 4: Commit**
+
+```powershell
+git -C E:\Code\QPS\QPS-HT add src/4.QPS.WebAPI/Data/TestDataInitializer.cs src/2.QPS.Application/Features/Crm/GetCrmDashboardQuery.cs
+git -C E:\Code\QPS\QPS-HT commit -m "test(crm): verify subject aggregation rollout"
+```
+
+仅在本任务确实修改这两个文件时提交，不创建空提交。
+
+## Plan Self-Review
+
+- 覆盖主体/基地分层、无主体基地、品类归基地、主体聚合列表、联系人/负责人/跟进归主体、导入幂等和迁移核验。
+- 属性与关系命名统一为 `CrmSubject.Id`、`CrmHerbBase.SubjectId`、`CRM_HERB_BASE`；没有主体品类表。
+- 不清空 CRM 数据，不把临时产物写入代码仓库，不依赖 `ParentId` 作为新模型关系。

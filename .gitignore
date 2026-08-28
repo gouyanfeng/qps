@@ -1,0 +1,9 @@
+# Local workspace state and generated artifacts
+/CodexTemp/
+/test-results/
+/.agents/
+/.codex/
+/.trae/
+/.workbuddy/
+/QPS_UI_TESTS/playwright-report*/
+/QPS_UI_TESTS/test-results/
