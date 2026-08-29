@@ -40,17 +40,19 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
 
         await EnsureVendorNameNotExists(normalizedVendorName, cancellationToken);
 
-        await EnsureOwnerExists(request.Request.OwnerUserId, cancellationToken);
+        var operatorUserId = GetOperatorUserId();
+        var ownerUserId = request.Request.OwnerUserId ?? operatorUserId;
+        await EnsureOwnerExists(ownerUserId, cancellationToken);
+        await EnsureCanSpecifyOwnerAsync(request.Request.OwnerUserId, operatorUserId, cancellationToken);
 
-        var vendor = CreateVendor(request.Request, vendorName, normalizedVendorName);
+        var vendor = CreateVendor(request.Request, vendorName, normalizedVendorName, ownerUserId);
 
         _dbContext.CrmVendors.Add(vendor);
-        _dbContext.CrmTransferRecords.Add(CrmTransferRecord.Create(
-            CrmCodes.VendorEntityType,
+        _dbContext.CrmTransferRecords.Add(CrmTransferRecord.CreateEntry(
+            CrmTransferEntityType.Vendor,
             vendor.Id,
-            null,
-            request.Request.OwnerUserId,
-            GetOperatorUserId(),
+            vendor.OwnerUserId,
+            operatorUserId,
             request.Request.Remark.Trim()));
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -92,16 +94,11 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
     /// <summary>
     /// 请求带负责人时确认负责人存在。
     /// </summary>
-    private async Task EnsureOwnerExists(Guid? ownerUserId, CancellationToken cancellationToken)
+    private async Task EnsureOwnerExists(Guid ownerUserId, CancellationToken cancellationToken)
     {
-        if (!ownerUserId.HasValue)
-        {
-            return;
-        }
-
         var ownerExists = await _dbContext.SystemUsers
             .AsNoTracking()
-            .AnyAsync(user => user.Id == ownerUserId.Value && user.IsActive, cancellationToken);
+            .AnyAsync(user => user.Id == ownerUserId && user.IsActive, cancellationToken);
 
         if (!ownerExists)
         {
@@ -115,7 +112,8 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
     private static CrmVendor CreateVendor(
         CrmVendorCreateRequest request,
         string vendorName,
-        string normalizedVendorName)
+        string normalizedVendorName,
+        Guid ownerUserId)
     {
         return CrmVendor.Create(
             vendorName,
@@ -124,13 +122,30 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
             request.LatestPurchaseTime,
             request.LatestPurchasePlanName.Trim(),
             request.Remark.Trim(),
-            request.OwnerUserId);
+            ownerUserId);
     }
 
-    private Guid? GetOperatorUserId()
+    private Guid GetOperatorUserId()
     {
         return Guid.TryParse(_currentUserService.UserId, out var operatorUserId)
             ? operatorUserId
-            : null;
+            : throw new BusinessException(401, "登录状态无效");
+    }
+
+    private async Task EnsureCanSpecifyOwnerAsync(Guid? requestedOwnerUserId, Guid operatorUserId, CancellationToken cancellationToken)
+    {
+        if (!requestedOwnerUserId.HasValue || requestedOwnerUserId == operatorUserId)
+            return;
+
+        var hasPermission = await (
+                from user in _dbContext.SystemUsers
+                join rolePermission in _dbContext.SystemRolePermissions on user.RoleId equals rolePermission.RoleId
+                join permission in _dbContext.SystemPermissions on rolePermission.PermissionId equals permission.Id
+                where user.Id == operatorUserId && permission.Code == "CRM_TRANSFER"
+                select permission.Id)
+            .AnyAsync(cancellationToken);
+
+        if (!hasPermission)
+            throw new BusinessException(403, "无权指定负责人");
     }
 }

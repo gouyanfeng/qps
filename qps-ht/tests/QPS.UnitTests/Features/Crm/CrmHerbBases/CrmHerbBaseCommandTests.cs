@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Domain.Entities.Crm;
+using QPS.Domain.Entities.System;
 using QPS.UnitTests.Common;
 using Xunit;
 
@@ -13,7 +14,13 @@ public class CrmHerbBaseCommandTests
     public async Task Create_ShouldPersistMainProductAttributes()
     {
         await using var dbContext = TestDbContextFactory.Create();
-        var handler = new CreateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreateDispatcher());
+        var currentUser = SystemUser.Create("creator", "hash", "创建人", Guid.NewGuid());
+        dbContext.SystemUsers.Add(currentUser);
+        await dbContext.SaveChangesAsync();
+        var handler = new CreateCrmHerbBaseHandler(
+            dbContext,
+            new TestCurrentUserService(currentUser.Id.ToString()),
+            TestDbContextFactory.CreateDispatcher());
 
         var result = await handler.Handle(new CreateCrmHerbBaseCommand
         {
@@ -48,14 +55,20 @@ public class CrmHerbBaseCommandTests
         Assert.Equal(new List<string> { "HUANG_QI", "DANG_GUI" }, attributes);
         Assert.Equal("Primary Contact", subject.PrimaryContactName);
         Assert.Equal("13900000000", subject.PrimaryContactPhone);
-        Assert.Equal(0, transferRecordCount);
+        Assert.Equal(1, transferRecordCount);
     }
 
     [Fact]
     public async Task GetList_ShouldFilterByBusinessEntityMainProductAttributes()
     {
         await using var dbContext = TestDbContextFactory.Create();
-        var createHandler = new CreateCrmHerbBaseHandler(dbContext, TestDbContextFactory.CreateDispatcher());
+        var currentUser = SystemUser.Create("creator", "hash", "创建人", Guid.NewGuid());
+        dbContext.SystemUsers.Add(currentUser);
+        await dbContext.SaveChangesAsync();
+        var createHandler = new CreateCrmHerbBaseHandler(
+            dbContext,
+            new TestCurrentUserService(currentUser.Id.ToString()),
+            TestDbContextFactory.CreateDispatcher());
         await createHandler.Handle(new CreateCrmHerbBaseCommand
         {
             Request = CreateCustomerRequest("Dang Gui Customer")
