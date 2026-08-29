@@ -13,7 +13,7 @@ export const getAuthMenuListApi = () => {
   return authMenuList;
 };
 
-const getUserPermissionsCacheKey = (userId: string) => `qps-user-permissions-v8-${userId || "anonymous"}`;
+const getUserPermissionsCacheKey = (userId: string) => `qps-user-permissions-v9-${userId || "anonymous"}`;
 
 export const getUserPermissionsApi = async (): Promise<string[]> => {
   const { useUserStore } = await import("@/stores/modules/user");

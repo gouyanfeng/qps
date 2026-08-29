@@ -20,11 +20,15 @@ public class CreateCrmFollowRecordCommand : IRequest<bool>
 public class CreateCrmFollowRecordHandler : IRequestHandler<CreateCrmFollowRecordCommand, bool>
 {
     private const string HerbBaseSubjectEntityType = CrmCodes.HerbBaseSubjectEntityType;
+    private const string VendorEntityType = CrmCodes.VendorEntityType;
 
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IDomainEventDispatcher _dispatcher;
 
+    /// <summary>
+    /// 初始化通用跟进记录处理器。
+    /// </summary>
     public CreateCrmFollowRecordHandler(IDbContext dbContext, ICurrentUserService currentUserService, IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
@@ -32,28 +36,38 @@ public class CreateCrmFollowRecordHandler : IRequestHandler<CreateCrmFollowRecor
         _dispatcher = dispatcher;
     }
 
+    /// <summary>
+    /// 为基地主体或厂商新增沟通记录，并同步其最近跟进摘要。
+    /// </summary>
     public async Task<bool> Handle(CreateCrmFollowRecordCommand request, CancellationToken cancellationToken)
     {
         EnsureFollowResult(request.Request.FollowResult);
         EnsureSupportedEntityType(request.EntityType);
-        var subject = await GetSubject(request.EntityId, cancellationToken);
+        var followAt = DateTime.Now;
 
-        await EnsureContactBelongsToSubject(request, cancellationToken);
+        if (request.EntityType == HerbBaseSubjectEntityType)
+        {
+            var subject = await GetSubject(request.EntityId, cancellationToken);
+            await EnsureContactBelongsToTarget(request, cancellationToken);
+            _dbContext.CrmFollowRecords.Add(CreateFollowRecord(request));
+            subject.UpdateFollowSummary(followAt, request.Request.FollowResult, request.Request.NextFollowAt);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
+            return true;
+        }
 
-        var record = CreateFollowRecord(request);
-        _dbContext.CrmFollowRecords.Add(record);
-
-        subject.UpdateFollowSummary(DateTime.Now, request.Request.FollowResult, request.Request.NextFollowAt);
+        var vendor = await GetVendor(request.EntityId, cancellationToken);
+        await EnsureContactBelongsToTarget(request, cancellationToken);
+        _dbContext.CrmFollowRecords.Add(CreateFollowRecord(request));
+        vendor.UpdateFollowSummary(followAt, request.Request.FollowResult, request.Request.NextFollowAt);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
-
         return true;
     }
 
     private static void EnsureSupportedEntityType(string entityType)
     {
-        if (entityType != HerbBaseSubjectEntityType)
+        if (entityType != HerbBaseSubjectEntityType && entityType != VendorEntityType)
         {
             throw new BusinessException(400, "不支持的沟通记录对象类型");
         }
@@ -78,7 +92,18 @@ public class CreateCrmFollowRecordHandler : IRequestHandler<CreateCrmFollowRecor
         return subject;
     }
 
-    private async Task EnsureContactBelongsToSubject(CreateCrmFollowRecordCommand command, CancellationToken cancellationToken)
+    private async Task<CrmVendor> GetVendor(Guid vendorId, CancellationToken cancellationToken)
+    {
+        var vendor = await _dbContext.CrmVendors.FirstOrDefaultAsync(vendor => vendor.Id == vendorId, cancellationToken);
+        if (vendor == null)
+        {
+            throw new BusinessException(404, "厂商不存在");
+        }
+
+        return vendor;
+    }
+
+    private async Task EnsureContactBelongsToTarget(CreateCrmFollowRecordCommand command, CancellationToken cancellationToken)
     {
         if (!command.Request.ContactId.HasValue)
         {

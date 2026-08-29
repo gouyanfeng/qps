@@ -246,22 +246,6 @@ public class CrmHerbBase : BaseEntity
         PrimaryContactPhone = string.Empty;
     }
 
-    public void UpdateFollowSummary(DateTime followAt, string followResult, DateTime? nextFollowAt)
-    {
-        LastFollowAt = followAt;
-        LastFollowResult = followResult;
-        NextFollowAt = nextFollowAt;
-
-        if (followResult == InterestedStatus || followResult == "有意向")
-        {
-            Status = InterestedStatus;
-        }
-        else if (Status == PendingContactStatus)
-        {
-            Status = FollowingUpStatus;
-        }
-    }
-
     public void UpdateStatus(string status, string remark)
     {
         Status = status;

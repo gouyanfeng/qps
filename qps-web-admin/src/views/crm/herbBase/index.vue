@@ -192,7 +192,7 @@
               <div class="table-actions">
                 <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
                 <Permission code="CRM_HERB_BASE_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
-                <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
+                <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               </div>
             </template>
           </el-table-column>
@@ -291,7 +291,7 @@
             <p v-if="currentHerbBase.remark" class="head-remark">{{ currentHerbBase.remark }}</p>
           </div>
           <div class="head-actions">
-            <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
+            <Permission code="CRM_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
             <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
             <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentHerbBase])">分配</el-button></Permission>
             <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="openSubjectDialog">编辑主体</el-button></Permission>
@@ -424,7 +424,7 @@
             <section class="detail-card detail-follow-panel">
               <div class="section-title section-title-first">
                 <h3>沟通记录</h3>
-                <Permission code="CRM_HERB_BASE_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录</el-button></Permission>
+                <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录</el-button></Permission>
               </div>
               <el-timeline>
                 <el-timeline-item
@@ -1189,6 +1189,11 @@ const loadCustomerDetail = async (herbBaseSubjectId: string) => {
 };
 
 const openDetail = async (row: any) => {
+  detailDrawerVisible.value = false;
+  currentHerbBase.value = null;
+  contacts.value = [];
+  followRecords.value = [];
+  transferRecords.value = [];
   await loadCustomerDetail(row.id);
   detailDrawerVisible.value = true;
 };

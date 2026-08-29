@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Extensions;
+using QPS.Application.Features.Crm;
+using QPS.Application.Features.Crm.CrmFollowRecords;
 using QPS.Application.Features.Crm.CrmVendors;
 
 namespace QPS.WebAPI.Controllers.Admin.Crm;
@@ -114,7 +116,7 @@ public class CrmVendorController : ControllerBase
     [HttpGet("{id}/follow-records")]
     public async Task<ActionResult<List<CrmFollowRecordDto>>> GetVendorFollowRecords(Guid id)
     {
-        var query = new GetCrmVendorFollowRecordsQuery { VendorId = id };
+        var query = new GetCrmFollowRecordsQuery { EntityType = CrmCodes.VendorEntityType, EntityId = id };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
@@ -122,7 +124,12 @@ public class CrmVendorController : ControllerBase
     [HttpPost("{id}/follow-records")]
     public async Task<ActionResult<bool>> CreateVendorFollowRecord(Guid id, [FromBody] CrmFollowRecordCreateRequest request)
     {
-        var command = new CreateCrmVendorFollowRecordCommand { VendorId = id, Request = request };
+        var command = new CreateCrmFollowRecordCommand
+        {
+            EntityType = CrmCodes.VendorEntityType,
+            EntityId = id,
+            Request = request
+        };
         var result = await _mediator.Send(command);
         return Ok(result);
     }

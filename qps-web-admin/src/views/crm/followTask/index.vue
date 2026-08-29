@@ -77,7 +77,7 @@
           </el-table-column>
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" link @click="openFollowDialog(row)">记录沟通</el-button>
+              <Permission code="CRM_FOLLOW"><el-button type="primary" link @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               <el-button link @click="detail(row)">详情</el-button>
             </template>
           </el-table-column>
@@ -149,6 +149,7 @@ import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { crmFollowTaskApi } from "@/api/modules/crmFollowTask";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 import QueryPage from "@/components/QueryPage/index.vue";
+import Permission from "@/components/Permission/index.vue";
 
 interface FollowTask {
   entityId: string;

@@ -96,9 +96,10 @@
           <el-table-column label="更新时间" width="150">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="240" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="310" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
+              <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button></Permission>
               <Permission code="CRM_VENDOR_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
             </template>
@@ -270,7 +271,7 @@
               <section class="detail-card follow-card activity-panel">
                 <div class="section-title section-title-first">
                   <h3>沟通记录</h3>
-                  <Permission code="CRM_VENDOR_EDIT">
+                  <Permission code="CRM_FOLLOW">
                     <el-button type="primary" link :icon="Phone" @click="openFollowDialog">记录</el-button>
                   </Permission>
                 </div>
@@ -436,7 +437,7 @@
       <el-form :model="followForm" label-width="100px">
         <el-form-item label="联系人">
           <el-select v-model="followForm.contactId" clearable placeholder="可不指定">
-            <el-option v-for="contact in currentVendor?.contacts || []" :key="contact.id" :label="contact.contactName || contact.phone" :value="contact.id" />
+            <el-option v-for="contact in followContacts" :key="contact.id" :label="contact.contactName || contact.phone" :value="contact.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="沟通方式">
@@ -466,7 +467,13 @@
           <el-input v-model="followForm.content" type="textarea" :rows="4" placeholder="记录沟通要点" />
         </el-form-item>
         <el-form-item label="下次跟进">
-          <el-date-picker v-model="followForm.nextFollowAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="请选择时间" />
+          <el-date-picker
+            v-model="followForm.nextFollowAt"
+            type="datetime"
+            value-format="YYYY-MM-DDTHH:mm:ss"
+            :disabled-date="disablePastFollowDate"
+            placeholder="请选择时间"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -502,7 +509,7 @@
 </template>
 
 <script setup lang="ts" name="vendor">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { Edit, Link, Phone, Plus, QuestionFilled, Refresh, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
@@ -555,6 +562,7 @@ const purchasePlanPageSize = ref(10);
 const purchasePlanTotal = ref(0);
 const productOptions = ref<any[]>([]);
 const followRecords = ref<any[]>([]);
+const followContacts = computed(() => (currentVendor.value?.contacts || []).filter((contact: any) => contact.status !== "INVALID"));
 
 const searchForm = reactive({
   keyword: "",
@@ -980,10 +988,14 @@ const resetFollowForm = () => {
   });
 };
 
-const openFollowDialog = () => {
+const openFollowDialog = async (row?: any) => {
+  if (row?.id && currentVendor.value?.id !== row.id) {
+    const result = await crmVendorApi.getVendor(row.id);
+    currentVendor.value = result.data;
+  }
   if (!currentVendor.value) return;
   resetFollowForm();
-  const primaryContact = currentVendor.value.contacts?.find((contact: any) => contact.isPrimary);
+  const primaryContact = followContacts.value.find((contact: any) => contact.isPrimary);
   followForm.contactId = primaryContact?.id;
   followDialogVisible.value = true;
 };
@@ -992,6 +1004,10 @@ const submitFollowRecord = async () => {
   if (!currentVendor.value) return;
   if (!followForm.followResult) {
     ElMessage.error("请选择沟通结果");
+    return;
+  }
+  if (followForm.nextFollowAt && new Date(followForm.nextFollowAt).getTime() <= Date.now()) {
+    ElMessage.error("下次跟进时间必须晚于当前时间");
     return;
   }
 
@@ -1006,7 +1022,13 @@ const submitFollowRecord = async () => {
   reloadList();
 };
 
+const disablePastFollowDate = (date: Date) => date.getTime() < new Date().setHours(0, 0, 0, 0);
+
 const openDetail = async (row: any) => {
+  detailDrawerVisible.value = false;
+  currentVendor.value = null;
+  purchasePlans.value = [];
+  followRecords.value = [];
   const result = await crmVendorApi.getVendor(row.id);
   currentVendor.value = result.data;
   detailDrawerVisible.value = true;
