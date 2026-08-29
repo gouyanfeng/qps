@@ -10,7 +10,5 @@ public class CrmVendorUpdateRequest
 
     public string LatestPurchasePlanName { get; set; } = string.Empty;
 
-    public Guid? OwnerUserId { get; set; }
-
     public string Remark { get; set; } = string.Empty;
 }

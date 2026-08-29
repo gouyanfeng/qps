@@ -90,8 +90,7 @@ public class CrmVendor : BaseEntity
         string priorityLevel,
         DateTime? latestPurchaseTime,
         string latestPurchasePlanName,
-        string remark,
-        Guid? ownerUserId)
+        string remark)
     {
         VendorName = vendorName;
         NormalizedVendorName = normalizedVendorName;
@@ -99,7 +98,6 @@ public class CrmVendor : BaseEntity
         LatestPurchaseTime = latestPurchaseTime;
         LatestPurchasePlanName = latestPurchasePlanName;
         Remark = remark;
-        OwnerUserId = ownerUserId;
     }
 
     public void AssignOwner(Guid? ownerUserId)
