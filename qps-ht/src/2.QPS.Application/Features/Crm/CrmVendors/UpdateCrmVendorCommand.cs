@@ -32,7 +32,7 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
     public async Task<bool> Handle(UpdateCrmVendorCommand request, CancellationToken cancellationToken)
     {
         // 编排更新厂商用例：
-        // 获取厂商、规范化名称、校验重复、确认负责人、更新并保存。
+        // 获取厂商、规范化名称、校验重复、更新并保存。
         var vendor = await GetVendor(request.Id, cancellationToken);
 
         var vendorName = NormalizeVendorDisplayName(request.Request.VendorName);
@@ -40,8 +40,6 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
         var normalizedVendorName = CrmVendorRules.NormalizeVendorName(vendorName);
 
         await EnsureVendorNameNotDuplicated(request.Id, normalizedVendorName, cancellationToken);
-
-        await EnsureOwnerExists(request.Request.OwnerUserId, cancellationToken);
 
         UpdateVendor(vendor, request.Request, vendorName, normalizedVendorName);
 
@@ -104,26 +102,6 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
     }
 
     /// <summary>
-    /// 请求带负责人时确认负责人存在。
-    /// </summary>
-    private async Task EnsureOwnerExists(Guid? ownerUserId, CancellationToken cancellationToken)
-    {
-        if (!ownerUserId.HasValue)
-        {
-            return;
-        }
-
-        var ownerExists = await _dbContext.SystemUsers
-            .AsNoTracking()
-            .AnyAsync(user => user.Id == ownerUserId.Value && user.IsActive, cancellationToken);
-
-        if (!ownerExists)
-        {
-            throw new BusinessException(404, "负责人不存在");
-        }
-    }
-
-    /// <summary>
     /// 更新厂商实体资料。
     /// </summary>
     private static void UpdateVendor(
@@ -138,7 +116,6 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
             CrmVendorRules.NormalizePriority(request.PriorityLevel),
             request.LatestPurchaseTime,
             request.LatestPurchasePlanName.Trim(),
-            request.Remark.Trim(),
-            request.OwnerUserId);
+            request.Remark.Trim());
     }
 }

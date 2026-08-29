@@ -562,10 +562,10 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="assignDialogVisible" title="分配负责人" width="520px">
+    <el-dialog v-model="assignDialogVisible" title="分配跟进人" width="520px">
       <el-form :model="assignForm" label-width="100px">
-        <el-form-item label="负责人">
-          <el-select v-model="assignForm.ownerUserId" placeholder="请选择负责人">
+        <el-form-item label="跟进人">
+          <el-select v-model="assignForm.ownerUserId" placeholder="请选择跟进人">
             <el-option label="未分配" value="" />
             <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
           </el-select>

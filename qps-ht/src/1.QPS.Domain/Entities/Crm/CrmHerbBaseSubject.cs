@@ -45,6 +45,20 @@ public class CrmHerbBaseSubject : BaseEntity
         OwnerUserId = ownerUserId;
     }
 
+    public CrmTransferRecord ChangeOwner(Guid? toOwnerUserId, Guid? operatorUserId, string? remark)
+    {
+        var record = CrmTransferRecord.CreateOwnerChange(
+            CrmTransferEntityType.HerbBaseSubject,
+            Id,
+            OwnerUserId,
+            toOwnerUserId,
+            operatorUserId,
+            remark?.Trim() ?? string.Empty);
+
+        OwnerUserId = toOwnerUserId;
+        return record;
+    }
+
     public void UpdateBasicInfo(string subjectName, string subjectType, string status, string grade, int score, string remark)
     {
         SubjectName = string.IsNullOrWhiteSpace(subjectName) ? SubjectName : subjectName.Trim();

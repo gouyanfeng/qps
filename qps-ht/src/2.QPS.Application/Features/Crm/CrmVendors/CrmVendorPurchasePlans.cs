@@ -36,8 +36,7 @@ internal static class CrmVendorPurchasePlans
             vendor.PriorityLevel,
             latestPlan?.PurchaseTime,
             latestPlan?.PurchasePlanName ?? string.Empty,
-            vendor.Remark,
-            vendor.OwnerUserId);
+            vendor.Remark);
     }
 
     private static bool IsLater(CrmVendorPurchasePlan plan, CrmVendorPurchasePlan? other)

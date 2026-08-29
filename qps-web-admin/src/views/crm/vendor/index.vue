@@ -78,7 +78,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="负责人" width="96" show-overflow-tooltip>
+          <el-table-column label="跟进人" width="96" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "未分配" }}</template>
           </el-table-column>
           <el-table-column label="采购计划" width="84" align="right">
@@ -330,8 +330,8 @@
             <el-option label="低" value="Low" />
           </el-select>
         </el-form-item>
-        <el-form-item label="负责人">
-          <el-select v-model="vendorForm.ownerUserId" clearable filterable placeholder="请选择负责人">
+        <el-form-item label="跟进人">
+          <el-select v-model="vendorForm.ownerUserId" clearable filterable placeholder="请选择跟进人">
             <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
           </el-select>
         </el-form-item>
@@ -356,8 +356,8 @@
         <el-form-item label="已选厂商">
           <span>{{ assignForm.vendorIds.length }} 个</span>
         </el-form-item>
-        <el-form-item label="负责人">
-          <el-select v-model="assignForm.ownerUserId" clearable filterable placeholder="清空则取消负责人">
+        <el-form-item label="跟进人">
+          <el-select v-model="assignForm.ownerUserId" clearable filterable placeholder="清空则取消跟进人">
             <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
           </el-select>
         </el-form-item>

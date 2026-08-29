@@ -16,18 +16,25 @@ public class CreateCrmHerbBaseCommand : IRequest<bool>
 public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand, bool>
 {
     private readonly IDbContext _dbContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly IDomainEventDispatcher _dispatcher;
 
-    public CreateCrmHerbBaseHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
+    public CreateCrmHerbBaseHandler(
+        IDbContext dbContext,
+        ICurrentUserService currentUserService,
+        IDomainEventDispatcher dispatcher)
     {
         _dbContext = dbContext;
+        _currentUserService = currentUserService;
         _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(CreateCrmHerbBaseCommand request, CancellationToken cancellationToken)
     {
+        var operatorUserId = GetOperatorUserId();
+        await EnsureOperatorActiveAsync(operatorUserId, cancellationToken);
         var herbBase = CreateHerbBase(request.Request);
-        var (subject, isNewSubject) = await ResolveSubjectAsync(request.Request, herbBase.BaseName, cancellationToken);
+        var (subject, isNewSubject) = await ResolveSubjectAsync(request.Request, herbBase.BaseName, operatorUserId, cancellationToken);
         herbBase.SetHerbBaseSubject(subject.Id);
         await SyncSubjectScaleAsync(subject, herbBase.Scale ?? 0, isNewSubject, cancellationToken);
 
@@ -35,6 +42,12 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         {
             ApplyPrimaryContact(subject, request.Request);
             _dbContext.CrmHerbBaseSubjects.Add(subject);
+            _dbContext.CrmTransferRecords.Add(CrmTransferRecord.CreateEntry(
+                CrmTransferEntityType.HerbBaseSubject,
+                subject.Id,
+                subject.OwnerUserId,
+                operatorUserId,
+                request.Request.Remark.Trim()));
         }
 
         _dbContext.CrmHerbBases.Add(herbBase);
@@ -88,14 +101,14 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
             scale: request.Scale);
     }
 
-    private static CrmHerbBaseSubject CreateSubject(CrmHerbBaseCreateRequest request, string baseName)
+    private static CrmHerbBaseSubject CreateSubject(CrmHerbBaseCreateRequest request, string baseName, Guid ownerUserId)
     {
         var hasSubjectName = !string.IsNullOrWhiteSpace(request.SubjectName);
         return CrmHerbBaseSubject.Create(
             request.SubjectName,
             baseName,
             hasSubjectName ? "UNKNOWN" : "BASE_ONLY",
-            null,
+            ownerUserId,
             CrmCodes.Status.Pending,
             request.Grade,
             request.Score,
@@ -106,6 +119,7 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
     private async Task<(CrmHerbBaseSubject Subject, bool IsNew)> ResolveSubjectAsync(
         CrmHerbBaseCreateRequest request,
         string baseName,
+        Guid operatorUserId,
         CancellationToken cancellationToken)
     {
         if (request.HerbBaseSubjectId.HasValue)
@@ -119,7 +133,7 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
 
         if (string.IsNullOrWhiteSpace(request.SubjectName))
         {
-            return (CreateSubject(request, baseName), true);
+            return (CreateSubject(request, baseName, operatorUserId), true);
         }
 
         var subjectName = request.SubjectName.Trim();
@@ -127,7 +141,7 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
             .FirstOrDefaultAsync(subject => subject.SubjectName == subjectName, cancellationToken);
 
         return existingSubject == null
-            ? (CreateSubject(request, baseName), true)
+            ? (CreateSubject(request, baseName, operatorUserId), true)
             : (existingSubject, false);
     }
 
@@ -164,5 +178,18 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
                 .SumAsync(herbBase => herbBase.Scale ?? 0, cancellationToken);
 
         subject.UpdateScale(existingScale + newBaseScale);
+    }
+
+    private Guid GetOperatorUserId()
+    {
+        return Guid.TryParse(_currentUserService.UserId, out var operatorUserId)
+            ? operatorUserId
+            : throw new BusinessException(401, "登录状态无效");
+    }
+
+    private async Task EnsureOperatorActiveAsync(Guid operatorUserId, CancellationToken cancellationToken)
+    {
+        if (!await _dbContext.SystemUsers.AnyAsync(user => user.Id == operatorUserId && user.IsActive, cancellationToken))
+            throw new BusinessException(401, "当前用户不可用");
     }
 }

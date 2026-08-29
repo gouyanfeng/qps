@@ -90,8 +90,7 @@ public class CrmVendor : BaseEntity
         string priorityLevel,
         DateTime? latestPurchaseTime,
         string latestPurchasePlanName,
-        string remark,
-        Guid? ownerUserId)
+        string remark)
     {
         VendorName = vendorName;
         NormalizedVendorName = normalizedVendorName;
@@ -99,12 +98,25 @@ public class CrmVendor : BaseEntity
         LatestPurchaseTime = latestPurchaseTime;
         LatestPurchasePlanName = latestPurchasePlanName;
         Remark = remark;
-        OwnerUserId = ownerUserId;
     }
 
     public void AssignOwner(Guid? ownerUserId)
     {
         OwnerUserId = ownerUserId;
+    }
+
+    public CrmTransferRecord ChangeOwner(Guid? toOwnerUserId, Guid? operatorUserId, string? remark)
+    {
+        var record = CrmTransferRecord.CreateOwnerChange(
+            CrmTransferEntityType.Vendor,
+            Id,
+            OwnerUserId,
+            toOwnerUserId,
+            operatorUserId,
+            remark?.Trim() ?? string.Empty);
+
+        OwnerUserId = toOwnerUserId;
+        return record;
     }
 
     public void UpdateFollowSummary(DateTime followAt, string followResult, DateTime? nextFollowAt)
