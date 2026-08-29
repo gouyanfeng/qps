@@ -10,7 +10,6 @@ using QPS.Application.Interfaces;
 using QPS.Infrastructure;
 using QPS.Infrastructure.Identity;
 using QPS.Infrastructure.Database;
-using QPS.WebAPI.Data;
 using QPS.WebAPI.Filters;
 using QPS.WebAPI.Middleware;
 using QPS.Application.Features.System;
@@ -172,14 +171,10 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    // 仅在开发环境创建数据库并初始化测试数据，避免污染生产库
+    // 开发环境通过 EF Migration 同步数据库结构与基础权限。
     if (app.Environment.IsDevelopment())
     {
-        // 确保数据库已创建
-        dbContext.Database.EnsureCreated();
-
-        // 初始化测试数据
-        TestDataInitializer.Initialize(dbContext);
+        await dbContext.Database.MigrateAsync();
     }
     else
     {

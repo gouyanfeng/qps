@@ -34,10 +34,10 @@ public class CreateCrmVendorFollowRecordHandler : IRequestHandler<CreateCrmVendo
             throw new BusinessException(400, "沟通结果不能为空");
         }
 
-        var vendorExists = await _dbContext.CrmVendors.AnyAsync(
-            vendor => vendor.Id == request.VendorId && !vendor.IsDeleted,
+        var vendor = await _dbContext.CrmVendors.FirstOrDefaultAsync(
+            item => item.Id == request.VendorId && !item.IsDeleted,
             cancellationToken);
-        if (!vendorExists)
+        if (vendor is null)
         {
             throw new BusinessException(404, "厂商不存在");
         }
@@ -54,6 +54,7 @@ public class CreateCrmVendorFollowRecordHandler : IRequestHandler<CreateCrmVendo
             content: request.Request.Content,
             nextFollowAt: request.Request.NextFollowAt,
             operatorUserId: GetOperatorUserId()));
+        vendor.UpdateFollowSummary(DateTime.Now, request.Request.FollowResult, request.Request.NextFollowAt);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

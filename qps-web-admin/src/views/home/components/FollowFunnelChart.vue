@@ -1,7 +1,7 @@
 <template>
   <div class="chart-block">
     <div class="block-header">
-      <h2>跟进漏斗</h2>
+      <h2>{{ props.title || "跟进漏斗" }}</h2>
     </div>
     <el-empty v-if="isEmpty" description="暂无漏斗数据" :image-size="72" />
     <VChart v-else class="chart" :option="option" autoresize />
@@ -21,6 +21,7 @@ use([CanvasRenderer, FunnelChart, TooltipComponent]);
 
 const props = defineProps<{
   items: CrmDashboardChartItem[];
+  title?: string;
 }>();
 
 const isEmpty = computed(() => props.items.length === 0 || props.items.every(item => item.value === 0));

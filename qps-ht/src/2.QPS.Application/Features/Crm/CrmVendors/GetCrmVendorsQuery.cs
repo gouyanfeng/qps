@@ -106,6 +106,9 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
             LatestPurchasePlanName = vendor.LatestPurchasePlanName,
             Remark = vendor.Remark,
             OwnerUserId = vendor.OwnerUserId,
+            LastFollowAt = vendor.LastFollowAt,
+            LastFollowResult = vendor.LastFollowResult,
+            NextFollowAt = vendor.NextFollowAt,
             PrimaryContactName = _dbContext.CrmContacts
                 .Where(contact =>
                     !contact.IsDeleted &&

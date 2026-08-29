@@ -1,7 +1,7 @@
 <template>
   <div class="chart-block">
     <div class="block-header">
-      <h2>近 7 天新增基地</h2>
+      <h2>{{ props.title || "近 7 天新增基地" }}</h2>
     </div>
     <el-empty v-if="isEmpty" description="暂无新增基地" :image-size="72" />
     <VChart v-else class="chart" :option="option" autoresize />
@@ -21,6 +21,7 @@ use([CanvasRenderer, BarChart, GridComponent, TooltipComponent]);
 
 const props = defineProps<{
   items: CrmDashboardNewBaseTrendItem[];
+  title?: string;
 }>();
 
 const isEmpty = computed(() => props.items.length === 0 || props.items.every(item => item.newBaseCount === 0));

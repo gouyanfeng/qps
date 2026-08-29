@@ -48,6 +48,11 @@ export interface CrmDashboardNewBaseTrendItem {
   newBaseCount: number;
 }
 
+export interface CrmDashboardNewPurchasePlanTrendItem {
+  date: string;
+  newPurchasePlanCount: number;
+}
+
 export interface CrmDashboardData {
   metrics: CrmDashboardMetrics;
   todayFollowSubjects: CrmDashboardFollowSubject[];
@@ -56,6 +61,10 @@ export interface CrmDashboardData {
   mainProductDistribution: CrmDashboardChartItem[];
   followTrend: CrmDashboardTrendItem[];
   newBaseTrend: CrmDashboardNewBaseTrendItem[];
+  vendorPriorityDistribution: CrmDashboardChartItem[];
+  vendorFollowTrend: CrmDashboardTrendItem[];
+  newPurchasePlanTrend: CrmDashboardNewPurchasePlanTrendItem[];
+  vendorPurchaseProductDistribution: CrmDashboardChartItem[];
 }
 
 export const dashboardApi = {

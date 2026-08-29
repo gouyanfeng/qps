@@ -11,6 +11,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
 {
     private static readonly string[] ClosedStatuses = [CrmCodes.Status.Deal, CrmCodes.Status.Lost, "已成交", "已流失"];
     private static readonly string[] EffectiveFollowResults = [CrmCodes.FollowResult.Connected, CrmCodes.FollowResult.Interested, "已接通", "有意向"];
+    private static readonly (string Code, string Name)[] VendorPriorities = [("High", "高优先级"), ("Medium", "中优先级"), ("Low", "低优先级")];
 
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
@@ -34,6 +35,8 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var trendStart = todayStart.AddDays(-6);
         var mySubjects = _dbContext.CrmHerbBaseSubjects
             .Where(subject => !subject.IsDeleted && subject.OwnerUserId == ownerUserId);
+        var myVendors = _dbContext.CrmVendors
+            .Where(vendor => !vendor.IsDeleted && vendor.OwnerUserId == ownerUserId);
         var activeSubjects = mySubjects.Where(subject => !ClosedStatuses.Contains(subject.Status));
 
         var todayFollowCount = await activeSubjects.CountAsync(
@@ -173,6 +176,84 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
+        var vendorPriorityCounts = await myVendors
+            .GroupBy(vendor => vendor.PriorityLevel)
+            .Select(group => new { PriorityLevel = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+        var vendorPriorityDistribution = VendorPriorities
+            .Select(priority => new CrmDashboardChartItemDto
+            {
+                Code = priority.Code,
+                Name = priority.Name,
+                Value = vendorPriorityCounts.FirstOrDefault(item => item.PriorityLevel == priority.Code)?.Count ?? 0
+            })
+            .ToList();
+
+        var vendorTrendRecords = await (
+                from record in _dbContext.CrmFollowRecords
+                join vendor in myVendors on record.EntityId equals vendor.Id
+                where !record.IsDeleted &&
+                    record.EntityType == CrmCodes.VendorEntityType &&
+                    record.CreatedAt >= trendStart &&
+                    record.CreatedAt < tomorrowStart
+                select new { record.CreatedAt, record.FollowResult })
+            .ToListAsync(cancellationToken);
+        var vendorFollowTrend = Enumerable.Range(0, 7)
+            .Select(offset => trendStart.AddDays(offset))
+            .Select(date =>
+            {
+                var nextDate = date.AddDays(1);
+                var records = vendorTrendRecords.Where(record => record.CreatedAt >= date && record.CreatedAt < nextDate).ToList();
+                return new CrmDashboardTrendItemDto
+                {
+                    Date = date,
+                    FollowCount = records.Count,
+                    EffectiveFollowCount = records.Count(record => EffectiveFollowResults.Contains(record.FollowResult))
+                };
+            })
+            .ToList();
+
+        var newPurchasePlanDates = await (
+                from purchasePlan in _dbContext.CrmVendorPurchasePlans
+                join vendor in myVendors on purchasePlan.VendorId equals vendor.Id
+                where !purchasePlan.IsDeleted &&
+                    purchasePlan.CreatedAt >= trendStart &&
+                    purchasePlan.CreatedAt < tomorrowStart
+                select purchasePlan.CreatedAt)
+            .ToListAsync(cancellationToken);
+        var newPurchasePlanTrend = Enumerable.Range(0, 7)
+            .Select(offset => trendStart.AddDays(offset))
+            .Select(date =>
+            {
+                var nextDate = date.AddDays(1);
+                return new CrmDashboardNewPurchasePlanTrendItemDto
+                {
+                    Date = date,
+                    NewPurchasePlanCount = newPurchasePlanDates.Count(createdAt => createdAt >= date && createdAt < nextDate)
+                };
+            })
+            .ToList();
+
+        var vendorPurchaseProductAttributes = await _dbContext.CrmBusinessEntityAttributes
+            .Where(attribute =>
+                !attribute.IsDeleted &&
+                attribute.EntityType == CrmCodes.VendorEntityType &&
+                attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode &&
+                myVendors.Select(vendor => vendor.Id).Contains(attribute.EntityId))
+            .GroupBy(attribute => attribute.AttributeValue)
+            .Select(group => new { Code = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+        var vendorPurchaseProductDistribution = vendorPurchaseProductAttributes
+            .Select(item => new CrmDashboardChartItemDto
+            {
+                Code = item.Code,
+                Name = FormatMainProduct(item.Code),
+                Value = item.Count
+            })
+            .OrderByDescending(item => item.Value)
+            .ThenBy(item => item.Name)
+            .ToList();
+
         await FillSubjectSummariesAsync(todayFollowSubjects, cancellationToken);
 
         return new CrmDashboardDto
@@ -189,7 +270,11 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             FollowFunnel = followFunnel,
             MainProductDistribution = mainProductDistribution,
             FollowTrend = followTrend,
-            NewBaseTrend = newBaseTrend
+            NewBaseTrend = newBaseTrend,
+            VendorPriorityDistribution = vendorPriorityDistribution,
+            VendorFollowTrend = vendorFollowTrend,
+            NewPurchasePlanTrend = newPurchasePlanTrend,
+            VendorPurchaseProductDistribution = vendorPurchaseProductDistribution
         };
     }
 
@@ -212,6 +297,17 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             NewBaseTrend = Enumerable.Range(0, 7)
                 .Select(offset => DateTime.Today.AddDays(-6 + offset))
                 .Select(date => new CrmDashboardNewBaseTrendItemDto { Date = date })
+                .ToList(),
+            VendorPriorityDistribution = VendorPriorities
+                .Select(priority => new CrmDashboardChartItemDto { Code = priority.Code, Name = priority.Name })
+                .ToList(),
+            VendorFollowTrend = Enumerable.Range(0, 7)
+                .Select(offset => DateTime.Today.AddDays(-6 + offset))
+                .Select(date => new CrmDashboardTrendItemDto { Date = date })
+                .ToList(),
+            NewPurchasePlanTrend = Enumerable.Range(0, 7)
+                .Select(offset => DateTime.Today.AddDays(-6 + offset))
+                .Select(date => new CrmDashboardNewPurchasePlanTrendItemDto { Date = date })
                 .ToList()
         };
     }

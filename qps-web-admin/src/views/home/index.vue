@@ -7,24 +7,26 @@
     </el-alert>
 
     <div v-loading="loading" class="dashboard-body">
-      <HomeMetricCards :metrics="dashboard.metrics" @metric-click="handleMetricClick" />
+      <div class="dashboard-grid">
+        <section class="chart-section">
+          <h2 class="section-title">基地数据</h2>
+          <div class="chart-grid">
+            <FollowFunnelChart title="基地主体状态" :items="dashboard.followFunnel" />
+            <FollowTrendChart title="近 7 天基地跟进趋势" :items="dashboard.followTrend" />
+            <NewBaseTrendChart :items="dashboard.newBaseTrend" />
+            <MainProductDistributionChart title="基地主营品类分布" :items="dashboard.mainProductDistribution" />
+          </div>
+        </section>
 
-      <div class="main-grid">
-        <TodayFollowTable
-          :customers="dashboard.todayFollowSubjects"
-          @open-detail="openHerbBaseDetail"
-          @record-follow="recordFollow"
-        />
-        <div class="side-column">
-          <RecentFollowRecords :records="dashboard.recentFollowRecords" @open-detail="openHerbBaseById" />
-        </div>
-      </div>
-
-      <div class="chart-grid">
-        <FollowFunnelChart :items="dashboard.followFunnel" />
-        <FollowTrendChart :items="dashboard.followTrend" />
-        <NewBaseTrendChart :items="dashboard.newBaseTrend" />
-        <MainProductDistributionChart :items="dashboard.mainProductDistribution" />
+        <section class="chart-section">
+          <h2 class="section-title">厂商数据</h2>
+          <div class="chart-grid">
+            <MainProductDistributionChart title="厂商优先级分布" :items="dashboard.vendorPriorityDistribution" />
+            <FollowTrendChart title="近 7 天厂商跟进趋势" :items="dashboard.vendorFollowTrend" />
+            <NewPurchasePlanTrendChart :items="dashboard.newPurchasePlanTrend" />
+            <MainProductDistributionChart title="厂商采购品类分布" :items="dashboard.vendorPurchaseProductDistribution" />
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -32,21 +34,14 @@
 
 <script setup lang="ts" name="home">
 import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
-import dashboardApi, {
-  type CrmDashboardData,
-  type CrmDashboardFollowSubject,
-} from "@/api/modules/dashboard";
-import HomeMetricCards from "./components/HomeMetricCards.vue";
-import TodayFollowTable from "./components/TodayFollowTable.vue";
-import RecentFollowRecords from "./components/RecentFollowRecords.vue";
+import dashboardApi, { type CrmDashboardData } from "@/api/modules/dashboard";
 import FollowFunnelChart from "./components/FollowFunnelChart.vue";
 import MainProductDistributionChart from "./components/MainProductDistributionChart.vue";
 import FollowTrendChart from "./components/FollowTrendChart.vue";
 import NewBaseTrendChart from "./components/NewBaseTrendChart.vue";
+import NewPurchasePlanTrendChart from "./components/NewPurchasePlanTrendChart.vue";
 
-const router = useRouter();
 const loading = ref(false);
 const errorMessage = ref("");
 const dashboard = ref<CrmDashboardData>({
@@ -62,6 +57,10 @@ const dashboard = ref<CrmDashboardData>({
   mainProductDistribution: [],
   followTrend: [],
   newBaseTrend: [],
+  vendorPriorityDistribution: [],
+  vendorFollowTrend: [],
+  newPurchasePlanTrend: [],
+  vendorPurchaseProductDistribution: [],
 });
 
 const loadDashboard = async () => {
@@ -75,34 +74,6 @@ const loadDashboard = async () => {
     ElMessage.error(errorMessage.value);
   } finally {
     loading.value = false;
-  }
-};
-
-const goHerbBaseList = (query: Record<string, string> = {}) => {
-  router.push({ path: "/crm/herb-base", query });
-};
-
-const openHerbBaseDetail = (subject: CrmDashboardFollowSubject) => {
-  goHerbBaseList({ detailId: subject.id });
-};
-
-const openHerbBaseById = (herbBaseSubjectId: string) => {
-  goHerbBaseList({ detailId: herbBaseSubjectId });
-};
-
-const recordFollow = (subject: CrmDashboardFollowSubject) => {
-  goHerbBaseList({ followId: subject.id });
-};
-
-const handleMetricClick = (type: string) => {
-  if (type === "today") {
-    goHerbBaseList({ followFilter: "today" });
-  } else if (type === "overdue") {
-    goHerbBaseList({ onlyOverdue: "true" });
-  } else if (type === "highIntent") {
-    goHerbBaseList({ status: "INTERESTED" });
-  } else {
-    goHerbBaseList();
   }
 };
 
@@ -120,23 +91,27 @@ onMounted(loadDashboard);
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: 1680px;
   min-height: 420px;
-  margin: 0 auto;
 }
 
-.main-grid {
+.dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2.25fr) minmax(300px, 0.75fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  align-items: start;
 }
 
-.side-column {
+.chart-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   min-width: 0;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .chart-grid {
@@ -145,16 +120,20 @@ onMounted(loadDashboard);
   gap: 14px;
 }
 
-@media (max-width: 1280px) {
-  .chart-grid {
-    grid-template-columns: 1fr;
-  }
+.chart-grid :deep(.chart-block) {
+  display: flex;
+  flex-direction: column;
+  height: 400px;
 }
 
-@media (max-width: 1080px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
+.chart-grid :deep(.chart) {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+.chart-grid :deep(.el-empty) {
+  flex: 1;
 }
 
 @media (max-width: 640px) {

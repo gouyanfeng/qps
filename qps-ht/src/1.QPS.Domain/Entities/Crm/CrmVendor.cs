@@ -42,6 +42,12 @@ public class CrmVendor : BaseEntity
     /// </summary>
     public Guid? OwnerUserId { get; private set; }
 
+    public DateTime? LastFollowAt { get; private set; }
+
+    public string LastFollowResult { get; private set; } = string.Empty;
+
+    public DateTime? NextFollowAt { get; private set; }
+
     public virtual ICollection<CrmVendorPurchasePlan> PurchasePlans { get; private set; } = new List<CrmVendorPurchasePlan>();
 
     private CrmVendor()
@@ -99,6 +105,13 @@ public class CrmVendor : BaseEntity
     public void AssignOwner(Guid? ownerUserId)
     {
         OwnerUserId = ownerUserId;
+    }
+
+    public void UpdateFollowSummary(DateTime followAt, string followResult, DateTime? nextFollowAt)
+    {
+        LastFollowAt = followAt;
+        LastFollowResult = followResult;
+        NextFollowAt = nextFollowAt;
     }
 }
 

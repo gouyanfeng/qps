@@ -112,9 +112,11 @@ public class AppDbContext : DbContext, IDbContext
             entity.Property(vendor => vendor.VendorName).HasMaxLength(200);
             entity.Property(vendor => vendor.NormalizedVendorName).HasMaxLength(200);
             entity.Property(vendor => vendor.PriorityLevel).HasMaxLength(20);
+            entity.Property(vendor => vendor.LastFollowResult).HasMaxLength(32);
             entity.HasIndex(vendor => vendor.NormalizedVendorName).IsUnique();
             entity.HasIndex(vendor => vendor.PriorityLevel);
             entity.HasIndex(vendor => vendor.LatestPurchaseTime);
+            entity.HasIndex(vendor => new { vendor.OwnerUserId, vendor.NextFollowAt });
         });
 
         modelBuilder.Entity<CrmVendorPurchasePlan>(entity =>

@@ -502,9 +502,10 @@
 </template>
 
 <script setup lang="ts" name="vendor">
-import { reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { Edit, Link, Phone, Plus, QuestionFilled, Refresh, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
+import { useRoute } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 import { userApi } from "@/api/modules/user";
@@ -534,6 +535,7 @@ interface VendorDetail {
 }
 
 const queryPageRef = ref();
+const route = useRoute();
 
 const detailDrawerVisible = ref(false);
 const vendorDialogVisible = ref(false);
@@ -1000,7 +1002,8 @@ const submitFollowRecord = async () => {
   });
   ElMessage.success("沟通记录已保存");
   followDialogVisible.value = false;
-  await loadFollowRecords();
+  await refreshDetail(false);
+  reloadList();
 };
 
 const openDetail = async (row: any) => {
@@ -1011,6 +1014,27 @@ const openDetail = async (row: any) => {
   await loadPurchasePlans();
   await loadFollowRecords();
 };
+
+const getQueryValue = (value: unknown) => {
+  if (Array.isArray(value)) return value[0] || "";
+  return typeof value === "string" ? value : "";
+};
+
+const applyRouteEntrypoint = async () => {
+  const followId = getQueryValue(route.query.followId);
+  const detailId = getQueryValue(route.query.detailId);
+
+  if (followId) {
+    await openDetail({ id: followId });
+    openFollowDialog();
+  } else if (detailId) {
+    await openDetail({ id: detailId });
+  }
+};
+
+onMounted(() => {
+  void applyRouteEntrypoint();
+});
 
 const refreshDetail = async (showMessage = true) => {
   if (!currentVendor.value) return;

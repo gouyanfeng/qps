@@ -7,3 +7,5 @@
 /.workbuddy/
 /qps-ui-tests/playwright-report*/
 /qps-ui-tests/test-results/
+/qps-ui-tests/**/bin/
+/qps-ui-tests/**/obj/

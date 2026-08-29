@@ -34,4 +34,4 @@ dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=
 
 ## 临时文件
 
-- 临时测试、Playwright 临时 spec、调试脚本和分析产物放在 `E:\Code\QPS\codex-temp`，不要放入源码目录或提交仓库。
+- 临时测试、Playwright 临时 spec、调试脚本和分析产物放在 `E:\Code\QPS\qps-ui-tests`，不要放入源码目录或提交仓库。

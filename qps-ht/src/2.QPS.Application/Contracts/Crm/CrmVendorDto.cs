@@ -20,6 +20,12 @@ public class CrmVendorDto
 
     public string? OwnerUserName { get; set; }
 
+    public DateTime? LastFollowAt { get; set; }
+
+    public string LastFollowResult { get; set; } = string.Empty;
+
+    public DateTime? NextFollowAt { get; set; }
+
     public string PrimaryContactName { get; set; } = string.Empty;
 
     public string PrimaryContactPhone { get; set; } = string.Empty;
