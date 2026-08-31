@@ -96,9 +96,7 @@ public class AppDbContext : DbContext, IDbContext
             entity.HasIndex(
                     attribute => new
                     {
-                        attribute.EntityType,
                         attribute.EntityId,
-                        attribute.AttributeCode,
                         attribute.AttributeValue
                     },
                     "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product")

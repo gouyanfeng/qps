@@ -76,7 +76,7 @@ namespace QPS.Infrastructure.Database.Migrations
 
                     b.HasIndex("EntityType", "EntityId", "AttributeCode", "AttributeValue");
 
-                    b.HasIndex(new[] { "EntityType", "EntityId", "AttributeCode", "AttributeValue" }, "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product")
+                    b.HasIndex(new[] { "EntityId", "AttributeValue" }, "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0 AND [EntityType] = 'CRM_VENDOR_PURCHASE_PLAN' AND [AttributeCode] = 'PURCHASE_PRODUCT'");
 
