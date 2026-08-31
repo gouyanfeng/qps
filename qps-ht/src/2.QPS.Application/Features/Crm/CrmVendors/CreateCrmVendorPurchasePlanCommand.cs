@@ -42,7 +42,7 @@ public class CreateCrmVendorPurchasePlanHandler : IRequestHandler<CreateCrmVendo
             vendor.Id,
             purchasePlanName,
             request.Request.PurchaseTime,
-            string.Empty,
+            request.Request.LegacyProducts.Trim(),
             request.Request.PageUrl.Trim(),
             request.Request.Remark.Trim());
 

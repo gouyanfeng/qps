@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace QPS.Application.Contracts.Crm;
 
 public class CrmVendorPurchasePlanCreateRequest
@@ -7,6 +9,9 @@ public class CrmVendorPurchasePlanCreateRequest
     public DateTime? PurchaseTime { get; set; }
 
     public List<string> ProductNames { get; set; } = new();
+
+    [JsonPropertyName("products")]
+    public string LegacyProducts { get; set; } = string.Empty;
 
     public string PageUrl { get; set; } = string.Empty;
 
