@@ -9,45 +9,70 @@ public static class CrmVendorPurchasePlanProducts
     public static async Task ReplaceAsync(
         IDbContext dbContext,
         Guid planId,
-        IEnumerable<string> productNames,
+        IEnumerable<string>? productNames,
         CancellationToken cancellationToken)
     {
-        var oldAttributes = await dbContext.CrmBusinessEntityAttributes
+        var productNamesToKeep = Normalize(productNames);
+        var attributes = await dbContext.CrmBusinessEntityAttributes
+            .IgnoreQueryFilters()
             .Where(attribute =>
-                !attribute.IsDeleted &&
                 attribute.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
                 attribute.EntityId == planId &&
                 attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode)
             .ToListAsync(cancellationToken);
 
-        foreach (var attribute in oldAttributes)
+        var retainedAttributeIds = new HashSet<Guid>();
+        var sortOrder = 1;
+        foreach (var productName in productNamesToKeep)
+        {
+            var attribute = attributes
+                .Where(item => string.Equals(
+                    item.AttributeValue.Trim(),
+                    productName,
+                    StringComparison.OrdinalIgnoreCase))
+                .OrderBy(item => item.IsDeleted)
+                .ThenBy(item => item.CreatedAt)
+                .FirstOrDefault();
+
+            if (attribute == null)
+            {
+                attribute = new CrmBusinessEntityAttribute(
+                    CrmCodes.VendorPurchasePlanEntityType,
+                    planId,
+                    CrmCodes.PurchaseProductAttributeCode,
+                    productName,
+                    sortOrder);
+                attributes.Add(attribute);
+                dbContext.CrmBusinessEntityAttributes.Add(attribute);
+            }
+            else
+            {
+                attribute.IsDeleted = false;
+                attribute.Update(
+                    CrmCodes.VendorPurchasePlanEntityType,
+                    planId,
+                    CrmCodes.PurchaseProductAttributeCode,
+                    productName,
+                    sortOrder,
+                    attribute.Remark);
+            }
+
+            retainedAttributeIds.Add(attribute.Id);
+            sortOrder++;
+        }
+
+        foreach (var attribute in attributes.Where(attribute =>
+                     !attribute.IsDeleted && !retainedAttributeIds.Contains(attribute.Id)))
         {
             attribute.IsDeleted = true;
         }
-
-        // The filtered unique index requires old rows to be soft-deleted before re-adding a name.
-        if (oldAttributes.Count > 0)
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        var sortOrder = 1;
-        foreach (var productName in Normalize(productNames))
-        {
-            dbContext.CrmBusinessEntityAttributes.Add(new CrmBusinessEntityAttribute(
-                CrmCodes.VendorPurchasePlanEntityType,
-                planId,
-                CrmCodes.PurchaseProductAttributeCode,
-                productName,
-                sortOrder++));
-        }
     }
 
-    private static List<string> Normalize(IEnumerable<string> productNames)
+    private static List<string> Normalize(IEnumerable<string>? productNames)
     {
-        return productNames
-            .Select(productName => productName.Trim())
+        return (productNames ?? [])
             .Where(productName => !string.IsNullOrWhiteSpace(productName))
+            .Select(productName => productName!.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }

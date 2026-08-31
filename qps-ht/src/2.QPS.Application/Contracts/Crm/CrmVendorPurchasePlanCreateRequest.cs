@@ -8,7 +8,7 @@ public class CrmVendorPurchasePlanCreateRequest
 
     public DateTime? PurchaseTime { get; set; }
 
-    public List<string> ProductNames { get; set; } = new();
+    public List<string>? ProductNames { get; set; }
 
     [JsonPropertyName("products")]
     public string LegacyProducts { get; set; } = string.Empty;

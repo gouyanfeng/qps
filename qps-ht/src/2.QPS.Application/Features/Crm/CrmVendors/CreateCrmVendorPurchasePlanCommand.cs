@@ -50,7 +50,7 @@ public class CreateCrmVendorPurchasePlanHandler : IRequestHandler<CreateCrmVendo
         await CrmVendorPurchasePlanProducts.ReplaceAsync(
             _dbContext,
             purchasePlan.Id,
-            request.Request.ProductNames,
+            request.Request.ProductNames ?? [],
             cancellationToken);
         await CrmVendorPurchasePlans.RefreshLatestAsync(_dbContext, vendor, cancellationToken, purchasePlan);
 
