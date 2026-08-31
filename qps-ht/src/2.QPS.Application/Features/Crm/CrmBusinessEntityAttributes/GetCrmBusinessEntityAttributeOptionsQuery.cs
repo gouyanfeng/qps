@@ -27,6 +27,33 @@ public class GetCrmBusinessEntityAttributeOptionsHandler : IRequestHandler<GetCr
 
     public async Task<List<AttributeOptionDto>> Handle(GetCrmBusinessEntityAttributeOptionsQuery request, CancellationToken cancellationToken)
     {
+        if (IsHerbProductAttribute(request))
+        {
+            var rootId = await _dbContext.SystemDataDictionaries
+                .Where(item => !item.IsDeleted && item.Code == CrmCodes.HerbProductDictionaryCode)
+                .Select(item => (Guid?)item.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (!rootId.HasValue)
+            {
+                return [];
+            }
+
+            var dictionaryQuery = _dbContext.SystemDataDictionaries
+                .AsNoTracking()
+                .Where(item => !item.IsDeleted && item.IsActive && item.ParentId == rootId.Value);
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                dictionaryQuery = dictionaryQuery.Where(item => item.Name.Contains(request.Keyword));
+            }
+
+            return await dictionaryQuery
+                .OrderBy(item => item.SortOrder)
+                .ThenBy(item => item.Name)
+                .Take(Math.Clamp(request.PageSize, 1, 200))
+                .Select(item => new AttributeOptionDto { Label = item.Name, Value = item.Name })
+                .ToListAsync(cancellationToken);
+        }
+
         var query = _dbContext.CrmBusinessEntityAttributes
             .AsNoTracking()
             .Where(attribute =>
@@ -60,5 +87,13 @@ public class GetCrmBusinessEntityAttributeOptionsHandler : IRequestHandler<GetCr
                 Value = option.Value
             })
             .ToListAsync(cancellationToken);
+    }
+
+    private static bool IsHerbProductAttribute(GetCrmBusinessEntityAttributeOptionsQuery request)
+    {
+        return (request.AttributeCode == CrmCodes.MainProductAttributeCode &&
+                request.EntityType == CrmCodes.HerbBaseEntityType) ||
+               (request.AttributeCode == CrmCodes.PurchaseProductAttributeCode &&
+                request.EntityType == CrmCodes.VendorPurchasePlanEntityType);
     }
 }

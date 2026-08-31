@@ -51,6 +51,10 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         }
 
         _dbContext.CrmHerbBases.Add(herbBase);
+        await CrmHerbProductDictionary.ValidateActiveNamesAsync(
+            _dbContext,
+            request.Request.MainProducts,
+            cancellationToken);
         AddMainProducts(herbBase.Id, request.Request.MainProducts);
         
         await _dbContext.SaveChangesAsync(cancellationToken);

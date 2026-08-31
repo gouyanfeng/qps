@@ -461,10 +461,8 @@
             multiple
             filterable
             remote
-            allow-create
-            default-first-option
             clearable
-            placeholder="输入或选择采购品类"
+            placeholder="请选择采购品类"
             :remote-method="loadPurchasePlanProductOptions"
           >
             <el-option v-for="item in purchasePlanProductOptions" :key="item.value" :label="item.label" :value="item.value" />

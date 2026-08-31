@@ -820,14 +820,7 @@ const mainProductValues: Record<string, string> = {
   其他: "OTHER",
 };
 
-const fallbackMainProductOptions = [
-  { label: "黄芪", value: "HUANG_QI" },
-  { label: "当归", value: "DANG_GUI" },
-  { label: "党参", value: "DANG_SHEN" },
-  { label: "天麻", value: "TIAN_MA" },
-  { label: "其他", value: "OTHER" },
-];
-const mainProductOptions = ref([...fallbackMainProductOptions]);
+const mainProductOptions = ref<Array<{ label: string; value: string }>>([]);
 const mainProductLoading = ref(false);
 
 const phoneTypeValues: Record<string, string> = {
@@ -954,26 +947,16 @@ const loadMainProductOptions = (keyword = "") => {
   mainProductTimer = setTimeout(async () => {
     mainProductLoading.value = true;
     try {
-      const trimmedKeyword = keyword.trim();
-      const fallbackMatch = trimmedKeyword
-        ? fallbackMainProductOptions.find(option =>
-            option.label.includes(trimmedKeyword) || option.value.includes(trimmedKeyword)
-          )
-        : undefined;
-      const searchKeyword = trimmedKeyword
-        ? toEnumValue(mainProductValues, trimmedKeyword, fallbackMatch?.value || trimmedKeyword)
-        : "";
       const response = await crmHerbBaseApi.getBusinessEntityAttributeOptions({
         entityType: "CRM_HERB_BASE",
         attributeCode: "CRM_MAIN_PRODUCT",
-        keyword: searchKeyword,
+        keyword: keyword.trim(),
         pageSize: 100,
       });
       const options = (response.data || [])
         .map(toMainProductOption)
         .filter(Boolean) as Array<{ label: string; value: string }>;
-
-      mainProductOptions.value = options.length ? options : trimmedKeyword ? [] : fallbackMainProductOptions;
+      mainProductOptions.value = options;
     } finally {
       mainProductLoading.value = false;
     }

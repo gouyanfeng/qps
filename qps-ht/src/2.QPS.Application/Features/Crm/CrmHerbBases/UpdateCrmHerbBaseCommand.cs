@@ -119,6 +119,7 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
 
     private async Task SyncMainProducts(Guid herbBaseId, List<string> mainProducts, CancellationToken cancellationToken)
     {
+        await CrmHerbProductDictionary.ValidateActiveNamesAsync(_dbContext, mainProducts, cancellationToken);
         var oldAttributes = await _dbContext.CrmBusinessEntityAttributes
             .Where(attribute =>
                 attribute.EntityType == CrmCodes.HerbBaseEntityType &&

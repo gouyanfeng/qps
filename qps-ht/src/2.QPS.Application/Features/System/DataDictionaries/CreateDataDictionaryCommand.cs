@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.System.DataDictionaries;
 using QPS.Application.Interfaces;
+using QPS.Application.Features.Crm;
 using QPS.Domain.Entities.System;
 using QPS.Domain.Exceptions;
 
@@ -25,12 +26,18 @@ public class CreateDataDictionaryCommandHandler : IRequestHandler<CreateDataDict
     {
         if (request.Request.ParentId.HasValue)
         {
-            var parentExists = await _dbContext.SystemDataDictionaries
-                .AnyAsync(d => d.Id == request.Request.ParentId.Value, cancellationToken);
+            var parent = await _dbContext.SystemDataDictionaries
+                .FirstOrDefaultAsync(d => d.Id == request.Request.ParentId.Value, cancellationToken);
 
-            if (!parentExists)
+            if (parent == null)
             {
                 throw new BusinessException(404, "Parent data dictionary does not exist.");
+            }
+
+            if (parent.Code == CrmCodes.HerbProductDictionaryCode &&
+                (request.Request.Code != request.Request.Name || request.Request.Name != request.Request.Value))
+            {
+                throw new BusinessException(400, "中药材品类的编码、名称和字典值必须一致。");
             }
         }
 

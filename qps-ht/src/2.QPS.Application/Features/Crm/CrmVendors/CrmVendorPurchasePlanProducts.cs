@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Interfaces;
+using QPS.Application.Features.Crm;
 using QPS.Domain.Entities.Crm;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
@@ -13,6 +14,10 @@ public static class CrmVendorPurchasePlanProducts
         CancellationToken cancellationToken)
     {
         var productNamesToKeep = Normalize(productNames);
+        await CrmHerbProductDictionary.ValidateActiveNamesAsync(
+            dbContext,
+            productNamesToKeep,
+            cancellationToken);
         var attributes = await dbContext.CrmBusinessEntityAttributes
             .IgnoreQueryFilters()
             .Where(attribute =>

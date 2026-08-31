@@ -26,6 +26,13 @@ public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBus
     public async Task<bool> Handle(SaveCrmBusinessEntityAttributesCommand request, CancellationToken cancellationToken)
     {
         var values = NormalizeValues(request.Request.Values);
+        if ((request.Request.EntityType == CrmCodes.HerbBaseEntityType &&
+             request.Request.AttributeCode == CrmCodes.MainProductAttributeCode) ||
+            (request.Request.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
+             request.Request.AttributeCode == CrmCodes.PurchaseProductAttributeCode))
+        {
+            await CrmHerbProductDictionary.ValidateActiveNamesAsync(_dbContext, values, cancellationToken);
+        }
         var oldAttributes = await GetOldAttributes(request.Request, cancellationToken);
 
         _dbContext.CrmBusinessEntityAttributes.RemoveRange(oldAttributes);

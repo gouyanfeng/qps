@@ -54,7 +54,7 @@
                         <template #default="{ row }">
                             <Permission code="SYSTEM_DATA_DICTIONARY_EDIT"><el-button type="primary" link :icon="EditPen"
                                 @click="openDialog('编辑', row)">编辑</el-button></Permission>
-                            <Permission code="SYSTEM_DATA_DICTIONARY_DELETE"><el-button type="danger" link :icon="Delete"
+                            <Permission v-if="!isHerbProductNode(row)" code="SYSTEM_DATA_DICTIONARY_DELETE"><el-button type="danger" link :icon="Delete"
                                 @click="deleteDataDictionary(row)">删除</el-button></Permission>
                         </template>
                     </el-table-column>
@@ -66,17 +66,17 @@
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
             <el-form :model="form" label-width="120px">
                 <el-form-item label="字典编码">
-                    <el-input v-model="form.code" placeholder="请输入字典编码" :disabled="dialogType === '编辑'" />
+                    <el-input v-model="form.code" placeholder="请输入字典编码" :disabled="dialogType === '编辑' || isHerbProductItem" />
                 </el-form-item>
                 <el-form-item label="字典名称">
-                    <el-input v-model="form.name" placeholder="请输入字典名称" />
+                    <el-input v-model="form.name" placeholder="请输入字典名称" :disabled="isHerbProductItem && dialogType === '编辑'" @input="syncHerbProductFields" />
                 </el-form-item>
                 <el-form-item label="字典值">
-                    <el-input v-model="form.value" placeholder="请输入字典值" />
+                    <el-input v-model="form.value" placeholder="请输入字典值" :disabled="isHerbProductItem" />
                 </el-form-item>
                 <el-form-item label="父级字典">
                     <el-tree-select v-model="form.parentId" :data="treeData" :props="treeProps" value-key="id"
-                        node-key="id" placeholder="请选择父级字典" clearable filterable check-strictly />
+                        node-key="id" placeholder="请选择父级字典" clearable filterable check-strictly :disabled="isHerbProductItem" />
                 </el-form-item>
                 <el-form-item label="描述">
                     <el-input v-model="form.description" placeholder="请输入描述" type="textarea" />
@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts" name="dataDictionary">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
 import { dataDictionaryApi } from '@/api/modules/dataDictionary'
@@ -142,6 +142,33 @@ const form = reactive({
     isActive: true,
     parentId: ''
 })
+
+const herbProductDictionaryCode = 'CRM_HERB_PRODUCT'
+
+const herbProductRootId = computed(() => {
+    const findRoot = (nodes: any[]): any => {
+        for (const node of nodes) {
+            if (node.code === herbProductDictionaryCode) return node
+            const found = findRoot(node.children || [])
+            if (found) return found
+        }
+    }
+    return findRoot(treeData.value)?.id || ''
+})
+
+const isHerbProductItem = computed(() =>
+    form.code === herbProductDictionaryCode || form.parentId === herbProductRootId.value
+)
+
+const isHerbProductNode = (row: any) =>
+    row.code === herbProductDictionaryCode || row.parentId === herbProductRootId.value
+
+const syncHerbProductFields = () => {
+    if (dialogType.value === '新增' && form.parentId === herbProductRootId.value) {
+        form.code = form.name
+        form.value = form.name
+    }
+}
 
 // 重置表单
 const handleReset = () => {
@@ -262,6 +289,10 @@ watch(() => searchForm.parentId, (newValue) => {
     if (queryPageRef.value && typeof queryPageRef.value.getTableList === 'function') {
         queryPageRef.value.getTableList()
     }
+})
+
+watch(() => form.parentId, () => {
+    syncHerbProductFields()
 })
 
 onMounted(() => {

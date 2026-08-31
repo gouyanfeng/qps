@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.System.DataDictionaries;
 using QPS.Application.Interfaces;
+using QPS.Application.Features.Crm;
 using QPS.Domain.Entities.System;
 using QPS.Domain.Exceptions;
 
@@ -30,6 +31,20 @@ public class UpdateDataDictionaryCommandHandler : IRequestHandler<UpdateDataDict
         if (dataDictionary == null)
         {
             throw new BusinessException(404, "Data dictionary does not exist.");
+        }
+
+        var rootId = await _dbContext.SystemDataDictionaries
+            .Where(d => d.Code == CrmCodes.HerbProductDictionaryCode && !d.IsDeleted)
+            .Select(d => (Guid?)d.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        var isHerbProductNode = dataDictionary.Code == CrmCodes.HerbProductDictionaryCode ||
+            (rootId.HasValue && dataDictionary.ParentId == rootId);
+        if (isHerbProductNode &&
+            (request.Request.ParentId != dataDictionary.ParentId ||
+             request.Request.Name != dataDictionary.Name ||
+             request.Request.Value != dataDictionary.Value))
+        {
+            throw new BusinessException(400, "中药材品类的编码、名称、字典值和父级不可修改。");
         }
 
         if (request.Request.ParentId.HasValue)

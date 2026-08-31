@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Interfaces;
+using QPS.Application.Features.Crm;
 using QPS.Domain.Exceptions;
 
 namespace QPS.Application.Features.System.DataDictionaries;
@@ -27,6 +28,16 @@ public class DeleteDataDictionaryCommandHandler : IRequestHandler<DeleteDataDict
         if (dataDictionary == null)
         {
             throw new BusinessException(404, "Data dictionary does not exist.");
+        }
+
+        var rootId = await _dbContext.SystemDataDictionaries
+            .Where(d => d.Code == CrmCodes.HerbProductDictionaryCode && !d.IsDeleted)
+            .Select(d => (Guid?)d.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (dataDictionary.Code == CrmCodes.HerbProductDictionaryCode ||
+            (rootId.HasValue && dataDictionary.ParentId == rootId))
+        {
+            throw new BusinessException(400, "中药材品类只允许停用，不允许删除。");
         }
 
         var hasChildren = await _dbContext.SystemDataDictionaries

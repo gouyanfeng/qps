@@ -8,6 +8,7 @@ public static class CrmCodes
     public const string VendorPurchasePlanEntityType = "CRM_VENDOR_PURCHASE_PLAN";
     public const string MainProductAttributeCode = "CRM_MAIN_PRODUCT";
     public const string PurchaseProductAttributeCode = "PURCHASE_PRODUCT";
+    public const string HerbProductDictionaryCode = "CRM_HERB_PRODUCT";
 
     public static class Status
     {
