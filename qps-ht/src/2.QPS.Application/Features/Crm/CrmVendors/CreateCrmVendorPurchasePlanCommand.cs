@@ -47,6 +47,11 @@ public class CreateCrmVendorPurchasePlanHandler : IRequestHandler<CreateCrmVendo
             request.Request.Remark.Trim());
 
         _dbContext.CrmVendorPurchasePlans.Add(purchasePlan);
+        await CrmVendorPurchasePlanProducts.ReplaceAsync(
+            _dbContext,
+            purchasePlan.Id,
+            request.Request.ProductNames,
+            cancellationToken);
         await CrmVendorPurchasePlans.RefreshLatestAsync(_dbContext, vendor, cancellationToken, purchasePlan);
 
         await _dbContext.SaveChangesAsync(cancellationToken);

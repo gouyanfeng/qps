@@ -38,6 +38,11 @@ public class DeleteCrmVendorPurchasePlanHandler : IRequestHandler<DeleteCrmVendo
         }
 
         plan.IsDeleted = true;
+        await CrmVendorPurchasePlanProducts.ReplaceAsync(
+            _dbContext,
+            plan.Id,
+            Array.Empty<string>(),
+            cancellationToken);
         await CrmVendorPurchasePlans.RefreshLatestAsync(_dbContext, vendor, cancellationToken, excludedPlanId: plan.Id);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

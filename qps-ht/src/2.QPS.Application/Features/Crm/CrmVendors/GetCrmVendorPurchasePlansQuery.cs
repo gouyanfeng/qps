@@ -74,6 +74,30 @@ public class GetCrmVendorPurchasePlansHandler : IRequestHandler<GetCrmVendorPurc
             })
             .ToListAsync(cancellationToken);
 
+        var planIds = plans.Select(plan => plan.Id).ToList();
+        var attributes = await _dbContext.CrmBusinessEntityAttributes
+            .Where(attribute =>
+                !attribute.IsDeleted &&
+                attribute.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
+                attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode &&
+                planIds.Contains(attribute.EntityId))
+            .OrderBy(attribute => attribute.EntityId)
+            .ThenBy(attribute => attribute.SortOrder)
+            .ThenBy(attribute => attribute.AttributeValue)
+            .Select(attribute => new { attribute.EntityId, attribute.AttributeValue })
+            .ToListAsync(cancellationToken);
+
+        var productNamesByPlanId = attributes
+            .GroupBy(attribute => attribute.EntityId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(attribute => attribute.AttributeValue).ToList());
+
+        foreach (var plan in plans)
+        {
+            plan.ProductNames = productNamesByPlanId.GetValueOrDefault(plan.Id, []);
+        }
+
         return new PaginationResponse<CrmVendorPurchasePlanDto>(plans, totalCount, page, pageSize);
     }
 }
