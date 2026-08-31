@@ -39,7 +39,7 @@
       </template>
 
       <template #headerButtons>
-        <Permission code="CRM_VENDOR_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog()">分配</el-button></Permission>
+        <Permission code="CRM_TRANSFER"><el-button :icon="Edit" @click="openTransferDialog()">批量流转</el-button></Permission>
         <Permission code="CRM_VENDOR_ADD"><el-button type="primary" :icon="Plus" @click="openCreateDialog">新增厂商</el-button></Permission>
       </template>
 
@@ -101,7 +101,10 @@
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
               <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button></Permission>
-              <Permission code="CRM_VENDOR_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
+              <el-button v-if="canManageTransfer" type="primary" link :icon="Edit" @click="openTransferDialog([row], row.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+                {{ row.ownerUserId ? "转交" : "分配" }}
+              </el-button>
+              <el-button v-if="canManageTransfer || canReturn(row)" type="primary" link :icon="Edit" @click="openTransferDialog([row], 'RETURN')">退回</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -128,7 +131,10 @@
             </div>
           </div>
           <div class="head-actions">
-            <Permission code="CRM_VENDOR_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentVendor])">分配</el-button></Permission>
+            <el-button v-if="canManageTransfer" :icon="Edit" @click="openTransferDialog([currentVendor], currentVendor.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+              {{ currentVendor.ownerUserId ? "转交" : "分配" }}
+            </el-button>
+            <el-button v-if="canManageTransfer || canReturn(currentVendor)" :icon="Edit" @click="openTransferDialog([currentVendor], 'RETURN')">退回</el-button>
             <Permission code="CRM_VENDOR_EDIT"><el-button :icon="Edit" @click="openEditDialog(currentVendor)">编辑</el-button></Permission>
             <el-button :icon="Refresh" @click="refreshDetail">刷新</el-button>
           </div>
@@ -303,7 +309,7 @@
                   >
                     <div class="follow-item">
                       <div class="follow-title">
-                        <strong>{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
+                        <strong>{{ formatTransferAction(record.actionType) }}：{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
                       </div>
                       <p v-if="record.remark">{{ record.remark }}</p>
                       <span class="muted">操作人 {{ record.operatorUserName || "-" }}</span>
@@ -330,17 +336,6 @@
             <el-option label="低" value="Low" />
           </el-select>
         </el-form-item>
-        <el-form-item label="跟进人">
-          <el-select v-model="vendorForm.ownerUserId" clearable filterable placeholder="请选择跟进人">
-            <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="最近采购时间">
-          <el-date-picker v-model="vendorForm.latestPurchaseTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="请选择时间" />
-        </el-form-item>
-        <el-form-item label="最近采购计划">
-          <el-input v-model="vendorForm.latestPurchasePlanName" clearable placeholder="请输入最近采购计划" />
-        </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="vendorForm.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
@@ -351,23 +346,23 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="assignDialogVisible" title="分配厂商" width="520px">
-      <el-form :model="assignForm" label-width="90px">
+    <el-dialog v-model="transferDialogVisible" :title="transferDialogTitle" width="520px">
+      <el-form :model="transferForm" label-width="90px">
         <el-form-item label="已选厂商">
-          <span>{{ assignForm.vendorIds.length }} 个</span>
+          <span>{{ transferForm.entityIds.length }} 个</span>
         </el-form-item>
-        <el-form-item label="跟进人">
-          <el-select v-model="assignForm.ownerUserId" clearable filterable placeholder="清空则取消跟进人">
+        <el-form-item v-if="transferMode !== 'RETURN'" label="跟进人">
+          <el-select v-model="transferForm.ownerUserId" filterable placeholder="请选择跟进人">
             <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="assignForm.remark" type="textarea" :rows="3" placeholder="可选" />
+          <el-input v-model="transferForm.remark" type="textarea" :rows="3" placeholder="可选" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="assignDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitAssignOwner">保存</el-button>
+        <el-button @click="transferDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitTransfer">保存</el-button>
       </template>
     </el-dialog>
 
@@ -517,6 +512,8 @@ import QueryPage from "@/components/QueryPage/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
+import { useAuthStore } from "@/stores/modules/auth";
+import { useUserStore } from "@/stores/modules/user";
 
 interface VendorDetail {
   id: string;
@@ -543,10 +540,12 @@ interface VendorDetail {
 
 const queryPageRef = ref();
 const route = useRoute();
+const authStore = useAuthStore();
+const userStore = useUserStore();
 
 const detailDrawerVisible = ref(false);
 const vendorDialogVisible = ref(false);
-const assignDialogVisible = ref(false);
+const transferDialogVisible = ref(false);
 const contactDialogVisible = ref(false);
 const purchasePlanDialogVisible = ref(false);
 const productDialogVisible = ref(false);
@@ -575,17 +574,21 @@ const vendorForm = reactive({
   id: "",
   vendorName: "",
   priorityLevel: "Medium",
-  latestPurchaseTime: "",
-  latestPurchasePlanName: "",
-  ownerUserId: "",
   remark: "",
 });
 
-const assignForm = reactive({
-  vendorIds: [] as string[],
+const transferForm = reactive({
+  entityIds: [] as string[],
   ownerUserId: "",
   remark: "",
 });
+const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
+const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const transferDialogTitle = computed(() => ({
+  ASSIGN: "分配跟进人",
+  TRANSFER: "转交跟进人",
+  RETURN: "退回待分配池",
+})[transferMode.value]);
 
 const contactForm = reactive({
   id: "",
@@ -695,9 +698,6 @@ const resetVendorForm = () => {
     id: "",
     vendorName: "",
     priorityLevel: "Medium",
-    latestPurchaseTime: "",
-    latestPurchasePlanName: "",
-    ownerUserId: "",
     remark: "",
   });
 };
@@ -709,15 +709,6 @@ const openCreateDialog = async () => {
   vendorDialogVisible.value = true;
 };
 
-const toDateTimeInputValue = (value?: string | null) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  const pad = (num: number) => `${num}`.padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
-
 const openEditDialog = async (row: VendorDetail) => {
   isEdit.value = true;
   await loadOwnerOptions();
@@ -725,9 +716,6 @@ const openEditDialog = async (row: VendorDetail) => {
     id: row.id,
     vendorName: row.vendorName || "",
     priorityLevel: row.priorityLevel || "Medium",
-    latestPurchaseTime: toDateTimeInputValue(row.latestPurchaseTime),
-    latestPurchasePlanName: row.latestPurchasePlanName || "",
-    ownerUserId: row.ownerUserId || "",
     remark: row.remark || "",
   });
   vendorDialogVisible.value = true;
@@ -742,9 +730,6 @@ const submitVendorForm = async () => {
   const payload = {
     vendorName: vendorForm.vendorName,
     priorityLevel: vendorForm.priorityLevel,
-    latestPurchaseTime: vendorForm.latestPurchaseTime || null,
-    latestPurchasePlanName: vendorForm.latestPurchasePlanName,
-    ownerUserId: vendorForm.ownerUserId || null,
     remark: vendorForm.remark,
   };
 
@@ -764,32 +749,38 @@ const submitVendorForm = async () => {
   reloadList();
 };
 
-const openAssignDialog = async (vendors?: VendorDetail[]) => {
+const openTransferDialog = async (vendors?: VendorDetail[], mode: "ASSIGN" | "TRANSFER" | "RETURN" = "TRANSFER") => {
   const rows = vendors || selectedVendors.value;
   if (rows.length === 0) {
-    ElMessage.warning("请选择要分配的厂商");
+    ElMessage.warning("请选择要流转的厂商");
     return;
   }
 
-  await loadOwnerOptions();
-  Object.assign(assignForm, {
-    vendorIds: rows.map(item => item.id),
-    ownerUserId: rows.length === 1 ? rows[0].ownerUserId || "" : "",
+  transferMode.value = mode;
+  if (mode !== "RETURN") await loadOwnerOptions();
+  Object.assign(transferForm, {
+    entityIds: rows.map(item => item.id),
+    ownerUserId: "",
     remark: "",
   });
-  assignDialogVisible.value = true;
+  transferDialogVisible.value = true;
 };
 
-const submitAssignOwner = async () => {
-  await crmVendorApi.assignOwner({
-    vendorIds: assignForm.vendorIds,
-    ownerUserId: assignForm.ownerUserId || null,
-    remark: assignForm.remark,
+const submitTransfer = async () => {
+  if (transferMode.value !== "RETURN" && !transferForm.ownerUserId) {
+    ElMessage.warning("请选择跟进人");
+    return;
+  }
+
+  await crmVendorApi.changeOwner({
+    entityIds: transferForm.entityIds,
+    toOwnerUserId: transferMode.value === "RETURN" ? null : transferForm.ownerUserId,
+    remark: transferForm.remark,
   });
-  ElMessage.success("分配成功");
-  assignDialogVisible.value = false;
+  ElMessage.success("流转成功");
+  transferDialogVisible.value = false;
   reloadList();
-  if (currentVendor.value && assignForm.vendorIds.includes(currentVendor.value.id)) {
+  if (currentVendor.value && transferForm.entityIds.includes(currentVendor.value.id)) {
     await refreshDetail();
   }
 };
@@ -925,6 +916,15 @@ const resetPurchasePlanForm = () => {
     pageUrl: "",
     remark: "",
   });
+};
+
+const toDateTimeInputValue = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const pad = (num: number) => `${num}`.padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 };
 
 const openPurchasePlanDialog = (row?: any) => {
@@ -1151,6 +1151,14 @@ const formatFollowResult = (value?: string | null, fallback = "-") => {
 };
 
 const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} 至 ${toName || "未分配"}`;
+const formatTransferAction = (actionType?: string | null) => ({
+  ENTRY: "入库",
+  ASSIGN: "分配",
+  TRANSFER: "转交",
+  RETURN: "退回",
+})[actionType || ""] || "流转";
+const canReturn = (row?: Partial<VendorDetail> | null) =>
+  !!row?.ownerUserId && row.ownerUserId === userStore.userInfo.userId;
 
 const formatDate = (value?: string | null) => {
   if (!value) return "-";

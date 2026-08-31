@@ -21,6 +21,7 @@ public static class CrmTransferRecords
             .Select(record => new CrmTransferRecordDto
             {
                 Id = record.Id,
+                ActionType = record.ActionType,
                 EntityType = record.EntityType,
                 EntityId = record.EntityId,
                 FromOwnerUserId = record.FromOwnerUserId,

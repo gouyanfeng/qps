@@ -13,8 +13,8 @@ export const crmHerbBaseApi = {
   updateSubject: (id: string, params: any) => {
     return http.put<any>(`/admin/crm/herb-base-subjects/${id}`, params);
   },
-  assignSubjectOwner: (params: any) => {
-    return http.patch<any>("/admin/crm/herb-base-subjects/assign-owner", params);
+  changeOwner: (params: any) => {
+    return http.patch<any>("/admin/crm/herb-base-subjects/owner", params);
   },
   getSubjectContacts: (herbBaseSubjectId: string) => {
     return http.get<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts`);

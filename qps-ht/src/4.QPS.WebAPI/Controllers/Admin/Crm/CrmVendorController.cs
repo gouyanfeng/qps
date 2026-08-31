@@ -4,7 +4,9 @@ using QPS.Application.Contracts.Crm;
 using QPS.Application.Extensions;
 using QPS.Application.Features.Crm;
 using QPS.Application.Features.Crm.CrmFollowRecords;
+using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Features.Crm.CrmVendors;
+using QPS.Domain.Entities.Crm;
 
 namespace QPS.WebAPI.Controllers.Admin.Crm;
 
@@ -70,10 +72,14 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPatch("assign-owner")]
-    public async Task<ActionResult<bool>> AssignOwner([FromBody] CrmVendorAssignOwnerRequest request)
+    [HttpPatch("owner")]
+    public async Task<ActionResult<bool>> ChangeOwner([FromBody] CrmTransferOwnerChangeRequest request)
     {
-        var command = new AssignCrmVendorOwnerCommand { Request = request };
+        var command = new ChangeCrmOwnerCommand
+        {
+            EntityType = CrmTransferEntityType.Vendor,
+            Request = request
+        };
         var result = await _mediator.Send(command);
         return Ok(result);
     }

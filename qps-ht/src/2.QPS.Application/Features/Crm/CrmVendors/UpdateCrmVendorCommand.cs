@@ -114,8 +114,6 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
             vendorName,
             normalizedVendorName,
             CrmVendorRules.NormalizePriority(request.PriorityLevel),
-            request.LatestPurchaseTime,
-            request.LatestPurchasePlanName.Trim(),
             request.Remark.Trim());
     }
 }

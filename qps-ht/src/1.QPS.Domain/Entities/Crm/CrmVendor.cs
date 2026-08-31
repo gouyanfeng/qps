@@ -58,16 +58,12 @@ public class CrmVendor : BaseEntity
         string vendorName,
         string normalizedVendorName,
         string priorityLevel,
-        DateTime? latestPurchaseTime,
-        string latestPurchasePlanName,
         string remark,
         Guid? ownerUserId)
     {
         VendorName = vendorName;
         NormalizedVendorName = normalizedVendorName;
         PriorityLevel = priorityLevel;
-        LatestPurchaseTime = latestPurchaseTime;
-        LatestPurchasePlanName = latestPurchasePlanName;
         Remark = remark;
         OwnerUserId = ownerUserId;
     }
@@ -76,33 +72,31 @@ public class CrmVendor : BaseEntity
         string vendorName,
         string normalizedVendorName,
         string priorityLevel,
-        DateTime? latestPurchaseTime,
-        string latestPurchasePlanName,
         string remark,
         Guid? ownerUserId = null)
     {
-        return new CrmVendor(vendorName, normalizedVendorName, priorityLevel, latestPurchaseTime, latestPurchasePlanName, remark, ownerUserId);
+        return new CrmVendor(vendorName, normalizedVendorName, priorityLevel, remark, ownerUserId);
     }
 
     public void Update(
         string vendorName,
         string normalizedVendorName,
         string priorityLevel,
-        DateTime? latestPurchaseTime,
-        string latestPurchasePlanName,
         string remark)
     {
         VendorName = vendorName;
         NormalizedVendorName = normalizedVendorName;
         PriorityLevel = priorityLevel;
-        LatestPurchaseTime = latestPurchaseTime;
-        LatestPurchasePlanName = latestPurchasePlanName;
         Remark = remark;
     }
 
-    public void AssignOwner(Guid? ownerUserId)
+    /// <summary>
+    /// 由采购计划子表刷新最近采购汇总。
+    /// </summary>
+    public void UpdateLatestPurchaseSummary(DateTime? latestPurchaseTime, string latestPurchasePlanName)
     {
-        OwnerUserId = ownerUserId;
+        LatestPurchaseTime = latestPurchaseTime;
+        LatestPurchasePlanName = latestPurchasePlanName;
     }
 
     public CrmTransferRecord ChangeOwner(Guid? toOwnerUserId, Guid? operatorUserId, string? remark)

@@ -68,7 +68,7 @@
       </template>
 
       <template #headerButtons>
-        <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog()">分配</el-button></Permission>
+        <Permission code="CRM_TRANSFER"><el-button :icon="Edit" @click="openTransferDialog()">批量流转</el-button></Permission>
         <Permission code="CRM_HERB_BASE_ADD"><el-button type="primary" :icon="Plus" @click="handleAdd">新增药材基地</el-button></Permission>
       </template>
 
@@ -191,7 +191,10 @@
             <template #default="{ row }">
               <div class="table-actions">
                 <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
-                <Permission code="CRM_HERB_BASE_ASSIGN"><el-button type="primary" link :icon="Edit" @click="openAssignDialog([row])">分配</el-button></Permission>
+                <el-button v-if="canManageTransfer" type="primary" link :icon="Edit" @click="openTransferDialog([row], row.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+                  {{ row.ownerUserId ? "转交" : "分配" }}
+                </el-button>
+                <el-button v-if="canManageTransfer || canReturn(row)" type="primary" link :icon="Edit" @click="openTransferDialog([row], 'RETURN')">退回</el-button>
                 <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               </div>
             </template>
@@ -293,7 +296,10 @@
           <div class="head-actions">
             <Permission code="CRM_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
             <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_ASSIGN"><el-button :icon="Edit" @click="openAssignDialog([currentHerbBase])">分配</el-button></Permission>
+            <el-button v-if="canManageTransfer" :icon="Edit" @click="openTransferDialog([currentHerbBase], currentHerbBase.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+              {{ currentHerbBase.ownerUserId ? "转交" : "分配" }}
+            </el-button>
+            <el-button v-if="canManageTransfer || canReturn(currentHerbBase)" :icon="Edit" @click="openTransferDialog([currentHerbBase], 'RETURN')">退回</el-button>
             <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="openSubjectDialog">编辑主体</el-button></Permission>
             <Permission code="CRM_HERB_BASE_STATUS"><el-button type="primary" plain @click="markCustomerStatus('INTERESTED')">标记有意向</el-button></Permission>
             <Permission code="CRM_HERB_BASE_STATUS"><el-button type="success" plain @click="markCustomerStatus('DEAL')">标记成交</el-button></Permission>
@@ -461,9 +467,9 @@
                   placement="top"
                 >
                   <div class="follow-item">
-                    <div class="follow-title">
-                      <strong>{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
-                    </div>
+                      <div class="follow-title">
+                        <strong>{{ formatTransferAction(record.actionType) }}：{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
+                      </div>
                     <p v-if="record.remark">{{ record.remark }}</p>
                     <span class="muted">操作人 {{ record.operatorUserName || "-" }}</span>
                   </div>
@@ -562,28 +568,27 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="assignDialogVisible" title="分配跟进人" width="520px">
-      <el-form :model="assignForm" label-width="100px">
-        <el-form-item label="跟进人">
-          <el-select v-model="assignForm.ownerUserId" placeholder="请选择跟进人">
-            <el-option label="未分配" value="" />
+    <el-dialog v-model="transferDialogVisible" :title="transferDialogTitle" width="520px">
+      <el-form :model="transferForm" label-width="100px">
+        <el-form-item v-if="transferMode !== 'RETURN'" label="跟进人">
+          <el-select v-model="transferForm.ownerUserId" placeholder="请选择跟进人">
             <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="assignForm.remark" type="textarea" :rows="3" placeholder="请输入分配备注" />
+          <el-input v-model="transferForm.remark" type="textarea" :rows="3" placeholder="请输入流转备注" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="assignDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitAssignOwner">保存</el-button>
+        <el-button @click="transferDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitTransfer">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts" name="customer">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 import { Delete, Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
@@ -592,6 +597,8 @@ import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
+import { useAuthStore } from "@/stores/modules/auth";
+import { useUserStore } from "@/stores/modules/user";
 
 interface HerbBaseSubjectDetail {
   id: string;
@@ -620,13 +627,15 @@ interface HerbBaseSubjectDetail {
 
 const queryPageRef = ref();
 const route = useRoute();
+const authStore = useAuthStore();
+const userStore = useUserStore();
 
 const dialogVisible = ref(false);
 const subjectDialogVisible = ref(false);
 const detailDrawerVisible = ref(false);
 const contactDialogVisible = ref(false);
 const followDialogVisible = ref(false);
-const assignDialogVisible = ref(false);
+const transferDialogVisible = ref(false);
 const isEdit = ref(false);
 const followFilter = ref("");
 const currentHerbBase = ref<HerbBaseSubjectDetail | null>(null);
@@ -701,11 +710,18 @@ const followForm = reactive({
   nextFollowAt: "",
 });
 
-const assignForm = reactive({
-  herbBaseSubjectIds: [] as string[],
+const transferForm = reactive({
+  entityIds: [] as string[],
   ownerUserId: "",
   remark: "",
 });
+const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
+const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const transferDialogTitle = computed(() => ({
+  ASSIGN: "分配跟进人",
+  TRANSFER: "转交跟进人",
+  RETURN: "退回待分配池",
+})[transferMode.value]);
 
 const sourcePlatformLabels: Record<string, string> = {
   BAIDU_MAP: "百度地图",
@@ -980,6 +996,14 @@ const getBaseName = (row: any) => row?.baseName?.trim?.() || row?.herbBaseName?.
 const getDetailTitle = (row: Partial<HerbBaseSubjectDetail> | any) => row?.subjectName?.trim?.() || "";
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
 const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} 至 ${toName || "未分配"}`;
+const formatTransferAction = (actionType?: string | null) => ({
+  ENTRY: "入库",
+  ASSIGN: "分配",
+  TRANSFER: "转交",
+  RETURN: "退回",
+})[actionType || ""] || "流转";
+const canReturn = (row?: Partial<HerbBaseSubjectDetail> | null) =>
+  !!row?.ownerUserId && row.ownerUserId === userStore.userInfo.userId;
 const formatScale = (value?: number | string | null) => {
   if (value === null || value === undefined || value === "") return "-";
   const numberValue = Number(value);
@@ -1251,33 +1275,39 @@ const deleteBase = async (base: any) => {
   reloadList();
 };
 
-const openAssignDialog = async (rows?: HerbBaseSubjectDetail[]) => {
+const openTransferDialog = async (rows?: HerbBaseSubjectDetail[], mode: "ASSIGN" | "TRANSFER" | "RETURN" = "TRANSFER") => {
   const customers = rows?.length ? rows : selectedHerbBases.value;
   if (customers.length === 0) {
-    ElMessage.warning("请选择要分配的基地主体");
+    ElMessage.warning("请选择要流转的基地主体");
     return;
   }
 
-  Object.assign(assignForm, {
-    herbBaseSubjectIds: customers.map(customer => customer.id),
-    ownerUserId: customers.length === 1 ? customers[0].ownerUserId || "" : "",
+  transferMode.value = mode;
+  Object.assign(transferForm, {
+    entityIds: customers.map(customer => customer.id),
+    ownerUserId: "",
     remark: "",
   });
-  await loadOwnerOptions();
-  assignDialogVisible.value = true;
+  if (mode !== "RETURN") await loadOwnerOptions();
+  transferDialogVisible.value = true;
 };
 
-const submitAssignOwner = async () => {
-  await crmHerbBaseApi.assignSubjectOwner({
-    herbBaseSubjectIds: [...assignForm.herbBaseSubjectIds],
-    ownerUserId: assignForm.ownerUserId || null,
-    remark: assignForm.remark || undefined,
+const submitTransfer = async () => {
+  if (transferMode.value !== "RETURN" && !transferForm.ownerUserId) {
+    ElMessage.warning("请选择跟进人");
+    return;
+  }
+
+  await crmHerbBaseApi.changeOwner({
+    entityIds: [...transferForm.entityIds],
+    toOwnerUserId: transferMode.value === "RETURN" ? null : transferForm.ownerUserId,
+    remark: transferForm.remark || undefined,
   });
-  if (currentHerbBase.value && assignForm.herbBaseSubjectIds.includes(currentHerbBase.value.id)) {
+  if (currentHerbBase.value && transferForm.entityIds.includes(currentHerbBase.value.id)) {
     await loadCustomerDetail(currentHerbBase.value.id);
   }
-  ElMessage.success("分配成功");
-  assignDialogVisible.value = false;
+  ElMessage.success("流转成功");
+  transferDialogVisible.value = false;
   reloadList();
 };
 

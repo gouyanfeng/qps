@@ -4,6 +4,8 @@ public class CrmTransferRecordDto
 {
     public Guid Id { get; set; }
 
+    public string ActionType { get; set; } = string.Empty;
+
     public string EntityType { get; set; } = string.Empty;
 
     public Guid EntityId { get; set; }

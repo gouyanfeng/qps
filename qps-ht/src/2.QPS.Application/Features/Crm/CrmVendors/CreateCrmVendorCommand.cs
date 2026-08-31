@@ -41,9 +41,8 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
         await EnsureVendorNameNotExists(normalizedVendorName, cancellationToken);
 
         var operatorUserId = GetOperatorUserId();
-        var ownerUserId = request.Request.OwnerUserId ?? operatorUserId;
+        var ownerUserId = operatorUserId;
         await EnsureOwnerExists(ownerUserId, cancellationToken);
-        await EnsureCanSpecifyOwnerAsync(request.Request.OwnerUserId, operatorUserId, cancellationToken);
 
         var vendor = CreateVendor(request.Request, vendorName, normalizedVendorName, ownerUserId);
 
@@ -119,8 +118,6 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
             vendorName,
             normalizedVendorName,
             CrmVendorRules.NormalizePriority(request.PriorityLevel),
-            request.LatestPurchaseTime,
-            request.LatestPurchasePlanName.Trim(),
             request.Remark.Trim(),
             ownerUserId);
     }
@@ -132,20 +129,4 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
             : throw new BusinessException(401, "登录状态无效");
     }
 
-    private async Task EnsureCanSpecifyOwnerAsync(Guid? requestedOwnerUserId, Guid operatorUserId, CancellationToken cancellationToken)
-    {
-        if (!requestedOwnerUserId.HasValue || requestedOwnerUserId == operatorUserId)
-            return;
-
-        var hasPermission = await (
-                from user in _dbContext.SystemUsers
-                join rolePermission in _dbContext.SystemRolePermissions on user.RoleId equals rolePermission.RoleId
-                join permission in _dbContext.SystemPermissions on rolePermission.PermissionId equals permission.Id
-                where user.Id == operatorUserId && permission.Code == "CRM_TRANSFER"
-                select permission.Id)
-            .AnyAsync(cancellationToken);
-
-        if (!hasPermission)
-            throw new BusinessException(403, "无权指定负责人");
-    }
 }

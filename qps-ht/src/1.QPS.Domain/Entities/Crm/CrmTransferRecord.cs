@@ -42,19 +42,6 @@ public class CrmTransferRecord : BaseEntity
         Remark = remark;
     }
 
-    public static CrmTransferRecord Create(
-        string entityType,
-        Guid entityId,
-        Guid? fromOwnerUserId,
-        Guid? toOwnerUserId,
-        Guid? operatorUserId,
-        string remark)
-    {
-        return !fromOwnerUserId.HasValue && !toOwnerUserId.HasValue
-            ? CreateEntry(entityType, entityId, null, operatorUserId, remark)
-            : CreateOwnerChange(entityType, entityId, fromOwnerUserId, toOwnerUserId, operatorUserId, remark);
-    }
-
     public static CrmTransferRecord CreateEntry(string entityType, Guid entityId, Guid? ownerUserId, Guid? operatorUserId, string remark)
     {
         EnsureEntity(entityType, entityId);

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Application.Features.Crm.CrmHerbBaseSubjects;
+using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Extensions;
+using QPS.Domain.Entities.Crm;
 
 namespace QPS.WebAPI.Controllers.Admin.Crm;
 
@@ -34,11 +36,15 @@ public class CrmHerbBaseController : ControllerBase
         return Ok(await _mediator.Send(new GetCrmHerbBaseSubjectQuery { Id = id }));
     }
 
-    [HttpPatch("/api/admin/crm/herb-base-subjects/assign-owner")]
-    public async Task<ActionResult<bool>> AssignHerbBaseSubjectOwner(
-        [FromBody] CrmHerbBaseSubjectAssignOwnerRequest request)
+    [HttpPatch("/api/admin/crm/herb-base-subjects/owner")]
+    public async Task<ActionResult<bool>> ChangeHerbBaseSubjectOwner(
+        [FromBody] CrmTransferOwnerChangeRequest request)
     {
-        return Ok(await _mediator.Send(new AssignCrmHerbBaseSubjectOwnerCommand { Request = request }));
+        return Ok(await _mediator.Send(new ChangeCrmOwnerCommand
+        {
+            EntityType = CrmTransferEntityType.HerbBaseSubject,
+            Request = request
+        }));
     }
 
     [HttpPut("/api/admin/crm/herb-base-subjects/{id:guid}")]

@@ -16,8 +16,8 @@ export const crmVendorApi = {
   updateVendor: (id: string, data: any) => {
     return http.put<any>(`/admin/crm/vendors/${id}`, data);
   },
-  assignOwner: (data: any) => {
-    return http.patch<any>("/admin/crm/vendors/assign-owner", data);
+  changeOwner: (data: any) => {
+    return http.patch<any>("/admin/crm/vendors/owner", data);
   },
   createContact: (id: string, data: any) => {
     return http.post<any>(`/admin/crm/vendors/${id}/contacts`, data);

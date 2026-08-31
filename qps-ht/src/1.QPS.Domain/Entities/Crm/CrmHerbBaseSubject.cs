@@ -40,11 +40,6 @@ public class CrmHerbBaseSubject : BaseEntity
     public static CrmHerbBaseSubject Create(string subjectName, string baseName, string subjectType, Guid? ownerUserId, string status, string grade, int score, string remark, decimal? scale = null)
         => new(subjectName, baseName, subjectType, ownerUserId, status, grade, score, remark, scale);
 
-    public void AssignOwner(Guid? ownerUserId)
-    {
-        OwnerUserId = ownerUserId;
-    }
-
     public CrmTransferRecord ChangeOwner(Guid? toOwnerUserId, Guid? operatorUserId, string? remark)
     {
         var record = CrmTransferRecord.CreateOwnerChange(

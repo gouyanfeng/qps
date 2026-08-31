@@ -125,11 +125,12 @@ public class AppDbContext : DbContext, IDbContext
             entity.Property(plan => plan.PageUrl).HasMaxLength(500);
             entity.HasIndex(plan => plan.VendorId);
             entity.HasIndex(plan => plan.PurchaseTime);
-            entity.HasIndex(plan => plan.PageUrl).IsUnique();
+            entity.HasIndex(plan => plan.PageUrl).IsUnique().HasFilter("[PageUrl] <> ''");
         });
 
         modelBuilder.Entity<CrmTransferRecord>(entity =>
         {
+            entity.Property(record => record.ActionType).HasMaxLength(16).HasDefaultValue(CrmTransferActionType.Entry);
             entity.Property(record => record.EntityType).HasMaxLength(64);
             entity.HasIndex(record => new { record.EntityType, record.EntityId, record.CreatedAt });
         });
