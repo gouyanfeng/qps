@@ -1,0 +1,38 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace QPS.Infrastructure.Database.Migrations
+{
+    /// <inheritdoc />
+    public partial class MoveVendorProductsToPurchasePlans : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql("""
+                UPDATE [CrmBusinessEntityAttributes]
+                SET [IsDeleted] = 1,
+                    [UpdatedAt] = GETDATE()
+                WHERE [IsDeleted] = 0
+                  AND [EntityType] = 'CRM_VENDOR'
+                  AND [AttributeCode] = 'PURCHASE_PRODUCT';
+                """);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product",
+                table: "CrmBusinessEntityAttributes",
+                columns: new[] { "EntityType", "EntityId", "AttributeCode", "AttributeValue" },
+                unique: true,
+                filter: "[IsDeleted] = 0 AND [EntityType] = 'CRM_VENDOR_PURCHASE_PLAN' AND [AttributeCode] = 'PURCHASE_PRODUCT'");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product",
+                table: "CrmBusinessEntityAttributes");
+        }
+    }
+}

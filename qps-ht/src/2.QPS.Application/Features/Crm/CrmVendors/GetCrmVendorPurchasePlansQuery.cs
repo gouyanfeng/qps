@@ -67,7 +67,6 @@ public class GetCrmVendorPurchasePlansHandler : IRequestHandler<GetCrmVendorPurc
                 VendorId = plan.VendorId,
                 PurchasePlanName = plan.PurchasePlanName,
                 PurchaseTime = plan.PurchaseTime,
-                Products = plan.Products,
                 PageUrl = plan.PageUrl,
                 Remark = plan.Remark,
                 CreatedAt = plan.CreatedAt,

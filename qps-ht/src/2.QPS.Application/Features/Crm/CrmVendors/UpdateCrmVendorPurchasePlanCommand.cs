@@ -49,7 +49,7 @@ public class UpdateCrmVendorPurchasePlanHandler : IRequestHandler<UpdateCrmVendo
         plan.Update(
             purchasePlanName,
             request.Request.PurchaseTime,
-            request.Request.Products.Trim(),
+            string.Empty,
             request.Request.PageUrl.Trim(),
             request.Request.Remark.Trim());
 

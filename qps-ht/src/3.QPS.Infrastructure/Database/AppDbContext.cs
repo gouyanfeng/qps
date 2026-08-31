@@ -92,6 +92,18 @@ public class AppDbContext : DbContext, IDbContext
                 attribute.AttributeCode,
                 attribute.AttributeValue
             });
+
+            entity.HasIndex(
+                    attribute => new
+                    {
+                        attribute.EntityType,
+                        attribute.EntityId,
+                        attribute.AttributeCode,
+                        attribute.AttributeValue
+                    },
+                    "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product")
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0 AND [EntityType] = 'CRM_VENDOR_PURCHASE_PLAN' AND [AttributeCode] = 'PURCHASE_PRODUCT'");
         });
 
         modelBuilder.Entity<CrmContact>(entity =>

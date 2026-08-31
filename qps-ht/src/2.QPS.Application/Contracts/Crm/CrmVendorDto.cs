@@ -70,7 +70,7 @@ public class CrmVendorPurchasePlanDto
 
     public DateTime? PurchaseTime { get; set; }
 
-    public string Products { get; set; } = string.Empty;
+    public List<string> ProductNames { get; set; } = new();
 
     public string PageUrl { get; set; } = string.Empty;
 
