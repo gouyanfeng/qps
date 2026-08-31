@@ -49,12 +49,12 @@
           :row-key="'id'"
           :fit="true"
           class="wide-list-table"
-          style="--table-min-width: 1560px"
+          style="--table-min-width: 1720px"
           border
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="44" fixed="left" />
-          <el-table-column label="厂商名称" min-width="220" fixed="left" show-overflow-tooltip>
+          <el-table-column label="厂商名称" min-width="240" fixed="left" show-overflow-tooltip>
             <template #default="{ row }">
               <el-button type="primary" link class="vendor-link" @click="openDetail(row)">
                 {{ row.vendorName || "-" }}
@@ -90,13 +90,13 @@
           <el-table-column label="最近采购时间" width="150">
             <template #default="{ row }">{{ formatDate(row.latestPurchaseTime) }}</template>
           </el-table-column>
-          <el-table-column label="最近采购计划" min-width="260" show-overflow-tooltip>
+          <el-table-column label="最近采购计划" min-width="280" show-overflow-tooltip>
             <template #default="{ row }">{{ row.latestPurchasePlanName || "-" }}</template>
           </el-table-column>
           <el-table-column label="更新时间" width="150">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="310" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="360" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
               <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
@@ -212,18 +212,6 @@
               </el-table-column>
             </el-table>
 
-            <div class="section-title">
-              <h3>采购品类</h3>
-              <Permission code="CRM_VENDOR_EDIT">
-                <el-button type="primary" link :icon="Plus" @click="openProductDialog">新增品类</el-button>
-              </Permission>
-            </div>
-            <div v-if="currentVendor.products?.length" class="product-tags">
-              <el-tooltip v-for="item in currentVendor.products" :key="item.id" :content="item.remark || item.productName" placement="top">
-                <el-tag effect="plain" closable @close="removeProduct(item.productName)">{{ item.productName }}</el-tag>
-              </el-tooltip>
-            </div>
-            <el-empty v-else description="暂无品类" />
           </div>
 
           <div class="detail-column">
@@ -241,8 +229,13 @@
               <el-table-column label="采购时间" width="150">
                 <template #default="{ row }">{{ formatDate(row.purchaseTime) }}</template>
               </el-table-column>
-              <el-table-column label="品类数量" min-width="240" show-overflow-tooltip>
-                <template #default="{ row }">{{ row.products || "-" }}</template>
+              <el-table-column label="采购品类" min-width="240" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <div v-if="row.productNames?.length" class="product-tags">
+                    <el-tag v-for="name in row.productNames" :key="name" size="small" effect="plain">{{ name }}</el-tag>
+                  </div>
+                  <span v-else>-</span>
+                </template>
               </el-table-column>
               <el-table-column label="网页" width="92">
                 <template #default="{ row }">
@@ -405,29 +398,6 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="productDialogVisible" title="新增采购品类" width="520px">
-      <el-form label-width="90px">
-        <el-form-item label="品类">
-          <el-select
-            v-model="productForm.productName"
-            filterable
-            remote
-            allow-create
-            default-first-option
-            clearable
-            placeholder="输入品类名称"
-            :remote-method="loadProductOptions"
-          >
-            <el-option v-for="item in productOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="productDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitProduct">保存</el-button>
-      </template>
-    </el-dialog>
-
     <el-dialog v-model="followDialogVisible" title="记录沟通" width="560px">
       <el-form :model="followForm" label-width="100px">
         <el-form-item label="联系人">
@@ -485,8 +455,20 @@
         <el-form-item label="采购时间">
           <el-date-picker v-model="purchasePlanForm.purchaseTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="请选择时间" />
         </el-form-item>
-        <el-form-item label="品类数量">
-          <el-input v-model="purchasePlanForm.products" clearable placeholder="例如：黄芪 10 吨、当归 5 吨" />
+        <el-form-item label="采购品类">
+          <el-select
+            v-model="purchasePlanForm.productNames"
+            multiple
+            filterable
+            remote
+            allow-create
+            default-first-option
+            clearable
+            placeholder="输入或选择采购品类"
+            :remote-method="loadPurchasePlanProductOptions"
+          >
+            <el-option v-for="item in purchasePlanProductOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="网页">
           <el-input v-model="purchasePlanForm.pageUrl" clearable placeholder="来源网页地址" />
@@ -533,8 +515,6 @@ interface VendorDetail {
   createdAt: string;
   updatedAt: string;
   contacts: any[];
-  products: any[];
-  purchasePlans: any[];
   transferRecords: any[];
 }
 
@@ -548,7 +528,6 @@ const vendorDialogVisible = ref(false);
 const transferDialogVisible = ref(false);
 const contactDialogVisible = ref(false);
 const purchasePlanDialogVisible = ref(false);
-const productDialogVisible = ref(false);
 const followDialogVisible = ref(false);
 const isEdit = ref(false);
 const currentVendor = ref<VendorDetail | null>(null);
@@ -559,7 +538,7 @@ const purchasePlanLoading = ref(false);
 const purchasePlanPage = ref(1);
 const purchasePlanPageSize = ref(10);
 const purchasePlanTotal = ref(0);
-const productOptions = ref<any[]>([]);
+const purchasePlanProductOptions = ref<any[]>([]);
 const followRecords = ref<any[]>([]);
 const followContacts = computed(() => (currentVendor.value?.contacts || []).filter((contact: any) => contact.status !== "INVALID"));
 
@@ -605,13 +584,9 @@ const purchasePlanForm = reactive({
   id: "",
   purchasePlanName: "",
   purchaseTime: "",
-  products: "",
+  productNames: [] as string[],
   pageUrl: "",
   remark: "",
-});
-
-const productForm = reactive({
-  productName: "",
 });
 
 const followForm = reactive({
@@ -858,53 +833,14 @@ const toggleContactStatus = async (row: any) => {
   reloadList();
 };
 
-const getProductValues = () => (currentVendor.value?.products || []).map((item: any) => item.productName).filter(Boolean);
-
-const saveProductValues = async (values: string[]) => {
-  if (!currentVendor.value) return;
-  await crmVendorApi.saveBusinessEntityAttributes({
-    entityType: "CRM_VENDOR",
-    entityId: currentVendor.value.id,
-    attributeCode: "PURCHASE_PRODUCT",
-    values,
-  });
-  await refreshDetail(false);
-  reloadList();
-};
-
-const openProductDialog = async () => {
-  productForm.productName = "";
-  productDialogVisible.value = true;
-  await loadProductOptions("");
-};
-
-const loadProductOptions = async (keyword: string) => {
+const loadPurchasePlanProductOptions = async (keyword: string) => {
   const result = await crmVendorApi.getBusinessEntityAttributeOptions({
-    entityType: "CRM_VENDOR",
+    entityType: "CRM_VENDOR_PURCHASE_PLAN",
     attributeCode: "PURCHASE_PRODUCT",
     keyword,
     pageSize: 30,
   });
-  productOptions.value = result.data || [];
-};
-
-const submitProduct = async () => {
-  const productName = productForm.productName.trim();
-  if (!productName) {
-    ElMessage.error("请输入采购品类");
-    return;
-  }
-
-  const values = Array.from(new Set([...getProductValues(), productName]));
-  await saveProductValues(values);
-  ElMessage.success("采购品类已保存");
-  productDialogVisible.value = false;
-};
-
-const removeProduct = async (productName: string) => {
-  const values = getProductValues().filter(value => value !== productName);
-  await saveProductValues(values);
-  ElMessage.success("采购品类已删除");
+  purchasePlanProductOptions.value = result.data || [];
 };
 
 const resetPurchasePlanForm = () => {
@@ -912,7 +848,7 @@ const resetPurchasePlanForm = () => {
     id: "",
     purchasePlanName: "",
     purchaseTime: "",
-    products: "",
+    productNames: [],
     pageUrl: "",
     remark: "",
   });
@@ -934,12 +870,13 @@ const openPurchasePlanDialog = (row?: any) => {
       id: row.id,
       purchasePlanName: row.purchasePlanName || "",
       purchaseTime: toDateTimeInputValue(row.purchaseTime),
-      products: row.products || "",
+      productNames: Array.isArray(row.productNames) ? row.productNames : [],
       pageUrl: row.pageUrl || "",
       remark: row.remark || "",
     });
   }
   purchasePlanDialogVisible.value = true;
+  void loadPurchasePlanProductOptions("");
 };
 
 const submitPurchasePlan = async () => {

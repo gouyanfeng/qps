@@ -8,10 +8,23 @@ public static class CrmVendorPurchasePlanProductQuery
 {
     public static IQueryable<CrmVendorPurchasePlanProductItem> GetEffectiveItems(IDbContext dbContext)
     {
-        return from plan in dbContext.CrmVendorPurchasePlans
+        return GetEffectiveItems(dbContext, []);
+    }
+
+    public static IQueryable<CrmVendorPurchasePlanProductItem> GetEffectiveItems(
+        IDbContext dbContext,
+        IReadOnlyCollection<Guid> vendorIds)
+    {
+        var plans = dbContext.CrmVendorPurchasePlans
+            .Where(plan => !plan.IsDeleted);
+        if (vendorIds.Count > 0)
+        {
+            plans = plans.Where(plan => vendorIds.Contains(plan.VendorId));
+        }
+
+        return from plan in plans
                join attribute in dbContext.CrmBusinessEntityAttributes on plan.Id equals attribute.EntityId
-               where !plan.IsDeleted &&
-                     !attribute.IsDeleted &&
+               where !attribute.IsDeleted &&
                      attribute.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
                      attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode
                select new CrmVendorPurchasePlanProductItem(
@@ -51,11 +64,7 @@ public static class CrmVendorPurchasePlanProductQuery
             return [];
         }
 
-        var items = await GetEffectiveItems(dbContext)
-            .Where(item => ids.Contains(item.VendorId))
-            .OrderBy(item => item.VendorId)
-            .ThenBy(item => item.SortOrder)
-            .ThenBy(item => item.ProductName)
+        var items = await GetEffectiveItems(dbContext, ids)
             .ToListAsync(cancellationToken);
 
         return items
@@ -64,7 +73,10 @@ public static class CrmVendorPurchasePlanProductQuery
                 group => group.Key,
                 group => group
                     .GroupBy(item => item.ProductName, StringComparer.OrdinalIgnoreCase)
-                    .Select(productGroup => productGroup.First())
+                    .Select(productGroup => productGroup
+                        .OrderBy(item => item.SortOrder)
+                        .ThenBy(item => item.ProductName)
+                        .First())
                     .OrderBy(item => item.SortOrder)
                     .ThenBy(item => item.ProductName)
                     .Select(item => new CrmVendorProductDto

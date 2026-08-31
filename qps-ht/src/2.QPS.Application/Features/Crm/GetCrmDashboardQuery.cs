@@ -235,8 +235,10 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var vendorPurchaseProducts = await CrmVendorPurchasePlanProductQuery.GetEffectiveItems(_dbContext)
-            .Where(item => myVendors.Select(vendor => vendor.Id).Contains(item.VendorId))
+        var myVendorIds = await myVendors
+            .Select(vendor => vendor.Id)
+            .ToListAsync(cancellationToken);
+        var vendorPurchaseProducts = await CrmVendorPurchasePlanProductQuery.GetEffectiveItems(_dbContext, myVendorIds)
             .Select(item => new { item.VendorId, item.ProductName })
             .Distinct()
             .ToListAsync(cancellationToken);

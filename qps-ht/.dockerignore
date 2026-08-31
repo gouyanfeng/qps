@@ -18,7 +18,6 @@ Thumbs.db
 # Logs and temp
 *.log
 *.tmp
-codex-temp/
 
 # Local database files
 *.db

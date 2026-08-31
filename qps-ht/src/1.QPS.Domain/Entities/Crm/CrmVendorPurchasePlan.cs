@@ -47,14 +47,12 @@ public class CrmVendorPurchasePlan : BaseEntity
         Guid vendorId,
         string purchasePlanName,
         DateTime? purchaseTime,
-        string products,
         string pageUrl,
         string remark)
     {
         VendorId = vendorId;
         PurchasePlanName = purchasePlanName;
         PurchaseTime = purchaseTime;
-        Products = products;
         PageUrl = pageUrl;
         Remark = remark;
     }
@@ -63,23 +61,20 @@ public class CrmVendorPurchasePlan : BaseEntity
         Guid vendorId,
         string purchasePlanName,
         DateTime? purchaseTime,
-        string products,
         string pageUrl,
         string remark)
     {
-        return new CrmVendorPurchasePlan(vendorId, purchasePlanName, purchaseTime, products, pageUrl, remark);
+        return new CrmVendorPurchasePlan(vendorId, purchasePlanName, purchaseTime, pageUrl, remark);
     }
 
     public void Update(
         string purchasePlanName,
         DateTime? purchaseTime,
-        string products,
         string pageUrl,
         string remark)
     {
         PurchasePlanName = purchasePlanName;
         PurchaseTime = purchaseTime;
-        Products = products;
         PageUrl = pageUrl;
         Remark = remark;
     }

@@ -1,8 +1,6 @@
 # Local workspace state and generated artifacts
-/codex-temp/
 /test-results/
 /.agents/
 /.codex/
 /.trae/
 /.workbuddy/
-/qps-ui-tests/

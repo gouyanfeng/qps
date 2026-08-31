@@ -79,7 +79,7 @@
           :row-class-name="getRowClassName"
           :fit="true"
           class="wide-list-table"
-          style="--table-min-width: 2010px"
+          style="--table-min-width: 2060px"
           border
           @selection-change="handleSelectionChange"
           @sort-change="handleSortChange"
@@ -94,7 +94,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="基地数" width="86" align="right">
+          <el-table-column label="基地数" width="82" align="right">
             <template #default="{ row }">
               <span class="count-cell">{{ row.baseCount || 0 }}</span>
             </template>
@@ -107,7 +107,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="主营品类" width="156">
+          <el-table-column label="主营品类" width="148">
             <template #default="{ row }">
               <div v-if="normalizeMainProducts(row).length" class="main-product-tags">
                 <el-tag
@@ -123,12 +123,12 @@
               <span v-else class="muted">-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="totalScale" label="总规模(亩)" width="124" align="right" sortable="custom">
+          <el-table-column prop="totalScale" label="总规模(亩)" width="118" align="right" sortable="custom">
             <template #default="{ row }">
               <span class="scale-cell">{{ formatListScale(row.totalScale) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="地区" min-width="190" show-overflow-tooltip>
+          <el-table-column label="地区" min-width="180" show-overflow-tooltip>
             <template #default="{ row }">{{ formatRegions(row.regions) }}</template>
           </el-table-column>
           <el-table-column prop="score" width="160" sortable="custom">
@@ -161,12 +161,12 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="92">
+          <el-table-column label="状态" width="88">
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">{{ formatCustomerStatus(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="最近沟通" min-width="180">
+          <el-table-column label="最近沟通" min-width="170">
             <template #default="{ row }">
               <div class="cell-main">
                 <span>{{ formatFollowResult(row.lastFollowResult, "未沟通") }}</span>
@@ -174,20 +174,20 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="下次跟进" width="142">
+          <el-table-column label="下次跟进" width="138">
             <template #default="{ row }">
               <span :class="{ overdue: isOverdue(row.nextFollowAt) }">
                 {{ formatNullableDate(row.nextFollowAt) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="跟进人" width="104" show-overflow-tooltip>
+          <el-table-column label="跟进人" width="96" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "-" }}</template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="150" sortable="custom">
+          <el-table-column prop="createdAt" label="创建时间" width="146" sortable="custom">
             <template #default="{ row }">{{ formatNullableDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="230" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="320" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <div class="table-actions">
                 <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>

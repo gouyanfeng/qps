@@ -47,35 +47,35 @@
       </template>
 
       <template #table="{ tableData }">
-        <el-table :data="tableData" border class="follow-task-table">
-          <el-table-column label="跟进对象" min-width="220">
+        <el-table :data="tableData" :fit="true" border class="follow-task-table wide-list-table" style="--table-min-width: 1220px">
+          <el-table-column label="跟进对象" min-width="260" show-overflow-tooltip>
             <template #default="{ row }">
               <b>{{ row.entityName }}</b>
             </template>
           </el-table-column>
-          <el-table-column label="类型" width="100">
+          <el-table-column label="类型" width="88">
             <template #default="{ row }">
               <el-tag size="small">{{ entityTypeText(row.entityType) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="contactName" label="联系人" width="150" show-overflow-tooltip />
-          <el-table-column prop="contactPhone" label="电话" width="140" />
-          <el-table-column label="上次跟进" width="170">
+          <el-table-column prop="contactName" label="联系人" width="130" show-overflow-tooltip />
+          <el-table-column prop="contactPhone" label="电话" width="136" show-overflow-tooltip />
+          <el-table-column label="上次跟进" width="150">
             <template #default="{ row }">
               {{ formatDate(row.lastFollowAt) }}
             </template>
           </el-table-column>
-          <el-table-column label="下次跟进" width="170">
+          <el-table-column label="下次跟进" width="150">
             <template #default="{ row }">
               <span :class="row.category.toLowerCase()">{{ taskText(row) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="最近结果" width="110">
+          <el-table-column label="最近结果" width="104">
             <template #default="{ row }">
               {{ formatFollowResult(row.lastFollowResult) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column label="操作" width="190" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <Permission code="CRM_FOLLOW"><el-button type="primary" link @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               <el-button link @click="detail(row)">详情</el-button>

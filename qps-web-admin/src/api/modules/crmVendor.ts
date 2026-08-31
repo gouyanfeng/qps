@@ -37,12 +37,6 @@ export const crmVendorApi = {
   createFollowRecord: (id: string, data: any) => {
     return http.post<any>(`/admin/crm/vendors/${id}/follow-records`, data);
   },
-  getBusinessEntityAttributes: (params: any) => {
-    return http.get<any>("/admin/crm/business-entity-attributes", params);
-  },
-  saveBusinessEntityAttributes: (data: any) => {
-    return http.put<any>("/admin/crm/business-entity-attributes", data);
-  },
   getBusinessEntityAttributeOptions: (params: any) => {
     return http.get<any>("/admin/crm/business-entity-attributes/options", params, { loading: false, cancel: false });
   },

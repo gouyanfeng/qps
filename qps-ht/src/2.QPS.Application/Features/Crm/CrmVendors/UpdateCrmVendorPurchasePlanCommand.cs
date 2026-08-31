@@ -49,7 +49,6 @@ public class UpdateCrmVendorPurchasePlanHandler : IRequestHandler<UpdateCrmVendo
         plan.Update(
             purchasePlanName,
             request.Request.PurchaseTime,
-            request.Request.LegacyProducts.Trim(),
             request.Request.PageUrl.Trim(),
             request.Request.Remark.Trim());
 
