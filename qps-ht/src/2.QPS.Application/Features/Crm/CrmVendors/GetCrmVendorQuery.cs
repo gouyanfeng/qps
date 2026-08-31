@@ -15,7 +15,6 @@ public class GetCrmVendorQuery : IRequest<CrmVendorDto>
 public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorDto>
 {
     private const string VendorEntityType = CrmCodes.VendorEntityType;
-    private const string PurchaseProductAttributeCode = "PURCHASE_PRODUCT";
     private const string InvalidContactStatus = "INVALID";
 
     private readonly IDbContext _dbContext;
@@ -60,23 +59,11 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             })
             .ToListAsync(cancellationToken);
 
-        var products = await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                !attribute.IsDeleted &&
-                attribute.EntityType == VendorEntityType &&
-                attribute.EntityId == vendor.Id &&
-                attribute.AttributeCode == PurchaseProductAttributeCode)
-            .OrderBy(attribute => attribute.SortOrder)
-            .ThenBy(attribute => attribute.AttributeValue)
-            .Take(80)
-            .Select(attribute => new CrmVendorProductDto
-            {
-                Id = attribute.Id,
-                ProductName = attribute.AttributeValue,
-                SortOrder = attribute.SortOrder,
-                Remark = attribute.Remark
-            })
-            .ToListAsync(cancellationToken);
+        var products = (await CrmVendorPurchasePlanProductQuery.GetProductsAsync(
+                _dbContext,
+                [vendor.Id],
+                cancellationToken))
+            .GetValueOrDefault(vendor.Id, []);
 
         var transferRecords = await CrmTransferRecords.GetAsync(
             _dbContext,
@@ -100,12 +87,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             PrimaryContactName = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.ContactName ?? string.Empty,
             PrimaryContactPhone = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.Phone ?? string.Empty,
             PurchasePlanCount = await _dbContext.CrmVendorPurchasePlans.CountAsync(plan => !plan.IsDeleted && plan.VendorId == vendor.Id, cancellationToken),
-            ProductCount = await _dbContext.CrmBusinessEntityAttributes.CountAsync(attribute =>
-                !attribute.IsDeleted &&
-                attribute.EntityType == VendorEntityType &&
-                attribute.EntityId == vendor.Id &&
-                attribute.AttributeCode == PurchaseProductAttributeCode,
-                cancellationToken),
+            ProductCount = products.Count,
             ContactCount = contacts.Count,
             CreatedAt = vendor.CreatedAt,
             UpdatedAt = vendor.UpdatedAt,

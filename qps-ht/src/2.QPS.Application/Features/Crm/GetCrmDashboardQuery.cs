@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
+using QPS.Application.Features.Crm.CrmVendors;
 using QPS.Application.Interfaces;
 
 namespace QPS.Application.Features.Crm;
@@ -234,21 +235,18 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var vendorPurchaseProductAttributes = await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                !attribute.IsDeleted &&
-                attribute.EntityType == CrmCodes.VendorEntityType &&
-                attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode &&
-                myVendors.Select(vendor => vendor.Id).Contains(attribute.EntityId))
-            .GroupBy(attribute => attribute.AttributeValue)
-            .Select(group => new { Code = group.Key, Count = group.Count() })
+        var vendorPurchaseProducts = await CrmVendorPurchasePlanProductQuery.GetEffectiveItems(_dbContext)
+            .Where(item => myVendors.Select(vendor => vendor.Id).Contains(item.VendorId))
+            .Select(item => new { item.VendorId, item.ProductName })
+            .Distinct()
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProductDistribution = vendorPurchaseProductAttributes
-            .Select(item => new CrmDashboardChartItemDto
+        var vendorPurchaseProductDistribution = vendorPurchaseProducts
+            .GroupBy(item => item.ProductName)
+            .Select(group => new CrmDashboardChartItemDto
             {
-                Code = item.Code,
-                Name = FormatMainProduct(item.Code),
-                Value = item.Count
+                Code = group.Key,
+                Name = FormatMainProduct(group.Key),
+                Value = group.Count()
             })
             .OrderByDescending(item => item.Value)
             .ThenBy(item => item.Name)

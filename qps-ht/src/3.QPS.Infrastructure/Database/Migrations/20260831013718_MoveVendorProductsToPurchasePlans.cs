@@ -10,6 +10,14 @@ namespace QPS.Infrastructure.Database.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("""
+                UPDATE [CrmBusinessEntityAttributes]
+                SET [IsDeleted] = 1
+                WHERE [IsDeleted] = 0
+                  AND [EntityType] = 'CRM_VENDOR'
+                  AND [AttributeCode] = 'PURCHASE_PRODUCT';
+                """);
+
             migrationBuilder.CreateIndex(
                 name: "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product",
                 table: "CrmBusinessEntityAttributes",

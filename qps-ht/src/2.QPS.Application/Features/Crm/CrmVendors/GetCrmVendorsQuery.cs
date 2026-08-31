@@ -21,7 +21,6 @@ public class GetCrmVendorsQuery : PaginationRequest, IRequest<PaginationResponse
 public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, PaginationResponse<CrmVendorDto>>
 {
     private const string VendorEntityType = CrmCodes.VendorEntityType;
-    private const string PurchaseProductAttributeCode = "PURCHASE_PRODUCT";
     private const string InvalidContactStatus = "INVALID";
 
     private readonly IDbContext _dbContext;
@@ -36,6 +35,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         var query = _dbContext.CrmVendors
             .Where(vendor => !vendor.IsDeleted)
             .AsQueryable();
+        var vendorIdsWithProducts = CrmVendorPurchasePlanProductQuery.GetVendorIdsWithProducts(_dbContext);
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
@@ -49,12 +49,8 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     (contact.ContactName.Contains(keyword) || contact.Phone.Contains(keyword))) ||
-                _dbContext.CrmBusinessEntityAttributes.Any(attribute =>
-                    !attribute.IsDeleted &&
-                    attribute.EntityType == VendorEntityType &&
-                    attribute.EntityId == vendor.Id &&
-                    attribute.AttributeCode == PurchaseProductAttributeCode &&
-                    attribute.AttributeValue.Contains(keyword)) ||
+                CrmVendorPurchasePlanProductQuery.GetEffectiveItems(_dbContext).Any(item =>
+                    item.VendorId == vendor.Id && item.ProductName.Contains(keyword)) ||
                 _dbContext.CrmVendorPurchasePlans.Any(plan =>
                     !plan.IsDeleted &&
                     plan.VendorId == vendor.Id &&
@@ -84,16 +80,8 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         if (request.HasProduct.HasValue)
         {
             query = request.HasProduct.Value
-                ? query.Where(vendor => _dbContext.CrmBusinessEntityAttributes.Any(attribute =>
-                    !attribute.IsDeleted &&
-                    attribute.EntityType == VendorEntityType &&
-                    attribute.EntityId == vendor.Id &&
-                    attribute.AttributeCode == PurchaseProductAttributeCode))
-                : query.Where(vendor => !_dbContext.CrmBusinessEntityAttributes.Any(attribute =>
-                    !attribute.IsDeleted &&
-                    attribute.EntityType == VendorEntityType &&
-                    attribute.EntityId == vendor.Id &&
-                    attribute.AttributeCode == PurchaseProductAttributeCode));
+                ? query.Where(vendor => vendorIdsWithProducts.Contains(vendor.Id))
+                : query.Where(vendor => !vendorIdsWithProducts.Contains(vendor.Id));
         }
 
         var dtoQuery = query.Select(vendor => new CrmVendorDto
@@ -130,11 +118,6 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
                 .Select(contact => contact.Phone)
                 .FirstOrDefault() ?? string.Empty,
             PurchasePlanCount = _dbContext.CrmVendorPurchasePlans.Count(plan => !plan.IsDeleted && plan.VendorId == vendor.Id),
-            ProductCount = _dbContext.CrmBusinessEntityAttributes.Count(attribute =>
-                !attribute.IsDeleted &&
-                attribute.EntityType == VendorEntityType &&
-                attribute.EntityId == vendor.Id &&
-                attribute.AttributeCode == PurchaseProductAttributeCode),
             ContactCount = _dbContext.CrmContacts.Count(contact =>
                 !contact.IsDeleted &&
                 contact.EntityType == VendorEntityType &&
@@ -144,6 +127,14 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         });
 
         var response = await dtoQuery.ToPaginationResponseAsync(request);
+        var productNames = await CrmVendorPurchasePlanProductQuery.GetNamesAsync(
+            _dbContext,
+            response.List.Select(vendor => vendor.Id),
+            cancellationToken);
+        foreach (var vendor in response.List)
+        {
+            vendor.ProductCount = productNames.GetValueOrDefault(vendor.Id, []).Count;
+        }
         await CrmVendorOwners.FillAsync(_dbContext, response.List, cancellationToken);
         return response;
     }
