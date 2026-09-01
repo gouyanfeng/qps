@@ -242,16 +242,16 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
                 from purchaseDemand in _dbContext.CrmPurchaseDemands
                 join item in _dbContext.CrmPurchaseDemandItems on purchaseDemand.Id equals item.PurchaseDemandId
                 where !purchaseDemand.IsDeleted && myVendorIds.Contains(purchaseDemand.VendorId)
-                select item.ProductName)
+                select new { purchaseDemand.VendorId, item.ProductName })
             .ToListAsync(cancellationToken);
         var vendorPurchaseProductDistribution = vendorPurchaseProducts
-            .Where(productName => !string.IsNullOrWhiteSpace(productName))
-            .GroupBy(productName => productName.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Where(item => !string.IsNullOrWhiteSpace(item.ProductName))
+            .GroupBy(item => item.ProductName.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(group => new CrmDashboardChartItemDto
             {
                 Code = group.Key,
                 Name = FormatMainProduct(group.Key),
-                Value = group.Count()
+                Value = group.Select(item => item.VendorId).Distinct().Count()
             })
             .OrderByDescending(item => item.Value)
             .ThenBy(item => item.Name)
