@@ -238,23 +238,22 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var myVendorIds = await myVendors
             .Select(vendor => vendor.Id)
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProducts = await (
+        var purchaseProductNames = await (
                 from purchaseDemand in _dbContext.CrmPurchaseDemands
                 join item in _dbContext.CrmPurchaseDemandItems on purchaseDemand.Id equals item.PurchaseDemandId
                 where !purchaseDemand.IsDeleted && myVendorIds.Contains(purchaseDemand.VendorId)
-                select new { purchaseDemand.VendorId, item.ProductName })
+                select item.ProductName)
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProductDistribution = vendorPurchaseProducts
-            .Where(item => !string.IsNullOrWhiteSpace(item.ProductName))
-            .GroupBy(item => item.ProductName.Trim(), StringComparer.OrdinalIgnoreCase)
+        var vendorPurchaseProductDistribution = purchaseProductNames
+            .Where(productName => !string.IsNullOrWhiteSpace(productName))
+            .GroupBy(productName => productName.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(group => new CrmDashboardChartItemDto
             {
                 Code = group.Key,
                 Name = FormatMainProduct(group.Key),
-                Value = group.Select(item => item.VendorId).Distinct().Count()
+                Value = 1
             })
-            .OrderByDescending(item => item.Value)
-            .ThenBy(item => item.Name)
+            .OrderBy(item => item.Name)
             .ToList();
 
         await FillSubjectSummariesAsync(todayFollowSubjects, cancellationToken);
