@@ -109,7 +109,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var productAttributes = await _dbContext.CrmBusinessEntityAttributes
+        var mainProductNames = await _dbContext.CrmBusinessEntityAttributes
             .Where(attribute =>
                 !attribute.IsDeleted &&
                 attribute.EntityType == CrmCodes.HerbBaseEntityType &&
@@ -118,18 +118,18 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
                     .Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && mySubjects.Select(subject => subject.Id).Contains(herbBase.HerbBaseSubjectId.Value))
                     .Select(herbBase => herbBase.Id)
                     .Contains(attribute.EntityId))
-            .GroupBy(attribute => attribute.AttributeValue)
-            .Select(group => new { Code = group.Key, Count = group.Count() })
+            .Select(attribute => attribute.AttributeValue)
             .ToListAsync(cancellationToken);
-        var mainProductDistribution = productAttributes
-            .Select(item => new CrmDashboardChartItemDto
+        var mainProductDistribution = mainProductNames
+            .Where(productName => !string.IsNullOrWhiteSpace(productName))
+            .GroupBy(productName => productName.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new CrmDashboardChartItemDto
             {
-                Code = item.Code,
-                Name = FormatMainProduct(item.Code),
-                Value = item.Count
+                Code = group.Key,
+                Name = FormatMainProduct(group.Key),
+                Value = 1
             })
-            .OrderByDescending(item => item.Value)
-            .ThenBy(item => item.Name)
+            .OrderBy(item => item.Name)
             .ToList();
 
         var trendRecords = await (
