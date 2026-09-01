@@ -119,5 +119,3 @@ public class GetCrmPurchaseDemandsHandler : IRequestHandler<GetCrmPurchaseDemand
         return new PaginationResponse<CrmPurchaseDemandDto>(plans, totalCount, page, pageSize);
     }
 }
-
-
