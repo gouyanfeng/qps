@@ -214,23 +214,23 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var newPurchasePlanDates = await (
-                from purchasePlan in _dbContext.CrmPurchaseDemands
-                join vendor in myVendors on purchasePlan.VendorId equals vendor.Id
-                where !purchasePlan.IsDeleted &&
-                    purchasePlan.CreatedAt >= trendStart &&
-                    purchasePlan.CreatedAt < tomorrowStart
-                select purchasePlan.CreatedAt)
+        var newPurchaseDemandDates = await (
+                from purchaseDemand in _dbContext.CrmPurchaseDemands
+                join vendor in myVendors on purchaseDemand.VendorId equals vendor.Id
+                where !purchaseDemand.IsDeleted &&
+                    purchaseDemand.CreatedAt >= trendStart &&
+                    purchaseDemand.CreatedAt < tomorrowStart
+                select purchaseDemand.CreatedAt)
             .ToListAsync(cancellationToken);
-        var newPurchasePlanTrend = Enumerable.Range(0, 7)
+        var newPurchaseDemandTrend = Enumerable.Range(0, 7)
             .Select(offset => trendStart.AddDays(offset))
             .Select(date =>
             {
                 var nextDate = date.AddDays(1);
-                return new CrmDashboardNewPurchasePlanTrendItemDto
+                return new CrmDashboardNewPurchaseDemandTrendItemDto
                 {
                     Date = date,
-                    NewPurchaseDemandCount = newPurchasePlanDates.Count(createdAt => createdAt >= date && createdAt < nextDate)
+                    NewPurchaseDemandCount = newPurchaseDemandDates.Count(createdAt => createdAt >= date && createdAt < nextDate)
                 };
             })
             .ToList();
@@ -273,7 +273,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             NewBaseTrend = newBaseTrend,
             VendorPriorityDistribution = vendorPriorityDistribution,
             VendorFollowTrend = vendorFollowTrend,
-            NewPurchasePlanTrend = newPurchasePlanTrend,
+            NewPurchaseDemandTrend = newPurchaseDemandTrend,
             VendorPurchaseProductDistribution = vendorPurchaseProductDistribution
         };
     }
@@ -305,9 +305,9 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
                 .Select(offset => DateTime.Today.AddDays(-6 + offset))
                 .Select(date => new CrmDashboardTrendItemDto { Date = date })
                 .ToList(),
-            NewPurchasePlanTrend = Enumerable.Range(0, 7)
+            NewPurchaseDemandTrend = Enumerable.Range(0, 7)
                 .Select(offset => DateTime.Today.AddDays(-6 + offset))
-                .Select(date => new CrmDashboardNewPurchasePlanTrendItemDto { Date = date })
+                .Select(date => new CrmDashboardNewPurchaseDemandTrendItemDto { Date = date })
                 .ToList()
         };
     }

@@ -23,7 +23,7 @@
           <div class="chart-grid">
             <MainProductDistributionChart title="厂商优先级分布" :items="dashboard.vendorPriorityDistribution" />
             <FollowTrendChart title="近 7 天厂商跟进趋势" :items="dashboard.vendorFollowTrend" />
-            <NewPurchasePlanTrendChart :items="dashboard.newPurchasePlanTrend" />
+            <NewPurchaseDemandTrendChart :items="dashboard.newPurchaseDemandTrend" />
             <MainProductDistributionChart title="厂商采购品类分布" :items="dashboard.vendorPurchaseProductDistribution" />
           </div>
         </section>
@@ -40,7 +40,7 @@ import FollowFunnelChart from "./components/FollowFunnelChart.vue";
 import MainProductDistributionChart from "./components/MainProductDistributionChart.vue";
 import FollowTrendChart from "./components/FollowTrendChart.vue";
 import NewBaseTrendChart from "./components/NewBaseTrendChart.vue";
-import NewPurchasePlanTrendChart from "./components/NewPurchasePlanTrendChart.vue";
+import NewPurchaseDemandTrendChart from "./components/NewPurchaseDemandTrendChart.vue";
 
 const loading = ref(false);
 const errorMessage = ref("");
@@ -59,7 +59,7 @@ const dashboard = ref<CrmDashboardData>({
   newBaseTrend: [],
   vendorPriorityDistribution: [],
   vendorFollowTrend: [],
-  newPurchasePlanTrend: [],
+  newPurchaseDemandTrend: [],
   vendorPurchaseProductDistribution: [],
 });
 

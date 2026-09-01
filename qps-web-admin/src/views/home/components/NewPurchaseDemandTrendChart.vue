@@ -1,9 +1,9 @@
 <template>
   <div class="chart-block">
     <div class="block-header">
-      <h2>近 7 天新增采购计划</h2>
+      <h2>近 7 天新增采购需求</h2>
     </div>
-    <el-empty v-if="isEmpty" description="暂无新增采购计划" :image-size="72" />
+    <el-empty v-if="isEmpty" description="暂无新增采购需求" :image-size="72" />
     <VChart v-else class="chart" :option="option" autoresize />
   </div>
 </template>
@@ -15,15 +15,15 @@ import { CanvasRenderer } from "echarts/renderers";
 import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import VChart from "vue-echarts";
-import type { CrmDashboardNewPurchasePlanTrendItem } from "@/api/modules/dashboard";
+import type { CrmDashboardNewPurchaseDemandTrendItem } from "@/api/modules/dashboard";
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent]);
 
 const props = defineProps<{
-  items: CrmDashboardNewPurchasePlanTrendItem[];
+  items: CrmDashboardNewPurchaseDemandTrendItem[];
 }>();
 
-const isEmpty = computed(() => props.items.length === 0 || props.items.every(item => item.newPurchasePlanCount === 0));
+const isEmpty = computed(() => props.items.length === 0 || props.items.every(item => item.newPurchaseDemandCount === 0));
 
 const option = computed(() => ({
   tooltip: { trigger: "axis" },
@@ -35,10 +35,10 @@ const option = computed(() => ({
   yAxis: { type: "value", minInterval: 1 },
   series: [
     {
-      name: "新增采购计划",
+      name: "新增采购需求",
       type: "bar",
       barMaxWidth: 28,
-      data: props.items.map(item => item.newPurchasePlanCount),
+      data: props.items.map(item => item.newPurchaseDemandCount),
     },
   ],
 }));

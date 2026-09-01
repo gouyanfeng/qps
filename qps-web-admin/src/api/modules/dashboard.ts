@@ -48,9 +48,9 @@ export interface CrmDashboardNewBaseTrendItem {
   newBaseCount: number;
 }
 
-export interface CrmDashboardNewPurchasePlanTrendItem {
+export interface CrmDashboardNewPurchaseDemandTrendItem {
   date: string;
-  newPurchasePlanCount: number;
+  newPurchaseDemandCount: number;
 }
 
 export interface CrmDashboardData {
@@ -63,7 +63,7 @@ export interface CrmDashboardData {
   newBaseTrend: CrmDashboardNewBaseTrendItem[];
   vendorPriorityDistribution: CrmDashboardChartItem[];
   vendorFollowTrend: CrmDashboardTrendItem[];
-  newPurchasePlanTrend: CrmDashboardNewPurchasePlanTrendItem[];
+  newPurchaseDemandTrend: CrmDashboardNewPurchaseDemandTrendItem[];
   vendorPurchaseProductDistribution: CrmDashboardChartItem[];
 }
 

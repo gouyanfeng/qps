@@ -11,7 +11,7 @@ public class CrmDashboardDto
     public List<CrmDashboardNewBaseTrendItemDto> NewBaseTrend { get; set; } = new();
     public List<CrmDashboardChartItemDto> VendorPriorityDistribution { get; set; } = new();
     public List<CrmDashboardTrendItemDto> VendorFollowTrend { get; set; } = new();
-    public List<CrmDashboardNewPurchasePlanTrendItemDto> NewPurchasePlanTrend { get; set; } = new();
+    public List<CrmDashboardNewPurchaseDemandTrendItemDto> NewPurchaseDemandTrend { get; set; } = new();
     public List<CrmDashboardChartItemDto> VendorPurchaseProductDistribution { get; set; } = new();
 }
 
@@ -69,7 +69,7 @@ public class CrmDashboardNewBaseTrendItemDto
     public int NewBaseCount { get; set; }
 }
 
-public class CrmDashboardNewPurchasePlanTrendItemDto
+public class CrmDashboardNewPurchaseDemandTrendItemDto
 {
     public DateTime Date { get; set; }
     public int NewPurchaseDemandCount { get; set; }
