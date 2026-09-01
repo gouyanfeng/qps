@@ -238,15 +238,15 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var myVendorIds = await myVendors
             .Select(vendor => vendor.Id)
             .ToListAsync(cancellationToken);
-        var purchaseProductItems = await (
+        var purchaseProductNames = await (
                 from purchaseDemand in _dbContext.CrmPurchaseDemands
                 join item in _dbContext.CrmPurchaseDemandItems on purchaseDemand.Id equals item.PurchaseDemandId
                 where !purchaseDemand.IsDeleted && myVendorIds.Contains(purchaseDemand.VendorId)
-                select new { item.ProductName, item.Remark })
+                select item.ProductName)
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProductDistribution = purchaseProductItems
-            .Where(item => !item.Remark.StartsWith("待清洗；", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(item.ProductName))
-            .GroupBy(item => item.ProductName.Trim(), StringComparer.OrdinalIgnoreCase)
+        var vendorPurchaseProductDistribution = purchaseProductNames
+            .Where(productName => !string.IsNullOrWhiteSpace(productName))
+            .GroupBy(productName => productName.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(group => new CrmDashboardChartItemDto
             {
                 Code = group.Key,
