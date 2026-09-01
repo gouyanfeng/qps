@@ -24,6 +24,13 @@ dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=
 - 字典和值、权限编码统一使用全大写加下划线；前端展示名称，接口和入库使用编码值。
 - 客户负责人使用 `OwnerUserId` 关联 `SystemUsers`；查询层负责补齐负责人名称。
 
+## 语义重命名
+
+- 重命名实体、数据库表/列、实体编码、属性编码、权限码或接口路径前，必须先在实施计划或变更说明中列出“语义重命名影响清单”，不能只依赖源码全局替换。
+- 清单至少逐项检查并决定“迁移、保留历史、删除”策略：数据库表和列、索引/筛选条件/约束、EF 模型快照、迁移 `Up/Down` SQL、`CrmBusinessEntityAttributes.EntityType/AttributeCode`、`CrmFollowRecord.EntityType`、`CrmTransferRecord.EntityType`、`SystemOperationLog.EntityType`、`SystemPermissions.Code`、`SystemDataDictionaries.Code/Value`。
+- 迁移前后必须对受影响数据执行数量和唯一性对账；有属性表关联时，还必须检查 `EntityId` 指向的新实体记录是否存在。任何旧编码残留都必须明确标注为 EF 历史迁移或历史数据，不能默认为可忽略。
+- 新增或调整属性表筛选索引时，索引名和 `HasFilter` 中的 `EntityType/AttributeCode` 必须与迁移的数据更新同步修改；更新后的运行时代码只允许写入新编码。
+
 ## 代码风格
 
 - `Handle` 只负责用例编排；复杂校验、查询、映射和状态同步下沉到私有方法或领域方法。
