@@ -5,7 +5,7 @@ public static class CrmCodes
     public const string HerbBaseEntityType = "CRM_HERB_BASE";
     public const string HerbBaseSubjectEntityType = "CRM_HERB_BASE_SUBJECT";
     public const string VendorEntityType = "CRM_VENDOR";
-    public const string VendorPurchasePlanEntityType = "CRM_VENDOR_PURCHASE_PLAN";
+    public const string PurchaseDemandEntityType = "CRM_PURCHASE_DEMAND";
     public const string MainProductAttributeCode = "CRM_MAIN_PRODUCT";
     public const string PurchaseProductAttributeCode = "PURCHASE_PRODUCT";
     public const string HerbProductDictionaryCode = "CRM_HERB_PRODUCT";

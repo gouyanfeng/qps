@@ -1,4 +1,4 @@
-﻿using QPS.Domain.Common;
+using QPS.Domain.Common;
 
 namespace QPS.Domain.Entities.Crm;
 
@@ -30,7 +30,7 @@ public class CrmVendor : BaseEntity
     /// <summary>
     /// 最近采购计划名称。
     /// </summary>
-    public string LatestPurchasePlanName { get; private set; } = string.Empty;
+    public string LatestPurchaseDemandName { get; private set; } = string.Empty;
 
     /// <summary>
     /// 备注。
@@ -48,7 +48,7 @@ public class CrmVendor : BaseEntity
 
     public DateTime? NextFollowAt { get; private set; }
 
-    public virtual ICollection<CrmVendorPurchasePlan> PurchasePlans { get; private set; } = new List<CrmVendorPurchasePlan>();
+    public virtual ICollection<CrmPurchaseDemand> PurchaseDemands { get; private set; } = new List<CrmPurchaseDemand>();
 
     private CrmVendor()
     {
@@ -93,10 +93,10 @@ public class CrmVendor : BaseEntity
     /// <summary>
     /// 由采购计划子表刷新最近采购汇总。
     /// </summary>
-    public void UpdateLatestPurchaseSummary(DateTime? latestPurchaseTime, string latestPurchasePlanName)
+    public void UpdateLatestPurchaseDemandSummary(DateTime? latestPurchaseTime, string latestPurchaseDemandName)
     {
         LatestPurchaseTime = latestPurchaseTime;
-        LatestPurchasePlanName = latestPurchasePlanName;
+        LatestPurchaseDemandName = latestPurchaseDemandName;
     }
 
     public CrmTransferRecord ChangeOwner(Guid? toOwnerUserId, Guid? operatorUserId, string? remark)

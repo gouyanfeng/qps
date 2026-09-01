@@ -40,17 +40,8 @@ export const crmVendorApi = {
   getBusinessEntityAttributeOptions: (params: any) => {
     return http.get<any>("/admin/crm/business-entity-attributes/options", params, { loading: false, cancel: false });
   },
-  getVendorPurchasePlans: (id: string, params: any) => {
-    return http.get<any>(`/admin/crm/vendors/${id}/purchase-plans`, params);
-  },
-  createVendorPurchasePlan: (id: string, data: any) => {
-    return http.post<any>(`/admin/crm/vendors/${id}/purchase-plans`, data);
-  },
-  updateVendorPurchasePlan: (id: string, planId: string, data: any) => {
-    return http.put<any>(`/admin/crm/vendors/${id}/purchase-plans/${planId}`, data);
-  },
-  deleteVendorPurchasePlan: (id: string, planId: string) => {
-    return http.delete<any>(`/admin/crm/vendors/${id}/purchase-plans/${planId}`);
+  getVendorPurchaseDemands: (id: string, params: any) => {
+    return http.get<any>(`/admin/crm/vendors/${id}/purchase-demands`, params);
   },
 };
 

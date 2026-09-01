@@ -25,11 +25,14 @@ public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBus
 
     public async Task<bool> Handle(SaveCrmBusinessEntityAttributesCommand request, CancellationToken cancellationToken)
     {
+        if (request.Request.EntityType == CrmCodes.PurchaseDemandEntityType &&
+            request.Request.AttributeCode == CrmCodes.PurchaseProductAttributeCode)
+        {
+            throw new QPS.Domain.Exceptions.BusinessException(400, "采购需求品类只能通过采购需求明细维护");
+        }
         var values = NormalizeValues(request.Request.Values);
-        if ((request.Request.EntityType == CrmCodes.HerbBaseEntityType &&
-             request.Request.AttributeCode == CrmCodes.MainProductAttributeCode) ||
-            (request.Request.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
-             request.Request.AttributeCode == CrmCodes.PurchaseProductAttributeCode))
+        if (request.Request.EntityType == CrmCodes.HerbBaseEntityType &&
+            request.Request.AttributeCode == CrmCodes.MainProductAttributeCode)
         {
             await CrmHerbProductDictionary.ValidateActiveNamesAsync(_dbContext, values, cancellationToken);
         }

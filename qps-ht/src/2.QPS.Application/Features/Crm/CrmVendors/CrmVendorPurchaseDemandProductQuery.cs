@@ -4,18 +4,18 @@ using QPS.Application.Interfaces;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
 
-public static class CrmVendorPurchasePlanProductQuery
+public static class CrmPurchaseDemandProductQuery
 {
-    public static IQueryable<CrmVendorPurchasePlanProductItem> GetEffectiveItems(IDbContext dbContext)
+    public static IQueryable<CrmPurchaseDemandProductItem> GetEffectiveItems(IDbContext dbContext)
     {
         return GetEffectiveItems(dbContext, []);
     }
 
-    public static IQueryable<CrmVendorPurchasePlanProductItem> GetEffectiveItems(
+    public static IQueryable<CrmPurchaseDemandProductItem> GetEffectiveItems(
         IDbContext dbContext,
         IReadOnlyCollection<Guid> vendorIds)
     {
-        var plans = dbContext.CrmVendorPurchasePlans
+        var plans = dbContext.CrmPurchaseDemands
             .Where(plan => !plan.IsDeleted);
         if (vendorIds.Count > 0)
         {
@@ -25,9 +25,9 @@ public static class CrmVendorPurchasePlanProductQuery
         return from plan in plans
                join attribute in dbContext.CrmBusinessEntityAttributes on plan.Id equals attribute.EntityId
                where !attribute.IsDeleted &&
-                     attribute.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
+                     attribute.EntityType == CrmCodes.PurchaseDemandEntityType &&
                      attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode
-               select new CrmVendorPurchasePlanProductItem(
+               select new CrmPurchaseDemandProductItem(
                    plan.VendorId,
                    attribute.Id,
                    attribute.AttributeValue,
@@ -90,7 +90,7 @@ public static class CrmVendorPurchasePlanProductQuery
     }
 }
 
-public sealed record CrmVendorPurchasePlanProductItem(
+public sealed record CrmPurchaseDemandProductItem(
     Guid VendorId,
     Guid AttributeId,
     string ProductName,

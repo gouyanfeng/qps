@@ -47,25 +47,25 @@
       </template>
 
       <template #table="{ tableData }">
-        <el-table :data="tableData" :fit="true" border class="follow-task-table wide-list-table" style="--table-min-width: 1220px">
-          <el-table-column label="跟进对象" min-width="260" show-overflow-tooltip>
+        <el-table :data="tableData" :fit="true" border class="follow-task-table wide-list-table" style="--table-min-width: 1336px">
+          <el-table-column label="跟进对象" min-width="290" show-overflow-tooltip>
             <template #default="{ row }">
               <b>{{ row.entityName }}</b>
             </template>
           </el-table-column>
-          <el-table-column label="类型" width="88">
+          <el-table-column label="类型" width="120">
             <template #default="{ row }">
               <el-tag size="small">{{ entityTypeText(row.entityType) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="contactName" label="联系人" width="130" show-overflow-tooltip />
-          <el-table-column prop="contactPhone" label="电话" width="136" show-overflow-tooltip />
-          <el-table-column label="上次跟进" width="150">
+          <el-table-column prop="contactName" label="联系人" width="160" show-overflow-tooltip />
+          <el-table-column prop="contactPhone" label="电话" width="140" show-overflow-tooltip />
+          <el-table-column label="上次跟进" width="148">
             <template #default="{ row }">
               {{ formatDate(row.lastFollowAt) }}
             </template>
           </el-table-column>
-          <el-table-column label="下次跟进" width="150">
+          <el-table-column label="下次跟进" width="148">
             <template #default="{ row }">
               <span :class="row.category.toLowerCase()">{{ taskText(row) }}</span>
             </template>
@@ -75,7 +75,7 @@
               {{ formatFollowResult(row.lastFollowResult) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="190" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <Permission code="CRM_FOLLOW"><el-button type="primary" link @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               <el-button link @click="detail(row)">详情</el-button>
@@ -423,6 +423,23 @@ onMounted(() => {
 
 .follow-task :deep(.follow-task-table .cell) {
   font-size: 13px;
+}
+
+.follow-task :deep(.follow-task-table .actions-column .cell) {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding-right: 10px;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+.follow-task :deep(.follow-task-table .actions-column .el-button) {
+  margin-left: 0;
+}
+
+.follow-task :deep(.follow-task-table .el-table__fixed-right) {
+  box-shadow: -8px 0 14px -12px rgba(15, 23, 42, 0.28);
 }
 
 .overdue {

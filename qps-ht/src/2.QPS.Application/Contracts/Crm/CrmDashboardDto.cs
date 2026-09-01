@@ -72,5 +72,5 @@ public class CrmDashboardNewBaseTrendItemDto
 public class CrmDashboardNewPurchasePlanTrendItemDto
 {
     public DateTime Date { get; set; }
-    public int NewPurchasePlanCount { get; set; }
+    public int NewPurchaseDemandCount { get; set; }
 }

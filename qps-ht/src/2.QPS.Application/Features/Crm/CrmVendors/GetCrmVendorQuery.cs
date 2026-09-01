@@ -59,7 +59,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             })
             .ToListAsync(cancellationToken);
 
-        var products = (await CrmVendorPurchasePlanProductQuery.GetProductsAsync(
+        var products = (await CrmPurchaseDemandProductQuery.GetProductsAsync(
                 _dbContext,
                 [vendor.Id],
                 cancellationToken))
@@ -78,7 +78,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             NormalizedVendorName = vendor.NormalizedVendorName,
             PriorityLevel = vendor.PriorityLevel,
             LatestPurchaseTime = vendor.LatestPurchaseTime,
-            LatestPurchasePlanName = vendor.LatestPurchasePlanName,
+            LatestPurchaseDemandName = vendor.LatestPurchaseDemandName,
             Remark = vendor.Remark,
             OwnerUserId = vendor.OwnerUserId,
             LastFollowAt = vendor.LastFollowAt,
@@ -86,7 +86,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             NextFollowAt = vendor.NextFollowAt,
             PrimaryContactName = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.ContactName ?? string.Empty,
             PrimaryContactPhone = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.Phone ?? string.Empty,
-            PurchasePlanCount = await _dbContext.CrmVendorPurchasePlans.CountAsync(plan => !plan.IsDeleted && plan.VendorId == vendor.Id, cancellationToken),
+            PurchaseDemandCount = await _dbContext.CrmPurchaseDemands.CountAsync(plan => !plan.IsDeleted && plan.VendorId == vendor.Id, cancellationToken),
             ProductCount = products.Count,
             ContactCount = contacts.Count,
             CreatedAt = vendor.CreatedAt,

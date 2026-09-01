@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Domain.Entities.System;
 using QPS.Domain.Entities.Crm;
 
@@ -25,7 +25,8 @@ public interface IDbContext
     DbSet<CrmBusinessEntityAttribute> CrmBusinessEntityAttributes { get; }
     DbSet<CrmTransferRecord> CrmTransferRecords { get; }
     DbSet<CrmVendor> CrmVendors { get; }
-    DbSet<CrmVendorPurchasePlan> CrmVendorPurchasePlans { get; }
+    DbSet<CrmPurchaseDemand> CrmPurchaseDemands { get; }
+    DbSet<CrmPurchaseDemandItem> CrmPurchaseDemandItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

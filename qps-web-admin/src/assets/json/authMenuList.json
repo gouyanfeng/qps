@@ -53,6 +53,12 @@
       }
     },
     {
+      "path": "/crm/purchase-demand",
+      "name": "purchaseDemand",
+      "component": "/crm/purchaseDemand/index",
+      "meta": { "icon": "Tickets", "title": "采购需求", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_PURCHASE_DEMAND_VIEW" }
+    },
+    {
       "path": "/system",
       "name": "system",
       "redirect": "/system/role",

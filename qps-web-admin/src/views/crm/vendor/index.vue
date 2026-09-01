@@ -81,8 +81,8 @@
           <el-table-column label="跟进人" width="96" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "未分配" }}</template>
           </el-table-column>
-          <el-table-column label="采购计划" width="84" align="right">
-            <template #default="{ row }">{{ row.purchasePlanCount || 0 }}</template>
+          <el-table-column label="采购需求" width="84" align="right">
+            <template #default="{ row }">{{ row.purchaseDemandCount || 0 }}</template>
           </el-table-column>
           <el-table-column label="品类" width="72" align="right">
             <template #default="{ row }">{{ row.productCount || 0 }}</template>
@@ -90,8 +90,8 @@
           <el-table-column label="最近采购时间" width="150">
             <template #default="{ row }">{{ formatDate(row.latestPurchaseTime) }}</template>
           </el-table-column>
-          <el-table-column label="最近采购计划" min-width="280" show-overflow-tooltip>
-            <template #default="{ row }">{{ row.latestPurchasePlanName || "-" }}</template>
+          <el-table-column label="最近采购需求" min-width="280" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.latestPurchaseDemandName || "-" }}</template>
           </el-table-column>
           <el-table-column label="更新时间" width="150">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
@@ -125,7 +125,7 @@
               </el-tooltip>
             </div>
             <div class="head-meta">
-              <span>采购计划 {{ currentVendor.purchasePlanCount || 0 }}</span>
+              <span>采购需求 {{ currentVendor.purchaseDemandCount || 0 }}</span>
               <span>品类 {{ currentVendor.productCount || 0 }}</span>
               <span>联系人 {{ currentVendor.contactCount || 0 }}</span>
             </div>
@@ -143,7 +143,7 @@
         <section class="summary-band">
           <div class="summary-card">
             <span class="label">采购概况</span>
-            <strong>{{ currentVendor.purchasePlanCount || 0 }} 个计划</strong>
+            <strong>{{ currentVendor.purchaseDemandCount || 0 }} 条需求</strong>
             <span>品类 {{ currentVendor.productCount || 0 }} · 联系人 {{ currentVendor.contactCount || 0 }}</span>
           </div>
           <div class="summary-card">
@@ -154,7 +154,7 @@
           <div class="summary-card">
             <span class="label">最近采购</span>
             <strong>{{ formatDate(currentVendor.latestPurchaseTime) }}</strong>
-            <span>{{ currentVendor.latestPurchasePlanName || "-" }}</span>
+            <span>{{ currentVendor.latestPurchaseDemandName || "-" }}</span>
           </div>
           <div class="summary-card">
             <span class="label">更新时间</span>
@@ -164,7 +164,7 @@
         </section>
 
         <section class="detail-grid">
-          <div class="detail-column detail-card">
+          <div class="detail-column detail-card contacts-card">
             <div class="section-title section-title-first">
               <h3>联系人</h3>
               <Permission code="CRM_VENDOR_EDIT">
@@ -214,54 +214,56 @@
 
           </div>
 
-          <div class="detail-column">
-            <section class="detail-card">
+          <div class="detail-column detail-content">
+            <section class="detail-card purchase-demand-card">
             <div class="section-title section-title-first">
-              <h3>采购计划</h3>
-              <Permission code="CRM_VENDOR_EDIT">
-                <el-button type="primary" link :icon="Plus" @click="openPurchasePlanDialog">新增计划</el-button>
+              <h3>采购需求</h3>
+              <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
+                <el-button type="primary" link :icon="Plus" @click="openPurchaseDemandDialog">新增采购需求</el-button>
               </Permission>
             </div>
-            <el-table :data="purchasePlans" v-loading="purchasePlanLoading" border>
-              <el-table-column label="计划名称" min-width="220" show-overflow-tooltip>
-                <template #default="{ row }">{{ row.purchasePlanName || "-" }}</template>
-              </el-table-column>
-              <el-table-column label="采购时间" width="150">
-                <template #default="{ row }">{{ formatDate(row.purchaseTime) }}</template>
-              </el-table-column>
-              <el-table-column label="采购品类" min-width="240" show-overflow-tooltip>
+            <el-table :data="purchaseDemands" v-loading="purchaseDemandLoading" border>
+              <el-table-column prop="demandNo" label="编号" min-width="180" />
+              <el-table-column prop="demandName" label="需求名称" min-width="200" show-overflow-tooltip />
+              <el-table-column label="采购明细" min-width="220">
                 <template #default="{ row }">
-                  <div v-if="row.productNames?.length" class="product-tags">
-                    <el-tag v-for="name in row.productNames" :key="name" size="small" effect="plain">{{ name }}</el-tag>
-                  </div>
-                  <span v-else>-</span>
+                  <el-tag v-for="item in row.items || []" :key="item.id || item.productName" size="small" class="item-tag">
+                    {{ item.productName }}{{ item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : "" }}
+                  </el-tag>
+                  <span v-if="!row.items?.length">-</span>
                 </template>
               </el-table-column>
-              <el-table-column label="网页" width="92">
-                <template #default="{ row }">
-                  <el-button v-if="row.pageUrl" type="primary" link :icon="Link" @click="openPage(row.pageUrl)">打开</el-button>
-                  <span v-else>-</span>
-                </template>
+              <el-table-column label="提出日期" width="170">
+                <template #default="{ row }">{{ formatDate(row.demandAt) }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="120" class-name="actions-column" header-class-name="actions-column">
+              <el-table-column label="期望到货" width="170">
+                <template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template>
+              </el-table-column>
+              <el-table-column prop="receivingAddress" label="收货地" min-width="160" show-overflow-tooltip />
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="{ row }"><el-tag size="small">{{ row.status || "待确认" }}</el-tag></template>
+              </el-table-column>
+              <el-table-column prop="sourceType" label="来源" width="100" />
+              <el-table-column label="操作" width="230" fixed="right" class-name="actions-column" header-class-name="actions-column">
                 <template #default="{ row }">
                   <div class="table-actions">
-                    <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openPurchasePlanDialog(row)">编辑</el-button></Permission>
-                    <Permission code="CRM_VENDOR_EDIT"><el-button type="danger" link @click="deletePurchasePlan(row)">删除</el-button></Permission>
+                    <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">编辑</el-button></Permission>
+                    <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button v-if="row.status === '待确认'" type="success" link @click="changePurchaseDemandStatus(row, '有效')">确认有效</el-button></Permission>
+                    <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" type="danger" link @click="closePurchaseDemand(row)">关闭</el-button></Permission>
                   </div>
                 </template>
               </el-table-column>
             </el-table>
             <div class="table-footer">
               <el-pagination
-                v-model:current-page="purchasePlanPage"
-                v-model:page-size="purchasePlanPageSize"
+                v-model:current-page="purchaseDemandPage"
+                v-model:page-size="purchaseDemandPageSize"
                 :page-sizes="[10, 20, 50, 100]"
-                :total="purchasePlanTotal"
+                :total="purchaseDemandTotal"
                 layout="total, sizes, prev, pager, next, jumper"
                 background
-                @size-change="handlePurchasePlanSizeChange"
-                @current-change="handlePurchasePlanPageChange"
+                @size-change="handlePurchaseDemandSizeChange"
+                @current-change="handlePurchaseDemandPageChange"
               />
             </div>
             </section>
@@ -447,49 +449,25 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="purchasePlanDialogVisible" :title="purchasePlanForm.id ? '编辑采购计划' : '新增采购计划'" width="560px">
-      <el-form :model="purchasePlanForm" label-width="110px">
-        <el-form-item label="计划名称" required>
-          <el-input v-model="purchasePlanForm.purchasePlanName" clearable placeholder="请输入计划名称" />
-        </el-form-item>
-        <el-form-item label="采购时间">
-          <el-date-picker v-model="purchasePlanForm.purchaseTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="请选择时间" />
-        </el-form-item>
-        <el-form-item label="采购品类">
-          <el-select
-            v-model="purchasePlanForm.productNames"
-            multiple
-            filterable
-            remote
-            clearable
-            placeholder="请选择采购品类"
-            :remote-method="loadPurchasePlanProductOptions"
-          >
-            <el-option v-for="item in purchasePlanProductOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="网页">
-          <el-input v-model="purchasePlanForm.pageUrl" clearable placeholder="来源网页地址" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="purchasePlanForm.remark" type="textarea" :rows="3" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="purchasePlanDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitPurchasePlan">保存</el-button>
-      </template>
-    </el-dialog>
+    <CrmPurchaseDemandEditor
+      v-model="purchaseDemandDialogVisible"
+      :vendor-id="currentVendor?.id"
+      :demand="editingPurchaseDemand"
+      lock-vendor
+      @saved="handlePurchaseDemandSaved"
+    />
   </div>
 </template>
 
 <script setup lang="ts" name="vendor">
 import { computed, onMounted, reactive, ref } from "vue";
-import { Edit, Link, Phone, Plus, QuestionFilled, Refresh, View } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
+import { Edit, Phone, Plus, QuestionFilled, Refresh, View } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { useRoute } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
+import CrmPurchaseDemandEditor from "@/components/CrmPurchaseDemandEditor/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
+import crmPurchaseDemandApi from "@/api/modules/crmPurchaseDemand";
 import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
 import { useAuthStore } from "@/stores/modules/auth";
@@ -501,13 +479,13 @@ interface VendorDetail {
   normalizedVendorName: string;
   priorityLevel: string;
   latestPurchaseTime?: string | null;
-  latestPurchasePlanName: string;
+  latestPurchaseDemandName: string;
   remark: string;
   ownerUserId?: string | null;
   ownerUserName?: string | null;
   primaryContactName: string;
   primaryContactPhone: string;
-  purchasePlanCount: number;
+  purchaseDemandCount: number;
   productCount: number;
   contactCount: number;
   createdAt: string;
@@ -525,18 +503,18 @@ const detailDrawerVisible = ref(false);
 const vendorDialogVisible = ref(false);
 const transferDialogVisible = ref(false);
 const contactDialogVisible = ref(false);
-const purchasePlanDialogVisible = ref(false);
+const purchaseDemandDialogVisible = ref(false);
+const editingPurchaseDemand = ref<any>(null);
 const followDialogVisible = ref(false);
 const isEdit = ref(false);
 const currentVendor = ref<VendorDetail | null>(null);
 const selectedVendors = ref<VendorDetail[]>([]);
 const ownerOptions = ref<any[]>([]);
-const purchasePlans = ref<any[]>([]);
-const purchasePlanLoading = ref(false);
-const purchasePlanPage = ref(1);
-const purchasePlanPageSize = ref(10);
-const purchasePlanTotal = ref(0);
-const purchasePlanProductOptions = ref<any[]>([]);
+const purchaseDemands = ref<any[]>([]);
+const purchaseDemandLoading = ref(false);
+const purchaseDemandPage = ref(1);
+const purchaseDemandPageSize = ref(10);
+const purchaseDemandTotal = ref(0);
 const followRecords = ref<any[]>([]);
 const followContacts = computed(() => (currentVendor.value?.contacts || []).filter((contact: any) => contact.status !== "INVALID"));
 
@@ -575,15 +553,6 @@ const contactForm = reactive({
   wechat: "",
   roleName: "",
   isPrimary: false,
-  remark: "",
-});
-
-const purchasePlanForm = reactive({
-  id: "",
-  purchasePlanName: "",
-  purchaseTime: "",
-  productNames: [] as string[],
-  pageUrl: "",
   remark: "",
 });
 
@@ -831,84 +800,32 @@ const toggleContactStatus = async (row: any) => {
   reloadList();
 };
 
-const loadPurchasePlanProductOptions = async (keyword: string) => {
-  const result = await crmVendorApi.getBusinessEntityAttributeOptions({
-    entityType: "CRM_VENDOR_PURCHASE_PLAN",
-    attributeCode: "PURCHASE_PRODUCT",
-    keyword,
-    pageSize: 30,
-  });
-  purchasePlanProductOptions.value = result.data || [];
+const openPurchaseDemandDialog = (row?: any) => {
+  editingPurchaseDemand.value = row || null;
+  purchaseDemandDialogVisible.value = true;
 };
 
-const resetPurchasePlanForm = () => {
-  Object.assign(purchasePlanForm, {
-    id: "",
-    purchasePlanName: "",
-    purchaseTime: "",
-    productNames: [],
-    pageUrl: "",
-    remark: "",
-  });
-};
-
-const toDateTimeInputValue = (value?: string | null) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  const pad = (num: number) => `${num}`.padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
-
-const openPurchasePlanDialog = (row?: any) => {
-  resetPurchasePlanForm();
-  if (row) {
-    Object.assign(purchasePlanForm, {
-      id: row.id,
-      purchasePlanName: row.purchasePlanName || "",
-      purchaseTime: toDateTimeInputValue(row.purchaseTime),
-      productNames: Array.isArray(row.productNames) ? row.productNames : [],
-      pageUrl: row.pageUrl || "",
-      remark: row.remark || "",
-    });
-  }
-  purchasePlanDialogVisible.value = true;
-  void loadPurchasePlanProductOptions("");
-};
-
-const submitPurchasePlan = async () => {
-  if (!currentVendor.value) return;
-  if (!purchasePlanForm.purchasePlanName.trim()) {
-    ElMessage.error("请输入采购计划名称");
-    return;
-  }
-
-  const request = {
-    ...purchasePlanForm,
-    purchasePlanName: purchasePlanForm.purchasePlanName.trim(),
-    purchaseTime: purchasePlanForm.purchaseTime || null,
-  };
-
-  if (purchasePlanForm.id) {
-    await crmVendorApi.updateVendorPurchasePlan(currentVendor.value.id, purchasePlanForm.id, request);
-  } else {
-    await crmVendorApi.createVendorPurchasePlan(currentVendor.value.id, request);
-  }
-
-  ElMessage.success("采购计划已保存");
-  purchasePlanDialogVisible.value = false;
-  purchasePlanPage.value = 1;
-  await refreshDetail();
+const handlePurchaseDemandSaved = async () => {
+  purchaseDemandPage.value = 1;
+  await refreshDetail(false);
   reloadList();
 };
 
-const deletePurchasePlan = async (row: any) => {
-  if (!currentVendor.value) return;
-  await crmVendorApi.deleteVendorPurchasePlan(currentVendor.value.id, row.id);
-  ElMessage.success("采购计划已删除");
-  purchasePlanPage.value = 1;
-  await refreshDetail();
+const changePurchaseDemandStatus = async (row: any, status: string) => {
+  await crmPurchaseDemandApi.changeStatus(row.id, { status });
+  ElMessage.success("状态已更新");
+  await refreshDetail(false);
+  reloadList();
+};
+
+const closePurchaseDemand = async (row: any) => {
+  const { value } = await ElMessageBox.prompt("关闭原因", "关闭采购需求", {
+    inputPattern: /.+/,
+    inputErrorMessage: "请填写关闭原因",
+  });
+  await crmPurchaseDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
+  ElMessage.success("采购需求已关闭");
+  await refreshDetail(false);
   reloadList();
 };
 
@@ -962,13 +879,13 @@ const disablePastFollowDate = (date: Date) => date.getTime() < new Date().setHou
 const openDetail = async (row: any) => {
   detailDrawerVisible.value = false;
   currentVendor.value = null;
-  purchasePlans.value = [];
+  purchaseDemands.value = [];
   followRecords.value = [];
   const result = await crmVendorApi.getVendor(row.id);
   currentVendor.value = result.data;
   detailDrawerVisible.value = true;
-  purchasePlanPage.value = 1;
-  await loadPurchasePlans();
+  purchaseDemandPage.value = 1;
+  await loadPurchaseDemands();
   await loadFollowRecords();
 };
 
@@ -997,28 +914,28 @@ const refreshDetail = async (showMessage = true) => {
   if (!currentVendor.value) return;
   const result = await crmVendorApi.getVendor(currentVendor.value.id);
   currentVendor.value = result.data;
-  await loadPurchasePlans();
+  await loadPurchaseDemands();
   await loadFollowRecords();
   if (showMessage) {
     ElMessage.success("厂商详情已刷新");
   }
 };
 
-const loadPurchasePlans = async () => {
+const loadPurchaseDemands = async () => {
   if (!currentVendor.value) return;
 
-  purchasePlanLoading.value = true;
+  purchaseDemandLoading.value = true;
   try {
-    const result = await crmVendorApi.getVendorPurchasePlans(currentVendor.value.id, {
-      page: purchasePlanPage.value,
-      pageSize: purchasePlanPageSize.value,
-      sortField: "PurchaseTime",
+    const result = await crmVendorApi.getVendorPurchaseDemands(currentVendor.value.id, {
+      page: purchaseDemandPage.value,
+      pageSize: purchaseDemandPageSize.value,
+      sortField: "DemandAt",
       sortDirection: "Descending",
     });
-    purchasePlans.value = result.data?.list || [];
-    purchasePlanTotal.value = result.data?.totalCount || 0;
+    purchaseDemands.value = result.data?.list || [];
+    purchaseDemandTotal.value = result.data?.totalCount || 0;
   } finally {
-    purchasePlanLoading.value = false;
+    purchaseDemandLoading.value = false;
   }
 };
 
@@ -1028,19 +945,15 @@ const loadFollowRecords = async () => {
   followRecords.value = result.data || [];
 };
 
-const handlePurchasePlanPageChange = async (page: number) => {
-  purchasePlanPage.value = page;
-  await loadPurchasePlans();
+const handlePurchaseDemandPageChange = async (page: number) => {
+  purchaseDemandPage.value = page;
+  await loadPurchaseDemands();
 };
 
-const handlePurchasePlanSizeChange = async (pageSize: number) => {
-  purchasePlanPageSize.value = pageSize;
-  purchasePlanPage.value = 1;
-  await loadPurchasePlans();
-};
-
-const openPage = (url: string) => {
-  window.open(url, "_blank", "noopener,noreferrer");
+const handlePurchaseDemandSizeChange = async (pageSize: number) => {
+  purchaseDemandPageSize.value = pageSize;
+  purchaseDemandPage.value = 1;
+  await loadPurchaseDemands();
 };
 
 const formatPriority = (value?: string | null) => {
@@ -1281,6 +1194,7 @@ const formatDate = (value?: string | null) => {
   .detail-grid {
     display: grid;
     grid-template-columns: minmax(360px, 0.9fr) minmax(0, 1.75fr);
+    grid-template-rows: auto auto;
     gap: 16px;
     padding: 0 0 24px;
     background: #ffffff;
@@ -1288,6 +1202,20 @@ const formatDate = (value?: string | null) => {
 
   .detail-column {
     min-width: 0;
+  }
+
+  .detail-content {
+    display: contents;
+  }
+
+  .purchase-demand-card {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .contacts-card {
+    grid-column: 1;
+    grid-row: 2;
   }
 
   .detail-column > .detail-card + .detail-card {
@@ -1331,18 +1259,17 @@ const formatDate = (value?: string | null) => {
     margin-top: 0;
   }
 
-  .product-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    min-height: 40px;
-    padding: 2px 0 4px;
+  .item-tag {
+    margin-right: 4px;
+    margin-bottom: 4px;
   }
 
   .activity-row {
     display: flex;
+    grid-column: 2;
+    grid-row: 2;
     gap: 16px;
-    margin-top: 16px;
+    margin-top: 0;
   }
 
   .activity-panel {
@@ -1409,6 +1336,13 @@ const formatDate = (value?: string | null) => {
     .summary-band,
     .detail-grid {
       grid-template-columns: 1fr;
+    }
+
+    .purchase-demand-card,
+    .contacts-card,
+    .activity-row {
+      grid-column: 1;
+      grid-row: auto;
     }
 
     .activity-row {

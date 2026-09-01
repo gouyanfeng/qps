@@ -215,7 +215,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             .ToList();
 
         var newPurchasePlanDates = await (
-                from purchasePlan in _dbContext.CrmVendorPurchasePlans
+                from purchasePlan in _dbContext.CrmPurchaseDemands
                 join vendor in myVendors on purchasePlan.VendorId equals vendor.Id
                 where !purchasePlan.IsDeleted &&
                     purchasePlan.CreatedAt >= trendStart &&
@@ -230,7 +230,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
                 return new CrmDashboardNewPurchasePlanTrendItemDto
                 {
                     Date = date,
-                    NewPurchasePlanCount = newPurchasePlanDates.Count(createdAt => createdAt >= date && createdAt < nextDate)
+                    NewPurchaseDemandCount = newPurchasePlanDates.Count(createdAt => createdAt >= date && createdAt < nextDate)
                 };
             })
             .ToList();
@@ -238,7 +238,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var myVendorIds = await myVendors
             .Select(vendor => vendor.Id)
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProducts = await CrmVendorPurchasePlanProductQuery.GetEffectiveItems(_dbContext, myVendorIds)
+        var vendorPurchaseProducts = await CrmPurchaseDemandProductQuery.GetEffectiveItems(_dbContext, myVendorIds)
             .Select(item => new { item.VendorId, item.ProductName })
             .Distinct()
             .ToListAsync(cancellationToken);

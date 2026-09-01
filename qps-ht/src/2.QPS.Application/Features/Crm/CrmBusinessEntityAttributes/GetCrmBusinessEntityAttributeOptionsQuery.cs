@@ -94,6 +94,6 @@ public class GetCrmBusinessEntityAttributeOptionsHandler : IRequestHandler<GetCr
         return (request.AttributeCode == CrmCodes.MainProductAttributeCode &&
                 request.EntityType == CrmCodes.HerbBaseEntityType) ||
                (request.AttributeCode == CrmCodes.PurchaseProductAttributeCode &&
-                request.EntityType == CrmCodes.VendorPurchasePlanEntityType);
+                request.EntityType == CrmCodes.PurchaseDemandEntityType);
     }
 }

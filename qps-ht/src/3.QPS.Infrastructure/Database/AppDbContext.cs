@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using QPS.Application.Interfaces;
 using QPS.Domain.Common;
 using QPS.Domain.Entities.System;
@@ -30,7 +30,8 @@ public class AppDbContext : DbContext, IDbContext
     public DbSet<CrmBusinessEntityAttribute> CrmBusinessEntityAttributes { get; set; }
     public DbSet<CrmTransferRecord> CrmTransferRecords { get; set; }
     public DbSet<CrmVendor> CrmVendors { get; set; }
-    public DbSet<CrmVendorPurchasePlan> CrmVendorPurchasePlans { get; set; }
+    public DbSet<CrmPurchaseDemand> CrmPurchaseDemands { get; set; }
+    public DbSet<CrmPurchaseDemandItem> CrmPurchaseDemandItems { get; set; }
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
@@ -99,9 +100,9 @@ public class AppDbContext : DbContext, IDbContext
                         attribute.EntityId,
                         attribute.AttributeValue
                     },
-                    "IX_CrmBusinessEntityAttributes_VendorPurchasePlan_Product")
+                    "IX_CrmBusinessEntityAttributes_PurchaseDemand_Product")
                 .IsUnique()
-                .HasFilter("[IsDeleted] = 0 AND [EntityType] = 'CRM_VENDOR_PURCHASE_PLAN' AND [AttributeCode] = 'PURCHASE_PRODUCT'");
+                .HasFilter("[IsDeleted] = 0 AND [EntityType] = 'CRM_PURCHASE_DEMAND' AND [AttributeCode] = 'PURCHASE_PRODUCT'");
         });
 
         modelBuilder.Entity<CrmContact>(entity =>
@@ -129,13 +130,26 @@ public class AppDbContext : DbContext, IDbContext
             entity.HasIndex(vendor => new { vendor.OwnerUserId, vendor.NextFollowAt });
         });
 
-        modelBuilder.Entity<CrmVendorPurchasePlan>(entity =>
+        modelBuilder.Entity<CrmPurchaseDemand>(entity =>
         {
-            entity.Property(plan => plan.PurchasePlanName).HasMaxLength(500);
-            entity.Property(plan => plan.PageUrl).HasMaxLength(500);
-            entity.HasIndex(plan => plan.VendorId);
-            entity.HasIndex(plan => plan.PurchaseTime);
-            entity.HasIndex(plan => plan.PageUrl).IsUnique().HasFilter("[PageUrl] <> ''");
+            entity.Property(demand => demand.DemandNo).HasMaxLength(64);
+            entity.Property(demand => demand.DemandName).HasMaxLength(500);
+            entity.Property(demand => demand.Status).HasMaxLength(32);
+            entity.Property(demand => demand.SourceType).HasMaxLength(32);
+            entity.Property(demand => demand.SourceUrl).HasMaxLength(500);
+            entity.HasIndex(demand => demand.DemandNo).IsUnique();
+            entity.HasIndex(demand => new { demand.VendorId, demand.Status, demand.DemandAt });
+            entity.HasIndex(demand => demand.ContactId);
+            entity.HasOne(demand => demand.Vendor).WithMany(vendor => vendor.PurchaseDemands).HasForeignKey(demand => demand.VendorId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(demand => demand.Contact).WithMany().HasForeignKey(demand => demand.ContactId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<CrmPurchaseDemandItem>(entity =>
+        {
+            entity.Property(item => item.ProductName).HasMaxLength(200);
+            entity.Property(item => item.Quantity).HasPrecision(18, 2);
+            entity.Property(item => item.TargetPrice).HasPrecision(18, 2);
+            entity.HasIndex(item => new { item.PurchaseDemandId, item.SortOrder });
+            entity.HasOne(item => item.PurchaseDemand).WithMany(demand => demand.Items).HasForeignKey(item => item.PurchaseDemandId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CrmTransferRecord>(entity =>

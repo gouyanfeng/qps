@@ -35,7 +35,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         var query = _dbContext.CrmVendors
             .Where(vendor => !vendor.IsDeleted)
             .AsQueryable();
-        var vendorIdsWithProducts = CrmVendorPurchasePlanProductQuery.GetVendorIdsWithProducts(_dbContext);
+        var vendorIdsWithProducts = CrmPurchaseDemandProductQuery.GetVendorIdsWithProducts(_dbContext);
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
@@ -43,18 +43,18 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
             query = query.Where(vendor =>
                 vendor.VendorName.Contains(keyword) ||
                 vendor.NormalizedVendorName.Contains(keyword) ||
-                vendor.LatestPurchasePlanName.Contains(keyword) ||
+                vendor.LatestPurchaseDemandName.Contains(keyword) ||
                 _dbContext.CrmContacts.Any(contact =>
                     !contact.IsDeleted &&
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     (contact.ContactName.Contains(keyword) || contact.Phone.Contains(keyword))) ||
-                CrmVendorPurchasePlanProductQuery.GetEffectiveItems(_dbContext).Any(item =>
+                CrmPurchaseDemandProductQuery.GetEffectiveItems(_dbContext).Any(item =>
                     item.VendorId == vendor.Id && item.ProductName.Contains(keyword)) ||
-                _dbContext.CrmVendorPurchasePlans.Any(plan =>
+                _dbContext.CrmPurchaseDemands.Any(plan =>
                     !plan.IsDeleted &&
                     plan.VendorId == vendor.Id &&
-                    plan.PurchasePlanName.Contains(keyword)));
+                    plan.DemandName.Contains(keyword)));
         }
 
         if (!string.IsNullOrWhiteSpace(request.PriorityLevel))
@@ -91,7 +91,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
             NormalizedVendorName = vendor.NormalizedVendorName,
             PriorityLevel = vendor.PriorityLevel,
             LatestPurchaseTime = vendor.LatestPurchaseTime,
-            LatestPurchasePlanName = vendor.LatestPurchasePlanName,
+            LatestPurchaseDemandName = vendor.LatestPurchaseDemandName,
             Remark = vendor.Remark,
             OwnerUserId = vendor.OwnerUserId,
             LastFollowAt = vendor.LastFollowAt,
@@ -117,7 +117,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
                 .ThenBy(contact => contact.CreatedAt)
                 .Select(contact => contact.Phone)
                 .FirstOrDefault() ?? string.Empty,
-            PurchasePlanCount = _dbContext.CrmVendorPurchasePlans.Count(plan => !plan.IsDeleted && plan.VendorId == vendor.Id),
+            PurchaseDemandCount = _dbContext.CrmPurchaseDemands.Count(plan => !plan.IsDeleted && plan.VendorId == vendor.Id),
             ContactCount = _dbContext.CrmContacts.Count(contact =>
                 !contact.IsDeleted &&
                 contact.EntityType == VendorEntityType &&
@@ -127,7 +127,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         });
 
         var response = await dtoQuery.ToPaginationResponseAsync(request);
-        var productNames = await CrmVendorPurchasePlanProductQuery.GetNamesAsync(
+        var productNames = await CrmPurchaseDemandProductQuery.GetNamesAsync(
             _dbContext,
             response.List.Select(vendor => vendor.Id),
             cancellationToken);

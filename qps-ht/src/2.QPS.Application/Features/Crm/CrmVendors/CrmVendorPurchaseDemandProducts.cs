@@ -5,7 +5,7 @@ using QPS.Domain.Entities.Crm;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
 
-public static class CrmVendorPurchasePlanProducts
+public static class CrmPurchaseDemandProducts
 {
     public static async Task ReplaceAsync(
         IDbContext dbContext,
@@ -21,7 +21,7 @@ public static class CrmVendorPurchasePlanProducts
         var attributes = await dbContext.CrmBusinessEntityAttributes
             .IgnoreQueryFilters()
             .Where(attribute =>
-                attribute.EntityType == CrmCodes.VendorPurchasePlanEntityType &&
+                attribute.EntityType == CrmCodes.PurchaseDemandEntityType &&
                 attribute.EntityId == planId &&
                 attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode)
             .ToListAsync(cancellationToken);
@@ -42,7 +42,7 @@ public static class CrmVendorPurchasePlanProducts
             if (attribute == null)
             {
                 attribute = new CrmBusinessEntityAttribute(
-                    CrmCodes.VendorPurchasePlanEntityType,
+                    CrmCodes.PurchaseDemandEntityType,
                     planId,
                     CrmCodes.PurchaseProductAttributeCode,
                     productName,
@@ -54,7 +54,7 @@ public static class CrmVendorPurchasePlanProducts
             {
                 attribute.IsDeleted = false;
                 attribute.Update(
-                    CrmCodes.VendorPurchasePlanEntityType,
+                    CrmCodes.PurchaseDemandEntityType,
                     planId,
                     CrmCodes.PurchaseProductAttributeCode,
                     productName,

@@ -4,21 +4,21 @@ using QPS.Domain.Entities.Crm;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
 
-internal static class CrmVendorPurchasePlans
+internal static class CrmPurchaseDemands
 {
     public static async Task RefreshLatestAsync(
         IDbContext dbContext,
         CrmVendor vendor,
         CancellationToken cancellationToken,
-        CrmVendorPurchasePlan? candidatePlan = null,
+        CrmPurchaseDemand? candidatePlan = null,
         Guid? excludedPlanId = null)
     {
-        var latestPlan = await dbContext.CrmVendorPurchasePlans
+        var latestPlan = await dbContext.CrmPurchaseDemands
             .Where(plan =>
                 !plan.IsDeleted &&
                 plan.VendorId == vendor.Id &&
                 (!excludedPlanId.HasValue || plan.Id != excludedPlanId.Value))
-            .OrderByDescending(plan => plan.PurchaseTime ?? plan.CreatedAt)
+            .OrderByDescending(plan => plan.DemandAt)
             .ThenByDescending(plan => plan.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -30,20 +30,20 @@ internal static class CrmVendorPurchasePlans
             latestPlan = candidatePlan;
         }
 
-        vendor.UpdateLatestPurchaseSummary(
-            latestPlan?.PurchaseTime,
-            latestPlan?.PurchasePlanName ?? string.Empty);
+        vendor.UpdateLatestPurchaseDemandSummary(
+            latestPlan?.DemandAt,
+            latestPlan?.DemandName ?? string.Empty);
     }
 
-    private static bool IsLater(CrmVendorPurchasePlan plan, CrmVendorPurchasePlan? other)
+    private static bool IsLater(CrmPurchaseDemand plan, CrmPurchaseDemand? other)
     {
         if (other == null)
         {
             return true;
         }
 
-        var planTime = plan.PurchaseTime ?? plan.CreatedAt;
-        var otherTime = other.PurchaseTime ?? other.CreatedAt;
+        var planTime = plan.DemandAt;
+        var otherTime = other.DemandAt;
         return planTime > otherTime || (planTime == otherTime && plan.CreatedAt > other.CreatedAt);
     }
 }

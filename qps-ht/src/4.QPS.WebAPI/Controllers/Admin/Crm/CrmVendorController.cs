@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Extensions;
@@ -92,33 +92,6 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("{id}/purchase-plans")]
-    public async Task<ActionResult<bool>> CreateVendorPurchasePlan(Guid id, [FromBody] CrmVendorPurchasePlanCreateRequest request)
-    {
-        var command = new CreateCrmVendorPurchasePlanCommand { VendorId = id, Request = request };
-        var result = await _mediator.Send(command);
-        return Ok(result);
-    }
-
-    [HttpPut("{id}/purchase-plans/{planId}")]
-    public async Task<ActionResult<bool>> UpdateVendorPurchasePlan(
-        Guid id,
-        Guid planId,
-        [FromBody] CrmVendorPurchasePlanCreateRequest request)
-    {
-        var command = new UpdateCrmVendorPurchasePlanCommand { VendorId = id, Id = planId, Request = request };
-        var result = await _mediator.Send(command);
-        return Ok(result);
-    }
-
-    [HttpDelete("{id}/purchase-plans/{planId}")]
-    public async Task<ActionResult<bool>> DeleteVendorPurchasePlan(Guid id, Guid planId)
-    {
-        var command = new DeleteCrmVendorPurchasePlanCommand { VendorId = id, Id = planId };
-        var result = await _mediator.Send(command);
-        return Ok(result);
-    }
-
     [HttpGet("{id}/follow-records")]
     public async Task<ActionResult<List<CrmFollowRecordDto>>> GetVendorFollowRecords(Guid id)
     {
@@ -140,15 +113,15 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id}/purchase-plans")]
-    public async Task<ActionResult<PaginationResponse<CrmVendorPurchasePlanDto>>> GetVendorPurchasePlans(
+    [HttpGet("{id}/purchase-demands")]
+    public async Task<ActionResult<PaginationResponse<CrmPurchaseDemandDto>>> GetVendorPurchaseDemands(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string sortField = "PurchaseTime",
+        [FromQuery] string sortField = "DemandAt",
         [FromQuery] string sortDirection = "Descending")
     {
-        var query = new GetCrmVendorPurchasePlansQuery
+        var query = new GetCrmPurchaseDemandsQuery
         {
             VendorId = id,
             Page = page,
