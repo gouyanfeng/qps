@@ -42,9 +42,7 @@
       <el-table :data="form.items" border size="small" class="item-table">
         <el-table-column label="采购品类" min-width="90">
           <template #default="{ row }">
-            <el-select v-model="row.productName" filterable remote clearable placeholder="请选择品类" :remote-method="loadPurchaseDemandProductOptions" :loading="productLoading">
-              <el-option v-for="item in productOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
+            <ProductSelect v-model="row.productName" />
           </template>
         </el-table-column>
         <el-table-column label="数量" width="150"><template #default="{ row }"><el-input-number v-model="row.quantity" :min="0" /></template></el-table-column>
@@ -67,6 +65,7 @@ import { computed, reactive, ref, watch } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
+import ProductSelect from "@/components/ProductSelect/index.vue";
 import crmPurchaseDemandApi from "@/api/modules/crmPurchaseDemand";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 
@@ -75,8 +74,6 @@ const emit = defineEmits<{ "update:modelValue": [value: boolean]; saved: [] }>()
 const dialogVisible = computed({ get: () => props.modelValue, set: value => emit("update:modelValue", value) });
 const contacts = ref<any[]>([]);
 const vendorOptions = ref<any[]>([]);
-const productOptions = ref<any[]>([]);
-const productLoading = ref(false);
 const saving = ref(false);
 const receivingRegionPath = ref<string[]>([]);
 const detailedAddress = ref("");
@@ -102,13 +99,6 @@ const loadContacts = async () => {
   contacts.value = (vendor.contacts || []).filter((contact: any) => contact.status !== "INVALID");
   if (!vendorOptions.value.some(item => item.id === vendor.id)) vendorOptions.value.unshift(vendor);
 };
-const loadPurchaseDemandProductOptions = async (keyword: string) => {
-  productLoading.value = true;
-  try {
-    const result = await crmVendorApi.getBusinessEntityAttributeOptions({ entityType: "CRM_PURCHASE_DEMAND", attributeCode: "PURCHASE_PRODUCT", keyword, pageSize: 100 });
-    productOptions.value = result.data || [];
-  } finally { productLoading.value = false; }
-};
 const handleVendorChange = async () => { form.contactId = undefined; await loadContacts(); };
 const composeReceivingAddress = () => {
   form.receivingAddress = [...receivingRegionPath.value, detailedAddress.value.trim()].filter(Boolean).join(" / ");
@@ -129,7 +119,7 @@ const reset = async () => {
   const receivingAddressParts = form.receivingAddress ? form.receivingAddress.split(" / ").filter(Boolean) : [];
   receivingRegionPath.value = receivingAddressParts.slice(0, 3);
   detailedAddress.value = receivingAddressParts.slice(3).join(" / ");
-  await Promise.all([loadVendorOptions(), loadPurchaseDemandProductOptions("")]);
+  await loadVendorOptions();
   await loadContacts();
 };
   const save = async () => {
