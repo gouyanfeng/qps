@@ -25,20 +25,15 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
 
     public async Task<CrmDashboardDto> Handle(GetCrmDashboardQuery request, CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(_currentUserService.UserId, out var ownerUserId))
-        {
-            return BuildEmptyDashboard();
-        }
-
         var now = DateTime.Now;
         var todayStart = now.Date;
         var tomorrowStart = todayStart.AddDays(1);
         var trendStart = todayStart.AddDays(-6);
-        var mySubjects = _dbContext.CrmHerbBaseSubjects
-            .Where(subject => !subject.IsDeleted && subject.OwnerUserId == ownerUserId);
-        var myVendors = _dbContext.CrmVendors
-            .Where(vendor => !vendor.IsDeleted && vendor.OwnerUserId == ownerUserId);
-        var activeSubjects = mySubjects.Where(subject => !ClosedStatuses.Contains(subject.Status));
+        var subjects = _dbContext.CrmHerbBaseSubjects
+            .Where(subject => !subject.IsDeleted);
+        var vendors = _dbContext.CrmVendors
+            .Where(vendor => !vendor.IsDeleted);
+        var activeSubjects = subjects.Where(subject => !ClosedStatuses.Contains(subject.Status));
 
         var todayFollowCount = await activeSubjects.CountAsync(
             subject => subject.NextFollowAt >= todayStart && subject.NextFollowAt < tomorrowStart,
@@ -46,7 +41,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var overdueFollowCount = await activeSubjects.CountAsync(
             subject => subject.NextFollowAt.HasValue && subject.NextFollowAt.Value < now,
             cancellationToken);
-        var mySubjectCount = await mySubjects.CountAsync(cancellationToken);
+        var mySubjectCount = await subjects.CountAsync(cancellationToken);
         var highIntentSubjectCount = await activeSubjects.CountAsync(
             subject => subject.Status == CrmCodes.Status.Interested, cancellationToken);
 
@@ -70,7 +65,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
 
         var recentFollowRecords = await (
                 from record in _dbContext.CrmFollowRecords
-                join subject in mySubjects on record.EntityId equals subject.Id
+                join subject in subjects on record.EntityId equals subject.Id
                 where !record.IsDeleted && record.EntityType == CrmCodes.HerbBaseSubjectEntityType
                 orderby record.CreatedAt descending
                 select new CrmDashboardRecentFollowRecordDto
@@ -96,7 +91,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             new { Code = CrmCodes.Status.Deal, Name = "成交" },
             new { Code = CrmCodes.Status.Lost, Name = "流失" }
         };
-        var statusCounts = await mySubjects
+        var statusCounts = await subjects
             .GroupBy(subject => subject.Status)
             .Select(group => new { Status = group.Key, Count = group.Count() })
             .ToListAsync(cancellationToken);
@@ -109,32 +104,33 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var mainProductNames = await _dbContext.CrmBusinessEntityAttributes
+        var mainProductCounts = await _dbContext.CrmBusinessEntityAttributes
             .Where(attribute =>
                 !attribute.IsDeleted &&
                 attribute.EntityType == CrmCodes.HerbBaseEntityType &&
                 attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
                 _dbContext.CrmHerbBases
-                    .Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && mySubjects.Select(subject => subject.Id).Contains(herbBase.HerbBaseSubjectId.Value))
+                    .Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && subjects.Select(subject => subject.Id).Contains(herbBase.HerbBaseSubjectId.Value))
                     .Select(herbBase => herbBase.Id)
                     .Contains(attribute.EntityId))
-            .Select(attribute => attribute.AttributeValue)
+            .GroupBy(attribute => attribute.AttributeValue)
+            .Select(group => new { Code = group.Key, Count = group.Select(attribute => attribute.EntityId).Distinct().Count() })
             .ToListAsync(cancellationToken);
-        var mainProductDistribution = mainProductNames
-            .Where(productName => !string.IsNullOrWhiteSpace(productName))
-            .GroupBy(productName => productName.Trim(), StringComparer.OrdinalIgnoreCase)
+        var mainProductDistribution = mainProductCounts
+            .Where(item => !string.IsNullOrWhiteSpace(item.Code))
             .Select(group => new CrmDashboardChartItemDto
             {
-                Code = group.Key,
-                Name = FormatMainProduct(group.Key),
-                Value = 1
+                Code = group.Code,
+                Name = FormatMainProduct(group.Code),
+                Value = group.Count
             })
-            .OrderBy(item => item.Name)
+            .OrderByDescending(item => item.Value)
+            .ThenBy(item => item.Name)
             .ToList();
 
         var trendRecords = await (
                 from record in _dbContext.CrmFollowRecords
-                join subject in mySubjects on record.EntityId equals subject.Id
+                join subject in subjects on record.EntityId equals subject.Id
                 where !record.IsDeleted &&
                     record.EntityType == CrmCodes.HerbBaseSubjectEntityType &&
                     record.CreatedAt >= trendStart &&
@@ -159,7 +155,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var newBaseDates = await _dbContext.CrmHerbBases
             .Where(herbBase =>
                 herbBase.HerbBaseSubjectId.HasValue &&
-                mySubjects.Select(subject => subject.Id).Contains(herbBase.HerbBaseSubjectId.Value) &&
+                subjects.Select(subject => subject.Id).Contains(herbBase.HerbBaseSubjectId.Value) &&
                 herbBase.CreatedAt >= trendStart &&
                 herbBase.CreatedAt < tomorrowStart)
             .Select(herbBase => herbBase.CreatedAt)
@@ -177,7 +173,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var vendorPriorityCounts = await myVendors
+        var vendorPriorityCounts = await vendors
             .GroupBy(vendor => vendor.PriorityLevel)
             .Select(group => new { PriorityLevel = group.Key, Count = group.Count() })
             .ToListAsync(cancellationToken);
@@ -192,7 +188,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
 
         var vendorTrendRecords = await (
                 from record in _dbContext.CrmFollowRecords
-                join vendor in myVendors on record.EntityId equals vendor.Id
+                join vendor in vendors on record.EntityId equals vendor.Id
                 where !record.IsDeleted &&
                     record.EntityType == CrmCodes.VendorEntityType &&
                     record.CreatedAt >= trendStart &&
@@ -216,7 +212,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
 
         var newPurchaseDemandDates = await (
                 from purchaseDemand in _dbContext.CrmPurchaseDemands
-                join vendor in myVendors on purchaseDemand.VendorId equals vendor.Id
+                join vendor in vendors on purchaseDemand.VendorId equals vendor.Id
                 where !purchaseDemand.IsDeleted &&
                     purchaseDemand.CreatedAt >= trendStart &&
                     purchaseDemand.CreatedAt < tomorrowStart
@@ -235,25 +231,26 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var myVendorIds = await myVendors
+        var vendorIds = await vendors
             .Select(vendor => vendor.Id)
             .ToListAsync(cancellationToken);
-        var purchaseProductNames = await (
+        var purchaseProductCounts = await (
                 from purchaseDemand in _dbContext.CrmPurchaseDemands
                 join item in _dbContext.CrmPurchaseDemandItems on purchaseDemand.Id equals item.PurchaseDemandId
-                where !purchaseDemand.IsDeleted && myVendorIds.Contains(purchaseDemand.VendorId)
-                select item.ProductName)
+                where !purchaseDemand.IsDeleted && vendorIds.Contains(purchaseDemand.VendorId)
+                group purchaseDemand by item.ProductName into productGroup
+                select new { Code = productGroup.Key, Count = productGroup.Select(purchaseDemand => purchaseDemand.VendorId).Distinct().Count() })
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProductDistribution = purchaseProductNames
-            .Where(productName => !string.IsNullOrWhiteSpace(productName))
-            .GroupBy(productName => productName.Trim(), StringComparer.OrdinalIgnoreCase)
+        var vendorPurchaseProductDistribution = purchaseProductCounts
+            .Where(item => !string.IsNullOrWhiteSpace(item.Code))
             .Select(group => new CrmDashboardChartItemDto
             {
-                Code = group.Key,
-                Name = FormatMainProduct(group.Key),
-                Value = 1
+                Code = group.Code,
+                Name = FormatMainProduct(group.Code),
+                Value = group.Count
             })
-            .OrderBy(item => item.Name)
+            .OrderByDescending(item => item.Value)
+            .ThenBy(item => item.Name)
             .ToList();
 
         await FillSubjectSummariesAsync(todayFollowSubjects, cancellationToken);
