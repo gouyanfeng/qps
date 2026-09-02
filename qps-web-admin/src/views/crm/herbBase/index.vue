@@ -385,6 +385,18 @@
                       <el-button type="danger" link @click="deleteBase(base)">删除</el-button>
                     </Permission>
                   </div>
+                  <div class="base-supply-list">
+                    <div class="section-title"><h4>供应信息</h4></div>
+                    <el-empty v-if="!base.supplies?.length" description="暂无供应信息" :image-size="48" />
+                    <el-table v-else :data="base.supplies" size="small" border>
+                      <el-table-column prop="productName" label="品类" min-width="100" />
+                      <el-table-column label="可供量" width="130"><template #default="{ row }">{{ row.availableQuantity ?? '-' }} {{ row.quantityUnit }}</template></el-table-column>
+                      <el-table-column prop="specification" label="规格" min-width="100" />
+                      <el-table-column prop="supplyCycle" label="供货周期" min-width="110" />
+                      <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag size="small" :type="row.isExpired ? 'danger' : row.status === '有效' ? 'success' : 'info'">{{ row.isExpired ? '已过期' : row.status }}</el-tag></template></el-table-column>
+                      <el-table-column label="有效期" width="120"><template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template></el-table-column>
+                    </el-table>
+                  </div>
                 </article>
               </div>
             </section>
