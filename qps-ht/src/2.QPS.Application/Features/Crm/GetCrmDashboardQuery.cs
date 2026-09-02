@@ -91,50 +91,11 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             .Take(5)
             .ToListAsync(cancellationToken);
 
-        var funnelStatuses = new[]
-        {
-            new { Code = CrmCodes.Status.Pending, Name = "待联系" },
-            new { Code = CrmCodes.Status.Following, Name = "跟进中" },
-            new { Code = CrmCodes.Status.Interested, Name = "有意向" },
-            new { Code = CrmCodes.Status.Deal, Name = "成交" },
-            new { Code = CrmCodes.Status.Lost, Name = "流失" }
-        };
-        var statusCounts = await subjects
-            .GroupBy(subject => subject.Status)
-            .Select(group => new { Status = group.Key, Count = group.Count() })
-            .ToListAsync(cancellationToken);
-        var followFunnel = funnelStatuses
-            .Select(status => new CrmDashboardChartItemDto
-            {
-                Code = status.Code,
-                Name = status.Name,
-                Value = statusCounts.FirstOrDefault(item => item.Status == status.Code)?.Count ?? 0
-            })
-            .ToList();
+        // 图表：基地主体状态。
+        var followFunnel = await GetFollowFunnelAsync(cancellationToken);
 
-        var mainProductCounts = await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                !attribute.IsDeleted &&
-                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
-                attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
-                _dbContext.CrmHerbBases
-                    .Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && subjects.Select(subject => subject.Id).Contains(herbBase.HerbBaseSubjectId.Value))
-                    .Select(herbBase => herbBase.Id)
-                    .Contains(attribute.EntityId))
-            .GroupBy(attribute => attribute.AttributeValue)
-            .Select(group => new { Code = group.Key, Count = group.Select(attribute => attribute.EntityId).Distinct().Count() })
-            .ToListAsync(cancellationToken);
-        var mainProductDistribution = mainProductCounts
-            .Where(item => !string.IsNullOrWhiteSpace(item.Code))
-            .Select(group => new CrmDashboardChartItemDto
-            {
-                Code = group.Code,
-                Name = FormatMainProduct(group.Code),
-                Value = group.Count
-            })
-            .OrderByDescending(item => item.Value)
-            .ThenBy(item => item.Name)
-            .ToList();
+        // 图表：基地主营品类分布。
+        var mainProductDistribution = await GetMainProductDistributionAsync(cancellationToken);
 
         var trendRecords = await (
                 from record in _dbContext.CrmFollowRecords
@@ -239,30 +200,8 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             })
             .ToList();
 
-        var vendorIds = await vendors
-            .Select(vendor => vendor.Id)
-            .ToListAsync(cancellationToken);
-        var purchaseProductCounts = await (
-                from purchaseDemand in _dbContext.CrmPurchaseDemands
-                join item in _dbContext.CrmPurchaseDemandItems on purchaseDemand.Id equals item.PurchaseDemandId
-                where !purchaseDemand.IsDeleted && !item.IsDeleted && vendorIds.Contains(purchaseDemand.VendorId)
-                group purchaseDemand by item.ProductName into productGroup
-                select new { Code = productGroup.Key, Count = productGroup.Select(purchaseDemand => purchaseDemand.VendorId).Distinct().Count() })
-            .ToListAsync(cancellationToken);
-        var validPurchaseProductCounts = purchaseProductCounts
-            .Where(item => !string.IsNullOrWhiteSpace(item.Code))
-            .ToList();
-        var vendorPurchaseProductDistribution = VendorProductCoverageRanges
-            .Select(range => new CrmDashboardChartItemDto
-            {
-                Code = range.Code,
-                Name = range.Name,
-                Value = validPurchaseProductCounts.Count(item =>
-                    item.Count >= range.MinVendorCount &&
-                    (!range.MaxVendorCount.HasValue || item.Count <= range.MaxVendorCount.Value))
-            })
-            .Where(item => item.Value > 0)
-            .ToList();
+        // 图表：厂商采购品类覆盖分布。
+        var vendorPurchaseProductDistribution = await GetVendorPurchaseProductDistributionAsync(cancellationToken);
 
         await FillSubjectSummariesAsync(todayFollowSubjects, cancellationToken);
 
@@ -286,6 +225,84 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             NewPurchaseDemandTrend = newPurchaseDemandTrend,
             VendorPurchaseProductDistribution = vendorPurchaseProductDistribution
         };
+    }
+
+    // 图表：基地主体状态，按未删除主体的 CRM 状态统计。
+    private async Task<List<CrmDashboardChartItemDto>> GetFollowFunnelAsync(CancellationToken cancellationToken)
+    {
+        var statuses = new[]
+        {
+            new { Code = CrmCodes.Status.Pending, Name = "待联系" },
+            new { Code = CrmCodes.Status.Following, Name = "跟进中" },
+            new { Code = CrmCodes.Status.Interested, Name = "有意向" },
+            new { Code = CrmCodes.Status.Deal, Name = "成交" },
+            new { Code = CrmCodes.Status.Lost, Name = "流失" }
+        };
+        var statusCounts = await _dbContext.CrmHerbBaseSubjects
+            .Where(subject => !subject.IsDeleted)
+            .GroupBy(subject => subject.Status)
+            .Select(group => new { Status = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+
+        return statuses
+            .Select(status => new CrmDashboardChartItemDto
+            {
+                Code = status.Code,
+                Name = status.Name,
+                Value = statusCounts.FirstOrDefault(item => item.Status == status.Code)?.Count ?? 0
+            })
+            .ToList();
+    }
+
+    // 图表：基地主营品类分布，同一基地的相同品类只计一次。
+    private async Task<List<CrmDashboardChartItemDto>> GetMainProductDistributionAsync(CancellationToken cancellationToken)
+    {
+        var productCounts = await _dbContext.CrmBusinessEntityAttributes
+            .Where(attribute =>
+                !attribute.IsDeleted &&
+                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
+                attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
+                _dbContext.CrmHerbBases
+                    .Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && !herbBase.IsDeleted &&
+                        _dbContext.CrmHerbBaseSubjects.Any(subject => subject.Id == herbBase.HerbBaseSubjectId.Value && !subject.IsDeleted))
+                    .Select(herbBase => herbBase.Id)
+                    .Contains(attribute.EntityId))
+            .GroupBy(attribute => attribute.AttributeValue)
+            .Select(group => new { Code = group.Key, Count = group.Select(attribute => attribute.EntityId).Distinct().Count() })
+            .ToListAsync(cancellationToken);
+
+        return productCounts
+            .Where(item => !string.IsNullOrWhiteSpace(item.Code))
+            .Select(group => new CrmDashboardChartItemDto { Code = group.Code, Name = FormatMainProduct(group.Code), Value = group.Count })
+            .OrderByDescending(item => item.Value)
+            .ThenBy(item => item.Name)
+            .ToList();
+    }
+
+    // 图表：厂商采购品类覆盖分布，先按“品类-厂商”去重，再按覆盖厂商数分桶。
+    private async Task<List<CrmDashboardChartItemDto>> GetVendorPurchaseProductDistributionAsync(CancellationToken cancellationToken)
+    {
+        var productCoverage = await (
+                from demand in _dbContext.CrmPurchaseDemands
+                join item in _dbContext.CrmPurchaseDemandItems on demand.Id equals item.PurchaseDemandId
+                join vendor in _dbContext.CrmVendors on demand.VendorId equals vendor.Id
+                where !demand.IsDeleted && !item.IsDeleted && !vendor.IsDeleted
+                group demand by item.ProductName into productGroup
+                select new { ProductName = productGroup.Key, VendorCount = productGroup.Select(demand => demand.VendorId).Distinct().Count() })
+            .ToListAsync(cancellationToken);
+
+        return VendorProductCoverageRanges
+            .Select(range => new CrmDashboardChartItemDto
+            {
+                Code = range.Code,
+                Name = range.Name,
+                Value = productCoverage.Count(item =>
+                    !string.IsNullOrWhiteSpace(item.ProductName) &&
+                    item.VendorCount >= range.MinVendorCount &&
+                    (!range.MaxVendorCount.HasValue || item.VendorCount <= range.MaxVendorCount.Value))
+            })
+            .Where(item => item.Value > 0)
+            .ToList();
     }
 
     private static CrmDashboardDto BuildEmptyDashboard()
