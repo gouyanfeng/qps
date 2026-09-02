@@ -9,10 +9,6 @@ export const userApi = {
   getUserList: (params: User.ReqUserParams) => {
     return http.get<User.ResUserPagination>("/admin/users", params);
   },
-  // 获取用户详情
-  getUserDetail: (id: string) => {
-    return http.get<User.ResUserList>(`/admin/users/${id}`);
-  },
   // 新增用户
   addUser: (params: User.ReqUserForm) => {
     return http.post<User.ResUserList>("/admin/users", params);

@@ -11,23 +11,22 @@
         <section class="chart-section">
           <h2 class="section-title">基地数据</h2>
           <div class="chart-grid">
-            <FollowFunnelChart title="基地主体状态" :items="dashboard.followFunnel" />
-            <FollowTrendChart title="近 7 天基地跟进趋势" :items="dashboard.followTrend" />
-            <NewBaseTrendChart :items="dashboard.newBaseTrend" />
-            <MainProductDistributionChart title="基地主营品类分布" :items="dashboard.mainProductDistribution" />
+            <FollowFunnelChart title="基地主体状态" :items="followFunnel" />
+            <FollowTrendChart title="近 7 天基地跟进趋势" :items="followTrend" />
+            <NewBaseTrendChart :items="newBaseTrend" />
+            <MainProductDistributionChart title="基地主营品类分布" :items="mainProductDistribution" />
           </div>
         </section>
 
         <section class="chart-section">
           <h2 class="section-title">厂商数据</h2>
           <div class="chart-grid">
-            <MainProductDistributionChart title="厂商优先级分布" :items="dashboard.vendorPriorityDistribution" />
-            <FollowTrendChart title="近 7 天厂商跟进趋势" :items="dashboard.vendorFollowTrend" />
-            <NewPurchaseDemandTrendChart :items="dashboard.newPurchaseDemandTrend" />
+            <MainProductDistributionChart title="厂商优先级分布" :items="vendorPriorityDistribution" />
+            <FollowTrendChart title="近 7 天厂商跟进趋势" :items="vendorFollowTrend" />
+            <NewPurchaseDemandTrendChart :items="newPurchaseDemandTrend" />
             <MainProductDistributionChart
               title="厂商采购品类 Top 10"
-              :items="dashboard.vendorPurchaseProductDistribution"
-              :total="dashboard.vendorPurchaseProductDistribution.length"
+              :items="vendorPurchaseProductDistribution"
             />
           </div>
         </section>
@@ -39,7 +38,12 @@
 <script setup lang="ts" name="home">
 import { onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
-import dashboardApi, { type CrmDashboardData } from "@/api/modules/dashboard";
+import dashboardApi, {
+  type CrmDashboardChartItem,
+  type CrmDashboardNewBaseTrendItem,
+  type CrmDashboardNewPurchaseDemandTrendItem,
+  type CrmDashboardTrendItem,
+} from "@/api/modules/dashboard";
 import FollowFunnelChart from "./components/FollowFunnelChart.vue";
 import MainProductDistributionChart from "./components/MainProductDistributionChart.vue";
 import FollowTrendChart from "./components/FollowTrendChart.vue";
@@ -48,31 +52,37 @@ import NewPurchaseDemandTrendChart from "./components/NewPurchaseDemandTrendChar
 
 const loading = ref(false);
 const errorMessage = ref("");
-const dashboard = ref<CrmDashboardData>({
-  metrics: {
-    todayFollowCount: 0,
-    overdueFollowCount: 0,
-    mySubjectCount: 0,
-    highIntentSubjectCount: 0,
-  },
-  todayFollowSubjects: [],
-  recentFollowRecords: [],
-  followFunnel: [],
-  mainProductDistribution: [],
-  followTrend: [],
-  newBaseTrend: [],
-  vendorPriorityDistribution: [],
-  vendorFollowTrend: [],
-  newPurchaseDemandTrend: [],
-  vendorPurchaseProductDistribution: [],
-});
+const followFunnel = ref<CrmDashboardChartItem[]>([]);
+const mainProductDistribution = ref<CrmDashboardChartItem[]>([]);
+const followTrend = ref<CrmDashboardTrendItem[]>([]);
+const newBaseTrend = ref<CrmDashboardNewBaseTrendItem[]>([]);
+const vendorPriorityDistribution = ref<CrmDashboardChartItem[]>([]);
+const vendorFollowTrend = ref<CrmDashboardTrendItem[]>([]);
+const newPurchaseDemandTrend = ref<CrmDashboardNewPurchaseDemandTrendItem[]>([]);
+const vendorPurchaseProductDistribution = ref<CrmDashboardChartItem[]>([]);
 
 const loadDashboard = async () => {
   loading.value = true;
   errorMessage.value = "";
   try {
-    const result = await dashboardApi.getCrmDashboard();
-    dashboard.value = result.data;
+    const [followFunnelResult, mainProductResult, followTrendResult, newBaseTrendResult, vendorPriorityResult, vendorFollowTrendResult, newPurchaseDemandTrendResult, vendorPurchaseProductResult] = await Promise.all([
+      dashboardApi.getFollowFunnel(),
+      dashboardApi.getMainProductDistribution(),
+      dashboardApi.getFollowTrend(),
+      dashboardApi.getNewBaseTrend(),
+      dashboardApi.getVendorPriorityDistribution(),
+      dashboardApi.getVendorFollowTrend(),
+      dashboardApi.getNewPurchaseDemandTrend(),
+      dashboardApi.getVendorPurchaseProductDistribution(),
+    ]);
+    followFunnel.value = followFunnelResult.data;
+    mainProductDistribution.value = mainProductResult.data;
+    followTrend.value = followTrendResult.data;
+    newBaseTrend.value = newBaseTrendResult.data;
+    vendorPriorityDistribution.value = vendorPriorityResult.data;
+    vendorFollowTrend.value = vendorFollowTrendResult.data;
+    newPurchaseDemandTrend.value = newPurchaseDemandTrendResult.data;
+    vendorPurchaseProductDistribution.value = vendorPurchaseProductResult.data;
   } catch (error) {
     errorMessage.value = "首页数据加载失败";
     ElMessage.error(errorMessage.value);

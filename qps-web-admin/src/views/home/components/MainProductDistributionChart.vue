@@ -26,16 +26,11 @@ const props = defineProps<{
 }>();
 
 const chartItems = computed(() => {
-  const sortedItems = props.items
+  return props.items
     .filter(item => item.value > 0)
     .slice()
-    .sort((a, b) => b.value - a.value);
-  const topItems = sortedItems.slice(0, 10);
-  const otherValue = sortedItems.slice(10).reduce((sum, item) => sum + item.value, 0);
-
-  return otherValue > 0
-    ? [...topItems, { code: "OTHER_GROUPED", name: "其他", value: otherValue }]
-    : topItems;
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
 });
 
 const isEmpty = computed(() => chartItems.value.length === 0);

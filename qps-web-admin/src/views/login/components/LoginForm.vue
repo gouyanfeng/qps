@@ -90,7 +90,6 @@ const login = (formEl: FormInstance | undefined) => {
         ...loginForm,
         password: loginForm.password
       });
-      console.log("登录接口返回数据：", data);
       userStore.setToken(data.token);
       userStore.setUserInfo({ name: data.realName, userId: data.userId, role: data.role });
       clearUserPermissionsCache(data.userId);

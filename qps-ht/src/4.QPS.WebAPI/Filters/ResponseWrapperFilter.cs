@@ -26,12 +26,6 @@ public class ResponseWrapperFilter : IAsyncResultFilter
             data = objectResult.Value;
         }
         // 如果是 EmptyResult 或 StatusCodeResult (如 NoContent)，data 保持为 null
-
-
-
-
-        Console.WriteLine($"OnResultExecutionAsync: {data}");
-
         var response = ApiResponse<object>.Success(data);
 
         context.Result = new JsonResult(response, _jsonOptions)

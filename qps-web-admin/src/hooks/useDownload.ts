@@ -38,8 +38,7 @@ export const useDownload = async (
     // 去除下载对 url 的影响
     document.body.removeChild(exportFile);
     window.URL.revokeObjectURL(blobUrl);
-  } catch (error) {
-    console.log(error);
+  } catch {
   }
 };
 

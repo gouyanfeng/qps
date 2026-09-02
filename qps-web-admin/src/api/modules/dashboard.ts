@@ -1,36 +1,5 @@
 import http from "@/api";
 
-export interface CrmDashboardMetrics {
-  todayFollowCount: number;
-  overdueFollowCount: number;
-  mySubjectCount: number;
-  highIntentSubjectCount: number;
-}
-
-export interface CrmDashboardFollowSubject {
-  id: string;
-  subjectName: string;
-  mainProducts: string[];
-  grade: string;
-  regions: string[];
-  primaryContactName: string;
-  primaryContactPhone: string;
-  lastFollowResult: string;
-  nextFollowAt?: string | null;
-}
-
-export interface CrmDashboardRecentFollowRecord {
-  id: string;
-  herbBaseSubjectId: string;
-  subjectName: string;
-  followType: string;
-  followResult: string;
-  intentLevel: string;
-  content: string;
-  nextFollowAt?: string | null;
-  createdAt: string;
-}
-
 export interface CrmDashboardChartItem {
   code: string;
   name: string;
@@ -53,24 +22,15 @@ export interface CrmDashboardNewPurchaseDemandTrendItem {
   newPurchaseDemandCount: number;
 }
 
-export interface CrmDashboardData {
-  metrics: CrmDashboardMetrics;
-  todayFollowSubjects: CrmDashboardFollowSubject[];
-  recentFollowRecords: CrmDashboardRecentFollowRecord[];
-  followFunnel: CrmDashboardChartItem[];
-  mainProductDistribution: CrmDashboardChartItem[];
-  followTrend: CrmDashboardTrendItem[];
-  newBaseTrend: CrmDashboardNewBaseTrendItem[];
-  vendorPriorityDistribution: CrmDashboardChartItem[];
-  vendorFollowTrend: CrmDashboardTrendItem[];
-  newPurchaseDemandTrend: CrmDashboardNewPurchaseDemandTrendItem[];
-  vendorPurchaseProductDistribution: CrmDashboardChartItem[];
-}
-
 export const dashboardApi = {
-  getCrmDashboard: () => {
-    return http.get<CrmDashboardData>("/admin/dashboard/crm", undefined, { loading: false });
-  },
+  getFollowFunnel: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/follow-funnel", undefined, { loading: false }),
+  getMainProductDistribution: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/main-product-distribution", undefined, { loading: false }),
+  getFollowTrend: () => http.get<CrmDashboardTrendItem[]>("/admin/dashboard/crm/follow-trend", undefined, { loading: false }),
+  getNewBaseTrend: () => http.get<CrmDashboardNewBaseTrendItem[]>("/admin/dashboard/crm/new-base-trend", undefined, { loading: false }),
+  getVendorPriorityDistribution: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/vendor-priority-distribution", undefined, { loading: false }),
+  getVendorFollowTrend: () => http.get<CrmDashboardTrendItem[]>("/admin/dashboard/crm/vendor-follow-trend", undefined, { loading: false }),
+  getNewPurchaseDemandTrend: () => http.get<CrmDashboardNewPurchaseDemandTrendItem[]>("/admin/dashboard/crm/new-purchase-demand-trend", undefined, { loading: false }),
+  getVendorPurchaseProductDistribution: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/vendor-purchase-product-distribution", undefined, { loading: false }),
 };
 
 export default dashboardApi;
