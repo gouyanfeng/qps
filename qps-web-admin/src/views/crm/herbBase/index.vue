@@ -377,7 +377,6 @@
                   </template>
                 </el-table-column>
                 <el-table-column label="基地名称" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ row.baseName || row.herbBaseName || '-' }}</template></el-table-column>
-                <el-table-column label="主营品类" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ formatMainProducts(row) }}</template></el-table-column>
                 <el-table-column label="地区" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ formatRegion(row) }}</template></el-table-column>
                 <el-table-column label="规模(亩)" width="120"><template #default="{ row }">{{ formatScale(row.scale) }}</template></el-table-column>
                 <el-table-column label="详细地址" min-width="220" show-overflow-tooltip><template #default="{ row }">{{ row.address || '-' }}</template></el-table-column>

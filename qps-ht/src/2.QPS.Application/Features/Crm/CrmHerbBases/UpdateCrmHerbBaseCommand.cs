@@ -141,6 +141,33 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
                 values[i],
                 i));
         }
+
+        var suppliedProducts = await _dbContext.CrmHerbBaseSupplies
+            .Where(supply => supply.HerbBaseId == herbBaseId)
+            .Select(supply => supply.ProductName)
+            .ToListAsync(cancellationToken);
+        var herbBase = await _dbContext.CrmHerbBases
+            .Where(item => item.Id == herbBaseId)
+            .Select(item => new { item.Id, item.HerbBaseSubjectId })
+            .FirstAsync(cancellationToken);
+        foreach (var productName in values.Where(productName => !suppliedProducts.Contains(productName)))
+        {
+            _dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(
+                herbBase.Id,
+                herbBase.HerbBaseSubjectId,
+                productName,
+                null,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                null,
+                string.Empty,
+                string.Empty,
+                null,
+                null,
+                string.Empty));
+        }
     }
 
     private async Task SyncSubjectScaleAsync(CrmHerbBase herbBase, CancellationToken cancellationToken)

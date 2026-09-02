@@ -56,6 +56,7 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
             request.Request.MainProducts,
             cancellationToken);
         AddMainProducts(herbBase.Id, request.Request.MainProducts);
+        AddPendingSupplies(herbBase, request.Request.MainProducts);
         
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (herbBase.HerbBaseSubjectId.HasValue)
@@ -80,6 +81,28 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
                 CrmCodes.MainProductAttributeCode,
                 values[i],
                 i));
+        }
+    }
+
+    private void AddPendingSupplies(CrmHerbBase herbBase, List<string> mainProducts)
+    {
+        foreach (var productName in mainProducts.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
+        {
+            _dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(
+                herbBase.Id,
+                herbBase.HerbBaseSubjectId,
+                productName,
+                null,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                null,
+                string.Empty,
+                string.Empty,
+                null,
+                null,
+                string.Empty));
         }
     }
 
