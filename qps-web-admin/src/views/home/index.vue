@@ -25,9 +25,9 @@
             <FollowTrendChart title="近 7 天厂商跟进趋势" :items="dashboard.vendorFollowTrend" />
             <NewPurchaseDemandTrendChart :items="dashboard.newPurchaseDemandTrend" />
             <MainProductDistributionChart
-              title="厂商采购品类覆盖分布"
+              title="厂商采购品类 Top 9"
               :items="dashboard.vendorPurchaseProductDistribution"
-              :total="dashboard.vendorPurchaseProductDistribution.reduce((sum, item) => sum + item.value, 0)"
+              :total="dashboard.vendorPurchaseProductDistribution.length"
             />
           </div>
         </section>

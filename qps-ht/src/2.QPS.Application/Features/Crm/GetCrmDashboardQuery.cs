@@ -13,15 +13,6 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
     private static readonly string[] ClosedStatuses = [CrmCodes.Status.Deal, CrmCodes.Status.Lost, "已成交", "已流失"];
     private static readonly string[] EffectiveFollowResults = [CrmCodes.FollowResult.Connected, CrmCodes.FollowResult.Interested, "已接通", "有意向"];
     private static readonly (string Code, string Name)[] VendorPriorities = [("High", "高优先级"), ("Medium", "中优先级"), ("Low", "低优先级")];
-    private static readonly (string Code, string Name, int MinVendorCount, int? MaxVendorCount)[] VendorProductCoverageRanges =
-    [
-        ("ONE_VENDOR", "1个厂商", 1, 1),
-        ("TWO_TO_FIVE_VENDORS", "2-5个厂商", 2, 5),
-        ("SIX_TO_TEN_VENDORS", "6-10个厂商", 6, 10),
-        ("ELEVEN_TO_THIRTY_VENDORS", "11-30个厂商", 11, 30),
-        ("THIRTY_ONE_OR_MORE_VENDORS", "31个及以上厂商", 31, null)
-    ];
-
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
 
@@ -279,7 +270,7 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
             .ToList();
     }
 
-    // 图表：厂商采购品类覆盖分布，先按“品类-厂商”去重，再按覆盖厂商数分桶。
+    // 图表：厂商采购品类。同一厂商的同品类只计一次，值为该品类出现的厂商数。
     private async Task<List<CrmDashboardChartItemDto>> GetVendorPurchaseProductDistributionAsync(CancellationToken cancellationToken)
     {
         var productCoverage = await (
@@ -291,17 +282,16 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
                 select new { ProductName = productGroup.Key, VendorCount = productGroup.Select(demand => demand.VendorId).Distinct().Count() })
             .ToListAsync(cancellationToken);
 
-        return VendorProductCoverageRanges
-            .Select(range => new CrmDashboardChartItemDto
+        return productCoverage
+            .Where(item => !string.IsNullOrWhiteSpace(item.ProductName))
+            .Select(item => new CrmDashboardChartItemDto
             {
-                Code = range.Code,
-                Name = range.Name,
-                Value = productCoverage.Count(item =>
-                    !string.IsNullOrWhiteSpace(item.ProductName) &&
-                    item.VendorCount >= range.MinVendorCount &&
-                    (!range.MaxVendorCount.HasValue || item.VendorCount <= range.MaxVendorCount.Value))
+                Code = item.ProductName,
+                Name = FormatMainProduct(item.ProductName),
+                Value = item.VendorCount
             })
-            .Where(item => item.Value > 0)
+            .OrderByDescending(item => item.Value)
+            .ThenBy(item => item.Name)
             .ToList();
     }
 
