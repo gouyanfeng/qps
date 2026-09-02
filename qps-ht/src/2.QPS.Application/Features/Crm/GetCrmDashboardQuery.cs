@@ -13,6 +13,14 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
     private static readonly string[] ClosedStatuses = [CrmCodes.Status.Deal, CrmCodes.Status.Lost, "已成交", "已流失"];
     private static readonly string[] EffectiveFollowResults = [CrmCodes.FollowResult.Connected, CrmCodes.FollowResult.Interested, "已接通", "有意向"];
     private static readonly (string Code, string Name)[] VendorPriorities = [("High", "高优先级"), ("Medium", "中优先级"), ("Low", "低优先级")];
+    private static readonly (string Code, string Name, int MinVendorCount, int? MaxVendorCount)[] VendorProductCoverageRanges =
+    [
+        ("ONE_VENDOR", "1个厂商", 1, 1),
+        ("TWO_TO_FIVE_VENDORS", "2-5个厂商", 2, 5),
+        ("SIX_TO_TEN_VENDORS", "6-10个厂商", 6, 10),
+        ("ELEVEN_TO_THIRTY_VENDORS", "11-30个厂商", 11, 30),
+        ("THIRTY_ONE_OR_MORE_VENDORS", "31个及以上厂商", 31, null)
+    ];
 
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
@@ -237,20 +245,23 @@ public class GetCrmDashboardHandler : IRequestHandler<GetCrmDashboardQuery, CrmD
         var purchaseProductCounts = await (
                 from purchaseDemand in _dbContext.CrmPurchaseDemands
                 join item in _dbContext.CrmPurchaseDemandItems on purchaseDemand.Id equals item.PurchaseDemandId
-                where !purchaseDemand.IsDeleted && vendorIds.Contains(purchaseDemand.VendorId)
+                where !purchaseDemand.IsDeleted && !item.IsDeleted && vendorIds.Contains(purchaseDemand.VendorId)
                 group purchaseDemand by item.ProductName into productGroup
                 select new { Code = productGroup.Key, Count = productGroup.Select(purchaseDemand => purchaseDemand.VendorId).Distinct().Count() })
             .ToListAsync(cancellationToken);
-        var vendorPurchaseProductDistribution = purchaseProductCounts
+        var validPurchaseProductCounts = purchaseProductCounts
             .Where(item => !string.IsNullOrWhiteSpace(item.Code))
-            .Select(group => new CrmDashboardChartItemDto
+            .ToList();
+        var vendorPurchaseProductDistribution = VendorProductCoverageRanges
+            .Select(range => new CrmDashboardChartItemDto
             {
-                Code = group.Code,
-                Name = FormatMainProduct(group.Code),
-                Value = group.Count
+                Code = range.Code,
+                Name = range.Name,
+                Value = validPurchaseProductCounts.Count(item =>
+                    item.Count >= range.MinVendorCount &&
+                    (!range.MaxVendorCount.HasValue || item.Count <= range.MaxVendorCount.Value))
             })
-            .OrderByDescending(item => item.Value)
-            .ThenBy(item => item.Name)
+            .Where(item => item.Value > 0)
             .ToList();
 
         await FillSubjectSummariesAsync(todayFollowSubjects, cancellationToken);
