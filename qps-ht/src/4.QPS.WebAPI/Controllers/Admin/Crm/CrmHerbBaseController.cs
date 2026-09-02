@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Application.Features.Crm.CrmHerbBaseSubjects;
+using QPS.Application.Features.Crm.CrmHerbBaseSupplies;
 using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Extensions;
 using QPS.Domain.Entities.Crm;
@@ -148,6 +149,26 @@ public class CrmHerbBaseController : ControllerBase
         var result = await _mediator.Send(command);
         return Ok(result);
     }
+
+    [HttpGet("{herbBaseId:guid}/supplies")]
+    public async Task<ActionResult<List<CrmHerbBaseSupplyDto>>> GetSupplies(Guid herbBaseId)
+        => Ok(await _mediator.Send(new GetCrmHerbBaseSuppliesQuery { HerbBaseId = herbBaseId }));
+
+    [HttpPost("{herbBaseId:guid}/supplies")]
+    public async Task<ActionResult<bool>> CreateSupply(Guid herbBaseId, [FromBody] CrmHerbBaseSupplySaveRequest request)
+        => Ok(await _mediator.Send(new CreateCrmHerbBaseSupplyCommand { HerbBaseId = herbBaseId, Request = request }));
+
+    [HttpPut("/api/admin/crm/herb-base-supplies/{id:guid}")]
+    public async Task<ActionResult<bool>> UpdateSupply(Guid id, [FromBody] CrmHerbBaseSupplySaveRequest request)
+        => Ok(await _mediator.Send(new UpdateCrmHerbBaseSupplyCommand { Id = id, Request = request }));
+
+    [HttpDelete("/api/admin/crm/herb-base-supplies/{id:guid}")]
+    public async Task<ActionResult<bool>> DeleteSupply(Guid id)
+        => Ok(await _mediator.Send(new DeleteCrmHerbBaseSupplyCommand { Id = id }));
+
+    [HttpPatch("/api/admin/crm/herb-base-supplies/{id:guid}/status")]
+    public async Task<ActionResult<bool>> ChangeSupplyStatus(Guid id, [FromBody] CrmHerbBaseSupplyStatusRequest request)
+        => Ok(await _mediator.Send(new ChangeCrmHerbBaseSupplyStatusCommand { Id = id, Request = request }));
 }
 
 

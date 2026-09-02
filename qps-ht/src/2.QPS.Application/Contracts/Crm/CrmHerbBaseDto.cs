@@ -28,6 +28,7 @@ public class CrmHerbBaseDto
     public string SubjectName { get; set; } = string.Empty;
 
     public List<string> MainProducts { get; set; } = new();
+    public List<CrmHerbBaseSupplyDto> Supplies { get; set; } = new();
 
     /// <summary>
     /// 药材基地等级，例如高、中、低、无效。

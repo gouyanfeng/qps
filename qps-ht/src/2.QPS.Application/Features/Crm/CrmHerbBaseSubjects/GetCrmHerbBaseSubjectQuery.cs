@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
+using QPS.Application.Features.Crm.CrmHerbBaseSupplies;
 using QPS.Domain.Exceptions;
 
 namespace QPS.Application.Features.Crm.CrmHerbBaseSubjects;
@@ -27,6 +28,7 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
         var subject = await GetSubjectAsync(request.Id, cancellationToken);
         subject.HerbBases = await GetHerbBasesAsync(subject.Id, cancellationToken);
         await FillMainProductsAsync(subject.HerbBases, cancellationToken);
+        await FillSuppliesAsync(subject.HerbBases, cancellationToken);
         FillBaseSummary(subject);
         subject.Contacts = await GetContactsAsync(subject.Id, cancellationToken);
         subject.FollowRecords = await GetFollowRecordsAsync(subject.Id, cancellationToken);
@@ -119,6 +121,16 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
 
         foreach (var herbBase in herbBases)
             herbBase.MainProducts = productsByBase.GetValueOrDefault(herbBase.Id, []);
+    }
+
+    private async Task FillSuppliesAsync(List<CrmHerbBaseDto> herbBases, CancellationToken cancellationToken)
+    {
+        var herbBaseIds = herbBases.Select(herbBase => herbBase.Id).ToList();
+        if (herbBaseIds.Count == 0) return;
+        var supplies = await _dbContext.CrmHerbBaseSupplies.Where(item => herbBaseIds.Contains(item.HerbBaseId))
+            .OrderByDescending(item => item.UpdatedAt).ToListAsync(cancellationToken);
+        var grouped = supplies.GroupBy(item => item.HerbBaseId).ToDictionary(group => group.Key, group => group.Select(CrmHerbBaseSupplyMapper.ToDto).ToList());
+        foreach (var herbBase in herbBases) herbBase.Supplies = grouped.GetValueOrDefault(herbBase.Id, []);
     }
 
     private static void FillBaseSummary(CrmHerbBaseSubjectDetailDto subject)

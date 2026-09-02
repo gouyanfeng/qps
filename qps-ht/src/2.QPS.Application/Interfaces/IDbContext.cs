@@ -20,6 +20,7 @@ public interface IDbContext
     // CRM 模块
     DbSet<CrmHerbBaseSubject> CrmHerbBaseSubjects { get; }
     DbSet<CrmHerbBase> CrmHerbBases { get; }
+    DbSet<CrmHerbBaseSupply> CrmHerbBaseSupplies { get; }
     DbSet<CrmContact> CrmContacts { get; }
     DbSet<CrmFollowRecord> CrmFollowRecords { get; }
     DbSet<CrmBusinessEntityAttribute> CrmBusinessEntityAttributes { get; }

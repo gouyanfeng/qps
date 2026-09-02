@@ -25,6 +25,7 @@ public class AppDbContext : DbContext, IDbContext
 
     public DbSet<CrmHerbBaseSubject> CrmHerbBaseSubjects { get; set; }
     public DbSet<CrmHerbBase> CrmHerbBases { get; set; }
+    public DbSet<CrmHerbBaseSupply> CrmHerbBaseSupplies { get; set; }
     public DbSet<CrmContact> CrmContacts { get; set; }
     public DbSet<CrmFollowRecord> CrmFollowRecords { get; set; }
     public DbSet<CrmBusinessEntityAttribute> CrmBusinessEntityAttributes { get; set; }
@@ -69,6 +70,25 @@ public class AppDbContext : DbContext, IDbContext
             entity.Property(subject => subject.PrimaryContactPhone).HasMaxLength(100);
             entity.HasIndex(subject => subject.SubjectName);
             entity.HasIndex(subject => new { subject.SubjectType, subject.IsDeleted });
+        });
+
+        modelBuilder.Entity<CrmHerbBaseSupply>(entity =>
+        {
+            entity.Property(supply => supply.ProductName).HasMaxLength(200);
+            entity.Property(supply => supply.QuantityUnit).HasMaxLength(32);
+            entity.Property(supply => supply.Specification).HasMaxLength(200);
+            entity.Property(supply => supply.QualityRequirement).HasMaxLength(500);
+            entity.Property(supply => supply.HarvestSeason).HasMaxLength(100);
+            entity.Property(supply => supply.PriceUnit).HasMaxLength(32);
+            entity.Property(supply => supply.SupplyCycle).HasMaxLength(100);
+            entity.Property(supply => supply.Status).HasMaxLength(32);
+            entity.Property(supply => supply.AvailableQuantity).HasPrecision(18, 2);
+            entity.Property(supply => supply.ExpectedPrice).HasPrecision(18, 2);
+            entity.HasIndex(supply => new { supply.HerbBaseId, supply.Status });
+            entity.HasIndex(supply => new { supply.HerbBaseSubjectId, supply.Status });
+            entity.HasIndex(supply => new { supply.ProductName, supply.Status, supply.ValidUntil });
+            entity.HasOne(supply => supply.HerbBase).WithMany(herbBase => herbBase.Supplies)
+                .HasForeignKey(supply => supply.HerbBaseId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<CrmFollowRecord>(entity =>

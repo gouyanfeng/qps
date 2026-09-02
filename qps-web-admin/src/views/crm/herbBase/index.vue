@@ -385,6 +385,19 @@
                       <el-button type="danger" link @click="deleteBase(base)">删除</el-button>
                     </Permission>
                   </div>
+                  <div class="base-supply-list">
+                    <div class="section-title"><h4>供应信息</h4><Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增</el-button></Permission></div>
+                    <el-empty v-if="!base.supplies?.length" description="暂无供应信息" :image-size="48" />
+                    <el-table v-else :data="base.supplies" size="small" border>
+                      <el-table-column prop="productName" label="品类" min-width="100" />
+                      <el-table-column label="可供量" width="130"><template #default="{ row }">{{ row.availableQuantity ?? '-' }} {{ row.quantityUnit }}</template></el-table-column>
+                      <el-table-column prop="specification" label="规格" min-width="100" />
+                      <el-table-column prop="supplyCycle" label="供货周期" min-width="110" />
+                      <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag size="small" :type="row.isExpired ? 'danger' : row.status === '有效' ? 'success' : 'info'">{{ row.isExpired ? '已过期' : row.status }}</el-tag></template></el-table-column>
+                      <el-table-column label="有效期" width="120"><template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template></el-table-column>
+                      <el-table-column label="操作" width="180"><template #default="{ row }"><Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button v-if="row.status !== '已失效'" type="primary" link @click="openSupplyDialog(base, row)">编辑</el-button><el-button v-if="row.status === '待确认'" type="danger" link @click="deleteSupply(row)">删除</el-button><el-dropdown v-if="row.status !== '已失效'" @command="changeSupplyStatus(row, $event)"><el-button link>状态</el-button><template #dropdown><el-dropdown-menu><el-dropdown-item command="有效">有效</el-dropdown-item><el-dropdown-item command="暂停">暂停</el-dropdown-item><el-dropdown-item command="已售罄">售罄</el-dropdown-item><el-dropdown-item command="已失效">失效</el-dropdown-item></el-dropdown-menu></template></el-dropdown></Permission></template></el-table-column>
+                    </el-table>
+                  </div>
                 </article>
               </div>
             </section>
@@ -482,6 +495,22 @@
         </section>
       </div>
     </el-drawer>
+
+    <el-dialog v-model="supplyDialogVisible" :title="supplyForm.id ? '编辑供应信息' : '新增供应信息'" width="620px">
+      <el-form :model="supplyForm" label-width="100px">
+        <el-form-item label="品类" required><el-select v-model="supplyForm.productName" filterable clearable><el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
+        <el-form-item label="可供量"><el-input-number v-model="supplyForm.availableQuantity" :min="0" /><el-input v-model="supplyForm.quantityUnit" class="ml8" placeholder="单位" /></el-form-item>
+        <el-form-item label="规格"><el-input v-model="supplyForm.specification" /></el-form-item>
+        <el-form-item label="质量要求"><el-input v-model="supplyForm.qualityRequirement" /></el-form-item>
+        <el-form-item label="产新期"><el-input v-model="supplyForm.harvestSeason" /></el-form-item>
+        <el-form-item label="预期价格"><el-input-number v-model="supplyForm.expectedPrice" :min="0" /><el-input v-model="supplyForm.priceUnit" class="ml8" placeholder="单位" /></el-form-item>
+        <el-form-item label="供货周期"><el-input v-model="supplyForm.supplyCycle" /></el-form-item>
+        <el-form-item label="核实日期"><el-date-picker v-model="supplyForm.confirmedAt" type="date" value-format="YYYY-MM-DD" /></el-form-item>
+        <el-form-item label="有效截止"><el-date-picker v-model="supplyForm.validUntil" type="date" value-format="YYYY-MM-DD" /></el-form-item>
+        <el-form-item label="备注"><el-input v-model="supplyForm.remark" type="textarea" :rows="2" /></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="supplyDialogVisible = false">取消</el-button><el-button type="primary" @click="submitSupply">保存</el-button></template>
+    </el-dialog>
 
     <el-dialog v-model="contactDialogVisible" :title="contactForm.id ? '编辑联系人' : '新增联系人'" width="520px">
       <el-form :model="contactForm" label-width="100px">
@@ -636,6 +665,7 @@ const detailDrawerVisible = ref(false);
 const contactDialogVisible = ref(false);
 const followDialogVisible = ref(false);
 const transferDialogVisible = ref(false);
+const supplyDialogVisible = ref(false);
 const isEdit = ref(false);
 const followFilter = ref("");
 const currentHerbBase = ref<HerbBaseSubjectDetail | null>(null);
@@ -645,6 +675,8 @@ const transferRecords = ref<any[]>([]);
 const selectedHerbBases = ref<HerbBaseSubjectDetail[]>([]);
 const ownerOptions = ref<any[]>([]);
 const regionPath = ref<string[]>([]);
+const supplyBaseId = ref("");
+const supplyForm = reactive({ id: "", productName: "", availableQuantity: undefined as number | undefined, quantityUnit: "", specification: "", qualityRequirement: "", harvestSeason: "", expectedPrice: undefined as number | undefined, priceUnit: "", supplyCycle: "", confirmedAt: "", validUntil: "", remark: "" });
 
 const searchForm = reactive({
   keyword: "",
@@ -1133,6 +1165,37 @@ const handleAdd = async () => {
   isEdit.value = false;
   resetCustomerForm();
   dialogVisible.value = true;
+};
+
+const openSupplyDialog = (base: any, supply?: any) => {
+  supplyBaseId.value = base.id;
+  Object.assign(supplyForm, { id: supply?.id || "", productName: supply?.productName || "", availableQuantity: supply?.availableQuantity, quantityUnit: supply?.quantityUnit || "", specification: supply?.specification || "", qualityRequirement: supply?.qualityRequirement || "", harvestSeason: supply?.harvestSeason || "", expectedPrice: supply?.expectedPrice, priceUnit: supply?.priceUnit || "", supplyCycle: supply?.supplyCycle || "", confirmedAt: supply?.confirmedAt || "", validUntil: supply?.validUntil || "", remark: supply?.remark || "" });
+  loadMainProductOptions();
+  supplyDialogVisible.value = true;
+};
+
+const submitSupply = async () => {
+  if (!supplyForm.productName) return ElMessage.error("请选择品类");
+  const request = { ...supplyForm };
+  delete (request as any).id;
+  if (supplyForm.id) await crmHerbBaseApi.updateSupply(supplyForm.id, request);
+  else await crmHerbBaseApi.createSupply(supplyBaseId.value, request);
+  supplyDialogVisible.value = false;
+  ElMessage.success("供应信息已保存");
+  if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
+};
+
+const deleteSupply = async (supply: any) => {
+  if (!window.confirm("确定删除该待确认供应信息吗？")) return;
+  await crmHerbBaseApi.deleteSupply(supply.id);
+  ElMessage.success("供应信息已删除");
+  if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
+};
+
+const changeSupplyStatus = async (supply: any, status: string) => {
+  await crmHerbBaseApi.changeSupplyStatus(supply.id, { status });
+  ElMessage.success("供应信息状态已更新");
+  if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
 };
 
 const handleEdit = async (row: any) => {
