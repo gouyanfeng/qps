@@ -13,15 +13,16 @@ import { computed } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { PieChart } from "echarts/charts";
-import { LegendComponent, TooltipComponent } from "echarts/components";
+import { LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
 import VChart from "vue-echarts";
 import type { CrmDashboardChartItem } from "@/api/modules/dashboard";
 
-use([CanvasRenderer, PieChart, LegendComponent, TooltipComponent]);
+use([CanvasRenderer, PieChart, LegendComponent, TitleComponent, TooltipComponent]);
 
 const props = defineProps<{
   items: CrmDashboardChartItem[];
   title?: string;
+  total?: number;
 }>();
 
 const chartItems = computed(() => {
@@ -49,6 +50,18 @@ const chartItems = computed(() => {
 const isEmpty = computed(() => chartItems.value.length === 0);
 
 const option = computed(() => ({
+  title:
+    props.total === undefined
+      ? undefined
+      : {
+          text: String(props.total),
+          subtext: "品类总数",
+          left: "center",
+          top: "39%",
+          textAlign: "center",
+          textStyle: { fontSize: 22, fontWeight: 600 },
+          subtextStyle: { fontSize: 12, color: "#909399" },
+        },
   tooltip: { trigger: "item" },
   legend: { top: 8, left: "center", type: "scroll" },
   series: [

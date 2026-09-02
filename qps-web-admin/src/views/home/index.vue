@@ -24,7 +24,11 @@
             <MainProductDistributionChart title="厂商优先级分布" :items="dashboard.vendorPriorityDistribution" />
             <FollowTrendChart title="近 7 天厂商跟进趋势" :items="dashboard.vendorFollowTrend" />
             <NewPurchaseDemandTrendChart :items="dashboard.newPurchaseDemandTrend" />
-            <MainProductDistributionChart title="厂商采购品类分布" :items="dashboard.vendorPurchaseProductDistribution" />
+            <MainProductDistributionChart
+              title="厂商采购品类分布"
+              :items="dashboard.vendorPurchaseProductDistribution"
+              :total="dashboard.vendorPurchaseProductDistribution.length"
+            />
           </div>
         </section>
       </div>
