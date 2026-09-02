@@ -359,35 +359,20 @@
               <el-table v-else :data="currentHerbBase.herbBases" row-key="id" class="base-detail-table" border>
                 <el-table-column type="expand" width="52">
                   <template #default="{ row: base }">
-                    <div class="base-nested-tables">
-                      <div class="base-nested-section">
-                        <h4>基本明细</h4>
-                        <el-table :data="[base]" size="small" border>
-                          <el-table-column label="规模(亩)" width="130"><template #default="{ row }">{{ formatScale(row.scale) }}</template></el-table-column>
-                          <el-table-column label="地区" min-width="220"><template #default="{ row }">{{ formatRegion(row) }}</template></el-table-column>
-                          <el-table-column prop="address" label="详细地址" min-width="260" show-overflow-tooltip>
-                            <template #default="{ row }">{{ row.address || '-' }}</template>
-                          </el-table-column>
-                          <el-table-column prop="remark" label="备注" min-width="220" show-overflow-tooltip>
-                            <template #default="{ row }">{{ row.remark || '-' }}</template>
-                          </el-table-column>
-                        </el-table>
+                    <div class="base-supply-table">
+                      <div class="base-nested-heading">
+                        <h4>供应信息</h4>
+                        <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增</el-button></Permission>
                       </div>
-                      <div class="base-nested-section">
-                        <div class="base-nested-heading">
-                          <h4>供应信息</h4>
-                          <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增</el-button></Permission>
-                        </div>
-                        <el-table :data="base.supplies || []" size="small" border empty-text="暂无供应信息">
-                          <el-table-column prop="productName" label="品类" min-width="100" />
-                          <el-table-column label="可供量" width="130"><template #default="{ row }">{{ row.availableQuantity ?? '-' }} {{ row.quantityUnit }}</template></el-table-column>
-                          <el-table-column prop="specification" label="规格" min-width="100" />
-                          <el-table-column prop="supplyCycle" label="供货周期" min-width="110" />
-                          <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag size="small" :type="row.isExpired ? 'danger' : row.status === '有效' ? 'success' : 'info'">{{ row.isExpired ? '已过期' : row.status }}</el-tag></template></el-table-column>
-                          <el-table-column label="有效期" width="120"><template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template></el-table-column>
-                          <el-table-column label="操作" width="180"><template #default="{ row }"><Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button v-if="row.status !== '已失效'" type="primary" link @click="openSupplyDialog(base, row)">编辑</el-button><el-button v-if="row.status === '待确认'" type="danger" link @click="deleteSupply(row)">删除</el-button><el-dropdown v-if="row.status !== '已失效'" @command="changeSupplyStatus(row, $event)"><el-button link>状态</el-button><template #dropdown><el-dropdown-menu><el-dropdown-item command="有效">有效</el-dropdown-item><el-dropdown-item command="暂停">暂停</el-dropdown-item><el-dropdown-item command="已售罄">售罄</el-dropdown-item><el-dropdown-item command="已失效">失效</el-dropdown-item></el-dropdown-menu></template></el-dropdown></Permission></template></el-table-column>
-                        </el-table>
-                      </div>
+                      <el-table :data="base.supplies || []" size="small" border empty-text="暂无供应信息">
+                        <el-table-column prop="productName" label="品类" min-width="100" />
+                        <el-table-column label="可供量" width="130"><template #default="{ row }">{{ row.availableQuantity ?? '-' }} {{ row.quantityUnit }}</template></el-table-column>
+                        <el-table-column prop="specification" label="规格" min-width="100" />
+                        <el-table-column prop="supplyCycle" label="供货周期" min-width="110" />
+                        <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag size="small" :type="row.isExpired ? 'danger' : row.status === '有效' ? 'success' : 'info'">{{ row.isExpired ? '已过期' : row.status }}</el-tag></template></el-table-column>
+                        <el-table-column label="有效期" width="120"><template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template></el-table-column>
+                        <el-table-column label="操作" width="180"><template #default="{ row }"><Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button v-if="row.status !== '已失效'" type="primary" link @click="openSupplyDialog(base, row)">编辑</el-button><el-button v-if="row.status === '待确认'" type="danger" link @click="deleteSupply(row)">删除</el-button><el-dropdown v-if="row.status !== '已失效'" @command="changeSupplyStatus(row, $event)"><el-button link>状态</el-button><template #dropdown><el-dropdown-menu><el-dropdown-item command="有效">有效</el-dropdown-item><el-dropdown-item command="暂停">暂停</el-dropdown-item><el-dropdown-item command="已售罄">售罄</el-dropdown-item><el-dropdown-item command="已失效">失效</el-dropdown-item></el-dropdown-menu></template></el-dropdown></Permission></template></el-table-column>
+                      </el-table>
                     </div>
                   </template>
                 </el-table-column>
@@ -395,6 +380,7 @@
                 <el-table-column label="主营品类" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ formatMainProducts(row) }}</template></el-table-column>
                 <el-table-column label="地区" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ formatRegion(row) }}</template></el-table-column>
                 <el-table-column label="规模(亩)" width="120"><template #default="{ row }">{{ formatScale(row.scale) }}</template></el-table-column>
+                <el-table-column label="详细地址" min-width="220" show-overflow-tooltip><template #default="{ row }">{{ row.address || '-' }}</template></el-table-column>
                 <el-table-column label="来源" width="120"><template #default="{ row }"><el-tag size="small" type="info" effect="plain">{{ formatSourcePlatform(row.sourcePlatform) }}</el-tag></template></el-table-column>
                 <el-table-column label="操作" width="140" fixed="right"><template #default="{ row }"><Permission code="CRM_HERB_BASE_EDIT"><el-button type="primary" link @click="handleEdit(row)">编辑</el-button></Permission><Permission code="CRM_HERB_BASE_DELETE"><el-button type="danger" link @click="deleteBase(row)">删除</el-button></Permission></template></el-table-column>
               </el-table>
@@ -1880,21 +1866,8 @@ const markCustomerStatus = async (status: string) => {
   background: #f8fafc;
 }
 
-.base-nested-tables {
-  display: grid;
-  gap: 16px;
+.base-supply-table {
   padding: 16px 20px;
-}
-
-.base-nested-section {
-  min-width: 0;
-
-  h4 {
-    margin: 0 0 10px;
-    color: #111827;
-    font-size: 14px;
-    font-weight: 600;
-  }
 }
 
 .base-nested-heading {
@@ -1904,7 +1877,11 @@ const markCustomerStatus = async (status: string) => {
   gap: 12px;
 
   h4 {
+    margin: 0;
     margin-bottom: 10px;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
   }
 }
 
@@ -1968,7 +1945,7 @@ const markCustomerStatus = async (status: string) => {
     max-height: none;
   }
 
-  .base-nested-tables {
+  .base-supply-table {
     padding: 12px;
   }
 }
