@@ -43,6 +43,21 @@ export const crmHerbBaseApi = {
   deleteCustomer: (id: string) => {
     return http.delete(`/admin/crm/herb-bases/${id}`);
   },
+  getSupplies: (herbBaseId: string) => {
+    return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/supplies`);
+  },
+  createSupply: (herbBaseId: string, params: any) => {
+    return http.post<any>(`/admin/crm/herb-bases/${herbBaseId}/supplies`, params);
+  },
+  updateSupply: (id: string, params: any) => {
+    return http.put<any>(`/admin/crm/herb-base-supplies/${id}`, params);
+  },
+  deleteSupply: (id: string) => {
+    return http.delete(`/admin/crm/herb-base-supplies/${id}`);
+  },
+  changeSupplyStatus: (id: string, params: any) => {
+    return http.patch<any>(`/admin/crm/herb-base-supplies/${id}/status`, params);
+  },
   getContacts: (herbBaseId: string) => {
     return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/contacts`);
   },
