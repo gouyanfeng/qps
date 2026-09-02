@@ -30,7 +30,12 @@ const chartItems = computed(() => {
     .filter(item => item.value > 0)
     .slice()
     .sort((a, b) => b.value - a.value);
-  return sortedItems.slice(0, 9);
+  const topItems = sortedItems.slice(0, 10);
+  const otherValue = sortedItems.slice(10).reduce((sum, item) => sum + item.value, 0);
+
+  return otherValue > 0
+    ? [...topItems, { code: "OTHER_GROUPED", name: "其他", value: otherValue }]
+    : topItems;
 });
 
 const isEmpty = computed(() => chartItems.value.length === 0);
