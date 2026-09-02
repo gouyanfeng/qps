@@ -14,6 +14,7 @@ public class CrmHerbBase : BaseEntity
     public Guid? HerbBaseSubjectId { get; private set; }
 
     public virtual CrmHerbBaseSubject? HerbBaseSubject { get; private set; }
+    public virtual ICollection<CrmHerbBaseSupply> Supplies { get; private set; } = new List<CrmHerbBaseSupply>();
 
     /// <summary>
     /// 基地名称，对应清洗线索名称，导入CRM使用。
