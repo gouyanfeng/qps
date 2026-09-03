@@ -16,7 +16,7 @@ dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=
 
 - 继承 `BaseEntity` 的实体默认走 EF 全局软删除过滤；常规查询不要重复写 `!IsDeleted`，只有必须查全量时才使用 `IgnoreQueryFilters()`。
 - 不要为了调试清空数据库；优先增量补齐或使用初始化逻辑。
-- CRM 客户按药材基地模型处理，实体类型统一使用 `CRM_HERB_BASE`，不要新增 `CRM_CUSTOMER` 业务编码。
+- CRM 不使用 `CRM_CUSTOMER` 业务编码：具体基地属性使用 `CRM_HERB_BASE`；基地主体的联系人、跟进和负责人流转使用 `CRM_HERB_BASE_SUBJECT`；厂商使用 `CRM_VENDOR`。
 - CRM 相关硬编码收敛到 `QPS.Application.Features.Crm.CrmCodes`，避免在 Handler 中散落业务编码和状态值。
 - 客户来源字段使用 `SourceId`，不要使用 `SourceLeadId`。
 - 主营品类、采购品类等扩展属性统一使用 `CrmBusinessEntityAttributes`，不要为单项属性新增独立表。

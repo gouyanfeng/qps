@@ -15,7 +15,4 @@
 
 ## 本地运行
 
-```bash
-npm install
-npm run dev
-```
+本地启动和构建验证统一见 [本地启动与发布](../docs/operations/本地启动与发布.md)。

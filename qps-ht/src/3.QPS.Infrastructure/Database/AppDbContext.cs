@@ -18,7 +18,6 @@ public class AppDbContext : DbContext, IDbContext
     public DbSet<SystemUserRole> SystemUserRoles { get; set; }
     public DbSet<SystemRolePermission> SystemRolePermissions { get; set; }
     public DbSet<SystemDataDictionary> SystemDataDictionaries { get; set; }
-    public DbSet<SystemRegion> SystemRegions { get; set; }
     public DbSet<SystemChinaRegion> SystemChinaRegions { get; set; }
     public DbSet<SystemErrorLog> SystemErrorLogs { get; set; }
     public DbSet<SystemOperationLog> SystemOperationLogs { get; set; }

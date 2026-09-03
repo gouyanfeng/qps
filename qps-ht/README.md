@@ -51,12 +51,8 @@ tests/
 | CrmFollowTaskController | /api/admin/crm/follow-tasks | 当前负责人跟进任务工作台 |
 | DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
 
-## Run
+## 运行
 
-```bash
-dotnet restore QPS.sln
-dotnet build QPS.sln
-dotnet run --project src/4.QPS.WebAPI/QPS.WebAPI.csproj -- --urls http://localhost:5000
-```
+本地启动、构建验证和 IIS 发布统一见 [本地启动与发布](../docs/operations/本地启动与发布.md)。
 
 Swagger is available at `/swagger` when the API is running.

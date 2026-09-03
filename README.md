@@ -13,14 +13,3 @@ codex-temp/     普通临时产物（已忽略）
 qps-ui-tests/   Playwright UI 测试、截图和报告（已忽略）
 docs/           共享产品与研发文档
 ```
-
-## 本地启动
-
-以下命令启动本地后端和前端。前端固定使用 `http://127.0.0.1:5173`，并通过 `http://localhost:5000/api` 连接本地后端；UI 测试也使用这组端口。
-
-```powershell
-dotnet run --project .\qps-ht\src\4.QPS.WebAPI\QPS.WebAPI.csproj -- --urls http://localhost:5000
-
-Set-Location .\qps-web-admin
-npm run dev
-```

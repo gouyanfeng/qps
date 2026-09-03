@@ -1891,7 +1891,7 @@ const markCustomerStatus = async (status: string) => {
 }
 
 .base-supply-table :deep(.supply-table th.el-table__cell) {
-  background: #f6f8fa;
+  background: transparent;
 }
 
 .base-supply-table :deep(.supply-table.el-table--border::after),
