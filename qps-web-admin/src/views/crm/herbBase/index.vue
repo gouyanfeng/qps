@@ -7,21 +7,13 @@
             <el-input v-model="searchForm.keyword" clearable placeholder="基地 / 主体 / 联系人 / 电话" />
           </el-form-item>
           <el-form-item label="主营品类">
-            <el-select
+            <ProductSelect
               v-model="searchForm.mainProducts"
               multiple
               collapse-tags
               collapse-tags-tooltip
-              clearable
-              filterable
-              remote
-              reserve-keyword
-              :remote-method="loadMainProductOptions"
-              :loading="mainProductLoading"
               placeholder="主营品类"
-            >
-              <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
+            />
           </el-form-item>
           <el-form-item>
             <template #label>
@@ -236,20 +228,13 @@
           <el-input v-model="form.baseName" placeholder="请输入基地名称" />
         </el-form-item>
         <el-form-item label="主营品类">
-          <el-select
+          <ProductSelect
             v-model="form.mainProducts"
             multiple
             collapse-tags
             collapse-tags-tooltip
-            filterable
-            remote
-            reserve-keyword
-            :remote-method="loadMainProductOptions"
-            :loading="mainProductLoading"
             placeholder="请选择主营品类"
-          >
-            <el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item label="规模(亩)">
           <el-input-number v-model="form.scale" :min="0" :precision="2" />
@@ -289,6 +274,7 @@
               <span>类型 {{ currentHerbBase.subjectType || "-" }}</span>
               <span>评分 {{ currentHerbBase.score ?? 0 }}</span>
               <span>跟进人 {{ currentHerbBase.ownerUserName || "-" }}</span>
+              <span :class="{ overdue: isOverdue(currentHerbBase.nextFollowAt) }">下次跟进 {{ formatNullableDate(currentHerbBase.nextFollowAt) }}</span>
               <span>{{ formatRegions(currentHerbBase.regions) }}</span>
             </div>
             <p v-if="currentHerbBase.remark" class="head-remark">{{ currentHerbBase.remark }}</p>
@@ -307,82 +293,84 @@
           </div>
         </section>
 
-        <section class="summary-band">
-          <div class="summary-card detail-main-products">
-            <span class="label">主营品类</span>
-            <div v-if="normalizeMainProducts(currentHerbBase).length" class="main-product-tags">
-              <el-tag
-                v-for="value in normalizeMainProducts(currentHerbBase)"
-                :key="value"
-                type="info"
-                effect="plain"
-              >
-                {{ formatEnumLabel(mainProductLabels, value) }}
-              </el-tag>
-            </div>
-            <strong v-else>-</strong>
-          </div>
-          <div class="summary-card">
-            <span class="label">基地数</span>
-            <strong>{{ currentHerbBase.baseCount || 0 }}</strong>
-          </div>
-          <div class="summary-card">
-            <span class="label">总规模(亩)</span>
-            <strong>{{ formatScale(currentHerbBase.totalScale) }}</strong>
-          </div>
-          <div class="summary-card detail-summary-owner">
-            <span class="label">主联系人</span>
-            <strong>{{ currentHerbBase.primaryContactName || "-" }}</strong>
-            <span>{{ currentHerbBase.primaryContactPhone || "-" }}</span>
-          </div>
-          <div class="summary-card">
-            <span class="label">最近沟通</span>
-            <strong>{{ formatFollowResult(currentHerbBase.lastFollowResult, "未沟通") }}</strong>
-            <span>{{ formatNullableDate(currentHerbBase.lastFollowAt) }}</span>
-          </div>
-          <div class="summary-card">
-            <span class="label">下次跟进</span>
-            <strong :class="{ overdue: isOverdue(currentHerbBase.nextFollowAt) }">
-              {{ formatNullableDate(currentHerbBase.nextFollowAt) }}
-            </strong>
-          </div>
-        </section>
-
         <section class="drawer-grid">
           <div class="profile-panel detail-profile-panel">
             <section class="detail-card">
               <div class="section-title section-title-first">
-                <h3>基地明细</h3>
+                <div class="base-section-heading">
+                  <h3>基地明细</h3>
+                  <div class="base-section-summary">
+                    <span>基地数 <strong>{{ currentHerbBase.baseCount || 0 }}</strong></span>
+                    <span>总规模 <strong>{{ formatScale(currentHerbBase.totalScale) }}</strong></span>
+                  </div>
+                </div>
                 <Permission code="CRM_HERB_BASE_ADD"><el-button type="primary" link :icon="Plus" @click="handleAdd">新增基地</el-button></Permission>
               </div>
               <el-empty v-if="!currentHerbBase.herbBases?.length" description="暂无基地明细" />
-              <el-table v-else :data="currentHerbBase.herbBases" row-key="id" class="base-detail-table" border>
-                <el-table-column type="expand" width="52">
-                  <template #default="{ row: base }">
-                    <div class="base-supply-table">
-                      <div class="base-nested-heading">
-                        <h4>供应信息</h4>
-                        <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增</el-button></Permission>
+              <div v-else class="base-detail-cards">
+                <article v-for="base in currentHerbBase.herbBases" :key="base.id" class="base-detail-card">
+                  <div class="base-card-head">
+                    <div class="base-card-main">
+                      <div class="base-card-title">{{ base.baseName || base.herbBaseName || "-" }}</div>
+                      <div class="base-card-meta">
+                        <span>{{ formatRegion(base) }}</span>
+                        <span>{{ base.address || "-" }}</span>
                       </div>
-                      <el-table :data="base.supplies || []" size="small" border empty-text="暂无供应信息">
-                        <el-table-column prop="productName" label="品类" min-width="100" />
-                        <el-table-column label="可供量" width="130"><template #default="{ row }">{{ row.availableQuantity ?? '-' }} {{ row.quantityUnit }}</template></el-table-column>
-                        <el-table-column prop="specification" label="规格" min-width="100" />
-                        <el-table-column prop="supplyCycle" label="供货周期" min-width="110" />
-                        <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag size="small" :type="row.isExpired ? 'danger' : row.status === '有效' ? 'success' : 'info'">{{ row.isExpired ? '已过期' : row.status }}</el-tag></template></el-table-column>
-                        <el-table-column label="有效期" width="120"><template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template></el-table-column>
-                        <el-table-column label="操作" width="180"><template #default="{ row }"><Permission code="CRM_HERB_BASE_SUPPLY_MANAGE"><el-button v-if="row.status !== '已失效'" type="primary" link @click="openSupplyDialog(base, row)">编辑</el-button><el-button v-if="row.status === '待确认'" type="danger" link @click="deleteSupply(row)">删除</el-button><el-dropdown v-if="row.status !== '已失效'" @command="changeSupplyStatus(row, $event)"><el-button link>状态</el-button><template #dropdown><el-dropdown-menu><el-dropdown-item command="有效">有效</el-dropdown-item><el-dropdown-item command="暂停">暂停</el-dropdown-item><el-dropdown-item command="已售罄">售罄</el-dropdown-item><el-dropdown-item command="已失效">失效</el-dropdown-item></el-dropdown-menu></template></el-dropdown></Permission></template></el-table-column>
-                      </el-table>
                     </div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="基地名称" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ row.baseName || row.herbBaseName || '-' }}</template></el-table-column>
-                <el-table-column label="地区" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ formatRegion(row) }}</template></el-table-column>
-                <el-table-column label="规模(亩)" width="120"><template #default="{ row }">{{ formatScale(row.scale) }}</template></el-table-column>
-                <el-table-column label="详细地址" min-width="220" show-overflow-tooltip><template #default="{ row }">{{ row.address || '-' }}</template></el-table-column>
-                <el-table-column label="来源" width="120"><template #default="{ row }"><el-tag size="small" type="info" effect="plain">{{ formatSourcePlatform(row.sourcePlatform) }}</el-tag></template></el-table-column>
-                <el-table-column label="操作" width="140" fixed="right"><template #default="{ row }"><Permission code="CRM_HERB_BASE_EDIT"><el-button type="primary" link @click="handleEdit(row)">编辑</el-button></Permission><Permission code="CRM_HERB_BASE_DELETE"><el-button type="danger" link @click="deleteBase(row)">删除</el-button></Permission></template></el-table-column>
-              </el-table>
+                    <div class="base-card-actions">
+                      <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE">
+                        <el-button class="base-action-link" type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增供应</el-button>
+                      </Permission>
+                      <Permission code="CRM_HERB_BASE_EDIT">
+                        <el-button class="base-action-link" type="primary" link :icon="Edit" @click="handleEdit(base)">编辑基地</el-button>
+                      </Permission>
+                      <Permission code="CRM_HERB_BASE_DELETE">
+                        <el-button class="base-action-link danger" type="danger" link :icon="Delete" @click="deleteBase(base)">删除基地</el-button>
+                      </Permission>
+                    </div>
+                  </div>
+
+                  <div class="base-supply-table">
+                    <el-table :data="base.supplies || []" size="small" class="supply-table" empty-text="暂无供应信息">
+                      <el-table-column prop="productName" label="品类" min-width="120" show-overflow-tooltip />
+                      <el-table-column label="可供量" width="130">
+                        <template #default="{ row }">{{ formatSupplyQuantity(row) }}</template>
+                      </el-table-column>
+                      <el-table-column prop="specification" label="规格" min-width="120" show-overflow-tooltip />
+                      <el-table-column prop="supplyCycle" label="供货周期" min-width="120" show-overflow-tooltip />
+                      <el-table-column label="状态" width="96">
+                        <template #default="{ row }">
+                          <el-tag size="small" :type="getSupplyStatusType(row)">{{ row.isExpired ? "已过期" : row.status || "-" }}</el-tag>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="有效期" width="150">
+                        <template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template>
+                      </el-table-column>
+                      <el-table-column label="操作" width="112" align="center" class-name="actions-column" header-class-name="actions-column">
+                        <template #default="{ row }">
+                          <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE">
+                            <el-dropdown trigger="click" @command="handleSupplyAction(base, row, $event)">
+                              <el-button class="supply-action-button">
+                                供应操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                              </el-button>
+                              <template #dropdown>
+                                <el-dropdown-menu>
+                                  <el-dropdown-item v-if="row.status !== '已失效'" command="edit" :icon="Edit">编辑</el-dropdown-item>
+                                  <el-dropdown-item v-if="row.id && row.status === '待确认'" command="delete" :icon="Delete">删除</el-dropdown-item>
+                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" divided command="status:有效">设为有效</el-dropdown-item>
+                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" command="status:暂停">设为暂停</el-dropdown-item>
+                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" command="status:已售罄">设为售罄</el-dropdown-item>
+                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" command="status:已失效">设为失效</el-dropdown-item>
+                                </el-dropdown-menu>
+                              </template>
+                            </el-dropdown>
+                          </Permission>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
+                </article>
+              </div>
             </section>
 
             <section class="detail-card detail-contacts-panel">
@@ -479,18 +467,32 @@
       </div>
     </el-drawer>
 
-    <el-dialog v-model="supplyDialogVisible" :title="supplyForm.id ? '编辑供应信息' : '新增供应信息'" width="620px">
-      <el-form :model="supplyForm" label-width="100px">
-        <el-form-item label="品类" required><el-select v-model="supplyForm.productName" filterable clearable><el-option v-for="item in mainProductOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
-        <el-form-item label="可供量"><el-input-number v-model="supplyForm.availableQuantity" :min="0" /><el-input v-model="supplyForm.quantityUnit" class="ml8" placeholder="单位" /></el-form-item>
-        <el-form-item label="规格"><el-input v-model="supplyForm.specification" /></el-form-item>
-        <el-form-item label="质量要求"><el-input v-model="supplyForm.qualityRequirement" /></el-form-item>
-        <el-form-item label="产新期"><el-input v-model="supplyForm.harvestSeason" /></el-form-item>
-        <el-form-item label="预期价格"><el-input-number v-model="supplyForm.expectedPrice" :min="0" /><el-input v-model="supplyForm.priceUnit" class="ml8" placeholder="单位" /></el-form-item>
-        <el-form-item label="供货周期"><el-input v-model="supplyForm.supplyCycle" /></el-form-item>
-        <el-form-item label="核实日期"><el-date-picker v-model="supplyForm.confirmedAt" type="date" value-format="YYYY-MM-DD" /></el-form-item>
-        <el-form-item label="有效截止"><el-date-picker v-model="supplyForm.validUntil" type="date" value-format="YYYY-MM-DD" /></el-form-item>
-        <el-form-item label="备注"><el-input v-model="supplyForm.remark" type="textarea" :rows="2" /></el-form-item>
+    <el-dialog v-model="supplyDialogVisible" :title="supplyForm.id ? '编辑供应信息' : '新增供应信息'" width="720px" class="supply-dialog">
+      <el-form :model="supplyForm" label-width="82px" class="supply-form">
+        <div class="supply-form-grid">
+          <el-form-item label="品类" required class="span-2">
+            <ProductSelect v-model="supplyForm.productName" placeholder="请选择品类" />
+          </el-form-item>
+          <el-form-item label="可供量">
+            <div class="inline-field">
+              <el-input-number v-model="supplyForm.availableQuantity" :min="0" controls-position="right" placeholder="数量" />
+              <el-input v-model="supplyForm.quantityUnit" placeholder="单位" />
+            </div>
+          </el-form-item>
+          <el-form-item label="预期价格">
+            <div class="inline-field">
+              <el-input-number v-model="supplyForm.expectedPrice" :min="0" controls-position="right" placeholder="价格" />
+              <el-input v-model="supplyForm.priceUnit" placeholder="单位" />
+            </div>
+          </el-form-item>
+          <el-form-item label="规格"><el-input v-model="supplyForm.specification" placeholder="如：统货、选货、干品" /></el-form-item>
+          <el-form-item label="质量要求"><el-input v-model="supplyForm.qualityRequirement" placeholder="如：水分、含硫、杂质要求" /></el-form-item>
+          <el-form-item label="产新期"><el-input v-model="supplyForm.harvestSeason" placeholder="如：9月-11月" /></el-form-item>
+          <el-form-item label="供货周期"><el-input v-model="supplyForm.supplyCycle" placeholder="如：现货、预售、长期供应" /></el-form-item>
+          <el-form-item label="核实日期"><el-date-picker v-model="supplyForm.confirmedAt" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" /></el-form-item>
+          <el-form-item label="有效截止"><el-date-picker v-model="supplyForm.validUntil" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" /></el-form-item>
+          <el-form-item label="备注" class="span-2"><el-input v-model="supplyForm.remark" type="textarea" :rows="3" placeholder="补充说明" /></el-form-item>
+        </div>
       </el-form>
       <template #footer><el-button @click="supplyDialogVisible = false">取消</el-button><el-button type="primary" @click="submitSupply">保存</el-button></template>
     </el-dialog>
@@ -602,10 +604,11 @@
 <script setup lang="ts" name="customer">
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
-import { Delete, Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
+import { ArrowDown, Delete, Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
+import ProductSelect from "@/components/ProductSelect/index.vue";
 import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
@@ -818,25 +821,22 @@ const mainProductLabels: Record<string, string> = {
 };
 
 const mainProductValues: Record<string, string> = {
-  HUANG_QI: "HUANG_QI",
-  DANG_GUI: "DANG_GUI",
-  DANG_SHEN: "DANG_SHEN",
-  TIAN_MA: "TIAN_MA",
-  OTHER: "OTHER",
-  黄芪: "HUANG_QI",
-  黃芪: "HUANG_QI",
-  当归: "DANG_GUI",
-  當歸: "DANG_GUI",
-  党参: "DANG_SHEN",
-  黨參: "DANG_SHEN",
-  天麻: "TIAN_MA",
-  多品类: "OTHER",
-  多品類: "OTHER",
-  其他: "OTHER",
+  HUANG_QI: "黄芪",
+  DANG_GUI: "当归",
+  DANG_SHEN: "党参",
+  TIAN_MA: "天麻",
+  OTHER: "其他",
+  黄芪: "黄芪",
+  黃芪: "黄芪",
+  当归: "当归",
+  當歸: "当归",
+  党参: "党参",
+  黨參: "党参",
+  天麻: "天麻",
+  多品类: "其他",
+  多品類: "其他",
+  其他: "其他",
 };
-
-const mainProductOptions = ref<Array<{ label: string; value: string }>>([]);
-const mainProductLoading = ref(false);
 
 const phoneTypeValues: Record<string, string> = {
   MOBILE: "MOBILE",
@@ -950,34 +950,6 @@ const normalizeMainProducts = (row: any): string[] => {
   ));
 };
 
-const toMainProductOption = (item: any) => {
-  const value = String(item?.value || item?.attributeValue || "").trim();
-  return value ? { label: formatEnumLabel(mainProductLabels, value, value), value } : null;
-};
-
-let mainProductTimer: ReturnType<typeof setTimeout> | undefined;
-
-const loadMainProductOptions = (keyword = "") => {
-  if (mainProductTimer) clearTimeout(mainProductTimer);
-  mainProductTimer = setTimeout(async () => {
-    mainProductLoading.value = true;
-    try {
-      const response = await crmHerbBaseApi.getBusinessEntityAttributeOptions({
-        entityType: "CRM_HERB_BASE",
-        attributeCode: "CRM_MAIN_PRODUCT",
-        keyword: keyword.trim(),
-        pageSize: 100,
-      });
-      const options = (response.data || [])
-        .map(toMainProductOption)
-        .filter(Boolean) as Array<{ label: string; value: string }>;
-      mainProductOptions.value = options;
-    } finally {
-      mainProductLoading.value = false;
-    }
-  }, 250);
-};
-
 const formatMainProducts = (row: any, fallback = "-") => {
   const values = normalizeMainProducts(row);
   if (values.length === 0) return fallback;
@@ -1013,6 +985,11 @@ const formatListScale = (value?: number | string | null) => {
   return Number.isFinite(numberValue) ? Math.round(numberValue).toLocaleString("zh-CN") : "-";
 };
 
+const formatSupplyQuantity = (supply: any) => {
+  if (supply?.availableQuantity === null || supply?.availableQuantity === undefined || supply?.availableQuantity === "") return "-";
+  return `${supply.availableQuantity}${supply.quantityUnit ? ` ${supply.quantityUnit}` : ""}`;
+};
+
 const getStatusType = (status: string) => {
   const types: Record<string, string> = {
     PENDING: "info",
@@ -1037,6 +1014,18 @@ const getGradeType = (grade: string) => {
     无效: "danger",
   };
   return types[grade] || "info";
+};
+
+const getSupplyStatusType = (supply: any) => {
+  if (supply?.isExpired) return "danger";
+  const types: Record<string, string> = {
+    有效: "success",
+    待确认: "warning",
+    暂停: "info",
+    已售罄: "info",
+    已失效: "danger",
+  };
+  return types[supply?.status] || "info";
 };
 
 const formatNullableDate = (date?: string | null) => {
@@ -1153,7 +1142,6 @@ const handleAdd = async () => {
 const openSupplyDialog = (base: any, supply?: any) => {
   supplyBaseId.value = base.id;
   Object.assign(supplyForm, { id: supply?.id || "", productName: supply?.productName || "", availableQuantity: supply?.availableQuantity, quantityUnit: supply?.quantityUnit || "", specification: supply?.specification || "", qualityRequirement: supply?.qualityRequirement || "", harvestSeason: supply?.harvestSeason || "", expectedPrice: supply?.expectedPrice, priceUnit: supply?.priceUnit || "", supplyCycle: supply?.supplyCycle || "", confirmedAt: supply?.confirmedAt || "", validUntil: supply?.validUntil || "", remark: supply?.remark || "" });
-  loadMainProductOptions();
   supplyDialogVisible.value = true;
 };
 
@@ -1179,6 +1167,20 @@ const changeSupplyStatus = async (supply: any, status: string) => {
   await crmHerbBaseApi.changeSupplyStatus(supply.id, { status });
   ElMessage.success("供应信息状态已更新");
   if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
+};
+
+const handleSupplyAction = async (base: any, supply: any, command: string) => {
+  if (command === "edit") {
+    openSupplyDialog(base, supply);
+    return;
+  }
+  if (command === "delete") {
+    await deleteSupply(supply);
+    return;
+  }
+  if (command.startsWith("status:")) {
+    await changeSupplyStatus(supply, command.replace("status:", ""));
+  }
 };
 
 const handleEdit = async (row: any) => {
@@ -1468,7 +1470,6 @@ const applyRouteEntrypoint = async () => {
 };
 
 onMounted(() => {
-  void loadMainProductOptions();
   void applyRouteEntrypoint();
 });
 
@@ -1737,55 +1738,11 @@ const markCustomerStatus = async (status: string) => {
   }
 }
 
-.summary-band {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  padding: 14px 0;
-  background: #ffffff;
-
-  > div {
-    display: flex;
-    min-height: 76px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    min-width: 0;
-    padding: 13px 16px;
-    border: 1px solid var(--el-border-color-light);
-    border-radius: 8px;
-    background: #ffffff;
-
-    strong,
-    span:not(.label) {
-      overflow-wrap: anywhere;
-    }
-
-    strong {
-      color: #111827;
-      font-size: 15px;
-      line-height: 1.35;
-    }
-  }
-
-  .label {
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-  }
-}
-
-.main-product-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-width: 0;
-}
-
 .drawer-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.75fr) minmax(360px, 0.9fr);
   gap: 16px;
-  padding: 0 0 24px;
+  padding: 16px 0 24px;
   background: #ffffff;
 }
 
@@ -1856,40 +1813,167 @@ const markCustomerStatus = async (status: string) => {
   overscroll-behavior: contain;
 }
 
-.base-detail-table {
-  width: 100%;
+.base-detail-cards {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
 }
 
-.base-detail-table :deep(.el-table__expanded-cell) {
-  padding: 0;
-  background: #f8fafc;
+.base-detail-card {
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.base-card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 15px 16px 13px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: #ffffff;
+}
+
+.base-card-main {
+  min-width: 0;
+}
+
+.base-card-title {
+  overflow: hidden;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.base-card-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 7px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.base-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.base-action-link {
+  height: 28px;
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+.base-action-link.danger {
+  margin-left: 4px;
 }
 
 .base-supply-table {
-  padding: 16px 20px;
+  padding: 12px 16px 16px;
+  overflow-x: auto;
 }
 
-.base-nested-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.supply-table {
+  min-width: 820px;
+  border-radius: 0;
+  overflow: hidden;
+}
 
-  h4 {
-    margin: 0;
-    margin-bottom: 10px;
-    color: #111827;
-    font-size: 14px;
-    font-weight: 600;
-  }
+.base-supply-table :deep(.supply-table th.el-table__cell) {
+  background: #f6f8fa;
+}
+
+.base-supply-table :deep(.supply-table.el-table--border::after),
+.base-supply-table :deep(.supply-table.el-table--border::before),
+.base-supply-table :deep(.supply-table .el-table__inner-wrapper::before) {
+  display: none;
+}
+
+.base-supply-table :deep(.supply-table .el-table__cell) {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.supply-action-button {
+  height: 26px;
+  padding: 0 9px;
+  border-color: transparent;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.supply-action-button:hover,
+.supply-action-button:focus {
+  border-color: var(--el-color-primary-light-7);
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.base-supply-table :deep(.supply-table::before) {
+  display: none;
+}
+
+.supply-dialog :deep(.el-dialog__body) {
+  padding: 18px 22px 8px;
+}
+
+.supply-dialog :deep(.el-dialog__footer) {
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.supply-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+  row-gap: 2px;
+}
+
+.supply-form-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+.supply-form :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.supply-form :deep(.el-select),
+.supply-form :deep(.el-date-editor),
+.supply-form :deep(.el-input-number) {
+  width: 100%;
+}
+
+.inline-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 8px;
+  width: 100%;
+}
+
+.supply-form :deep(.el-textarea__inner) {
+  min-height: 82px !important;
 }
 
 .section-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 18px -16px 14px;
-  padding: 0 16px 10px;
+  margin: 18px -16px 18px;
+  padding: 0 16px 12px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 
   h3 {
@@ -1900,6 +1984,40 @@ const markCustomerStatus = async (status: string) => {
 
 .section-title-first {
   margin-top: 0;
+}
+
+.base-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.base-section-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.base-section-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.base-section-summary strong {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .follow-item {
@@ -1933,7 +2051,6 @@ const markCustomerStatus = async (status: string) => {
 
 @media (max-width: 960px) {
   .drawer-head,
-  .summary-band,
   .drawer-grid {
     display: flex;
     flex-direction: column;
@@ -1944,8 +2061,38 @@ const markCustomerStatus = async (status: string) => {
     max-height: none;
   }
 
+  .base-card-head {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .base-card-stats {
+    flex-wrap: wrap;
+  }
+
+  .base-card-actions {
+    justify-content: flex-start;
+  }
+
+  .base-card-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+
   .base-supply-table {
     padding: 12px;
+  }
+
+  .supply-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .supply-form-grid .span-2 {
+    grid-column: auto;
+  }
+
+  .inline-field {
+    grid-template-columns: minmax(0, 1fr) 84px;
   }
 }
 </style>
