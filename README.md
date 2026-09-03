@@ -9,13 +9,14 @@ QPS 面向中药材基地卖方与药厂买方，统一管理供给信息、采�
 ```text
 qps-ht/         ASP.NET Core 后端
 qps-web-admin/  Vue 3 管理端
-C:\Users\Dust\AppData\Local\Temp\QPS/   Playwright UI 测试
+codex-temp/     普通临时产物（已忽略）
+qps-ui-tests/   Playwright UI 测试、截图和报告（已忽略）
 docs/           共享产品与研发文档
 ```
 
 ## 本地启动
 
-以下命令启动后端调试服务和前端开发服务。管理端默认连接本地 IIS 的 `20004`；需要联调 `5000` 调试后端时，按 [本地启动与发布](docs/operations/本地启动与发布.md) 配置本机 `.env.local`。
+以下命令启动本地后端和前端。前端固定使用 `http://127.0.0.1:5173`，并通过 `http://localhost:5000/api` 连接本地后端；UI 测试也使用这组端口。
 
 ```powershell
 dotnet run --project .\qps-ht\src\4.QPS.WebAPI\QPS.WebAPI.csproj -- --urls http://localhost:5000

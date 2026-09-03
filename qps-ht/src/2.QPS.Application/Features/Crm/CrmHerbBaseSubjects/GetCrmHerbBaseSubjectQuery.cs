@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
+using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Interfaces;
 using QPS.Application.Features.Crm.CrmHerbBaseSupplies;
 using QPS.Domain.Exceptions;
@@ -32,7 +33,7 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
         FillBaseSummary(subject);
         subject.Contacts = await GetContactsAsync(subject.Id, cancellationToken);
         subject.FollowRecords = await GetFollowRecordsAsync(subject.Id, cancellationToken);
-        subject.TransferRecords = await CrmTransferRecords.GetAsync(
+        subject.TransferRecords = await CrmTransferRecordQuery.GetAsync(
             _dbContext,
             CrmCodes.HerbBaseSubjectEntityType,
             subject.Id,

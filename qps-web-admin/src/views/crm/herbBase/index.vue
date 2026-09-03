@@ -662,7 +662,7 @@ const selectedHerbBases = ref<HerbBaseSubjectDetail[]>([]);
 const ownerOptions = ref<any[]>([]);
 const regionPath = ref<string[]>([]);
 const supplyBaseId = ref("");
-const supplyForm = reactive({ id: "", productName: "", availableQuantity: undefined as number | undefined, quantityUnit: "", specification: "", qualityRequirement: "", harvestSeason: "", expectedPrice: undefined as number | undefined, priceUnit: "", supplyCycle: "", confirmedAt: "", validUntil: "", remark: "" });
+const supplyForm = reactive({ id: "", productName: "", availableQuantity: undefined as number | undefined, quantityUnit: "", specification: "", qualityRequirement: "", harvestSeason: "", expectedPrice: undefined as number | undefined, priceUnit: "", supplyCycle: "", confirmedAt: null as string | null, validUntil: null as string | null, remark: "" });
 
 const searchForm = reactive({
   keyword: "",
@@ -1141,13 +1141,13 @@ const handleAdd = async () => {
 
 const openSupplyDialog = (base: any, supply?: any) => {
   supplyBaseId.value = base.id;
-  Object.assign(supplyForm, { id: supply?.id || "", productName: supply?.productName || "", availableQuantity: supply?.availableQuantity, quantityUnit: supply?.quantityUnit || "", specification: supply?.specification || "", qualityRequirement: supply?.qualityRequirement || "", harvestSeason: supply?.harvestSeason || "", expectedPrice: supply?.expectedPrice, priceUnit: supply?.priceUnit || "", supplyCycle: supply?.supplyCycle || "", confirmedAt: supply?.confirmedAt || "", validUntil: supply?.validUntil || "", remark: supply?.remark || "" });
+  Object.assign(supplyForm, { id: supply?.id || "", productName: supply?.productName || "", availableQuantity: supply?.availableQuantity, quantityUnit: supply?.quantityUnit || "", specification: supply?.specification || "", qualityRequirement: supply?.qualityRequirement || "", harvestSeason: supply?.harvestSeason || "", expectedPrice: supply?.expectedPrice, priceUnit: supply?.priceUnit || "", supplyCycle: supply?.supplyCycle || "", confirmedAt: supply?.confirmedAt || null, validUntil: supply?.validUntil || null, remark: supply?.remark || "" });
   supplyDialogVisible.value = true;
 };
 
 const submitSupply = async () => {
   if (!supplyForm.productName) return ElMessage.error("请选择品类");
-  const request = { ...supplyForm };
+  const request = { ...supplyForm, confirmedAt: supplyForm.confirmedAt || null, validUntil: supplyForm.validUntil || null };
   delete (request as any).id;
   if (supplyForm.id) await crmHerbBaseApi.updateSupply(supplyForm.id, request);
   else await crmHerbBaseApi.createSupply(supplyBaseId.value, request);

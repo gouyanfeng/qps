@@ -51,6 +51,6 @@ export default defineConfig({
     // 固定端口，避免每次启动变化
     port: 5173,
     // 端口被占用时报错而不自动 +1，便于排查
-    strictPort: false,
+    strictPort: true,
   },
 });

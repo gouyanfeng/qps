@@ -33,12 +33,13 @@ dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=
 
 ## 代码风格
 
+- Application 层按业务功能分目录：`Features/{领域}/{功能}`；文件命名空间必须与其目录一致，例如 `Features.Crm.CrmTransfers`。
+- Contracts 与功能目录平行组织：仅被某个功能使用的 DTO 放入 `Contracts/{领域}/{功能}`；跨 CRM 功能共用的 DTO 才保留在 `Contracts/Crm` 根目录。
+- 一个文件的主类型名必须与文件名一致；包含同一功能的一组 DTO 时使用复数文件名（如 `CrmDashboardChartDtos.cs`）。
+- Command、Query 使用 `动词 + Crm + 业务对象 + Command/Query` 命名；静态查询辅助类以单数业务对象加 `Query` 结尾（如 `CrmTransferRecordQuery`），规则类用 `Rules`，映射类用 `Mapper`。不要使用复数集合名作为辅助类名。
+- 仅被多个 CRM 功能共同使用的常量、字典校验等组件可以放在 `Features/Crm` 根目录；功能专属组件必须归入所属功能目录。
 - `Handle` 只负责用例编排；复杂校验、查询、映射和状态同步下沉到私有方法或领域方法。
 - 构造函数、`Handle` 和复杂私有方法添加简短 XML 注释，说明业务意图。
 - 长条件和长参数列表换行；方法之间保留一个空行。
 - 领域不变量放在 Domain 实体或领域方法，Application 层负责跨仓储、跨服务的协作。
 - 不为统一风格批量修改无关 System 文件；改动应直接降低重复或风险。
-
-## 临时文件
-
-- 临时测试、Playwright 临时 spec、调试脚本和分析产物放在 `C:\Users\Dust\AppData\Local\Temp\QPS`，不要放入仓库、源码目录或提交仓库。

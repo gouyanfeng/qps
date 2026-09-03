@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
 
-namespace QPS.Application.Features.Crm;
+namespace QPS.Application.Features.Crm.CrmTransfers;
 
-public static class CrmTransferRecords
+public static class CrmTransferRecordQuery
 {
     public static async Task<List<CrmTransferRecordDto>> GetAsync(
         IDbContext dbContext,

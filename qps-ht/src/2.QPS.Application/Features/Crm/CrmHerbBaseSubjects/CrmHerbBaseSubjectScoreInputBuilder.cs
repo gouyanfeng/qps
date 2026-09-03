@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using QPS.Application.Interfaces;
 using QPS.Domain.Entities.Crm;
 
-namespace QPS.Application.Features.Crm;
+namespace QPS.Application.Features.Crm.CrmHerbBaseSubjects;
 
 public static class CrmHerbBaseSubjectScoreInputBuilder
 {

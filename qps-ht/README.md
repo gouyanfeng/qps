@@ -17,7 +17,7 @@ permissions, CRM business data, data dictionaries, and error logging.
 | Framework | ASP.NET Core 8 |
 | Language | C# |
 | ORM | Entity Framework Core 8 |
-| Database | SQLite |
+| Database | SQL Server |
 | CQRS | MediatR |
 | Auth | JWT |
 | Validation | FluentValidation |
@@ -45,13 +45,18 @@ tests/
 | UserController | /api/admin/users | User management |
 | PermissionController | /api/admin/permissions | Permission tree and role permissions |
 | DataDictionaryController | /api/admin/data-dictionaries | Data dictionary management |
+| CrmHerbBaseController | /api/admin/crm/herb-base-subjects, /api/admin/crm/herb-bases | 基地主体、基地及供应信息 |
+| CrmVendorController | /api/admin/crm/vendors | 厂商、联系人、跟进和厂商采购需求 |
+| CrmPurchaseDemandController | /api/admin/crm/purchase-demands | 采购需求维护与状态流转 |
+| CrmFollowTaskController | /api/admin/crm/follow-tasks | 当前负责人跟进任务工作台 |
+| DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
 
 ## Run
 
 ```bash
 dotnet restore QPS.sln
 dotnet build QPS.sln
-dotnet run --project src/4.QPS.WebAPI/QPS.WebAPI.csproj
+dotnet run --project src/4.QPS.WebAPI/QPS.WebAPI.csproj -- --urls http://localhost:5000
 ```
 
 Swagger is available at `/swagger` when the API is running.

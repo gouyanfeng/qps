@@ -1,10 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using QPS.Application.Contracts.Crm;
+using QPS.Application.Contracts.Crm.CrmDashboard;
+using QPS.Application.Features.Crm;
 using QPS.Application.Features.Crm.CrmVendors;
 using QPS.Application.Interfaces;
 
-namespace QPS.Application.Features.Crm;
+namespace QPS.Application.Features.Crm.CrmDashboard;
 
 public enum CrmDashboardChart
 {

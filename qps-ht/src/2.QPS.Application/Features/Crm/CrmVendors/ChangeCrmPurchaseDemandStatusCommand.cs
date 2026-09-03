@@ -18,8 +18,7 @@ public class ChangeCrmPurchaseDemandStatusHandler : IRequestHandler<ChangeCrmPur
     public async Task<bool> Handle(ChangeCrmPurchaseDemandStatusCommand request, CancellationToken cancellationToken)
     {
         var demand = await _dbContext.CrmPurchaseDemands.Include(item => item.Items).FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken) ?? throw new BusinessException(404, "采购需求不存在");
-        try { demand.ChangeStatus(request.Request.Status.Trim(), request.Request.ClosedReason); }
-        catch (InvalidOperationException exception) { throw new BusinessException(400, exception.Message); }
+        demand.ChangeStatus(request.Request.Status.Trim(), request.Request.ClosedReason);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }

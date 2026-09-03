@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Features.Crm;
+using QPS.Application.Features.Crm.CrmDashboard;
 
 namespace QPS.WebAPI.Controllers.Admin.Crm;
 

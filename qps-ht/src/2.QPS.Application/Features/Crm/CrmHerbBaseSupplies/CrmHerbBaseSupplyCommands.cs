@@ -26,7 +26,6 @@ public class CreateCrmHerbBaseSupplyHandler(IDbContext dbContext) : IRequestHand
     public async Task<bool> Handle(CreateCrmHerbBaseSupplyCommand command, CancellationToken cancellationToken)
     {
         var herbBase = await dbContext.CrmHerbBases.FirstOrDefaultAsync(item => item.Id == command.HerbBaseId, cancellationToken) ?? throw new BusinessException(404, "药材基地不存在");
-        await CrmHerbProductDictionary.ValidateActiveNamesAsync(dbContext, [command.Request.ProductName.Trim()], cancellationToken);
         var request = command.Request;
         dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(herbBase.Id, herbBase.HerbBaseSubjectId, request.ProductName, request.AvailableQuantity, request.QuantityUnit, request.Specification, request.QualityRequirement, request.HarvestSeason, request.ExpectedPrice, request.PriceUnit, request.SupplyCycle, request.ConfirmedAt, request.ValidUntil, request.Remark));
         await dbContext.SaveChangesAsync(cancellationToken); return true;
@@ -38,9 +37,8 @@ public class UpdateCrmHerbBaseSupplyHandler(IDbContext dbContext) : IRequestHand
     public async Task<bool> Handle(UpdateCrmHerbBaseSupplyCommand command, CancellationToken cancellationToken)
     {
         var supply = await dbContext.CrmHerbBaseSupplies.FirstOrDefaultAsync(item => item.Id == command.Id, cancellationToken) ?? throw new BusinessException(404, "供应信息不存在");
-        await CrmHerbProductDictionary.ValidateActiveNamesAsync(dbContext, [command.Request.ProductName.Trim()], cancellationToken);
-        try { var r = command.Request; supply.Update(r.ProductName, r.AvailableQuantity, r.QuantityUnit, r.Specification, r.QualityRequirement, r.HarvestSeason, r.ExpectedPrice, r.PriceUnit, r.SupplyCycle, r.ConfirmedAt, r.ValidUntil, r.Remark); }
-        catch (InvalidOperationException ex) { throw new BusinessException(400, ex.Message); }
+        var request = command.Request;
+        supply.Update(request.ProductName, request.AvailableQuantity, request.QuantityUnit, request.Specification, request.QualityRequirement, request.HarvestSeason, request.ExpectedPrice, request.PriceUnit, request.SupplyCycle, request.ConfirmedAt, request.ValidUntil, request.Remark);
         await dbContext.SaveChangesAsync(cancellationToken); return true;
     }
 }
@@ -60,7 +58,7 @@ public class ChangeCrmHerbBaseSupplyStatusHandler(IDbContext dbContext) : IReque
     public async Task<bool> Handle(ChangeCrmHerbBaseSupplyStatusCommand command, CancellationToken cancellationToken)
     {
         var supply = await dbContext.CrmHerbBaseSupplies.FirstOrDefaultAsync(item => item.Id == command.Id, cancellationToken) ?? throw new BusinessException(404, "供应信息不存在");
-        try { supply.ChangeStatus(command.Request.Status); } catch (InvalidOperationException ex) { throw new BusinessException(400, ex.Message); }
+        supply.ChangeStatus(command.Request.Status);
         await dbContext.SaveChangesAsync(cancellationToken); return true;
     }
 }

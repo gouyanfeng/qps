@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
+using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Features.Crm;
 using QPS.Application.Interfaces;
 using QPS.Domain.Exceptions;
@@ -65,7 +66,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
                 cancellationToken))
             .GetValueOrDefault(vendor.Id, []);
 
-        var transferRecords = await CrmTransferRecords.GetAsync(
+        var transferRecords = await CrmTransferRecordQuery.GetAsync(
             _dbContext,
             VendorEntityType,
             vendor.Id,
