@@ -1,11 +1,15 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
+using QPS.Application.Features.Crm;
+using QPS.Application.Features.Crm.CrmContacts;
+using QPS.Application.Features.Crm.CrmFollowRecords;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Application.Features.Crm.CrmHerbBaseSubjects;
 using QPS.Application.Features.Crm.CrmHerbBaseSupplies;
 using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Extensions;
+using QPS.Application.Interfaces;
 using QPS.Domain.Entities.Crm;
 
 namespace QPS.WebAPI.Controllers.Admin.Crm;
@@ -18,10 +22,12 @@ namespace QPS.WebAPI.Controllers.Admin.Crm;
 public class CrmHerbBaseController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IDbContext _dbContext;
 
-    public CrmHerbBaseController(IMediator mediator)
+    public CrmHerbBaseController(IMediator mediator, IDbContext dbContext)
     {
         _mediator = mediator;
+        _dbContext = dbContext;
     }
 
     [HttpGet("/api/admin/crm/herb-base-subjects")]
@@ -37,15 +43,113 @@ public class CrmHerbBaseController : ControllerBase
         return Ok(await _mediator.Send(new GetCrmHerbBaseSubjectQuery { Id = id }));
     }
 
-    [HttpPatch("/api/admin/crm/herb-base-subjects/owner")]
+    [HttpPatch("/api/admin/crm/herb-base-subjects/{subjectId:guid}/owner")]
     public async Task<ActionResult<bool>> ChangeHerbBaseSubjectOwner(
+        Guid subjectId,
         [FromBody] CrmTransferOwnerChangeRequest request)
     {
         return Ok(await _mediator.Send(new ChangeCrmOwnerCommand
         {
             EntityType = CrmTransferEntityType.HerbBaseSubject,
+            Request = CreateOwnerRequest(subjectId, request)
+        }));
+    }
+
+    [HttpGet("/api/admin/crm/herb-base-subjects/{subjectId:guid}/contacts")]
+    public async Task<ActionResult<List<CrmContactDto>>> GetSubjectContacts(Guid subjectId)
+    {
+        return Ok(await _mediator.Send(new GetCrmContactsQuery
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId
+        }));
+    }
+
+    [HttpPost("/api/admin/crm/herb-base-subjects/{subjectId:guid}/contacts")]
+    public async Task<ActionResult<bool>> CreateSubjectContact(
+        Guid subjectId,
+        [FromBody] CrmContactCreateRequest request)
+    {
+        return Ok(await _mediator.Send(new CreateCrmContactCommand
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId,
             Request = request
         }));
+    }
+
+    [HttpPut("/api/admin/crm/herb-base-subjects/{subjectId:guid}/contacts/{contactId:guid}")]
+    public async Task<ActionResult<bool>> UpdateSubjectContact(
+        Guid subjectId,
+        Guid contactId,
+        [FromBody] CrmContactUpdateRequest request)
+    {
+        return Ok(await _mediator.Send(new UpdateCrmContactCommand
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId,
+            Id = contactId,
+            Request = request
+        }));
+    }
+
+    [HttpPatch("/api/admin/crm/herb-base-subjects/{subjectId:guid}/contacts/{contactId:guid}/primary")]
+    public async Task<ActionResult<bool>> SetSubjectPrimaryContact(Guid subjectId, Guid contactId)
+    {
+        return Ok(await _mediator.Send(new SetPrimaryCrmContactCommand
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId,
+            Id = contactId
+        }));
+    }
+
+    [HttpPatch("/api/admin/crm/herb-base-subjects/{subjectId:guid}/contacts/{contactId:guid}/status")]
+    public async Task<ActionResult<bool>> UpdateSubjectContactStatus(
+        Guid subjectId,
+        Guid contactId,
+        [FromBody] CrmContactStatusRequest request)
+    {
+        return Ok(await _mediator.Send(new UpdateCrmContactStatusCommand
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId,
+            Id = contactId,
+            Request = request
+        }));
+    }
+
+    [HttpGet("/api/admin/crm/herb-base-subjects/{subjectId:guid}/follow-records")]
+    public async Task<ActionResult<List<CrmFollowRecordDto>>> GetSubjectFollowRecords(Guid subjectId)
+    {
+        return Ok(await _mediator.Send(new GetCrmFollowRecordsQuery
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId
+        }));
+    }
+
+    [HttpPost("/api/admin/crm/herb-base-subjects/{subjectId:guid}/follow-records")]
+    public async Task<ActionResult<bool>> CreateSubjectFollowRecord(
+        Guid subjectId,
+        [FromBody] CrmFollowRecordCreateRequest request)
+    {
+        return Ok(await _mediator.Send(new CreateCrmFollowRecordCommand
+        {
+            EntityType = CrmCodes.HerbBaseSubjectEntityType,
+            EntityId = subjectId,
+            Request = request
+        }));
+    }
+
+    [HttpGet("/api/admin/crm/herb-base-subjects/{subjectId:guid}/transfer-records")]
+    public async Task<ActionResult<List<CrmTransferRecordDto>>> GetSubjectTransferRecords(Guid subjectId)
+    {
+        return Ok(await CrmTransferRecordQuery.GetAsync(
+            _dbContext,
+            CrmTransferEntityType.HerbBaseSubject,
+            subjectId,
+            HttpContext.RequestAborted));
     }
 
     [HttpPut("/api/admin/crm/herb-base-subjects/{id:guid}")]
@@ -165,6 +269,18 @@ public class CrmHerbBaseController : ControllerBase
     [HttpPatch("/api/admin/crm/herb-base-supplies/{id:guid}/status")]
     public async Task<ActionResult<bool>> ChangeSupplyStatus(Guid id, [FromBody] CrmHerbBaseSupplyStatusRequest request)
         => Ok(await _mediator.Send(new ChangeCrmHerbBaseSupplyStatusCommand { Id = id, Request = request }));
+
+    private static CrmTransferOwnerChangeRequest CreateOwnerRequest(
+        Guid entityId,
+        CrmTransferOwnerChangeRequest request)
+    {
+        return new CrmTransferOwnerChangeRequest
+        {
+            EntityIds = new List<Guid> { entityId },
+            ToOwnerUserId = request.ToOwnerUserId,
+            Remark = request.Remark
+        };
+    }
 }
 
 

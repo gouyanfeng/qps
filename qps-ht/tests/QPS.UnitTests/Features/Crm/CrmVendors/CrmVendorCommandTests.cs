@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmVendors;
+using QPS.Domain.Entities.Crm;
 using QPS.Domain.Entities.System;
 using QPS.UnitTests.Common;
 using Xunit;
@@ -35,7 +36,7 @@ public class CrmVendorCommandTests
         var transferRecord = await dbContext.CrmTransferRecords.SingleAsync();
 
         Assert.True(result);
-        Assert.Equal("ENTRY", transferRecord.ActionType);
+        Assert.Equal(CrmTransferActionType.Entry, transferRecord.ActionType);
         Assert.Equal("CRM_VENDOR", transferRecord.EntityType);
         Assert.Equal(vendor.Id, transferRecord.EntityId);
         Assert.Null(transferRecord.FromOwnerUserId);
@@ -73,7 +74,7 @@ public class CrmVendorCommandTests
             CancellationToken.None);
 
         var transferRecord = Assert.Single(detail.TransferRecords);
-        Assert.Equal("ENTRY", transferRecord.ActionType);
+        Assert.Equal(CrmTransferActionType.Entry, transferRecord.ActionType);
         Assert.Null(transferRecord.FromOwnerUserId);
         Assert.Equal(operatorUser.Id, transferRecord.ToOwnerUserId);
         Assert.Equal("Operator", transferRecord.ToOwnerUserName);

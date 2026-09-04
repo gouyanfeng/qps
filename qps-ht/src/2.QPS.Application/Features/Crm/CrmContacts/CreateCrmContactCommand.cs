@@ -10,14 +10,16 @@ namespace QPS.Application.Features.Crm.CrmContacts;
 
 public class CreateCrmContactCommand : IRequest<bool>
 {
-    public Guid HerbBaseSubjectId { get; set; }
+    public string EntityType { get; set; } = string.Empty;
+
+    public Guid EntityId { get; set; }
 
     public CrmContactCreateRequest Request { get; set; } = null!;
 }
 
 public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, bool>
 {
-    private const string HerbBaseSubjectEntityType = CrmCodes.HerbBaseSubjectEntityType;
+    private const string InvalidStatus = "无效";
 
     private readonly IDbContext _dbContext;
     private readonly IDomainEventDispatcher _dispatcher;
@@ -30,33 +32,67 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
 
     public async Task<bool> Handle(CreateCrmContactCommand request, CancellationToken cancellationToken)
     {
-        var subject = await GetSubject(request.HerbBaseSubjectId, cancellationToken);
-        await EnsurePhoneNotDuplicated(request.HerbBaseSubjectId, request.Request.Phone, cancellationToken);
-        var contact = CreateContact(request, subject);
-        await ApplyPrimaryContact(subject, contact, cancellationToken);
+        var target = new CrmContactTarget(request.EntityType, request.EntityId);
+        target.EnsureSupported();
+
+        var subject = target.IsHerbBaseSubject
+            ? await GetSubject(target.EntityId, cancellationToken)
+            : null;
+        if (target.IsVendor)
+        {
+            await EnsureVendorExists(target.EntityId, cancellationToken);
+        }
+
+        await EnsurePhoneNotDuplicated(target, request.Request.Phone, null, cancellationToken);
+
+        var contact = CrmContact.Create(
+            target.EntityType,
+            target.EntityId,
+            request.Request.ContactName,
+            request.Request.Phone,
+            request.Request.PhoneType,
+            request.Request.Wechat,
+            request.Request.RoleName,
+            await ShouldBePrimary(target, subject, request.Request.IsPrimary, cancellationToken),
+            request.Request.Remark);
+
+        if (contact.IsPrimary)
+        {
+            await UnmarkSiblingPrimaryContacts(target, contact.Id, cancellationToken);
+            subject?.UpdatePrimaryContact(contact.ContactName, contact.Phone);
+        }
 
         _dbContext.CrmContacts.Add(contact);
-
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
+        await PublishScoreIfNeeded(subject, cancellationToken);
 
         return true;
     }
 
-    private async Task<CrmHerbBaseSubject> GetSubject(Guid herbBaseSubjectId, CancellationToken cancellationToken)
+    private async Task<CrmHerbBaseSubject> GetSubject(Guid subjectId, CancellationToken cancellationToken)
     {
         var subject = await _dbContext.CrmHerbBaseSubjects
-            .FirstOrDefaultAsync(subject => subject.Id == herbBaseSubjectId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == subjectId && !item.IsDeleted, cancellationToken);
 
-        if (subject == null)
-        {
-            throw new BusinessException(404, "药材基地主体不存在");
-        }
-
-        return subject;
+        return subject ?? throw new BusinessException(404, "药材基地主体不存在");
     }
 
-    private async Task EnsurePhoneNotDuplicated(Guid herbBaseSubjectId, string phone, CancellationToken cancellationToken)
+    private async Task EnsureVendorExists(Guid vendorId, CancellationToken cancellationToken)
+    {
+        var exists = await _dbContext.CrmVendors
+            .AnyAsync(item => item.Id == vendorId && !item.IsDeleted, cancellationToken);
+
+        if (!exists)
+        {
+            throw new BusinessException(404, "厂商不存在");
+        }
+    }
+
+    private async Task EnsurePhoneNotDuplicated(
+        CrmContactTarget target,
+        string phone,
+        Guid? excludedContactId,
+        CancellationToken cancellationToken)
     {
         var normalizedPhone = phone?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(normalizedPhone))
@@ -66,60 +102,70 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
 
         var exists = await _dbContext.CrmContacts.AnyAsync(
             contact =>
-                contact.EntityType == HerbBaseSubjectEntityType &&
-                contact.EntityId == herbBaseSubjectId &&
+                !contact.IsDeleted &&
+                contact.EntityType == target.EntityType &&
+                contact.EntityId == target.EntityId &&
+                contact.Id != excludedContactId &&
                 contact.Phone == normalizedPhone,
             cancellationToken);
 
         if (exists)
         {
-            throw new BusinessException(400, "该主体下已存在相同联系电话");
+            throw new BusinessException(400, "该对象下已存在相同联系电话");
         }
     }
 
-    private static CrmContact CreateContact(CreateCrmContactCommand command, CrmHerbBaseSubject subject)
+    private async Task<bool> ShouldBePrimary(
+        CrmContactTarget target,
+        CrmHerbBaseSubject? subject,
+        bool requestedPrimary,
+        CancellationToken cancellationToken)
     {
-        var shouldBePrimary = command.Request.IsPrimary ||
-            (
-                string.IsNullOrWhiteSpace(subject.PrimaryContactName) &&
-                string.IsNullOrWhiteSpace(subject.PrimaryContactPhone));
-
-        return CrmContact.Create(
-            HerbBaseSubjectEntityType,
-            command.HerbBaseSubjectId,
-            command.Request.ContactName,
-            command.Request.Phone,
-            command.Request.PhoneType,
-            command.Request.Wechat,
-            command.Request.RoleName,
-            shouldBePrimary,
-            command.Request.Remark);
-    }
-
-    private async Task ApplyPrimaryContact(CrmHerbBaseSubject subject, CrmContact contact, CancellationToken cancellationToken)
-    {
-        if (!contact.IsPrimary)
+        if (requestedPrimary)
         {
-            return;
+            return true;
         }
 
-        await UnmarkSiblingPrimaryContacts(subject.Id, contact.Id, cancellationToken);
-        subject.UpdatePrimaryContact(contact.ContactName, contact.Phone);
+        if (target.IsHerbBaseSubject)
+        {
+            return string.IsNullOrWhiteSpace(subject?.PrimaryContactName) &&
+                string.IsNullOrWhiteSpace(subject?.PrimaryContactPhone);
+        }
+
+        return !await _dbContext.CrmContacts.AnyAsync(
+            contact =>
+                !contact.IsDeleted &&
+                contact.EntityType == target.EntityType &&
+                contact.EntityId == target.EntityId &&
+                contact.Status != InvalidStatus,
+            cancellationToken);
     }
 
-    private async Task UnmarkSiblingPrimaryContacts(Guid herbBaseSubjectId, Guid contactId, CancellationToken cancellationToken)
+    private async Task UnmarkSiblingPrimaryContacts(
+        CrmContactTarget target,
+        Guid contactId,
+        CancellationToken cancellationToken)
     {
         var siblings = await _dbContext.CrmContacts
-            .Where(c =>
-                c.EntityType == HerbBaseSubjectEntityType &&
-                c.EntityId == herbBaseSubjectId &&
-                c.Id != contactId &&
-                c.IsPrimary)
+            .Where(contact =>
+                !contact.IsDeleted &&
+                contact.EntityType == target.EntityType &&
+                contact.EntityId == target.EntityId &&
+                contact.Id != contactId &&
+                contact.IsPrimary)
             .ToListAsync(cancellationToken);
 
         foreach (var sibling in siblings)
         {
             sibling.UnmarkPrimary();
+        }
+    }
+
+    private async Task PublishScoreIfNeeded(CrmHerbBaseSubject? subject, CancellationToken cancellationToken)
+    {
+        if (subject != null)
+        {
+            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subject.Id), cancellationToken);
         }
     }
 }

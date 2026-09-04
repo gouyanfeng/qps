@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Extensions;
 using QPS.Application.Features.Crm;
+using QPS.Application.Features.Crm.CrmContacts;
 using QPS.Application.Features.Crm.CrmFollowRecords;
 using QPS.Application.Features.Crm.CrmTransfers;
 using QPS.Application.Features.Crm.CrmVendors;
+using QPS.Application.Interfaces;
 using QPS.Domain.Entities.Crm;
 
 namespace QPS.WebAPI.Controllers.Admin.Crm;
@@ -15,10 +17,12 @@ namespace QPS.WebAPI.Controllers.Admin.Crm;
 public class CrmVendorController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IDbContext _dbContext;
 
-    public CrmVendorController(IMediator mediator)
+    public CrmVendorController(IMediator mediator, IDbContext dbContext)
     {
         _mediator = mediator;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
@@ -72,13 +76,13 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPatch("owner")]
-    public async Task<ActionResult<bool>> ChangeOwner([FromBody] CrmTransferOwnerChangeRequest request)
+    [HttpPatch("{id:guid}/owner")]
+    public async Task<ActionResult<bool>> ChangeOwner(Guid id, [FromBody] CrmTransferOwnerChangeRequest request)
     {
         var command = new ChangeCrmOwnerCommand
         {
             EntityType = CrmTransferEntityType.Vendor,
-            Request = request
+            Request = CreateOwnerRequest(id, request)
         };
         var result = await _mediator.Send(command);
         return Ok(result);
@@ -97,15 +101,69 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("{id}/contacts")]
-    public async Task<ActionResult<bool>> CreateContact(Guid id, [FromBody] CrmContactCreateRequest request)
+    [HttpGet("{id:guid}/contacts")]
+    public async Task<ActionResult<List<CrmContactDto>>> GetContacts(Guid id)
     {
-        var command = new CreateCrmVendorContactCommand { VendorId = id, Request = request };
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        return Ok(await _mediator.Send(new GetCrmContactsQuery
+        {
+            EntityType = CrmCodes.VendorEntityType,
+            EntityId = id
+        }));
     }
 
-    [HttpGet("{id}/follow-records")]
+    [HttpPost("{id:guid}/contacts")]
+    public async Task<ActionResult<bool>> CreateContact(Guid id, [FromBody] CrmContactCreateRequest request)
+    {
+        return Ok(await _mediator.Send(new CreateCrmContactCommand
+        {
+            EntityType = CrmCodes.VendorEntityType,
+            EntityId = id,
+            Request = request
+        }));
+    }
+
+    [HttpPut("{id:guid}/contacts/{contactId:guid}")]
+    public async Task<ActionResult<bool>> UpdateContact(
+        Guid id,
+        Guid contactId,
+        [FromBody] CrmContactUpdateRequest request)
+    {
+        return Ok(await _mediator.Send(new UpdateCrmContactCommand
+        {
+            EntityType = CrmCodes.VendorEntityType,
+            EntityId = id,
+            Id = contactId,
+            Request = request
+        }));
+    }
+
+    [HttpPatch("{id:guid}/contacts/{contactId:guid}/primary")]
+    public async Task<ActionResult<bool>> SetPrimaryContact(Guid id, Guid contactId)
+    {
+        return Ok(await _mediator.Send(new SetPrimaryCrmContactCommand
+        {
+            EntityType = CrmCodes.VendorEntityType,
+            EntityId = id,
+            Id = contactId
+        }));
+    }
+
+    [HttpPatch("{id:guid}/contacts/{contactId:guid}/status")]
+    public async Task<ActionResult<bool>> UpdateContactStatus(
+        Guid id,
+        Guid contactId,
+        [FromBody] CrmContactStatusRequest request)
+    {
+        return Ok(await _mediator.Send(new UpdateCrmContactStatusCommand
+        {
+            EntityType = CrmCodes.VendorEntityType,
+            EntityId = id,
+            Id = contactId,
+            Request = request
+        }));
+    }
+
+    [HttpGet("{id:guid}/follow-records")]
     public async Task<ActionResult<List<CrmFollowRecordDto>>> GetVendorFollowRecords(Guid id)
     {
         var query = new GetCrmFollowRecordsQuery { EntityType = CrmCodes.VendorEntityType, EntityId = id };
@@ -113,7 +171,7 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("{id}/follow-records")]
+    [HttpPost("{id:guid}/follow-records")]
     public async Task<ActionResult<bool>> CreateVendorFollowRecord(Guid id, [FromBody] CrmFollowRecordCreateRequest request)
     {
         var command = new CreateCrmFollowRecordCommand
@@ -124,6 +182,16 @@ public class CrmVendorController : ControllerBase
         };
         var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/transfer-records")]
+    public async Task<ActionResult<List<CrmTransferRecordDto>>> GetTransferRecords(Guid id)
+    {
+        return Ok(await CrmTransferRecordQuery.GetAsync(
+            _dbContext,
+            CrmTransferEntityType.Vendor,
+            id,
+            HttpContext.RequestAborted));
     }
 
     [HttpGet("{id}/purchase-demands")]
@@ -145,6 +213,18 @@ public class CrmVendorController : ControllerBase
 
         var result = await _mediator.Send(query);
         return Ok(result);
+    }
+
+    private static CrmTransferOwnerChangeRequest CreateOwnerRequest(
+        Guid entityId,
+        CrmTransferOwnerChangeRequest request)
+    {
+        return new CrmTransferOwnerChangeRequest
+        {
+            EntityIds = new List<Guid> { entityId },
+            ToOwnerUserId = request.ToOwnerUserId,
+            Remark = request.Remark
+        };
     }
 }
 

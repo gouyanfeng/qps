@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
+using QPS.Application.Features.Crm;
 using QPS.Application.Features.Crm.CrmFollowRecords;
 using QPS.Domain.Entities.Crm;
 using QPS.Domain.Exceptions;
@@ -60,7 +61,7 @@ public class CrmFollowRecordCommandTests
             {
                 ContactId = contact.Id,
                 FollowType = "PHONE",
-                FollowResult = "INTERESTED",
+                FollowResult = CrmCodes.FollowResult.Interested,
                 IntentLevel = "A",
                 Content = "Customer is interested",
                 NextFollowAt = nextFollowAt
@@ -73,9 +74,9 @@ public class CrmFollowRecordCommandTests
         Assert.Equal(operatorUserId, persistedRecord.OperatorUserId);
         Assert.Equal("CRM_HERB_BASE_SUBJECT", persistedRecord.EntityType);
         Assert.Equal(subject.Id, persistedRecord.EntityId);
-        Assert.Equal("INTERESTED", subject.LastFollowResult);
+        Assert.Equal(CrmCodes.FollowResult.Interested, subject.LastFollowResult);
         Assert.Equal(nextFollowAt, subject.NextFollowAt);
-        Assert.Equal("INTERESTED", subject.Status);
+        Assert.Equal(CrmCodes.Status.Interested, subject.Status);
     }
 
     [Fact]

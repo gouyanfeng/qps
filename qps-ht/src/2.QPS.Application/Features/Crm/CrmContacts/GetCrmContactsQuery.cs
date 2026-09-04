@@ -8,13 +8,13 @@ namespace QPS.Application.Features.Crm.CrmContacts;
 
 public class GetCrmContactsQuery : IRequest<List<CrmContactDto>>
 {
-    public Guid HerbBaseSubjectId { get; set; }
+    public string EntityType { get; set; } = string.Empty;
+
+    public Guid EntityId { get; set; }
 }
 
 public class GetCrmContactsHandler : IRequestHandler<GetCrmContactsQuery, List<CrmContactDto>>
 {
-    private const string HerbBaseSubjectEntityType = CrmCodes.HerbBaseSubjectEntityType;
-
     private readonly IDbContext _dbContext;
 
     /// <summary>
@@ -30,10 +30,12 @@ public class GetCrmContactsHandler : IRequestHandler<GetCrmContactsQuery, List<C
     /// </summary>
     public async Task<List<CrmContactDto>> Handle(GetCrmContactsQuery request, CancellationToken cancellationToken)
     {
-        // 编排查询客户联系人用例：
-        // 按基地主体编号过滤、主联系人优先排序并映射 DTO。
+        var target = new CrmContactTarget(request.EntityType, request.EntityId);
+        target.EnsureSupported();
+        await EnsureTargetExists(target, cancellationToken);
+
         return await _dbContext.CrmContacts
-            .Where(c => c.EntityType == HerbBaseSubjectEntityType && c.EntityId == request.HerbBaseSubjectId)
+            .Where(c => !c.IsDeleted && c.EntityType == target.EntityType && c.EntityId == target.EntityId)
             .OrderByDescending(c => c.IsPrimary)
             .ThenBy(c => c.CreatedAt)
             .Select(c => new CrmContactDto
@@ -53,5 +55,24 @@ public class GetCrmContactsHandler : IRequestHandler<GetCrmContactsQuery, List<C
                 UpdatedAt = c.UpdatedAt
             })
             .ToListAsync(cancellationToken);
+    }
+
+    private async Task EnsureTargetExists(CrmContactTarget target, CancellationToken cancellationToken)
+    {
+        var exists = target.EntityType switch
+        {
+            CrmCodes.HerbBaseSubjectEntityType => await _dbContext.CrmHerbBaseSubjects
+                .AnyAsync(subject => subject.Id == target.EntityId && !subject.IsDeleted, cancellationToken),
+            CrmCodes.VendorEntityType => await _dbContext.CrmVendors
+                .AnyAsync(vendor => vendor.Id == target.EntityId && !vendor.IsDeleted, cancellationToken),
+            _ => false
+        };
+
+        if (!exists)
+        {
+            throw new QPS.Domain.Exceptions.BusinessException(
+                404,
+                target.IsHerbBaseSubject ? "药材基地主体不存在" : "厂商不存在");
+        }
     }
 }
