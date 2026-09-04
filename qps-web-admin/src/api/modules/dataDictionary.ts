@@ -1,4 +1,4 @@
-﻿import http from "@/api";
+import http from "@/api";
 
 /**
  * @description 数据字典模块

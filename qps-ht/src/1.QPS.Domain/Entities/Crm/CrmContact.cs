@@ -43,7 +43,7 @@ public class CrmContact : BaseEntity
         RoleName = Trim(roleName);
         IsPrimary = isPrimary;
         Remark = Trim(remark);
-        Status = "UNVERIFIED";
+        Status = "未验证";
     }
 
     public static CrmContact Create(

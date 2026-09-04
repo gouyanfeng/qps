@@ -14,17 +14,17 @@
             <FollowFunnelChart title="基地主体状态" :items="followFunnel" />
             <FollowTrendChart title="近 7 天基地跟进趋势" :items="followTrend" />
             <NewBaseTrendChart :items="newBaseTrend" />
-            <MainProductDistributionChart title="基地主营品类分布" :items="mainProductDistribution" />
+            <ProductDistributionChart title="基地供应品类分布" :items="supplyProductDistribution" />
           </div>
         </section>
 
         <section class="chart-section">
           <h2 class="section-title">厂商数据</h2>
           <div class="chart-grid">
-            <MainProductDistributionChart title="厂商优先级分布" :items="vendorPriorityDistribution" />
+            <ProductDistributionChart title="厂商优先级分布" :items="vendorPriorityDistribution" />
             <FollowTrendChart title="近 7 天厂商跟进趋势" :items="vendorFollowTrend" />
             <NewPurchaseDemandTrendChart :items="newPurchaseDemandTrend" />
-            <MainProductDistributionChart
+            <ProductDistributionChart
               title="厂商采购品类 Top 10"
               :items="vendorPurchaseProductDistribution"
             />
@@ -45,7 +45,7 @@ import dashboardApi, {
   type CrmDashboardTrendItem,
 } from "@/api/modules/dashboard";
 import FollowFunnelChart from "./components/FollowFunnelChart.vue";
-import MainProductDistributionChart from "./components/MainProductDistributionChart.vue";
+import ProductDistributionChart from "./components/ProductDistributionChart.vue";
 import FollowTrendChart from "./components/FollowTrendChart.vue";
 import NewBaseTrendChart from "./components/NewBaseTrendChart.vue";
 import NewPurchaseDemandTrendChart from "./components/NewPurchaseDemandTrendChart.vue";
@@ -53,7 +53,7 @@ import NewPurchaseDemandTrendChart from "./components/NewPurchaseDemandTrendChar
 const loading = ref(false);
 const errorMessage = ref("");
 const followFunnel = ref<CrmDashboardChartItem[]>([]);
-const mainProductDistribution = ref<CrmDashboardChartItem[]>([]);
+const supplyProductDistribution = ref<CrmDashboardChartItem[]>([]);
 const followTrend = ref<CrmDashboardTrendItem[]>([]);
 const newBaseTrend = ref<CrmDashboardNewBaseTrendItem[]>([]);
 const vendorPriorityDistribution = ref<CrmDashboardChartItem[]>([]);
@@ -65,9 +65,9 @@ const loadDashboard = async () => {
   loading.value = true;
   errorMessage.value = "";
   try {
-    const [followFunnelResult, mainProductResult, followTrendResult, newBaseTrendResult, vendorPriorityResult, vendorFollowTrendResult, newPurchaseDemandTrendResult, vendorPurchaseProductResult] = await Promise.all([
+    const [followFunnelResult, supplyProductResult, followTrendResult, newBaseTrendResult, vendorPriorityResult, vendorFollowTrendResult, newPurchaseDemandTrendResult, vendorPurchaseProductResult] = await Promise.all([
       dashboardApi.getFollowFunnel(),
-      dashboardApi.getMainProductDistribution(),
+      dashboardApi.getSupplyProductDistribution(),
       dashboardApi.getFollowTrend(),
       dashboardApi.getNewBaseTrend(),
       dashboardApi.getVendorPriorityDistribution(),
@@ -76,7 +76,7 @@ const loadDashboard = async () => {
       dashboardApi.getVendorPurchaseProductDistribution(),
     ]);
     followFunnel.value = followFunnelResult.data;
-    mainProductDistribution.value = mainProductResult.data;
+    supplyProductDistribution.value = supplyProductResult.data;
     followTrend.value = followTrendResult.data;
     newBaseTrend.value = newBaseTrendResult.data;
     vendorPriorityDistribution.value = vendorPriorityResult.data;

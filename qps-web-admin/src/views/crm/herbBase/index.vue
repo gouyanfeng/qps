@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="customer-page">
     <QueryPage api="/admin/crm/herb-base-subjects" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
       <template #searchConditions>
@@ -6,13 +6,13 @@
           <el-form-item label="关键词">
             <el-input v-model="searchForm.keyword" clearable placeholder="基地 / 主体 / 联系人 / 电话" />
           </el-form-item>
-          <el-form-item label="主营品类">
+          <el-form-item label="供应品类">
             <ProductSelect
-              v-model="searchForm.mainProducts"
+              v-model="searchForm.productName"
               multiple
               collapse-tags
               collapse-tags-tooltip
-              placeholder="主营品类"
+              placeholder="供应品类"
             />
           </el-form-item>
           <el-form-item>
@@ -41,11 +41,11 @@
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.status" clearable placeholder="状态">
-              <el-option label="待联系" value="PENDING" />
-              <el-option label="跟进中" value="FOLLOWING" />
-              <el-option label="有意向" value="INTERESTED" />
-              <el-option label="已成交" value="DEAL" />
-              <el-option label="已流失" value="LOST" />
+              <el-option label="待联系" value="待联系" />
+              <el-option label="跟进中" value="跟进中" />
+              <el-option label="有意向" value="有意向" />
+              <el-option label="已成交" value="已成交" />
+              <el-option label="已流失" value="已流失" />
             </el-select>
           </el-form-item>
           <el-form-item label="跟进">
@@ -99,17 +99,17 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="主营品类" width="148">
+          <el-table-column label="供应品类" width="148">
             <template #default="{ row }">
-              <div v-if="normalizeMainProducts(row).length" class="main-product-tags">
+              <div v-if="row.productName?.length" class="main-product-tags">
                 <el-tag
-                  v-for="value in normalizeMainProducts(row)"
+                  v-for="value in row.productName"
                   :key="value"
                   size="small"
                   type="info"
                   effect="plain"
                 >
-                  {{ formatEnumLabel(mainProductLabels, value) }}
+                  {{ value }}
                 </el-tag>
               </div>
               <span v-else class="muted">-</span>
@@ -117,7 +117,7 @@
           </el-table-column>
           <el-table-column prop="totalScale" label="总规模(亩)" width="118" align="right" sortable="custom">
             <template #default="{ row }">
-              <span class="scale-cell">{{ formatListScale(row.totalScale) }}</span>
+              <span class="scale-cell">{{ row.totalScale ?? "-" }}</span>
             </template>
           </el-table-column>
           <el-table-column label="地区" min-width="180" show-overflow-tooltip>
@@ -133,7 +133,7 @@
                       <strong>主体评分规则（满分 100 分）</strong>
                       <div>规模：&gt;0 为 10 分，&ge;100 为 15 分，&ge;200 为 20 分，&ge;500 为 25 分</div>
                       <div>基地数：1 个 5 分，2 个 8 分，&ge;3 个 10 分</div>
-                      <div>主营品类：1 个 10 分，&ge;2 个 15 分</div>
+                      <div>供应品类：1 个 10 分，&ge;2 个 15 分</div>
                       <div>联系人：姓名 4 分，主体电话 12 分，有效联系人电话 4 分，无电话 2 分，最高 20 分</div>
                       <div>跟进：已成交 20 分，有意向 18 分，近 30 天有效跟进 14 分，跟进中 10 分</div>
                       <div>资料：地区 2 分，地址 2 分，备注 1 分</div>
@@ -149,19 +149,19 @@
             <template #default="{ row }">
               <div class="score-cell">
                 <strong>{{ row.score ?? 0 }}</strong>
-                <el-tag size="small" :type="getGradeType(row.grade)">{{ formatGrade(row.grade) }}</el-tag>
+                <el-tag size="small">{{ row.grade || "-" }}</el-tag>
               </div>
             </template>
           </el-table-column>
           <el-table-column label="状态" width="88">
             <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)">{{ formatCustomerStatus(row.status) }}</el-tag>
+              <el-tag>{{ row.status || "-" }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="最近沟通" min-width="170">
             <template #default="{ row }">
               <div class="cell-main">
-                <span>{{ formatFollowResult(row.lastFollowResult, "未沟通") }}</span>
+                <span>{{ row.lastFollowResult || "未沟通" }}</span>
                 <span class="muted">{{ formatNullableDate(row.lastFollowAt) }}</span>
               </div>
             </template>
@@ -187,7 +187,7 @@
                   {{ row.ownerUserId ? "转交" : "分配" }}
                 </el-button>
                 <el-button v-if="canManageTransfer || canReturn(row)" type="primary" link :icon="Edit" @click="openTransferDialog([row], 'RETURN')">退回</el-button>
-                <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
+                <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openDetail(row)">记录沟通</el-button></Permission>
               </div>
             </template>
           </el-table-column>
@@ -195,46 +195,10 @@
       </template>
     </QueryPage>
 
-    <el-dialog v-model="subjectDialogVisible" title="编辑主体" width="560px">
-      <el-form :model="subjectForm" label-width="100px">
-        <el-form-item label="主体名称">
-          <el-input v-model="subjectForm.subjectName" placeholder="请输入主体名称" />
-        </el-form-item>
-        <el-form-item label="主体类型">
-          <el-input v-model="subjectForm.subjectType" placeholder="请输入主体类型" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="subjectForm.status" placeholder="请选择状态">
-            <el-option label="待联系" value="PENDING" />
-            <el-option label="跟进中" value="FOLLOWING" />
-            <el-option label="有意向" value="INTERESTED" />
-            <el-option label="已成交" value="DEAL" />
-            <el-option label="已流失" value="LOST" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input type="textarea" v-model="subjectForm.remark" :rows="3" placeholder="请输入备注" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="subjectDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitSubject">保存</el-button>
-      </template>
-    </el-dialog>
-
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑基地' : '新增基地'" width="680px">
       <el-form :model="form" label-width="110px">
         <el-form-item label="基地名称">
           <el-input v-model="form.baseName" placeholder="请输入基地名称" />
-        </el-form-item>
-        <el-form-item label="主营品类">
-          <ProductSelect
-            v-model="form.mainProducts"
-            multiple
-            collapse-tags
-            collapse-tags-tooltip
-            placeholder="请选择主营品类"
-          />
         </el-form-item>
         <el-form-item label="规模(亩)">
           <el-input-number v-model="form.scale" :min="0" :precision="2" />
@@ -247,7 +211,7 @@
         </el-form-item>
         <el-form-item label="来源">
           <el-select v-model="form.sourcePlatform" placeholder="请选择来源">
-            <el-option v-for="item in sourcePlatformOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <el-option v-for="item in sourcePlatforms" :key="item" :label="item" :value="item" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
@@ -260,333 +224,13 @@
       </template>
     </el-dialog>
 
-    <el-drawer v-model="detailDrawerVisible" size="80%" :with-header="false" class="customer-drawer">
-      <div v-if="currentHerbBase" class="drawer-layout">
-        <section class="drawer-head">
-          <div class="head-main">
-            <div class="detail-kicker">基地主体详情</div>
-            <div class="title-row">
-              <h2>{{ getDetailTitle(currentHerbBase) }}</h2>
-              <el-tag :type="getStatusType(currentHerbBase.status)" effect="dark">{{ formatCustomerStatus(currentHerbBase.status) }}</el-tag>
-            </div>
-            <div class="head-meta">
-              <el-tag :type="getGradeType(currentHerbBase.grade)">等级 {{ formatGrade(currentHerbBase.grade) }}</el-tag>
-              <span>类型 {{ currentHerbBase.subjectType || "-" }}</span>
-              <span>评分 {{ currentHerbBase.score ?? 0 }}</span>
-              <span>跟进人 {{ currentHerbBase.ownerUserName || "-" }}</span>
-              <span :class="{ overdue: isOverdue(currentHerbBase.nextFollowAt) }">下次跟进 {{ formatNullableDate(currentHerbBase.nextFollowAt) }}</span>
-              <span>{{ formatRegions(currentHerbBase.regions) }}</span>
-            </div>
-            <p v-if="currentHerbBase.remark" class="head-remark">{{ currentHerbBase.remark }}</p>
-          </div>
-          <div class="head-actions">
-            <Permission code="CRM_FOLLOW"><el-button type="primary" :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录沟通</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
-            <el-button v-if="canManageTransfer" :icon="Edit" @click="openTransferDialog([currentHerbBase], currentHerbBase.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
-              {{ currentHerbBase.ownerUserId ? "转交" : "分配" }}
-            </el-button>
-            <el-button v-if="canManageTransfer || canReturn(currentHerbBase)" :icon="Edit" @click="openTransferDialog([currentHerbBase], 'RETURN')">退回</el-button>
-            <Permission code="CRM_HERB_BASE_EDIT"><el-button :icon="Edit" @click="openSubjectDialog">编辑主体</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="primary" plain @click="markCustomerStatus('INTERESTED')">标记有意向</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="success" plain @click="markCustomerStatus('DEAL')">标记成交</el-button></Permission>
-            <Permission code="CRM_HERB_BASE_STATUS"><el-button type="danger" plain @click="markCustomerStatus('LOST')">标记流失</el-button></Permission>
-          </div>
-        </section>
-
-        <section class="drawer-grid">
-          <div class="profile-panel detail-profile-panel">
-            <section class="detail-card">
-              <div class="section-title section-title-first">
-                <div class="base-section-heading">
-                  <h3>基地明细</h3>
-                  <div class="base-section-summary">
-                    <span>基地数 <strong>{{ currentHerbBase.baseCount || 0 }}</strong></span>
-                    <span>总规模 <strong>{{ formatScale(currentHerbBase.totalScale) }}</strong></span>
-                  </div>
-                </div>
-                <Permission code="CRM_HERB_BASE_ADD"><el-button type="primary" link :icon="Plus" @click="handleAdd">新增基地</el-button></Permission>
-              </div>
-              <el-empty v-if="!currentHerbBase.herbBases?.length" description="暂无基地明细" />
-              <div v-else class="base-detail-cards">
-                <article v-for="base in currentHerbBase.herbBases" :key="base.id" class="base-detail-card">
-                  <div class="base-card-head">
-                    <div class="base-card-main">
-                      <div class="base-card-title">{{ base.baseName || base.herbBaseName || "-" }}</div>
-                      <div class="base-card-meta">
-                        <span>{{ formatRegion(base) }}</span>
-                        <span>{{ base.address || "-" }}</span>
-                      </div>
-                    </div>
-                    <div class="base-card-actions">
-                      <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE">
-                        <el-button class="base-action-link" type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增供应</el-button>
-                      </Permission>
-                      <Permission code="CRM_HERB_BASE_EDIT">
-                        <el-button class="base-action-link" type="primary" link :icon="Edit" @click="handleEdit(base)">编辑基地</el-button>
-                      </Permission>
-                      <Permission code="CRM_HERB_BASE_DELETE">
-                        <el-button class="base-action-link danger" type="danger" link :icon="Delete" @click="deleteBase(base)">删除基地</el-button>
-                      </Permission>
-                    </div>
-                  </div>
-
-                  <div class="base-supply-table">
-                    <el-table :data="base.supplies || []" size="small" class="supply-table" empty-text="暂无供应信息">
-                      <el-table-column prop="productName" label="品类" min-width="120" show-overflow-tooltip />
-                      <el-table-column label="可供量" width="130">
-                        <template #default="{ row }">{{ formatSupplyQuantity(row) }}</template>
-                      </el-table-column>
-                      <el-table-column prop="specification" label="规格" min-width="120" show-overflow-tooltip />
-                      <el-table-column prop="supplyCycle" label="供货周期" min-width="120" show-overflow-tooltip />
-                      <el-table-column label="状态" width="96">
-                        <template #default="{ row }">
-                          <el-tag size="small" :type="getSupplyStatusType(row)">{{ row.isExpired ? "已过期" : row.status || "-" }}</el-tag>
-                        </template>
-                      </el-table-column>
-                      <el-table-column label="有效期" width="150">
-                        <template #default="{ row }">{{ formatNullableDate(row.validUntil) }}</template>
-                      </el-table-column>
-                      <el-table-column label="操作" width="112" align="center" class-name="actions-column" header-class-name="actions-column">
-                        <template #default="{ row }">
-                          <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE">
-                            <el-dropdown trigger="click" @command="handleSupplyAction(base, row, $event)">
-                              <el-button class="supply-action-button">
-                                供应操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                              </el-button>
-                              <template #dropdown>
-                                <el-dropdown-menu>
-                                  <el-dropdown-item v-if="row.status !== '已失效'" command="edit" :icon="Edit">编辑</el-dropdown-item>
-                                  <el-dropdown-item v-if="row.id && row.status === '待确认'" command="delete" :icon="Delete">删除</el-dropdown-item>
-                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" divided command="status:有效">设为有效</el-dropdown-item>
-                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" command="status:暂停">设为暂停</el-dropdown-item>
-                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" command="status:已售罄">设为售罄</el-dropdown-item>
-                                  <el-dropdown-item v-if="row.id && row.status !== '已失效'" command="status:已失效">设为失效</el-dropdown-item>
-                                </el-dropdown-menu>
-                              </template>
-                            </el-dropdown>
-                          </Permission>
-                        </template>
-                      </el-table-column>
-                    </el-table>
-                  </div>
-                </article>
-              </div>
-            </section>
-
-            <section class="detail-card detail-contacts-panel">
-              <div class="section-title section-title-first">
-                <h3>联系人</h3>
-                <Permission code="CRM_HERB_BASE_CONTACT_ADD"><el-button type="primary" link :icon="Plus" @click="openContactDialog()">新增</el-button></Permission>
-              </div>
-              <el-table :data="contacts" class="contacts-table" border>
-                <el-table-column label="姓名" width="160">
-                  <template #default="{ row }">
-                    <span>{{ row.contactName || "-" }}</span>
-                    <el-tag v-if="row.isPrimary" size="small" type="success" class="ml8">主</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="phone" label="电话" width="150" />
-                <el-table-column prop="wechat" label="微信" min-width="180" show-overflow-tooltip />
-                <el-table-column label="角色" width="150">
-                  <template #default="{ row }">{{ formatContactRole(row.roleName) }}</template>
-                </el-table-column>
-                <el-table-column prop="remark" label="备注" min-width="240" show-overflow-tooltip />
-                <el-table-column label="状态" width="96">
-                  <template #default="{ row }">
-                    <el-tag size="small" :type="row.status === 'INVALID' ? 'danger' : 'success'">
-                      {{ row.status === "INVALID" ? "无效" : "有效" }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="190" class-name="actions-column" header-class-name="actions-column">
-                  <template #default="{ row }">
-                    <div class="table-actions">
-                      <Permission code="CRM_HERB_BASE_CONTACT_EDIT"><el-button type="primary" link :icon="Edit" @click="openContactDialog(row)">编辑</el-button></Permission>
-                      <Permission code="CRM_HERB_BASE_CONTACT_PRIMARY"><el-button v-if="!row.isPrimary && row.status !== 'INVALID'" type="primary" link @click="setPrimaryContact(row)">设为主</el-button></Permission>
-                    </div>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </section>
-          </div>
-
-          <div class="timeline-panel">
-            <section class="detail-card detail-follow-panel">
-              <div class="section-title section-title-first">
-                <h3>沟通记录</h3>
-                <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(currentHerbBase)">记录</el-button></Permission>
-              </div>
-              <el-timeline>
-                <el-timeline-item
-                  v-for="record in followRecords"
-                  :key="record.id"
-                  :timestamp="formatNullableDate(record.createdAt)"
-                  placement="top"
-                >
-                  <div class="follow-item">
-                    <div class="follow-title">
-                      <strong>{{ formatFollowResult(record.followResult, "沟通") }}</strong>
-                      <el-tag size="small">{{ formatFollowType(record.followType) }}</el-tag>
-                      <el-tag v-if="record.intentLevel" size="small" type="warning">{{ formatGrade(record.intentLevel) }}</el-tag>
-                    </div>
-                    <p>{{ record.content || "-" }}</p>
-                    <span class="muted">
-                      {{ record.contactName || "未指定联系人" }} · 下次 {{ formatNullableDate(record.nextFollowAt) }}
-                    </span>
-                  </div>
-                </el-timeline-item>
-                <el-empty v-if="followRecords.length === 0" description="暂无沟通记录" />
-              </el-timeline>
-            </section>
-
-            <section class="detail-card detail-transfer-panel">
-              <div class="section-title section-title-first">
-                <h3>流转记录</h3>
-              </div>
-              <el-timeline>
-                <el-timeline-item
-                  v-for="record in transferRecords"
-                  :key="record.id"
-                  :timestamp="formatNullableDate(record.createdAt)"
-                  placement="top"
-                >
-                  <div class="follow-item">
-                      <div class="follow-title">
-                        <strong>{{ formatTransferAction(record.actionType) }}：{{ formatTransferOwner(record.fromOwnerUserName, record.toOwnerUserName) }}</strong>
-                      </div>
-                    <p v-if="record.remark">{{ record.remark }}</p>
-                    <span class="muted">操作人 {{ record.operatorUserName || "-" }}</span>
-                  </div>
-                </el-timeline-item>
-                <el-empty v-if="transferRecords.length === 0" description="暂无流转记录" />
-              </el-timeline>
-            </section>
-
-          </div>
-        </section>
-      </div>
-    </el-drawer>
-
-    <el-dialog v-model="supplyDialogVisible" :title="supplyForm.id ? '编辑供应信息' : '新增供应信息'" width="720px" class="supply-dialog">
-      <el-form :model="supplyForm" label-width="82px" class="supply-form">
-        <div class="supply-form-grid">
-          <el-form-item label="品类" required class="span-2">
-            <ProductSelect v-model="supplyForm.productName" placeholder="请选择品类" />
-          </el-form-item>
-          <el-form-item label="可供量">
-            <div class="inline-field">
-              <el-input-number v-model="supplyForm.availableQuantity" :min="0" controls-position="right" placeholder="数量" />
-              <el-input v-model="supplyForm.quantityUnit" placeholder="单位" />
-            </div>
-          </el-form-item>
-          <el-form-item label="预期价格">
-            <div class="inline-field">
-              <el-input-number v-model="supplyForm.expectedPrice" :min="0" controls-position="right" placeholder="价格" />
-              <el-input v-model="supplyForm.priceUnit" placeholder="单位" />
-            </div>
-          </el-form-item>
-          <el-form-item label="规格"><el-input v-model="supplyForm.specification" placeholder="如：统货、选货、干品" /></el-form-item>
-          <el-form-item label="质量要求"><el-input v-model="supplyForm.qualityRequirement" placeholder="如：水分、含硫、杂质要求" /></el-form-item>
-          <el-form-item label="产新期"><el-input v-model="supplyForm.harvestSeason" placeholder="如：9月-11月" /></el-form-item>
-          <el-form-item label="供货周期"><el-input v-model="supplyForm.supplyCycle" placeholder="如：现货、预售、长期供应" /></el-form-item>
-          <el-form-item label="核实日期"><el-date-picker v-model="supplyForm.confirmedAt" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" /></el-form-item>
-          <el-form-item label="有效截止"><el-date-picker v-model="supplyForm.validUntil" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" /></el-form-item>
-          <el-form-item label="备注" class="span-2"><el-input v-model="supplyForm.remark" type="textarea" :rows="3" placeholder="补充说明" /></el-form-item>
-        </div>
-      </el-form>
-      <template #footer><el-button @click="supplyDialogVisible = false">取消</el-button><el-button type="primary" @click="submitSupply">保存</el-button></template>
-    </el-dialog>
-
-    <el-dialog v-model="contactDialogVisible" :title="contactForm.id ? '编辑联系人' : '新增联系人'" width="520px">
-      <el-form :model="contactForm" label-width="100px">
-        <el-form-item label="姓名">
-          <el-input v-model="contactForm.contactName" placeholder="联系人姓名" />
-        </el-form-item>
-        <el-form-item label="电话">
-          <el-input v-model="contactForm.phone" placeholder="联系电话" />
-        </el-form-item>
-        <el-form-item label="电话类型">
-          <el-select v-model="contactForm.phoneType">
-            <el-option label="手机" value="MOBILE" />
-            <el-option label="座机" value="LANDLINE" />
-            <el-option label="未知" value="UNKNOWN" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="微信">
-          <el-input v-model="contactForm.wechat" placeholder="微信号" />
-        </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="contactForm.roleName" clearable placeholder="请选择角色">
-            <el-option v-for="item in contactRoleOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="主联系人">
-          <el-switch v-model="contactForm.isPrimary" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input type="textarea" v-model="contactForm.remark" :rows="3" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="contactDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitContact">保存</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="followDialogVisible" title="记录沟通" width="560px">
-      <el-form :model="followForm" label-width="100px">
-        <el-form-item label="联系人">
-          <el-select v-model="followForm.contactId" clearable placeholder="可不指定">
-            <el-option v-for="contact in contacts" :key="contact.id" :label="contact.contactName" :value="contact.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="方式">
-          <el-select v-model="followForm.followType">
-            <el-option label="电话" value="PHONE" />
-            <el-option label="微信" value="WECHAT" />
-            <el-option label="拜访" value="VISIT" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="结果">
-          <el-select v-model="followForm.followResult" placeholder="请选择结果">
-            <el-option label="已接通" value="CONNECTED" />
-            <el-option label="未接" value="MISSED" />
-            <el-option label="空号" value="EMPTY_NUMBER" />
-            <el-option label="有意向" value="INTERESTED" />
-            <el-option label="无意向" value="NOT_INTERESTED" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="意向">
-          <el-select v-model="followForm.intentLevel" clearable placeholder="意向等级">
-            <el-option label="高" value="高" />
-            <el-option label="中" value="中" />
-            <el-option label="低" value="低" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="沟通内容">
-          <el-input type="textarea" v-model="followForm.content" :rows="4" placeholder="记录销售跟进要点" />
-        </el-form-item>
-        <el-form-item label="下次跟进">
-          <el-date-picker
-            v-model="followForm.nextFollowAt"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            :disabled-date="disablePastFollowDate"
-            placeholder="选择时间"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="followDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitFollowRecord">保存</el-button>
-      </template>
-    </el-dialog>
+    <HerbBaseDetailDrawer v-model="detailDrawerVisible" :subject-id="currentHerbBaseSubjectId" @refresh-list="reloadList" />
 
     <el-dialog v-model="transferDialogVisible" :title="transferDialogTitle" width="520px">
       <el-form :model="transferForm" label-width="100px">
         <el-form-item v-if="transferMode !== 'RETURN'" label="跟进人">
           <el-select v-model="transferForm.ownerUserId" placeholder="请选择跟进人">
-            <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
+            <el-option v-for="user in ownerOptions" :key="user.id" :label="user.realName" :value="user.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
@@ -604,7 +248,7 @@
 <script setup lang="ts" name="customer">
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
-import { ArrowDown, Delete, Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
+import { Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
@@ -612,6 +256,7 @@ import ProductSelect from "@/components/ProductSelect/index.vue";
 import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
+import HerbBaseDetailDrawer from "./components/HerbBaseDetailDrawer.vue";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useUserStore } from "@/stores/modules/user";
 
@@ -619,7 +264,7 @@ interface HerbBaseSubjectDetail {
   id: string;
   subjectName?: string;
   subjectType?: string;
-  mainProducts: string[];
+  productName: string[];
   grade: string;
   score: number;
   status: string;
@@ -640,36 +285,28 @@ interface HerbBaseSubjectDetail {
   updatedAt: string;
 }
 
+// 页面状态
 const queryPageRef = ref();
 const route = useRoute();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 
 const dialogVisible = ref(false);
-const subjectDialogVisible = ref(false);
 const detailDrawerVisible = ref(false);
-const contactDialogVisible = ref(false);
-const followDialogVisible = ref(false);
 const transferDialogVisible = ref(false);
-const supplyDialogVisible = ref(false);
 const isEdit = ref(false);
 const followFilter = ref("");
-const currentHerbBase = ref<HerbBaseSubjectDetail | null>(null);
-const contacts = ref<any[]>([]);
-const followRecords = ref<any[]>([]);
-const transferRecords = ref<any[]>([]);
+const currentHerbBaseSubjectId = ref("");
 const selectedHerbBases = ref<HerbBaseSubjectDetail[]>([]);
 const ownerOptions = ref<any[]>([]);
 const regionPath = ref<string[]>([]);
-const supplyBaseId = ref("");
-const supplyForm = reactive({ id: "", productName: "", availableQuantity: undefined as number | undefined, quantityUnit: "", specification: "", qualityRequirement: "", harvestSeason: "", expectedPrice: undefined as number | undefined, priceUnit: "", supplyCycle: "", confirmedAt: null as string | null, validUntil: null as string | null, remark: "" });
 
+// 列表筛选
 const searchForm = reactive({
   keyword: "",
-  herbBaseName: "",
   grade: "",
   status: "",
-  mainProducts: [] as string[],
+  productName: [] as string[],
   onlyOverdue: undefined as boolean | undefined,
   onlyNoNextFollow: undefined as boolean | undefined,
   nextFollowFrom: "",
@@ -678,13 +315,12 @@ const searchForm = reactive({
   sortDirection: "Descending",
 });
 
+// 基地编辑
 const form = reactive({
   id: "",
   baseName: "",
   herbBaseSubjectId: undefined as string | undefined,
   subjectName: "",
-  herbBaseName: "",
-  mainProducts: [] as string[],
   scale: undefined as number | undefined,
   province: "",
   city: "",
@@ -692,42 +328,15 @@ const form = reactive({
   address: "",
   lat: undefined as number | undefined,
   lng: undefined as number | undefined,
-  sourcePlatform: "BAIDU_MAP",
+  sourcePlatform: "百度地图",
   sourceId: undefined as number | undefined,
-  status: "PENDING",
+  status: "待联系",
   remark: "",
   primaryContactName: "",
   primaryContactPhone: "",
 });
 
-const subjectForm = reactive({
-  id: "",
-  subjectName: "",
-  subjectType: "",
-  status: "PENDING",
-  remark: "",
-});
-
-const contactForm = reactive({
-  id: "",
-  contactName: "",
-  phone: "",
-  phoneType: "UNKNOWN",
-  wechat: "",
-  roleName: "",
-  isPrimary: false,
-  remark: "",
-});
-
-const followForm = reactive({
-  contactId: undefined as string | undefined,
-  followType: "PHONE",
-  followResult: "",
-  intentLevel: "",
-  content: "",
-  nextFollowAt: "",
-});
-
+// 流转
 const transferForm = reactive({
   entityIds: [] as string[],
   ownerUserId: "",
@@ -741,305 +350,19 @@ const transferDialogTitle = computed(() => ({
   RETURN: "退回待分配池",
 })[transferMode.value]);
 
-const sourcePlatformLabels: Record<string, string> = {
-  BAIDU_MAP: "百度地图",
-  GOV_HERB_BASE: "政府网站",
-  MANUAL: "手工录入",
-  EXCEL: "Excel导入",
-  OTHER: "其他",
-  百度地图: "百度地图",
-  政府网站: "政府网站",
-  手工录入: "手工录入",
-  Excel导入: "Excel导入",
-  其他: "其他",
-};
+// 下拉选项
+const sourcePlatforms = ["百度地图", "政府网站", "手工录入", "Excel导入", "其他"];
 
-const sourcePlatformValues: Record<string, string> = {
-  BAIDU_MAP: "BAIDU_MAP",
-  GOV_HERB_BASE: "GOV_HERB_BASE",
-  MANUAL: "MANUAL",
-  EXCEL: "EXCEL",
-  OTHER: "OTHER",
-  百度地图: "BAIDU_MAP",
-  政府中药材基地: "GOV_HERB_BASE",
-  政府网站: "GOV_HERB_BASE",
-  手工录入: "MANUAL",
-  Excel导入: "EXCEL",
-  其他: "OTHER",
-};
-
-const sourcePlatformOptions = [
-  { label: "百度地图", value: "BAIDU_MAP" },
-  { label: "政府网站", value: "GOV_HERB_BASE" },
-  { label: "手工录入", value: "MANUAL" },
-  { label: "Excel导入", value: "EXCEL" },
-  { label: "其他", value: "OTHER" },
-];
-
-const statusLabels: Record<string, string> = {
-  PENDING: "待联系",
-  FOLLOWING: "跟进中",
-  INTERESTED: "有意向",
-  DEAL: "已成交",
-  LOST: "已流失",
-  待联系: "待联系",
-  跟进中: "跟进中",
-  有意向: "有意向",
-  已成交: "已成交",
-  已流失: "已流失",
-};
-
-const statusValues: Record<string, string> = {
-  PENDING: "PENDING",
-  FOLLOWING: "FOLLOWING",
-  INTERESTED: "INTERESTED",
-  DEAL: "DEAL",
-  LOST: "LOST",
-  待联系: "PENDING",
-  跟进中: "FOLLOWING",
-  有意向: "INTERESTED",
-  已成交: "DEAL",
-  已流失: "LOST",
-};
-
-const mainProductLabels: Record<string, string> = {
-  HUANG_QI: "黄芪",
-  DANG_GUI: "当归",
-  DANG_SHEN: "党参",
-  TIAN_MA: "天麻",
-  OTHER: "其他",
-  黄芪: "黄芪",
-  黃芪: "黄芪",
-  当归: "当归",
-  當歸: "当归",
-  党参: "党参",
-  黨參: "党参",
-  天麻: "天麻",
-  多品类: "其他",
-  多品類: "其他",
-  其他: "其他",
-};
-
-const mainProductValues: Record<string, string> = {
-  HUANG_QI: "黄芪",
-  DANG_GUI: "当归",
-  DANG_SHEN: "党参",
-  TIAN_MA: "天麻",
-  OTHER: "其他",
-  黄芪: "黄芪",
-  黃芪: "黄芪",
-  当归: "当归",
-  當歸: "当归",
-  党参: "党参",
-  黨參: "党参",
-  天麻: "天麻",
-  多品类: "其他",
-  多品類: "其他",
-  其他: "其他",
-};
-
-const phoneTypeValues: Record<string, string> = {
-  MOBILE: "MOBILE",
-  LANDLINE: "LANDLINE",
-  UNKNOWN: "UNKNOWN",
-  手机: "MOBILE",
-  座机: "LANDLINE",
-  未知: "UNKNOWN",
-};
-
-const contactRoleLabels: Record<string, string> = {
-  OWNER: "负责人",
-  PURCHASE: "采购",
-  FINANCE: "财务",
-  BASE_OWNER: "基地负责人",
-  COOPERATIVE_OWNER: "合作社负责人",
-  OTHER: "其他",
-  负责人: "负责人",
-  采购: "采购",
-  财务: "财务",
-  基地负责人: "基地负责人",
-  合作社负责人: "合作社负责人",
-  其他: "其他",
-};
-
-const contactRoleValues: Record<string, string> = {
-  OWNER: "OWNER",
-  PURCHASE: "PURCHASE",
-  FINANCE: "FINANCE",
-  BASE_OWNER: "BASE_OWNER",
-  COOPERATIVE_OWNER: "COOPERATIVE_OWNER",
-  OTHER: "OTHER",
-  负责人: "OWNER",
-  采购: "PURCHASE",
-  财务: "FINANCE",
-  基地负责人: "BASE_OWNER",
-  合作社负责人: "COOPERATIVE_OWNER",
-  其他: "OTHER",
-};
-
-const contactRoleOptions = [
-  { label: "负责人", value: "OWNER" },
-  { label: "采购", value: "PURCHASE" },
-  { label: "财务", value: "FINANCE" },
-  { label: "基地负责人", value: "BASE_OWNER" },
-  { label: "合作社负责人", value: "COOPERATIVE_OWNER" },
-  { label: "其他", value: "OTHER" },
-];
-
-const followTypeLabels: Record<string, string> = {
-  PHONE: "电话",
-  WECHAT: "微信",
-  VISIT: "拜访",
-  电话: "电话",
-  微信: "微信",
-  拜访: "拜访",
-};
-
-const followTypeValues: Record<string, string> = {
-  PHONE: "PHONE",
-  WECHAT: "WECHAT",
-  VISIT: "VISIT",
-  电话: "PHONE",
-  微信: "WECHAT",
-  拜访: "VISIT",
-};
-
-const followResultLabels: Record<string, string> = {
-  CONNECTED: "已接通",
-  MISSED: "未接",
-  EMPTY_NUMBER: "空号",
-  INTERESTED: "有意向",
-  NOT_INTERESTED: "无意向",
-  已接通: "已接通",
-  未接: "未接",
-  空号: "空号",
-  有意向: "有意向",
-  无意向: "无意向",
-};
-
-const followResultValues: Record<string, string> = {
-  CONNECTED: "CONNECTED",
-  MISSED: "MISSED",
-  EMPTY_NUMBER: "EMPTY_NUMBER",
-  INTERESTED: "INTERESTED",
-  NOT_INTERESTED: "NOT_INTERESTED",
-  已接通: "CONNECTED",
-  未接: "MISSED",
-  空号: "EMPTY_NUMBER",
-  有意向: "INTERESTED",
-  无意向: "NOT_INTERESTED",
-};
-
-const formatEnumLabel = (labels: Record<string, string>, value?: string | null, fallback = "-") => {
-  if (!value) return fallback;
-  return labels[value] || value;
-};
-
-const toEnumValue = (values: Record<string, string>, value?: string | null, fallback = "") => {
-  if (!value) return fallback;
-  return values[value] || value;
-};
-
-const normalizeMainProducts = (row: any): string[] => {
-  const rawValues: string[] = Array.isArray(row?.mainProducts) ? row.mainProducts : [];
-
-  return Array.from(new Set<string>(
-    rawValues
-      .map((item: string) => toEnumValue(mainProductValues, item))
-      .filter(Boolean)
-  ));
-};
-
-const formatMainProducts = (row: any, fallback = "-") => {
-  const values = normalizeMainProducts(row);
-  if (values.length === 0) return fallback;
-  return values.map(value => formatEnumLabel(mainProductLabels, value)).join("、");
-};
-
-const formatSourcePlatform = (value?: string | null, fallback = "-") => formatEnumLabel(sourcePlatformLabels, value, fallback);
-const formatCustomerStatus = (value?: string | null, fallback = "-") => formatEnumLabel(statusLabels, value, fallback);
-const formatGrade = (value?: string | null, fallback = "-") => value || fallback;
-const formatContactRole = (value?: string | null, fallback = "-") => formatEnumLabel(contactRoleLabels, value, fallback);
-const formatFollowType = (value?: string | null, fallback = "-") => formatEnumLabel(followTypeLabels, value, fallback);
-const formatFollowResult = (value?: string | null, fallback = "-") => formatEnumLabel(followResultLabels, value, fallback);
-const getBaseName = (row: any) => row?.baseName?.trim?.() || row?.herbBaseName?.trim?.() || "";
-const getDetailTitle = (row: Partial<HerbBaseSubjectDetail> | any) => row?.subjectName?.trim?.() || "";
-const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
-const formatTransferOwner = (fromName?: string | null, toName?: string | null) => `${fromName || "未分配"} 至 ${toName || "未分配"}`;
-const formatTransferAction = (actionType?: string | null) => ({
-  ENTRY: "入库",
-  ASSIGN: "分配",
-  TRANSFER: "转交",
-  RETURN: "退回",
-})[actionType || ""] || "流转";
+// 通用展示与校验
 const canReturn = (row?: Partial<HerbBaseSubjectDetail> | null) =>
   !!row?.ownerUserId && row.ownerUserId === userStore.userInfo.userId;
-const formatScale = (value?: number | string | null) => {
-  if (value === null || value === undefined || value === "") return "-";
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : "-";
-};
-const formatListScale = (value?: number | string | null) => {
-  if (value === null || value === undefined || value === "") return "-";
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? Math.round(numberValue).toLocaleString("zh-CN") : "-";
-};
-
-const formatSupplyQuantity = (supply: any) => {
-  if (supply?.availableQuantity === null || supply?.availableQuantity === undefined || supply?.availableQuantity === "") return "-";
-  return `${supply.availableQuantity}${supply.quantityUnit ? ` ${supply.quantityUnit}` : ""}`;
-};
-
-const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    PENDING: "info",
-    FOLLOWING: "warning",
-    INTERESTED: "primary",
-    DEAL: "success",
-    LOST: "danger",
-    待联系: "info",
-    跟进中: "warning",
-    有意向: "primary",
-    已成交: "success",
-    已流失: "danger",
-  };
-  return types[status] || "info";
-};
-
-const getGradeType = (grade: string) => {
-  const types: Record<string, string> = {
-    高: "danger",
-    中: "warning",
-    低: "info",
-    无效: "danger",
-  };
-  return types[grade] || "info";
-};
-
-const getSupplyStatusType = (supply: any) => {
-  if (supply?.isExpired) return "danger";
-  const types: Record<string, string> = {
-    有效: "success",
-    待确认: "warning",
-    暂停: "info",
-    已售罄: "info",
-    已失效: "danger",
-  };
-  return types[supply?.status] || "info";
-};
 
 const formatNullableDate = (date?: string | null) => {
   if (!date) return "-";
   return new Date(date).toLocaleString("zh-CN");
 };
 
-const formatRegion = (row: any) => [row.province, row.city, row.area].filter(Boolean).join(" / ") || "-";
 const formatRegions = (regions?: string[]) => regions?.filter(Boolean).join(" / ") || "-";
-const formatSourcePlatforms = (sources?: string[]) => (sources || []).map(source => formatSourcePlatform(source)).join("、") || "-";
-
-const syncRegionPathFromForm = () => {
-  regionPath.value = [form.province, form.city, form.area].filter(Boolean);
-};
 
 const handleRegionChange = (value: string[] | string) => {
   const path = Array.isArray(value) ? value : [];
@@ -1058,6 +381,7 @@ const formatDateParam = (date: Date) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 };
 
+// 列表操作
 const getRowClassName = ({ row }: any) => {
   if (isOverdue(row.nextFollowAt)) return "row-overdue";
   return "";
@@ -1093,11 +417,10 @@ const applyFollowFilter = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     keyword: "",
-    herbBaseName: "",
     sourcePlatform: "",
     grade: "",
     status: "",
-    mainProducts: [],
+    productName: [],
     onlyOverdue: undefined,
     onlyNoNextFollow: undefined,
     nextFollowFrom: "",
@@ -1108,14 +431,13 @@ const handleReset = () => {
   followFilter.value = "";
 };
 
+// 基地编辑操作
 const resetCustomerForm = () => {
   Object.assign(form, {
     id: "",
     baseName: "",
-    herbBaseSubjectId: currentHerbBase.value?.id,
+    herbBaseSubjectId: undefined,
     subjectName: "",
-    herbBaseName: "",
-    mainProducts: [],
     scale: undefined,
     province: "",
     city: "",
@@ -1123,9 +445,9 @@ const resetCustomerForm = () => {
     address: "",
     lat: undefined,
     lng: undefined,
-    sourcePlatform: "BAIDU_MAP",
+    sourcePlatform: "百度地图",
     sourceId: undefined,
-    status: "PENDING",
+    status: "待联系",
     remark: "",
     primaryContactName: "",
     primaryContactPhone: "",
@@ -1136,77 +458,6 @@ const resetCustomerForm = () => {
 const handleAdd = async () => {
   isEdit.value = false;
   resetCustomerForm();
-  dialogVisible.value = true;
-};
-
-const openSupplyDialog = (base: any, supply?: any) => {
-  supplyBaseId.value = base.id;
-  Object.assign(supplyForm, { id: supply?.id || "", productName: supply?.productName || "", availableQuantity: supply?.availableQuantity, quantityUnit: supply?.quantityUnit || "", specification: supply?.specification || "", qualityRequirement: supply?.qualityRequirement || "", harvestSeason: supply?.harvestSeason || "", expectedPrice: supply?.expectedPrice, priceUnit: supply?.priceUnit || "", supplyCycle: supply?.supplyCycle || "", confirmedAt: supply?.confirmedAt || null, validUntil: supply?.validUntil || null, remark: supply?.remark || "" });
-  supplyDialogVisible.value = true;
-};
-
-const submitSupply = async () => {
-  if (!supplyForm.productName) return ElMessage.error("请选择品类");
-  const request = { ...supplyForm, confirmedAt: supplyForm.confirmedAt || null, validUntil: supplyForm.validUntil || null };
-  delete (request as any).id;
-  if (supplyForm.id) await crmHerbBaseApi.updateSupply(supplyForm.id, request);
-  else await crmHerbBaseApi.createSupply(supplyBaseId.value, request);
-  supplyDialogVisible.value = false;
-  ElMessage.success("供应信息已保存");
-  if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
-};
-
-const deleteSupply = async (supply: any) => {
-  if (!window.confirm("确定删除该待确认供应信息吗？")) return;
-  await crmHerbBaseApi.deleteSupply(supply.id);
-  ElMessage.success("供应信息已删除");
-  if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
-};
-
-const changeSupplyStatus = async (supply: any, status: string) => {
-  await crmHerbBaseApi.changeSupplyStatus(supply.id, { status });
-  ElMessage.success("供应信息状态已更新");
-  if (currentHerbBase.value) await loadCustomerDetail(currentHerbBase.value.id);
-};
-
-const handleSupplyAction = async (base: any, supply: any, command: string) => {
-  if (command === "edit") {
-    openSupplyDialog(base, supply);
-    return;
-  }
-  if (command === "delete") {
-    await deleteSupply(supply);
-    return;
-  }
-  if (command.startsWith("status:")) {
-    await changeSupplyStatus(supply, command.replace("status:", ""));
-  }
-};
-
-const handleEdit = async (row: any) => {
-  isEdit.value = true;
-  Object.assign(form, {
-    id: row.id,
-    baseName: getBaseName(row),
-    herbBaseSubjectId: row.herbBaseSubjectId || currentHerbBase.value?.id,
-    subjectName: row.subjectName || currentHerbBase.value?.subjectName || "",
-    herbBaseName: getBaseName(row),
-    mainProducts: normalizeMainProducts(row),
-    scale: row.scale ?? undefined,
-    province: row.province || "",
-    city: row.city || "",
-    area: row.area || "",
-    address: row.address || "",
-    lat: row.lat ?? undefined,
-    lng: row.lng ?? undefined,
-    sourcePlatform: toEnumValue(sourcePlatformValues, row.sourcePlatform, "BAIDU_MAP"),
-    sourceId: row.sourceId ?? undefined,
-    status: toEnumValue(statusValues, row.status, "PENDING"),
-    remark: row.remark || "",
-    primaryContactName: row.primaryContactName || "",
-    primaryContactPhone: row.primaryContactPhone || "",
-  });
-  syncRegionPathFromForm();
   dialogVisible.value = true;
 };
 
@@ -1230,39 +481,15 @@ const handleSelectionChange = (rows: HerbBaseSubjectDetail[]) => {
   selectedHerbBases.value = rows;
 };
 
+// 主体流转
 const loadOwnerOptions = async () => {
   const res = await userApi.getUserList({ page: 1, pageSize: 100, username: "", realName: "", roleId: "", isActive: true });
   ownerOptions.value = (res.data?.list || []).filter((user: any) => user.isActive);
 };
 
-const loadCustomerDetail = async (herbBaseSubjectId: string) => {
-  const response = await crmHerbBaseApi.getSubject(herbBaseSubjectId);
-  currentHerbBase.value = response.data;
-  contacts.value = response.data?.contacts || [];
-  followRecords.value = response.data?.followRecords || [];
-  transferRecords.value = response.data?.transferRecords || [];
-};
-
-const openDetail = async (row: any) => {
-  detailDrawerVisible.value = false;
-  currentHerbBase.value = null;
-  contacts.value = [];
-  followRecords.value = [];
-  transferRecords.value = [];
-  await loadCustomerDetail(row.id);
+const openDetail = (row: any) => {
+  currentHerbBaseSubjectId.value = row.id;
   detailDrawerVisible.value = true;
-};
-
-const openSubjectDialog = () => {
-  if (!currentHerbBase.value) return;
-  Object.assign(subjectForm, {
-    id: currentHerbBase.value.id,
-    subjectName: currentHerbBase.value.subjectName || "",
-    subjectType: currentHerbBase.value.subjectType || "",
-    status: toEnumValue(statusValues, currentHerbBase.value.status, "PENDING"),
-    remark: currentHerbBase.value.remark || "",
-  });
-  subjectDialogVisible.value = true;
 };
 
 const handleSubmit = async () => {
@@ -1273,36 +500,21 @@ const handleSubmit = async () => {
 
   const request = {
     ...form,
-    herbBaseName: form.baseName,
-    herbBaseSubjectId: form.herbBaseSubjectId || currentHerbBase.value?.id,
-    subjectName: currentHerbBase.value?.subjectName || form.subjectName || "",
-    mainProducts: [...form.mainProducts],
-    sourcePlatform: toEnumValue(sourcePlatformValues, form.sourcePlatform, "BAIDU_MAP"),
-    status: toEnumValue(statusValues, form.status, "PENDING"),
+    herbBaseSubjectId: form.herbBaseSubjectId,
+    subjectName: form.subjectName || form.baseName || "",
+    sourcePlatform: form.sourcePlatform || "百度地图",
+    status: form.status || "待联系",
   };
 
   if (isEdit.value) {
-    await crmHerbBaseApi.updateCustomer(form.id, request);
+    await crmHerbBaseApi.updateHerbBase(form.id, request);
     ElMessage.success("保存成功");
   } else {
-    await crmHerbBaseApi.createCustomer(request);
+    await crmHerbBaseApi.createHerbBase(request);
     ElMessage.success("创建成功");
   }
 
   dialogVisible.value = false;
-  if (currentHerbBase.value) {
-    await loadCustomerDetail(currentHerbBase.value.id);
-  }
-  reloadList();
-};
-
-const deleteBase = async (base: any) => {
-  if (!base?.id || !window.confirm("确定删除这个基地明细吗？")) return;
-  await crmHerbBaseApi.deleteCustomer(base.id);
-  ElMessage.success("基地已删除");
-  if (currentHerbBase.value) {
-    await loadCustomerDetail(currentHerbBase.value.id);
-  }
   reloadList();
 };
 
@@ -1334,102 +546,12 @@ const submitTransfer = async () => {
     toOwnerUserId: transferMode.value === "RETURN" ? null : transferForm.ownerUserId,
     remark: transferForm.remark || undefined,
   });
-  if (currentHerbBase.value && transferForm.entityIds.includes(currentHerbBase.value.id)) {
-    await loadCustomerDetail(currentHerbBase.value.id);
-  }
   ElMessage.success("流转成功");
   transferDialogVisible.value = false;
   reloadList();
 };
 
-const resetContactForm = () => {
-  Object.assign(contactForm, {
-    id: "",
-    contactName: "",
-    phone: "",
-    phoneType: "UNKNOWN",
-    wechat: "",
-    roleName: "",
-    isPrimary: false,
-    remark: "",
-  });
-};
-
-const openContactDialog = (row?: any) => {
-  resetContactForm();
-  if (row) {
-    Object.assign(contactForm, {
-      ...row,
-      phoneType: toEnumValue(phoneTypeValues, row.phoneType, "UNKNOWN"),
-      roleName: toEnumValue(contactRoleValues, row.roleName),
-    });
-  }
-  contactDialogVisible.value = true;
-};
-
-const isValidPhone = (phone: string) => /^1[3-9]\d{9}$/.test(phone) || /^0\d{2,3}-?\d{7,8}(-\d{1,6})?$/.test(phone);
-
-const submitContact = async () => {
-  if (!currentHerbBase.value) return;
-  const phone = contactForm.phone.trim();
-  if (!contactForm.contactName.trim() && !phone) {
-    ElMessage.error("请填写联系人姓名或电话");
-    return;
-  }
-  if (phone && !isValidPhone(phone)) {
-    ElMessage.error("联系电话格式不正确");
-    return;
-  }
-
-  const request = {
-    ...contactForm,
-    contactName: contactForm.contactName.trim(),
-    phone,
-    phoneType: toEnumValue(phoneTypeValues, contactForm.phoneType, "UNKNOWN"),
-    roleName: toEnumValue(contactRoleValues, contactForm.roleName),
-  };
-
-  if (contactForm.id) {
-    await crmHerbBaseApi.updateContact(contactForm.id, request);
-  } else {
-    await crmHerbBaseApi.createSubjectContact(currentHerbBase.value.id, request);
-  }
-
-  ElMessage.success("联系人已保存");
-  contactDialogVisible.value = false;
-  await loadCustomerDetail(currentHerbBase.value.id);
-  reloadList();
-};
-
-const setPrimaryContact = async (row: any) => {
-  if (!currentHerbBase.value) return;
-  await crmHerbBaseApi.setPrimaryContact(row.id);
-  ElMessage.success("主联系人已更新");
-  await loadCustomerDetail(currentHerbBase.value.id);
-  reloadList();
-};
-
-const resetFollowForm = () => {
-  Object.assign(followForm, {
-    contactId: undefined,
-    followType: "PHONE",
-    followResult: "",
-    intentLevel: "",
-    content: "",
-    nextFollowAt: "",
-  });
-};
-
-const openFollowDialog = async (row: any) => {
-  if (!currentHerbBase.value || currentHerbBase.value.id !== row.id) {
-    await loadCustomerDetail(row.id);
-  }
-  resetFollowForm();
-  const primaryContact = contacts.value.find(contact => contact.isPrimary);
-  followForm.contactId = primaryContact?.id;
-  followDialogVisible.value = true;
-};
-
+// 路由入口
 const getQueryValue = (value: unknown) => {
   if (Array.isArray(value)) return value[0] || "";
   return typeof value === "string" ? value : "";
@@ -1463,72 +585,17 @@ const applyRouteEntrypoint = async () => {
   }
 
   if (followId) {
-    await openFollowDialog({ id: followId });
+    currentHerbBaseSubjectId.value = followId;
+    detailDrawerVisible.value = true;
   } else if (detailId) {
-    await openDetail({ id: detailId });
+    currentHerbBaseSubjectId.value = detailId;
+    detailDrawerVisible.value = true;
   }
 };
 
 onMounted(() => {
   void applyRouteEntrypoint();
 });
-
-const submitFollowRecord = async () => {
-  if (!currentHerbBase.value) return;
-  if (!followForm.followResult) {
-    ElMessage.error("请选择沟通结果");
-    return;
-  }
-  if (followForm.nextFollowAt && new Date(followForm.nextFollowAt).getTime() <= Date.now()) {
-    ElMessage.error("下次跟进时间必须晚于当前时间");
-    return;
-  }
-
-  await crmHerbBaseApi.createSubjectFollowRecord(currentHerbBase.value.id, {
-    ...followForm,
-    followType: toEnumValue(followTypeValues, followForm.followType, "PHONE"),
-    followResult: toEnumValue(followResultValues, followForm.followResult),
-    intentLevel: followForm.intentLevel,
-    nextFollowAt: followForm.nextFollowAt || null,
-  });
-  ElMessage.success("沟通记录已保存");
-  followDialogVisible.value = false;
-  await loadCustomerDetail(currentHerbBase.value.id);
-  reloadList();
-};
-
-const disablePastFollowDate = (date: Date) => date.getTime() < new Date().setHours(0, 0, 0, 0);
-
-const submitSubject = async () => {
-  if (!subjectForm.subjectName) {
-    ElMessage.error("请输入主体名称");
-    return;
-  }
-
-  await crmHerbBaseApi.updateSubject(subjectForm.id, {
-    subjectName: subjectForm.subjectName,
-    subjectType: subjectForm.subjectType,
-    status: toEnumValue(statusValues, subjectForm.status, "PENDING"),
-    remark: subjectForm.remark || "",
-  });
-  ElMessage.success("主体已保存");
-  subjectDialogVisible.value = false;
-  await loadCustomerDetail(subjectForm.id);
-  reloadList();
-};
-
-const markCustomerStatus = async (status: string) => {
-  if (!currentHerbBase.value) return;
-  await crmHerbBaseApi.updateSubject(currentHerbBase.value.id, {
-    subjectName: currentHerbBase.value.subjectName || "",
-    subjectType: currentHerbBase.value.subjectType || "",
-    status,
-    remark: currentHerbBase.value.remark || "",
-  });
-  ElMessage.success("药材基地状态已更新");
-  await loadCustomerDetail(currentHerbBase.value.id);
-  reloadList();
-};
 </script>
 
 <style scoped lang="scss">
@@ -1650,465 +717,4 @@ const markCustomerStatus = async (status: string) => {
     background: #fff7f7;
   }
 }
-
-.drawer-layout {
-  min-height: 100%;
-  padding: 0;
-  background: #ffffff;
-  overscroll-behavior: contain;
-}
-
-.drawer-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, auto);
-  gap: 20px;
-  align-items: flex-start;
-  padding: 22px 0 18px;
-  border-bottom: 1px solid var(--el-border-color-light);
-  background: #ffffff;
-
-  h2 {
-    margin: 0;
-    color: #111827;
-    font-size: 25px;
-    font-weight: 700;
-    line-height: 1.25;
-  }
-
-  .detail-kicker {
-    margin-bottom: 6px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .title-row {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .head-meta,
-  .head-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .head-meta {
-    margin-top: 10px;
-    color: var(--el-text-color-secondary);
-    line-height: 1.7;
-
-    > span {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      padding-right: 10px;
-      border-right: 1px solid var(--el-border-color-lighter);
-      color: var(--el-text-color-secondary);
-      font-size: 13px;
-
-      &:last-child {
-        border-right: 0;
-      }
-    }
-  }
-
-  .head-remark {
-    max-width: 900px;
-    margin: 10px 0 0;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-    line-height: 1.6;
-    overflow-wrap: anywhere;
-  }
-
-  .head-actions {
-    justify-content: flex-end;
-    max-width: 560px;
-    min-width: 0;
-
-    :deep(.el-button) {
-      margin-left: 0;
-    }
-  }
-}
-
-.drawer-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(360px, 0.9fr);
-  gap: 16px;
-  padding: 16px 0 24px;
-  background: #ffffff;
-}
-
-.profile-panel {
-  display: grid;
-  grid-column: auto;
-  gap: 14px;
-  align-content: start;
-}
-
-.timeline-panel {
-  display: grid;
-  grid-column: auto;
-  gap: 14px;
-  align-content: start;
-
-  :deep(.el-timeline) {
-    margin: 0;
-    padding-left: 0;
-  }
-
-  :deep(.el-timeline-item__wrapper) {
-    padding-left: 26px;
-  }
-}
-
-.profile-panel,
-.timeline-panel {
-  min-width: 0;
-
-  h3 {
-    margin: 0;
-    font-size: 16px;
-  }
-}
-
-.detail-card {
-  min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: #ffffff;
-
-  :deep(.el-table) {
-    border-radius: 6px;
-  }
-
-  :deep(.el-table th.el-table__cell) {
-    background: #f8fafc;
-    color: var(--el-text-color-secondary);
-    font-weight: 600;
-  }
-}
-
-.detail-contacts-panel {
-  overflow-x: auto;
-}
-
-.detail-contacts-panel :deep(.contacts-table) {
-  min-width: 980px;
-}
-
-.detail-follow-panel,
-.detail-transfer-panel {
-  min-height: 220px;
-  max-height: calc((100vh - 252px) / 2);
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-
-.base-detail-cards {
-  display: grid;
-  gap: 14px;
-  padding-top: 4px;
-}
-
-.base-detail-card {
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.base-card-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  padding: 15px 16px 13px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: #ffffff;
-}
-
-.base-card-main {
-  min-width: 0;
-}
-
-.base-card-title {
-  overflow: hidden;
-  color: #111827;
-  font-size: 15px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.base-card-meta {
-  display: flex;
-  gap: 12px;
-  margin-top: 7px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-
-  span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-.base-card-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.base-action-link {
-  height: 28px;
-  padding: 0 2px;
-  font-weight: 500;
-}
-
-.base-action-link.danger {
-  margin-left: 4px;
-}
-
-.base-supply-table {
-  padding: 12px 16px 16px;
-  overflow-x: auto;
-}
-
-.supply-table {
-  min-width: 820px;
-  border-radius: 0;
-  overflow: hidden;
-}
-
-.base-supply-table :deep(.supply-table th.el-table__cell) {
-  background: transparent;
-}
-
-.base-supply-table :deep(.supply-table.el-table--border::after),
-.base-supply-table :deep(.supply-table.el-table--border::before),
-.base-supply-table :deep(.supply-table .el-table__inner-wrapper::before) {
-  display: none;
-}
-
-.base-supply-table :deep(.supply-table .el-table__cell) {
-  padding-top: 7px;
-  padding-bottom: 7px;
-}
-
-.supply-action-button {
-  height: 26px;
-  padding: 0 9px;
-  border-color: transparent;
-  border-radius: 6px;
-  background: #f8fafc;
-  color: #4b5563;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.supply-action-button:hover,
-.supply-action-button:focus {
-  border-color: var(--el-color-primary-light-7);
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.base-supply-table :deep(.supply-table::before) {
-  display: none;
-}
-
-.supply-dialog :deep(.el-dialog__body) {
-  padding: 18px 22px 8px;
-}
-
-.supply-dialog :deep(.el-dialog__footer) {
-  padding: 14px 22px 18px;
-  border-top: 1px solid var(--el-border-color-lighter);
-}
-
-.supply-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 18px;
-  row-gap: 2px;
-}
-
-.supply-form-grid .span-2 {
-  grid-column: 1 / -1;
-}
-
-.supply-form :deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-
-.supply-form :deep(.el-select),
-.supply-form :deep(.el-date-editor),
-.supply-form :deep(.el-input-number) {
-  width: 100%;
-}
-
-.inline-field {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px;
-  gap: 8px;
-  width: 100%;
-}
-
-.supply-form :deep(.el-textarea__inner) {
-  min-height: 82px !important;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 18px -16px 18px;
-  padding: 0 16px 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-
-  h3 {
-    color: #111827;
-    font-weight: 700;
-  }
-}
-
-.section-title-first {
-  margin-top: 0;
-}
-
-.base-section-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.base-section-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.base-section-summary span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  background: #f8fafc;
-}
-
-.base-section-summary strong {
-  color: #111827;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.follow-item {
-  padding: 0 0 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: transparent;
-
-  .follow-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  p {
-    margin: 0 0 6px;
-    color: var(--el-text-color-primary);
-    line-height: 1.55;
-    overflow-wrap: anywhere;
-  }
-}
-
-.timeline-panel :deep(.el-timeline-item:last-child .follow-item) {
-  border-bottom: 0;
-}
-
-
-.ml8 {
-  margin-left: 8px;
-}
-
-@media (max-width: 960px) {
-  .drawer-head,
-  .drawer-grid {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .detail-follow-panel,
-  .detail-transfer-panel {
-    max-height: none;
-  }
-
-  .base-card-head {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .base-card-stats {
-    flex-wrap: wrap;
-  }
-
-  .base-card-actions {
-    justify-content: flex-start;
-  }
-
-  .base-card-meta {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .base-supply-table {
-    padding: 12px;
-  }
-
-  .supply-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .supply-form-grid .span-2 {
-    grid-column: auto;
-  }
-
-  .inline-field {
-    grid-template-columns: minmax(0, 1fr) 84px;
-  }
-}
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-﻿using QPS.Domain.Common;
+using QPS.Domain.Common;
 
 using QPS.Domain.Exceptions;
 

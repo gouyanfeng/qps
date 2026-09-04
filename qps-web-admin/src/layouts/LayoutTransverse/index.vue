@@ -1,4 +1,4 @@
-﻿<!-- 横向布局 -->
+<!-- 横向布局 -->
 <template>
   <el-container class="layout">
     <el-header>

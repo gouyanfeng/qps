@@ -1,4 +1,4 @@
-﻿import http from "@/api";
+import http from "@/api";
 
 /**
  * @description CRM 厂商管理模块
@@ -37,8 +37,8 @@ export const crmVendorApi = {
   createFollowRecord: (id: string, data: any) => {
     return http.post<any>(`/admin/crm/vendors/${id}/follow-records`, data);
   },
-  getBusinessEntityAttributeOptions: (params: any) => {
-    return http.get<any>("/admin/crm/business-entity-attributes/options", params, { loading: false, cancel: false });
+  getHerbProductOptions: (params: any) => {
+    return http.get<any>("/admin/crm/vendors/herb-product-options", params, { loading: false, cancel: false });
   },
   getVendorPurchaseDemands: (id: string, params: any) => {
     return http.get<any>(`/admin/crm/vendors/${id}/purchase-demands`, params);

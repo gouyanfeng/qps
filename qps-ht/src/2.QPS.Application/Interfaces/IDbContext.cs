@@ -25,8 +25,8 @@ public interface IDbContext
     DbSet<CrmBusinessEntityAttribute> CrmBusinessEntityAttributes { get; }
     DbSet<CrmTransferRecord> CrmTransferRecords { get; }
     DbSet<CrmVendor> CrmVendors { get; }
-    DbSet<CrmPurchaseDemand> CrmPurchaseDemands { get; }
-    DbSet<CrmPurchaseDemandItem> CrmPurchaseDemandItems { get; }
+    DbSet<CrmVendorDemand> CrmVendorDemands { get; }
+    DbSet<CrmVendorDemandItem> CrmVendorDemandItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

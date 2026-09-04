@@ -28,7 +28,6 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
     {
         var subject = await GetSubjectAsync(request.Id, cancellationToken);
         subject.HerbBases = await GetHerbBasesAsync(subject.Id, cancellationToken);
-        await FillMainProductsAsync(subject.HerbBases, cancellationToken);
         await FillSuppliesAsync(subject.HerbBases, cancellationToken);
         FillBaseSummary(subject);
         subject.Contacts = await GetContactsAsync(subject.Id, cancellationToken);
@@ -101,29 +100,6 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
             .ToListAsync(cancellationToken);
     }
 
-    private async Task FillMainProductsAsync(List<CrmHerbBaseDto> herbBases, CancellationToken cancellationToken)
-    {
-        var herbBaseIds = herbBases.Select(herbBase => herbBase.Id).ToList();
-        if (herbBaseIds.Count == 0)
-            return;
-
-        var attributes = await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
-                attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
-                herbBaseIds.Contains(attribute.EntityId))
-            .OrderBy(attribute => attribute.SortOrder)
-            .ThenBy(attribute => attribute.CreatedAt)
-            .Select(attribute => new { attribute.EntityId, attribute.AttributeValue })
-            .ToListAsync(cancellationToken);
-        var productsByBase = attributes
-            .GroupBy(attribute => attribute.EntityId)
-            .ToDictionary(group => group.Key, group => group.Select(attribute => attribute.AttributeValue).ToList());
-
-        foreach (var herbBase in herbBases)
-            herbBase.MainProducts = productsByBase.GetValueOrDefault(herbBase.Id, []);
-    }
-
     private async Task FillSuppliesAsync(List<CrmHerbBaseDto> herbBases, CancellationToken cancellationToken)
     {
         var herbBaseIds = herbBases.Select(herbBase => herbBase.Id).ToList();
@@ -137,7 +113,11 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
     private static void FillBaseSummary(CrmHerbBaseSubjectDetailDto subject)
     {
         subject.BaseCount = subject.HerbBases.Count;
-        subject.MainProducts = subject.HerbBases.SelectMany(herbBase => herbBase.MainProducts).Distinct().ToList();
+        subject.ProductName = subject.HerbBases
+            .SelectMany(herbBase => herbBase.Supplies)
+            .Select(supply => supply.ProductName)
+            .Distinct()
+            .ToList();
         subject.Regions = subject.HerbBases
             .Select(herbBase => string.Join(' ', new[] { herbBase.Province, herbBase.City, herbBase.Area }.Where(value => !string.IsNullOrWhiteSpace(value))))
             .Where(region => !string.IsNullOrWhiteSpace(region))

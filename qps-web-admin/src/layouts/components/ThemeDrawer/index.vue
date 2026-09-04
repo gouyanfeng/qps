@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-drawer v-model="drawerVisible" title="布局设置" size="290px">
     <!-- 布局样式 -->
     <el-divider class="divider" content-position="center">

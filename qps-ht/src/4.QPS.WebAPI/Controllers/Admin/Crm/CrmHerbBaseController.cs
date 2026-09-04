@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Features.Crm.CrmHerbBases;
@@ -66,13 +66,11 @@ public class CrmHerbBaseController : ControllerBase
         [FromQuery] string sortField = "CreatedAt",
         [FromQuery] string sortDirection = "Descending",
         [FromQuery] string? baseName = null,
-        [FromQuery] string? herbBaseName = null,
         [FromQuery] string? keyword = null,
         [FromQuery] string? grade = null,
         [FromQuery] string? status = null,
         [FromQuery] string? sourcePlatform = null,
         [FromQuery] Guid? ownerUserId = null,
-        [FromQuery] List<string>? mainProducts = null,
         [FromQuery] string? province = null,
         [FromQuery] string? city = null,
         [FromQuery] DateTime? nextFollowFrom = null,
@@ -87,13 +85,11 @@ public class CrmHerbBaseController : ControllerBase
             SortField = sortField,
             SortDirection = sortDirection,
             BaseName = baseName,
-            HerbBaseName = herbBaseName,
             Keyword = keyword,
             Grade = grade,
             Status = status,
             SourcePlatform = sourcePlatform,
             OwnerUserId = ownerUserId,
-            MainProducts = mainProducts,
             Province = province,
             City = city,
             NextFollowFrom = nextFollowFrom,

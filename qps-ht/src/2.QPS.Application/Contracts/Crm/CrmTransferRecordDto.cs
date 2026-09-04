@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.Crm;
+namespace QPS.Application.Contracts.Crm;
 
 public class CrmTransferRecordDto
 {

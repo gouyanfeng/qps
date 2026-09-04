@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div class="query-page">
         <!-- 搜索表单 -->
         <div class="card table-search" v-show="isShowSearch">

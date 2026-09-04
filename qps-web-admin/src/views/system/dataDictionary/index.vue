@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div class="list-page">
         <QueryPage api="/admin/data-dictionaries" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->

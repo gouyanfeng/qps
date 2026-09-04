@@ -19,8 +19,8 @@ public class DashboardController : ControllerBase
     [HttpGet("follow-funnel")]
     public Task<object> GetFollowFunnel() => GetChart(CrmDashboardChart.FollowFunnel);
 
-    [HttpGet("main-product-distribution")]
-    public Task<object> GetMainProductDistribution() => GetChart(CrmDashboardChart.MainProductDistribution);
+    [HttpGet("supply-product-distribution")]
+    public Task<object> GetSupplyProductDistribution() => GetChart(CrmDashboardChart.SupplyProductDistribution);
 
     [HttpGet("follow-trend")]
     public Task<object> GetFollowTrend() => GetChart(CrmDashboardChart.FollowTrend);

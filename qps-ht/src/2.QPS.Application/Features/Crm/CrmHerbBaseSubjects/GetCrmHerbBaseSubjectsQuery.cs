@@ -13,7 +13,7 @@ public class GetCrmHerbBaseSubjectsQuery : PaginationRequest, IRequest<Paginatio
     public string? Grade { get; set; }
     public string? Status { get; set; }
     public Guid? OwnerUserId { get; set; }
-    public List<string>? MainProducts { get; set; }
+    public List<string>? ProductName { get; set; }
     public string? Province { get; set; }
     public string? City { get; set; }
     public string? SourcePlatform { get; set; }
@@ -180,15 +180,13 @@ public class GetCrmHerbBaseSubjectsHandler : IRequestHandler<GetCrmHerbBaseSubje
         if (request.OnlyNoNextFollow == true)
             query = query.Where(subject => !subject.NextFollowAt.HasValue);
 
-        var mainProducts = NormalizeMainProducts(request.MainProducts);
-        if (mainProducts.Count > 0)
+        var productNames = NormalizeProductNames(request.ProductName);
+        if (productNames.Count > 0)
         {
             query = query.Where(subject => subject.HerbBases.Any(herbBase =>
-                _dbContext.CrmBusinessEntityAttributes.Any(attribute =>
-                    attribute.EntityType == CrmCodes.HerbBaseEntityType &&
-                    attribute.EntityId == herbBase.Id &&
-                    attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
-                    mainProducts.Contains(attribute.AttributeValue))));
+                _dbContext.CrmHerbBaseSupplies.Any(supply =>
+                    supply.HerbBaseId == herbBase.Id &&
+                    productNames.Contains(supply.ProductName))));
         }
 
         return query;
@@ -216,38 +214,46 @@ public class GetCrmHerbBaseSubjectsHandler : IRequestHandler<GetCrmHerbBaseSubje
             .ToListAsync(cancellationToken);
 
         var baseIds = bases.Select(herbBase => herbBase.Id).ToList();
-        var attributes = await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
-                attribute.AttributeCode == CrmCodes.MainProductAttributeCode &&
-                baseIds.Contains(attribute.EntityId))
-            .Select(attribute => new { attribute.EntityId, attribute.AttributeValue })
+        var supplies = await _dbContext.CrmHerbBaseSupplies
+            .Where(supply => baseIds.Contains(supply.HerbBaseId))
+            .Select(supply => new { supply.HerbBaseId, supply.ProductName })
             .ToListAsync(cancellationToken);
-        var baseProducts = attributes
-            .GroupBy(attribute => attribute.EntityId)
-            .ToDictionary(group => group.Key, group => group.Select(item => item.AttributeValue));
+        var productsByBase = supplies
+            .GroupBy(supply => supply.HerbBaseId)
+            .ToDictionary(group => group.Key, group => group.Select(supply => supply.ProductName).ToList());
+        var summaries = bases
+            .GroupBy(herbBase => herbBase.SubjectId)
+            .ToDictionary(
+                group => group.Key,
+                group => new
+                {
+                    BaseCount = group.Count(),
+                    Regions = group
+                        .Select(herbBase => string.Join(' ', new[] { herbBase.Province, herbBase.City, herbBase.Area }
+                            .Where(value => !string.IsNullOrWhiteSpace(value))))
+                        .Where(region => !string.IsNullOrWhiteSpace(region))
+                        .Distinct()
+                        .ToList(),
+                    ProductNames = group
+                        .SelectMany(herbBase => productsByBase.GetValueOrDefault(herbBase.Id, []))
+                        .Distinct()
+                        .ToList()
+                });
 
         foreach (var subject in subjects)
         {
-            var subjectBases = bases.Where(herbBase => herbBase.SubjectId == subject.Id).ToList();
-            subject.BaseCount = subjectBases.Count;
-            subject.Regions = subjectBases
-                .Select(herbBase => string.Join(' ', new[] { herbBase.Province, herbBase.City, herbBase.Area }.Where(value => !string.IsNullOrWhiteSpace(value))))
-                .Where(region => !string.IsNullOrWhiteSpace(region))
-                .Distinct()
-                .ToList();
-            subject.MainProducts = subjectBases
-                .SelectMany(herbBase => baseProducts.TryGetValue(herbBase.Id, out var products)
-                    ? products
-                    : Enumerable.Empty<string>())
-                .Distinct()
-                .ToList();
+            if (!summaries.TryGetValue(subject.Id, out var summary))
+                continue;
+
+            subject.BaseCount = summary.BaseCount;
+            subject.Regions = summary.Regions;
+            subject.ProductName = summary.ProductNames;
         }
     }
 
-    private static List<string> NormalizeMainProducts(IEnumerable<string>? mainProducts)
+    private static List<string> NormalizeProductNames(IEnumerable<string>? productNames)
     {
-        return (mainProducts ?? Enumerable.Empty<string>())
+        return (productNames ?? Enumerable.Empty<string>())
             .Select(value => value.Trim())
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.OrdinalIgnoreCase)

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="not-container">
     <img src="@/assets/images/500.png" class="not-img" alt="500" />
     <div class="not-detail">

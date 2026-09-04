@@ -19,7 +19,7 @@ dotnet test "E:\Code\QPS\qps-ht\QPS.sln" --no-build --logger "console;verbosity=
 - CRM 不使用 `CRM_CUSTOMER` 业务编码：具体基地属性使用 `CRM_HERB_BASE`；基地主体的联系人、跟进和负责人流转使用 `CRM_HERB_BASE_SUBJECT`；厂商使用 `CRM_VENDOR`。
 - CRM 相关硬编码收敛到 `QPS.Application.Features.Crm.CrmCodes`，避免在 Handler 中散落业务编码和状态值。
 - 客户来源字段使用 `SourceId`，不要使用 `SourceLeadId`。
-- 主营品类、采购品类等扩展属性统一使用 `CrmBusinessEntityAttributes`，不要为单项属性新增独立表。
+- 标签、资质等扩展属性统一使用 `CrmBusinessEntityAttributes`；基地品类仅通过 `CrmHerbBaseSupplies.ProductName` 维护，采购品类仅通过 `CrmVendorDemandItems.ProductName` 维护。
 - `CrmBusinessEntityAttributes.EntityType` 使用实体编码，`AttributeCode` 使用属性编码。
 - 字典和值、权限编码统一使用全大写加下划线；前端展示名称，接口和入库使用编码值。
 - 客户负责人使用 `OwnerUserId` 关联 `SystemUsers`；查询层负责补齐负责人名称。

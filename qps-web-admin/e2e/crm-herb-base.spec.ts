@@ -1,4 +1,4 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { adminPermissions, loginWithMockedAdmin, mockCrmHerbBaseApi } from "./helpers/mockApi";
 
 test.beforeEach(async ({ page }) => {

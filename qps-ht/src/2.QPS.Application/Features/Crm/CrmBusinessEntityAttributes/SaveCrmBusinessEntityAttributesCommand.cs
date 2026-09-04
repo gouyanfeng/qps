@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Interfaces;
 using QPS.Domain.Entities.Crm;
-using QPS.Domain.Events.Crm;
 
 namespace QPS.Application.Features.Crm.CrmBusinessEntityAttributes;
 
@@ -15,27 +14,15 @@ public class SaveCrmBusinessEntityAttributesCommand : IRequest<bool>
 public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBusinessEntityAttributesCommand, bool>
 {
     private readonly IDbContext _dbContext;
-    private readonly IDomainEventDispatcher _dispatcher;
 
-    public SaveCrmBusinessEntityAttributesHandler(IDbContext dbContext, IDomainEventDispatcher dispatcher)
+    public SaveCrmBusinessEntityAttributesHandler(IDbContext dbContext)
     {
         _dbContext = dbContext;
-        _dispatcher = dispatcher;
     }
 
     public async Task<bool> Handle(SaveCrmBusinessEntityAttributesCommand request, CancellationToken cancellationToken)
     {
-        if (request.Request.EntityType == CrmCodes.PurchaseDemandEntityType &&
-            request.Request.AttributeCode == CrmCodes.PurchaseProductAttributeCode)
-        {
-            throw new QPS.Domain.Exceptions.BusinessException(400, "采购需求品类只能通过采购需求明细维护");
-        }
         var values = NormalizeValues(request.Request.Values);
-        if (request.Request.EntityType == CrmCodes.HerbBaseEntityType &&
-            request.Request.AttributeCode == CrmCodes.MainProductAttributeCode)
-        {
-            await CrmHerbProductDictionary.ValidateActiveNamesAsync(_dbContext, values, cancellationToken);
-        }
         var oldAttributes = await GetOldAttributes(request.Request, cancellationToken);
 
         _dbContext.CrmBusinessEntityAttributes.RemoveRange(oldAttributes);
@@ -43,12 +30,6 @@ public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBus
         AddNewAttributes(request.Request, values);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-
-        var subjectId = await GetSubjectIdIfNeeded(request.Request, cancellationToken);
-        if (subjectId.HasValue)
-        {
-            await _dispatcher.PublishAsync(new CrmHerbBaseSubjectScoreAffectedEvent(subjectId.Value), cancellationToken);
-        }
 
         return true;
     }
@@ -89,19 +70,4 @@ public class SaveCrmBusinessEntityAttributesHandler : IRequestHandler<SaveCrmBus
         }
     }
 
-    private async Task<Guid?> GetSubjectIdIfNeeded(
-        CrmBusinessEntityAttributeSaveRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (request.EntityType != CrmCodes.HerbBaseEntityType ||
-            request.AttributeCode != CrmCodes.MainProductAttributeCode)
-        {
-            return null;
-        }
-
-        return await _dbContext.CrmHerbBases
-            .Where(item => item.Id == request.EntityId && item.HerbBaseSubjectId.HasValue)
-            .Select(item => item.HerbBaseSubjectId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
 }

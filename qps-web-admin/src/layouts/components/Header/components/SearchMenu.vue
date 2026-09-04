@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="search-menu">
     <i :class="'iconfont icon-sousuo'" class="toolBar-icon" @click="handleOpen"></i>
     <el-dialog class="search-dialog" v-model="isShowSearch" :width="600" :show-close="false" top="10vh">

@@ -18,16 +18,10 @@ public class CrmHerbBaseDto
     public string BaseName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 兼容旧接口字段，等同于基地名称。
-    /// </summary>
-    public string HerbBaseName { get; set; } = string.Empty;
-
-    /// <summary>
     /// 主体名称，用于记录客户对应的工商或经营主体。
     /// </summary>
     public string SubjectName { get; set; } = string.Empty;
 
-    public List<string> MainProducts { get; set; } = new();
     public List<CrmHerbBaseSupplyDto> Supplies { get; set; } = new();
 
     /// <summary>

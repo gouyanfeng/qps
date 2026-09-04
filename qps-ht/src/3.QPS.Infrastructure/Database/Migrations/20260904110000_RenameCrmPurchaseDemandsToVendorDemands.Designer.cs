@@ -12,8 +12,8 @@ using QPS.Infrastructure.Database;
 namespace QPS.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260901054147_MigrateVendorPurchasePlansToPurchaseDemands")]
-    partial class MigrateVendorPurchasePlansToPurchaseDemands
+    [Migration("20260904110000_RenameCrmPurchaseDemandsToVendorDemands")]
+    partial class RenameCrmPurchaseDemandsToVendorDemands
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -420,18 +420,18 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.ToTable("CrmHerbBaseSubjects");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmPurchaseDemand", b =>
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmHerbBaseSupply", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ClosedReason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal?>("AvailableQuantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid?>("ContactId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -440,127 +440,62 @@ namespace QPS.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("DemandAt")
-                        .HasColumnType("datetime2");
+                    b.Property<decimal?>("ExpectedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("DemandName")
+                    b.Property<string>("HarvestSeason")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("DemandNo")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<DateTime?>("ExpectedDeliveryAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ReceivingAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Remark")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SourceType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("SourceUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("VendorId")
+                    b.Property<Guid>("HerbBaseId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContactId");
-
-                    b.HasIndex("DemandNo")
-                        .IsUnique();
-
-                    b.HasIndex("VendorId", "Status", "DemandAt");
-
-                    b.ToTable("CrmPurchaseDemands");
-                });
-
-            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmPurchaseDemandItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid?>("HerbBaseSubjectId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ExpectedDeliveryAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("PriceUnit")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<Guid>("PurchaseDemandId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("QualityRequirement")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("Quantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("QuantityUnit")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("Remark")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
                     b.Property<string>("Specification")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal?>("TargetPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("SupplyCycle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -569,11 +504,18 @@ namespace QPS.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ValidUntil")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("PurchaseDemandId", "SortOrder");
+                    b.HasIndex("HerbBaseId", "Status");
 
-                    b.ToTable("CrmPurchaseDemandItems");
+                    b.HasIndex("HerbBaseSubjectId", "Status");
+
+                    b.HasIndex("ProductName", "Status", "ValidUntil");
+
+                    b.ToTable("CrmHerbBaseSupplies");
                 });
 
             modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmTransferRecord", b =>
@@ -587,7 +529,7 @@ namespace QPS.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)")
-                        .HasDefaultValue("ENTRY");
+                        .HasDefaultValue("入库");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -709,6 +651,162 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.HasIndex("OwnerUserId", "NextFollowAt");
 
                     b.ToTable("CrmVendors");
+                });
+
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendorDemand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClosedReason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ContactId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DemandAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DemandName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DemandNo")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("ExpectedDeliveryAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReceivingAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Remark")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("SourceUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("VendorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("DemandNo")
+                        .IsUnique();
+
+                    b.HasIndex("VendorId", "Status", "DemandAt");
+
+                    b.ToTable("CrmVendorDemands", (string)null);
+                });
+
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendorDemandItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpectedDeliveryAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PriceUnit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("QualityRequirement")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Remark")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Specification")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("TargetPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("VendorDemandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VendorDemandId", "SortOrder");
+
+                    b.ToTable("CrmVendorDemandItems", (string)null);
                 });
 
             modelBuilder.Entity("QPS.Domain.Entities.System.SystemChinaRegion", b =>
@@ -1012,56 +1110,6 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.ToTable("SystemPermissions");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.System.SystemRegion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("SystemRegions");
-                });
-
             modelBuilder.Entity("QPS.Domain.Entities.System.SystemRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1231,7 +1279,18 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.Navigation("HerbBaseSubject");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmPurchaseDemand", b =>
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmHerbBaseSupply", b =>
+                {
+                    b.HasOne("QPS.Domain.Entities.Crm.CrmHerbBase", "HerbBase")
+                        .WithMany("Supplies")
+                        .HasForeignKey("HerbBaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("HerbBase");
+                });
+
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendorDemand", b =>
                 {
                     b.HasOne("QPS.Domain.Entities.Crm.CrmContact", "Contact")
                         .WithMany()
@@ -1239,7 +1298,7 @@ namespace QPS.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("QPS.Domain.Entities.Crm.CrmVendor", "Vendor")
-                        .WithMany("PurchaseDemands")
+                        .WithMany("VendorDemands")
                         .HasForeignKey("VendorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1249,15 +1308,15 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.Navigation("Vendor");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmPurchaseDemandItem", b =>
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendorDemandItem", b =>
                 {
-                    b.HasOne("QPS.Domain.Entities.Crm.CrmPurchaseDemand", "PurchaseDemand")
+                    b.HasOne("QPS.Domain.Entities.Crm.CrmVendorDemand", "VendorDemand")
                         .WithMany("Items")
-                        .HasForeignKey("PurchaseDemandId")
+                        .HasForeignKey("VendorDemandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("PurchaseDemand");
+                    b.Navigation("VendorDemand");
                 });
 
             modelBuilder.Entity("QPS.Domain.Entities.System.SystemDataDictionary", b =>
@@ -1269,18 +1328,14 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.System.SystemRegion", b =>
-                {
-                    b.HasOne("QPS.Domain.Entities.System.SystemRegion", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId");
-
-                    b.Navigation("Parent");
-                });
-
             modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmContact", b =>
                 {
                     b.Navigation("FollowRecords");
+                });
+
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmHerbBase", b =>
+                {
+                    b.Navigation("Supplies");
                 });
 
             modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmHerbBaseSubject", b =>
@@ -1288,22 +1343,17 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.Navigation("HerbBases");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmPurchaseDemand", b =>
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendor", b =>
+                {
+                    b.Navigation("VendorDemands");
+                });
+
+            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendorDemand", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("QPS.Domain.Entities.Crm.CrmVendor", b =>
-                {
-                    b.Navigation("PurchaseDemands");
-                });
-
             modelBuilder.Entity("QPS.Domain.Entities.System.SystemDataDictionary", b =>
-                {
-                    b.Navigation("Children");
-                });
-
-            modelBuilder.Entity("QPS.Domain.Entities.System.SystemRegion", b =>
                 {
                     b.Navigation("Children");
                 });

@@ -39,12 +39,8 @@ public class GetCrmHerbBaseHandler : IRequestHandler<GetCrmHerbBaseQuery, CrmHer
     public async Task<CrmHerbBaseDto> Handle(GetCrmHerbBaseQuery request, CancellationToken cancellationToken)
     {
         // 编排查询药材基地详情用例：
-        // 查询基础资料、校验存在、补齐主营品类。
-        var dto = await GetCustomerDto(request.Id, cancellationToken);
-
-        dto.MainProducts = await GetMainProducts(dto.Id, cancellationToken);
-
-        return dto;
+        // 查询基础资料并校验基地存在。
+        return await GetCustomerDto(request.Id, cancellationToken);
     }
 
     /// <summary>
@@ -61,7 +57,6 @@ public class GetCrmHerbBaseHandler : IRequestHandler<GetCrmHerbBaseQuery, CrmHer
             {
                 Id = customer.Id,
                 BaseName = customer.BaseName,
-                HerbBaseName = customer.BaseName,
                 SubjectName = customer.SubjectName,
                 Grade = customer.Grade,
                 Score = customer.Score,
@@ -96,20 +91,4 @@ public class GetCrmHerbBaseHandler : IRequestHandler<GetCrmHerbBaseQuery, CrmHer
         return dto;
     }
 
-    /// <summary>
-    /// 查询药材基地主营品类。
-    /// </summary>
-    private async Task<List<string>> GetMainProducts(Guid customerId, CancellationToken cancellationToken)
-    {
-        return await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                !attribute.IsDeleted &&
-                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
-                attribute.EntityId == customerId &&
-                attribute.AttributeCode == CrmCodes.MainProductAttributeCode)
-            .OrderBy(attribute => attribute.SortOrder)
-            .ThenBy(attribute => attribute.CreatedAt)
-            .Select(attribute => attribute.AttributeValue)
-            .ToListAsync(cancellationToken);
-    }
 }

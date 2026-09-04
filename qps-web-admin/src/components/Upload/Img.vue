@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="upload-box">
     <el-upload
       :id="uuid"

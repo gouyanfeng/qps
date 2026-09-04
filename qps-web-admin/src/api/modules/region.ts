@@ -1,4 +1,4 @@
-﻿import http from "@/api";
+import http from "@/api";
 
 /**
  * @description 地址区域模块

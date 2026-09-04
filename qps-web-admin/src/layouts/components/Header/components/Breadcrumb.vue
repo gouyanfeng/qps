@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div :class="['breadcrumb-box mask-image', !globalStore.breadcrumbIcon && 'no-icon']">
     <el-breadcrumb :separator-icon="ArrowRight">
       <transition-group name="breadcrumb">

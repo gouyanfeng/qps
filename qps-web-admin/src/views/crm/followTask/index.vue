@@ -72,7 +72,7 @@
           </el-table-column>
           <el-table-column label="最近结果" width="104">
             <template #default="{ row }">
-              {{ formatFollowResult(row.lastFollowResult) }}
+              {{ row.lastFollowResult || "-" }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
@@ -99,18 +99,18 @@
         </el-form-item>
         <el-form-item label="沟通方式">
           <el-select v-model="followForm.followType">
-            <el-option label="电话" value="PHONE" />
-            <el-option label="微信" value="WECHAT" />
-            <el-option label="拜访" value="VISIT" />
+            <el-option label="电话" value="电话" />
+            <el-option label="微信" value="微信" />
+            <el-option label="拜访" value="拜访" />
           </el-select>
         </el-form-item>
         <el-form-item label="沟通结果" required>
           <el-select v-model="followForm.followResult" placeholder="请选择结果">
-            <el-option label="已接通" value="CONNECTED" />
-            <el-option label="未接" value="MISSED" />
-            <el-option label="空号" value="EMPTY_NUMBER" />
-            <el-option label="有意向" value="INTERESTED" />
-            <el-option label="无意向" value="NOT_INTERESTED" />
+            <el-option label="已接通" value="已接通" />
+            <el-option label="未接" value="未接" />
+            <el-option label="空号" value="空号" />
+            <el-option label="有意向" value="有意向" />
+            <el-option label="无意向" value="无意向" />
           </el-select>
         </el-form-item>
         <el-form-item label="意向等级">
@@ -197,7 +197,7 @@ const searchForm = reactive({
 });
 const followForm = reactive({
   contactId: undefined as string | undefined,
-  followType: "PHONE",
+  followType: "电话",
   followResult: "",
   intentLevel: "",
   content: "",
@@ -210,19 +210,6 @@ const metrics = computed(() => [
   { label: "未设下次跟进", value: overview.value.noPlanCount, category: "NO_PLAN", tone: "neutral", icon: DocumentDelete },
   { label: "近 7 天已完成", value: overview.value.completedLast7DaysCount, category: "", tone: "success", icon: CircleCheckFilled },
 ]);
-
-const followResultLabels: Record<string, string> = {
-  CONNECTED: "已接通",
-  MISSED: "未接",
-  EMPTY_NUMBER: "空号",
-  INTERESTED: "有意向",
-  NOT_INTERESTED: "无意向",
-  已接通: "已接通",
-  未接: "未接",
-  空号: "空号",
-  有意向: "有意向",
-  无意向: "无意向",
-};
 
 const loadOverview = async () => {
   const { data } = await crmFollowTaskApi.getList({ page: 1, pageSize: 1 });
@@ -254,7 +241,7 @@ const detail = (row: FollowTask) => {
 const resetFollowForm = () => {
   Object.assign(followForm, {
     contactId: undefined,
-    followType: "PHONE",
+    followType: "电话",
     followResult: "",
     intentLevel: "",
     content: "",
@@ -270,7 +257,7 @@ const openFollowDialog = async (row: FollowTask) => {
     ? await crmVendorApi.getVendor(row.entityId)
     : await crmHerbBaseApi.getSubject(row.entityId);
 
-  followContacts.value = (response.data?.contacts || []).filter((contact: FollowContact) => contact.status !== "INVALID");
+  followContacts.value = (response.data?.contacts || []).filter((contact: FollowContact) => contact.status !== "无效");
   followForm.contactId = followContacts.value.find(contact => contact.isPrimary)?.id;
   followDialogVisible.value = true;
 };
@@ -310,8 +297,6 @@ const submitFollowRecord = async () => {
 };
 
 const formatDate = (value?: string) => (value ? value.replace("T", " ").slice(0, 16) : "-");
-
-const formatFollowResult = (value?: string) => (value ? followResultLabels[value] || value : "-");
 
 const taskText = (row: FollowTask) => {
   if (row.category === "OVERDUE") return "已逾期";

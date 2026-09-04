@@ -1,4 +1,4 @@
-﻿import { Upload } from "@/api/interface/index";
+import { Upload } from "@/api/interface/index";
 import http from "@/api";
 
 /**

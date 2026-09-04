@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-dropdown trigger="click">
     <div class="avatar">
       <img src="@/assets/images/avatar.png" alt="avatar" />

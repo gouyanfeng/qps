@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
+using QPS.Application.Features.Crm.CrmHerbBaseSubjects;
 using QPS.Application.Features.Crm.CrmHerbBases;
 using QPS.Domain.Entities.Crm;
 using QPS.Domain.Entities.System;
@@ -11,7 +12,7 @@ namespace QPS.UnitTests.Features.Crm.CrmHerbBases;
 public class CrmHerbBaseCommandTests
 {
     [Fact]
-    public async Task Create_ShouldPersistMainProductAttributes()
+    public async Task Create_ShouldNotCreateProductAttributesOrSupplies()
     {
         await using var dbContext = TestDbContextFactory.Create();
         var currentUser = SystemUser.Create("creator", "hash", "创建人", Guid.NewGuid());
@@ -26,8 +27,7 @@ public class CrmHerbBaseCommandTests
         {
             Request = new CrmHerbBaseCreateRequest
             {
-                HerbBaseName = "Multi Product Customer",
-                MainProducts = new List<string> { "HUANG_QI", "DANG_GUI" },
+                BaseName = "Multi Product Customer",
                 Grade = "A",
                 Score = 95,
                 Province = "Gansu",
@@ -52,51 +52,34 @@ public class CrmHerbBaseCommandTests
         var transferRecordCount = await dbContext.CrmTransferRecords.CountAsync();
 
         Assert.True(result);
-        Assert.Equal(new List<string> { "HUANG_QI", "DANG_GUI" }, attributes);
+        Assert.Empty(attributes);
+        Assert.Empty(await dbContext.CrmHerbBaseSupplies.ToListAsync());
         Assert.Equal("Primary Contact", subject.PrimaryContactName);
         Assert.Equal("13900000000", subject.PrimaryContactPhone);
         Assert.Equal(1, transferRecordCount);
     }
 
     [Fact]
-    public async Task GetList_ShouldFilterByBusinessEntityMainProductAttributes()
+    public async Task GetSubjectList_ShouldAggregateSupplyProductName_AndFilterByProductName()
     {
         await using var dbContext = TestDbContextFactory.Create();
-        var currentUser = SystemUser.Create("creator", "hash", "创建人", Guid.NewGuid());
-        dbContext.SystemUsers.Add(currentUser);
-        await dbContext.SaveChangesAsync();
-        var createHandler = new CreateCrmHerbBaseHandler(
-            dbContext,
-            new TestCurrentUserService(currentUser.Id.ToString()),
-            TestDbContextFactory.CreateDispatcher());
-        await createHandler.Handle(new CreateCrmHerbBaseCommand
-        {
-            Request = CreateCustomerRequest("Dang Gui Customer")
-        }, CancellationToken.None);
-        await createHandler.Handle(new CreateCrmHerbBaseCommand
-        {
-            Request = CreateCustomerRequest("Tian Ma Customer")
-        }, CancellationToken.None);
-
-        var dangGuiCustomer = await dbContext.CrmHerbBases.SingleAsync(item => item.BaseName == "Dang Gui Customer");
-        var tianMaCustomer = await dbContext.CrmHerbBases.SingleAsync(item => item.BaseName == "Tian Ma Customer");
-        dbContext.CrmBusinessEntityAttributes.Add(new CrmBusinessEntityAttribute("CRM_HERB_BASE", dangGuiCustomer.Id, "CRM_MAIN_PRODUCT", "DANG_GUI", 1));
-        dbContext.CrmBusinessEntityAttributes.Add(new CrmBusinessEntityAttribute("CRM_HERB_BASE", tianMaCustomer.Id, "CRM_MAIN_PRODUCT", "TIAN_MA", 1));
+        var matchingSubject = AddSubjectWithSupply(dbContext, "Supply Astragalus Subject", "黄芪");
+        AddSubjectWithSupply(dbContext, "Supply Angelica Subject", "当归");
         await dbContext.SaveChangesAsync();
 
-        var handler = new GetCrmHerbBasesHandler(dbContext);
+        var handler = new GetCrmHerbBaseSubjectsHandler(dbContext);
 
-        var result = await handler.Handle(new GetCrmHerbBasesQuery
+        var result = await handler.Handle(new GetCrmHerbBaseSubjectsQuery
         {
-            MainProducts = new List<string> { "DANG_GUI" },
+            ProductName = new List<string> { "黄芪" },
             Page = 1,
             PageSize = 10
         }, CancellationToken.None);
 
         Assert.Equal(1, result.TotalCount);
-        var customer = Assert.Single(result.List);
-        Assert.Equal("Dang Gui Customer", customer.HerbBaseName);
-        Assert.Equal(new List<string> { "DANG_GUI" }, customer.MainProducts);
+        var subject = Assert.Single(result.List);
+        Assert.Equal(matchingSubject.Id, subject.Id);
+        Assert.Equal(new List<string> { "黄芪" }, subject.ProductName);
     }
 
     [Fact]
@@ -133,19 +116,19 @@ public class CrmHerbBaseCommandTests
         Assert.Equal(0, list.TotalCount);
     }
 
-    private static CrmHerbBaseCreateRequest CreateCustomerRequest(string herbBaseName)
+    private static CrmHerbBaseSubject AddSubjectWithSupply(
+        QPS.Infrastructure.Database.AppDbContext dbContext,
+        string subjectName,
+        string productName)
     {
-        return new CrmHerbBaseCreateRequest
-        {
-            HerbBaseName = herbBaseName,
-            Grade = "B",
-            Score = 80,
-            Province = "Gansu",
-            City = "Dingxi",
-            Area = "Longxi",
-            Address = "Test address",
-            SourcePlatform = "MANUAL",
-            Remark = "Created by unit test"
-        };
+        var subject = CrmHerbBaseSubject.Create(subjectName, subjectName, "仅基地", null, "待联系", "低", 0, string.Empty);
+        var herbBase = CrmHerbBase.Create(subjectName, "低", 0, "甘肃省", "定西市", "陇西县", string.Empty, null, null, "手工录入", null, null, string.Empty);
+        herbBase.SetHerbBaseSubject(subject.Id);
+        dbContext.CrmHerbBaseSubjects.Add(subject);
+        dbContext.CrmHerbBases.Add(herbBase);
+        dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(
+            herbBase.Id, subject.Id, productName, null, string.Empty, string.Empty, string.Empty,
+            string.Empty, null, string.Empty, string.Empty, null, null, string.Empty));
+        return subject;
     }
 }

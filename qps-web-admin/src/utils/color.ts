@@ -1,4 +1,4 @@
-﻿import { ElMessage } from "element-plus";
+import { ElMessage } from "element-plus";
 
 /**
  * @description hex颜色转rgb颜色

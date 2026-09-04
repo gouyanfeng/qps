@@ -4,35 +4,33 @@ using QPS.Application.Interfaces;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
 
-public static class CrmPurchaseDemandProductQuery
+public static class CrmVendorDemandProductQuery
 {
-    public static IQueryable<CrmPurchaseDemandProductItem> GetEffectiveItems(IDbContext dbContext)
+    public static IQueryable<CrmVendorDemandProductItem> GetEffectiveItems(IDbContext dbContext)
     {
         return GetEffectiveItems(dbContext, []);
     }
 
-    public static IQueryable<CrmPurchaseDemandProductItem> GetEffectiveItems(
+    public static IQueryable<CrmVendorDemandProductItem> GetEffectiveItems(
         IDbContext dbContext,
         IReadOnlyCollection<Guid> vendorIds)
     {
-        var plans = dbContext.CrmPurchaseDemands
-            .Where(plan => !plan.IsDeleted);
+        var demands = dbContext.CrmVendorDemands
+            .Where(demand => !demand.IsDeleted);
         if (vendorIds.Count > 0)
         {
-            plans = plans.Where(plan => vendorIds.Contains(plan.VendorId));
+            demands = demands.Where(demand => vendorIds.Contains(demand.VendorId));
         }
 
-        return from plan in plans
-               join attribute in dbContext.CrmBusinessEntityAttributes on plan.Id equals attribute.EntityId
-               where !attribute.IsDeleted &&
-                     attribute.EntityType == CrmCodes.PurchaseDemandEntityType &&
-                     attribute.AttributeCode == CrmCodes.PurchaseProductAttributeCode
-               select new CrmPurchaseDemandProductItem(
-                   plan.VendorId,
-                   attribute.Id,
-                   attribute.AttributeValue,
-                   attribute.SortOrder,
-                   attribute.Remark);
+        return from demand in demands
+               join item in dbContext.CrmVendorDemandItems on demand.Id equals item.VendorDemandId
+               where !item.IsDeleted
+               select new CrmVendorDemandProductItem(
+                   demand.VendorId,
+                   item.Id,
+                   item.ProductName,
+                   item.SortOrder,
+                   item.Remark);
     }
 
     public static IQueryable<Guid> GetVendorIdsWithProducts(IDbContext dbContext)
@@ -81,7 +79,7 @@ public static class CrmPurchaseDemandProductQuery
                     .ThenBy(item => item.ProductName)
                     .Select(item => new CrmVendorProductDto
                     {
-                        Id = item.AttributeId,
+                        Id = item.ItemId,
                         ProductName = item.ProductName,
                         SortOrder = item.SortOrder,
                         Remark = item.Remark
@@ -90,9 +88,9 @@ public static class CrmPurchaseDemandProductQuery
     }
 }
 
-public sealed record CrmPurchaseDemandProductItem(
+public sealed record CrmVendorDemandProductItem(
     Guid VendorId,
-    Guid AttributeId,
+    Guid ItemId,
     string ProductName,
     int SortOrder,
     string Remark);

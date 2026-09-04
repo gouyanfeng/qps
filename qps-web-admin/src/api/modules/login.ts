@@ -1,4 +1,4 @@
-﻿import { Login } from "@/api/interface/index";
+import { Login } from "@/api/interface/index";
 import authMenuList from "@/assets/json/authMenuList.json";
 import http from "@/api";
 import { cacheGet, cacheSet } from "@/utils";

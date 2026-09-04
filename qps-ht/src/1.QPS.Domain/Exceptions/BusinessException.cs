@@ -1,4 +1,4 @@
-﻿namespace QPS.Domain.Exceptions;
+namespace QPS.Domain.Exceptions;
 
 public class BusinessException : Exception
 {

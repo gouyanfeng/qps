@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.Users;
+namespace QPS.Application.Contracts.System.Users;
 
 public class UserCreateRequest
 {

@@ -7,9 +7,9 @@ namespace QPS.Domain.Entities.Crm;
 /// </summary>
 public class CrmHerbBase : BaseEntity
 {
-    private const string PendingContactStatus = "PENDING";
-    private const string FollowingUpStatus = "FOLLOWING";
-    private const string InterestedStatus = "INTERESTED";
+    private const string PendingContactStatus = "待联系";
+    private const string FollowingUpStatus = "跟进中";
+    private const string InterestedStatus = "有意向";
 
     public Guid? HerbBaseSubjectId { get; private set; }
 
@@ -20,11 +20,6 @@ public class CrmHerbBase : BaseEntity
     /// 基地名称，对应清洗线索名称，导入CRM使用。
     /// </summary>
     public string BaseName { get; private set; } = string.Empty;
-
-    /// <summary>
-    /// 兼容旧接口字段，等同于基地名称。
-    /// </summary>
-    public string HerbBaseName => BaseName;
 
     /// <summary>
     /// 主体名称，用于记录客户对应的工商或经营主体。
@@ -77,7 +72,7 @@ public class CrmHerbBase : BaseEntity
     public decimal? Lng { get; private set; }
 
     /// <summary>
-    /// 数据来源平台，默认BAIDU_MAP。
+    /// 数据来源平台，例如百度地图。
     /// </summary>
     public string SourcePlatform { get; private set; } = string.Empty;
 
@@ -87,7 +82,7 @@ public class CrmHerbBase : BaseEntity
     public long? SourceId { get; private set; }
 
     /// <summary>
-    /// 药材基地处理状态，例如PENDING、FOLLOWING、INTERESTED、DEAL、LOST。
+    /// 药材基地处理状态，例如待联系、跟进中、有意向、已成交、已流失。
     /// </summary>
     public string Status { get; private set; } = string.Empty;
 

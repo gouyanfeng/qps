@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Interfaces;
+namespace QPS.Application.Interfaces;
 
 public interface ICurrentUserService
 {

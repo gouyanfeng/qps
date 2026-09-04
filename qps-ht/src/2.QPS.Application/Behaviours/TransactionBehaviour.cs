@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using QPS.Application.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;

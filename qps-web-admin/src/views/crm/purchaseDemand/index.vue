@@ -54,7 +54,7 @@
       </template>
     </QueryPage>
 
-    <CrmPurchaseDemandEditor v-model="editorVisible" :demand="editingDemand" @saved="reloadList" />
+    <CrmVendorDemandEditor v-model="editorVisible" :demand="editingDemand" @saved="reloadList" />
   </div>
 </template>
 
@@ -62,8 +62,8 @@
 import { reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
-import crmPurchaseDemandApi from "@/api/modules/crmPurchaseDemand";
-import CrmPurchaseDemandEditor from "@/components/CrmPurchaseDemandEditor/index.vue";
+import crmVendorDemandApi from "@/api/modules/crmVendorDemand";
+import CrmVendorDemandEditor from "@/components/CrmVendorDemandEditor/index.vue";
 import Permission from "@/components/Permission/index.vue";
 import QueryPage from "@/components/QueryPage/index.vue";
 
@@ -86,7 +86,7 @@ const open = (row?: any) => {
 };
 
 const changeStatus = async (row: any, status: string) => {
-  await crmPurchaseDemandApi.changeStatus(row.id, { status });
+  await crmVendorDemandApi.changeStatus(row.id, { status });
   ElMessage.success("状态已更新");
   reloadList();
 };
@@ -96,7 +96,7 @@ const close = async (row: any) => {
     inputPattern: /.+/,
     inputErrorMessage: "请填写关闭原因",
   });
-  await crmPurchaseDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
+  await crmVendorDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
   ElMessage.success("采购需求已关闭");
   reloadList();
 };

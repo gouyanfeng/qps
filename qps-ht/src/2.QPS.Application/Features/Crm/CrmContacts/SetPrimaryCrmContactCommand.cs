@@ -17,7 +17,7 @@ public class SetPrimaryCrmContactHandler : IRequestHandler<SetPrimaryCrmContactC
 {
     private const string HerbBaseSubjectEntityType = CrmCodes.HerbBaseSubjectEntityType;
     private const string VendorEntityType = CrmCodes.VendorEntityType;
-    private const string InvalidStatus = "INVALID";
+    private const string InvalidStatus = "无效";
 
     private readonly IDbContext _dbContext;
     private readonly IDomainEventDispatcher _dispatcher;

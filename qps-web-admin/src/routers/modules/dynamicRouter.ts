@@ -1,4 +1,4 @@
-﻿import router from "@/routers/index";
+import router from "@/routers/index";
 import { LOGIN_URL } from "@/config";
 import { RouteRecordRaw } from "vue-router";
 import { ElNotification } from "element-plus";

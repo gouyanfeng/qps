@@ -31,16 +31,14 @@ public static class CrmHerbBaseSubjectScoreInputBuilder
             .ToListAsync(cancellationToken);
 
         var baseIds = bases.Select(item => item.Id).ToList();
-        var mainProductCount = baseIds.Count == 0
+        var supplyProductCount = baseIds.Count == 0
             ? 0
-            : await dbContext.CrmBusinessEntityAttributes
+            : await dbContext.CrmHerbBaseSupplies
                 .Where(item =>
                     !item.IsDeleted &&
-                    item.EntityType == CrmCodes.HerbBaseEntityType &&
-                    item.AttributeCode == CrmCodes.MainProductAttributeCode &&
-                    baseIds.Contains(item.EntityId) &&
-                    item.AttributeValue != string.Empty)
-                .Select(item => item.AttributeValue)
+                    baseIds.Contains(item.HerbBaseId) &&
+                    !string.IsNullOrWhiteSpace(item.ProductName))
+                .Select(item => item.ProductName)
                 .Distinct()
                 .CountAsync(cancellationToken);
 
@@ -55,14 +53,14 @@ public static class CrmHerbBaseSubjectScoreInputBuilder
                 item.Status
             })
             .ToListAsync(cancellationToken);
-        var validContacts = contacts.Where(item => item.Status != "INVALID").ToList();
+        var validContacts = contacts.Where(item => item.Status != "无效").ToList();
 
         var input = new CrmHerbBaseSubjectScoreInput
         {
             Status = subject.Status,
             Scale = subject.Scale ?? bases.Sum(item => item.Scale ?? 0),
             BaseCount = bases.Count,
-            MainProductCount = mainProductCount,
+            SupplyProductCount = supplyProductCount,
             HasPrimaryContactName = !string.IsNullOrWhiteSpace(subject.PrimaryContactName),
             HasPrimaryContactPhone = !string.IsNullOrWhiteSpace(subject.PrimaryContactPhone),
             HasValidContact = validContacts.Count > 0,

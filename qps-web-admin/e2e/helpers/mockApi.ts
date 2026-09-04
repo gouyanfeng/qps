@@ -14,8 +14,6 @@ export const crmHerbBase = {
   baseName: "Codex测试种植基地",
   subjectName: "Codex测试药材公司",
   herbBaseName: "Codex测试种植基地",
-  mainProduct: "HUANG_QI",
-  mainProducts: ["HUANG_QI"],
   grade: "A",
   score: 92,
   province: "甘肃省",

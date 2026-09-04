@@ -4,16 +4,16 @@ using QPS.Domain.Entities.Crm;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
 
-internal static class CrmPurchaseDemands
+internal static class CrmVendorDemands
 {
     public static async Task RefreshLatestAsync(
         IDbContext dbContext,
         CrmVendor vendor,
         CancellationToken cancellationToken,
-        CrmPurchaseDemand? candidatePlan = null,
+        CrmVendorDemand? candidatePlan = null,
         Guid? excludedPlanId = null)
     {
-        var latestPlan = await dbContext.CrmPurchaseDemands
+        var latestPlan = await dbContext.CrmVendorDemands
             .Where(plan =>
                 !plan.IsDeleted &&
                 plan.VendorId == vendor.Id &&
@@ -35,7 +35,7 @@ internal static class CrmPurchaseDemands
             latestPlan?.DemandName ?? string.Empty);
     }
 
-    private static bool IsLater(CrmPurchaseDemand plan, CrmPurchaseDemand? other)
+    private static bool IsLater(CrmVendorDemand plan, CrmVendorDemand? other)
     {
         if (other == null)
         {

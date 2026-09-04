@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.ChinaRegions;
+namespace QPS.Application.Contracts.System.ChinaRegions;
 
 public class ChinaRegionDto
 {

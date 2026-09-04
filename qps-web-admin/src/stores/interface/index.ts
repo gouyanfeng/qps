@@ -1,4 +1,4 @@
-﻿import { Login } from "@/api/interface";
+import { Login } from "@/api/interface";
 
 export type LayoutType = "vertical" | "classic" | "transverse" | "columns";
 

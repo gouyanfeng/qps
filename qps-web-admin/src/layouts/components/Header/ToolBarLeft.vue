@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="tool-bar-lf">
     <CollapseIcon id="collapseIcon" />
     <Breadcrumb v-show="globalStore.breadcrumb" id="breadcrumb" />

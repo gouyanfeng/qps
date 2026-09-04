@@ -2,7 +2,7 @@ using QPS.Domain.Common;
 
 namespace QPS.Domain.Entities.Crm;
 
-public class CrmPurchaseDemand : BaseEntity
+public class CrmVendorDemand : BaseEntity
 {
     public const string Pending = "待确认";
     public const string Active = "有效";
@@ -23,15 +23,15 @@ public class CrmPurchaseDemand : BaseEntity
     public string ClosedReason { get; private set; } = string.Empty;
     public virtual CrmVendor? Vendor { get; private set; }
     public virtual CrmContact? Contact { get; private set; }
-    public virtual ICollection<CrmPurchaseDemandItem> Items { get; private set; } = new List<CrmPurchaseDemandItem>();
-    private CrmPurchaseDemand() { }
-    public static CrmPurchaseDemand Create(Guid vendorId, string demandNo, string demandName, DateTime demandAt, string sourceType, Guid? contactId, DateTime? expectedDeliveryAt, string receivingAddress, string sourceUrl, string remark, IReadOnlyCollection<CrmPurchaseDemandItem> items)
+    public virtual ICollection<CrmVendorDemandItem> Items { get; private set; } = new List<CrmVendorDemandItem>();
+    private CrmVendorDemand() { }
+    public static CrmVendorDemand Create(Guid vendorId, string demandNo, string demandName, DateTime demandAt, string sourceType, Guid? contactId, DateTime? expectedDeliveryAt, string receivingAddress, string sourceUrl, string remark, IReadOnlyCollection<CrmVendorDemandItem> items)
     {
-        var demand = new CrmPurchaseDemand { DemandNo = demandNo, SourceType = sourceType };
+        var demand = new CrmVendorDemand { DemandNo = demandNo, SourceType = sourceType };
         demand.UpdateCore(vendorId, demandName, demandAt, contactId, expectedDeliveryAt, receivingAddress, sourceUrl, remark, items);
         return demand;
     }
-    public void Update(Guid vendorId, string demandName, DateTime demandAt, Guid? contactId, DateTime? expectedDeliveryAt, string receivingAddress, string sourceUrl, string remark, IReadOnlyCollection<CrmPurchaseDemandItem> items)
+    public void Update(Guid vendorId, string demandName, DateTime demandAt, Guid? contactId, DateTime? expectedDeliveryAt, string receivingAddress, string sourceUrl, string remark, IReadOnlyCollection<CrmVendorDemandItem> items)
     {
         if (Status is Completed or Closed) throw new InvalidOperationException("终态采购需求不可编辑");
         UpdateCore(vendorId, demandName, demandAt, contactId, expectedDeliveryAt, receivingAddress, sourceUrl, remark, items);
@@ -45,7 +45,7 @@ public class CrmPurchaseDemand : BaseEntity
         Status = targetStatus;
         ClosedReason = targetStatus == Closed ? closedReason!.Trim() : string.Empty;
     }
-    private void UpdateCore(Guid vendorId, string demandName, DateTime demandAt, Guid? contactId, DateTime? expectedDeliveryAt, string receivingAddress, string sourceUrl, string remark, IReadOnlyCollection<CrmPurchaseDemandItem> items)
+    private void UpdateCore(Guid vendorId, string demandName, DateTime demandAt, Guid? contactId, DateTime? expectedDeliveryAt, string receivingAddress, string sourceUrl, string remark, IReadOnlyCollection<CrmVendorDemandItem> items)
     {
         VendorId = vendorId; DemandName = demandName; DemandAt = demandAt; ContactId = contactId; ExpectedDeliveryAt = expectedDeliveryAt;
         ReceivingAddress = receivingAddress ?? string.Empty;

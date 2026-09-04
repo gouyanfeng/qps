@@ -47,7 +47,7 @@ tests/
 | DataDictionaryController | /api/admin/data-dictionaries | Data dictionary management |
 | CrmHerbBaseController | /api/admin/crm/herb-base-subjects, /api/admin/crm/herb-bases | 基地主体、基地及供应信息 |
 | CrmVendorController | /api/admin/crm/vendors | 厂商、联系人、跟进和厂商采购需求 |
-| CrmPurchaseDemandController | /api/admin/crm/purchase-demands | 采购需求维护与状态流转 |
+| CrmVendorDemandController | /api/admin/crm/purchase-demands | 采购需求维护与状态流转 |
 | CrmFollowTaskController | /api/admin/crm/follow-tasks | 当前负责人跟进任务工作台 |
 | DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
 

@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.Permissions;
+namespace QPS.Application.Contracts.System.Permissions;
 
 /// <summary>
 /// 权限树节点 DTO

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-dropdown trigger="click" @command="changeLanguage">
     <i :class="'iconfont icon-zhongyingwen'" class="toolBar-icon"></i>
     <template #dropdown>

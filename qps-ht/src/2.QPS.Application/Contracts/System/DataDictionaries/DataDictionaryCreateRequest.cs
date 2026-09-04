@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.DataDictionaries;
+namespace QPS.Application.Contracts.System.DataDictionaries;
 
 public class DataDictionaryCreateRequest
 {

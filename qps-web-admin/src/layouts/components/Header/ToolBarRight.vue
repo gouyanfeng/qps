@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="tool-bar-ri">
     <div class="header-icon">
       <AssemblySize id="assemblySize" />

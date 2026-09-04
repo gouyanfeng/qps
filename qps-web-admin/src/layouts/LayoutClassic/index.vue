@@ -1,4 +1,4 @@
-﻿<!-- 经典布局 -->
+<!-- 经典布局 -->
 <template>
   <el-container class="layout">
     <el-header>

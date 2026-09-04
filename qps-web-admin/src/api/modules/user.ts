@@ -1,4 +1,4 @@
-﻿import { User } from "@/api/interface/index";
+import { User } from "@/api/interface/index";
 import http from "@/api";
 
 /**

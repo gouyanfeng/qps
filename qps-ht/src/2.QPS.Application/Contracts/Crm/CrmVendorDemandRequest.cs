@@ -1,6 +1,6 @@
 namespace QPS.Application.Contracts.Crm;
 
-public class CrmPurchaseDemandSaveRequest
+public class CrmVendorDemandSaveRequest
 {
     public Guid VendorId { get; set; }
     public string DemandName { get; set; } = string.Empty;
@@ -10,9 +10,9 @@ public class CrmPurchaseDemandSaveRequest
     public string ReceivingAddress { get; set; } = string.Empty;
     public string SourceUrl { get; set; } = string.Empty;
     public string Remark { get; set; } = string.Empty;
-    public List<CrmPurchaseDemandItemRequest> Items { get; set; } = [];
+    public List<CrmVendorDemandItemRequest> Items { get; set; } = [];
 }
-public class CrmPurchaseDemandItemRequest
+public class CrmVendorDemandItemRequest
 {
     public Guid? Id { get; set; }
     public string ProductName { get; set; } = string.Empty;
@@ -25,4 +25,4 @@ public class CrmPurchaseDemandItemRequest
     public DateTime? ExpectedDeliveryAt { get; set; }
     public string Remark { get; set; } = string.Empty;
 }
-public class CrmPurchaseDemandStatusRequest { public string Status { get; set; } = string.Empty; public string ClosedReason { get; set; } = string.Empty; }
+public class CrmVendorDemandStatusRequest { public string Status { get; set; } = string.Empty; public string ClosedReason { get; set; } = string.Empty; }

@@ -1,7 +1,7 @@
 <template>
   <div class="chart-block">
     <div class="block-header">
-      <h2>{{ props.title || "主营品类分布" }}</h2>
+      <h2>{{ props.title || "品类分布" }}</h2>
     </div>
     <el-empty v-if="isEmpty" description="暂无品类数据" :image-size="72" />
     <VChart v-else class="chart" :option="option" autoresize />

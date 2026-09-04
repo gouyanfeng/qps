@@ -28,7 +28,7 @@ public class CrmVendor : BaseEntity
     public DateTime? LatestPurchaseTime { get; private set; }
 
     /// <summary>
-    /// 最近采购计划名称。
+    /// 最近采购需求名称。
     /// </summary>
     public string LatestPurchaseDemandName { get; private set; } = string.Empty;
 
@@ -48,7 +48,7 @@ public class CrmVendor : BaseEntity
 
     public DateTime? NextFollowAt { get; private set; }
 
-    public virtual ICollection<CrmPurchaseDemand> PurchaseDemands { get; private set; } = new List<CrmPurchaseDemand>();
+    public virtual ICollection<CrmVendorDemand> VendorDemands { get; private set; } = new List<CrmVendorDemand>();
 
     private CrmVendor()
     {
@@ -91,7 +91,7 @@ public class CrmVendor : BaseEntity
     }
 
     /// <summary>
-    /// 由采购计划子表刷新最近采购汇总。
+    /// 由采购需求子表刷新最近采购汇总。
     /// </summary>
     public void UpdateLatestPurchaseDemandSummary(DateTime? latestPurchaseTime, string latestPurchaseDemandName)
     {

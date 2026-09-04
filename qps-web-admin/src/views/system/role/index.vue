@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div class="list-page">
         <QueryPage api="/admin/roles" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
             <!-- 搜索条件 -->

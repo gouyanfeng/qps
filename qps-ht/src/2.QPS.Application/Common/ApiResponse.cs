@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Common;
+namespace QPS.Application.Common;
 
 /// <summary>
 /// API 响应包装类

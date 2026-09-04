@@ -24,7 +24,7 @@ export interface CrmDashboardNewPurchaseDemandTrendItem {
 
 export const dashboardApi = {
   getFollowFunnel: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/follow-funnel", undefined, { loading: false }),
-  getMainProductDistribution: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/main-product-distribution", undefined, { loading: false }),
+  getSupplyProductDistribution: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/supply-product-distribution", undefined, { loading: false }),
   getFollowTrend: () => http.get<CrmDashboardTrendItem[]>("/admin/dashboard/crm/follow-trend", undefined, { loading: false }),
   getNewBaseTrend: () => http.get<CrmDashboardNewBaseTrendItem[]>("/admin/dashboard/crm/new-base-trend", undefined, { loading: false }),
   getVendorPriorityDistribution: () => http.get<CrmDashboardChartItem[]>("/admin/dashboard/crm/vendor-priority-distribution", undefined, { loading: false }),

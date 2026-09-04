@@ -1,4 +1,4 @@
-﻿import { ElLoading } from "element-plus";
+import { ElLoading } from "element-plus";
 
 /* 全局请求 loading */
 let loadingInstance: ReturnType<typeof ElLoading.service>;

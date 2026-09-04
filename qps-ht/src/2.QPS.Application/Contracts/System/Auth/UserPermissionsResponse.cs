@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.Auth;
+namespace QPS.Application.Contracts.System.Auth;
 
 /// <summary>
 /// 当前用户权限响应

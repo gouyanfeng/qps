@@ -1,4 +1,4 @@
-﻿namespace QPS.Domain.Entities.Crm;
+namespace QPS.Domain.Entities.Crm;
 
 public class CrmHerbBaseSubjectScoreInput
 {
@@ -8,7 +8,7 @@ public class CrmHerbBaseSubjectScoreInput
 
     public int BaseCount { get; init; }
 
-    public int MainProductCount { get; init; }
+    public int SupplyProductCount { get; init; }
 
     public bool HasPrimaryContactName { get; init; }
 
@@ -41,23 +41,15 @@ public static class CrmHerbBaseSubjectScorePolicy
     private const string GradeB = "中";
     private const string GradeC = "低";
     private const string InvalidGrade = "无效";
-    private static readonly string[] LostStatuses = ["LOST", "已流失"];
-    private static readonly string[] InterestedStatuses = ["INTERESTED", "有意向"];
-    private static readonly string[] DealStatuses = ["DEAL", "已成交"];
-    private static readonly string[] FollowingStatuses = ["FOLLOWING", "跟进中"];
-    private static readonly string[] EffectiveFollowResults = ["CONNECTED", "INTERESTED", "已接通", "有意向"];
+    private static readonly string[] LostStatuses = ["已流失"];
+    private static readonly string[] InterestedStatuses = ["有意向"];
+    private static readonly string[] DealStatuses = ["已成交"];
+    private static readonly string[] FollowingStatuses = ["跟进中"];
+    private static readonly string[] EffectiveFollowResults = ["已接通", "有意向"];
 
     public static string NormalizeGrade(string? grade)
     {
-        return grade?.Trim() switch
-        {
-            "A" => GradeA,
-            "B" => GradeB,
-            "C" => GradeC,
-            "INVALID" => InvalidGrade,
-            "" or null => string.Empty,
-            var value => value
-        };
+        return grade?.Trim() ?? string.Empty;
     }
 
     public static CrmHerbBaseSubjectScoreResult Calculate(CrmHerbBaseSubjectScoreInput input)
@@ -70,7 +62,7 @@ public static class CrmHerbBaseSubjectScorePolicy
         var score =
             ScaleScore(input.Scale) +
             BaseCountScore(input.BaseCount) +
-            MainProductScore(input.MainProductCount) +
+            SupplyProductScore(input.SupplyProductCount) +
             ContactScore(input) +
             FollowScore(input) +
             SourceScore(input.SourcePlatforms) +
@@ -112,10 +104,10 @@ public static class CrmHerbBaseSubjectScorePolicy
         return 0;
     }
 
-    private static int MainProductScore(int mainProductCount)
+    private static int SupplyProductScore(int supplyProductCount)
     {
-        if (mainProductCount >= 2) return 15;
-        if (mainProductCount == 1) return 10;
+        if (supplyProductCount >= 2) return 15;
+        if (supplyProductCount == 1) return 10;
         return 0;
     }
 
@@ -166,14 +158,12 @@ public static class CrmHerbBaseSubjectScorePolicy
     {
         if (string.IsNullOrWhiteSpace(sourcePlatform)) return 0;
 
-        var normalized = sourcePlatform.Trim().ToUpperInvariant();
-
-        return normalized switch
+        return sourcePlatform.Trim() switch
         {
-            "MANUAL" or "人工录入" or "手工录入" => 5,
-            "GOV" or "GAP" or "GOV_HERB_BASE" or "政府网站" or "官方公示" => 5,
-            "HERB_PLATFORM" or "INDUSTRY_SITE" or "THIRD_PARTY" or "YT1998" or "ZYCTD" => 4,
-            "BAIDU_MAP" or "MAP_POI" or "百度地图" => 3,
+            "手工录入" => 5,
+            "政府网站" => 5,
+            "药材平台" => 4,
+            "百度地图" => 3,
             _ => 2
         };
     }

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-config-provider :locale="locale" :size="assemblySize" :button="buttonConfig">
     <router-view></router-view>
     <button v-show="assistantVisible && !assistantOpen" class="data-assistant-tab" type="button" @click="openDataAssistant">数据助手</button>

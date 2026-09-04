@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-icon class="collapse-icon" @click="changeCollapse">
     <component :is="globalStore.isCollapse ? 'expand' : 'fold'"></component>
   </el-icon>

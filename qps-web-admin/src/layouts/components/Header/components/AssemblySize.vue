@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-dropdown trigger="click" @command="setAssemblySize">
     <i :class="'iconfont icon-contentright'" class="toolBar-icon"></i>
     <template #dropdown>

@@ -51,9 +51,7 @@ const selectedValue = computed({
 const loadOptions = async (keyword = "") => {
   loading.value = true;
   try {
-    const result = await crmVendorApi.getBusinessEntityAttributeOptions({
-      entityType: "CRM_PURCHASE_DEMAND",
-      attributeCode: "PURCHASE_PRODUCT",
+    const result = await crmVendorApi.getHerbProductOptions({
       keyword,
       pageSize: 100,
     });

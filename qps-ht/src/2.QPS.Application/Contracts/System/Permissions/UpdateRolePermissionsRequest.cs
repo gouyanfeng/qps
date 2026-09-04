@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.Permissions;
+namespace QPS.Application.Contracts.System.Permissions;
 
 /// <summary>
 /// 更新角色权限请求

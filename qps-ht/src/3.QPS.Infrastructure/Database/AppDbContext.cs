@@ -30,8 +30,8 @@ public class AppDbContext : DbContext, IDbContext
     public DbSet<CrmBusinessEntityAttribute> CrmBusinessEntityAttributes { get; set; }
     public DbSet<CrmTransferRecord> CrmTransferRecords { get; set; }
     public DbSet<CrmVendor> CrmVendors { get; set; }
-    public DbSet<CrmPurchaseDemand> CrmPurchaseDemands { get; set; }
-    public DbSet<CrmPurchaseDemandItem> CrmPurchaseDemandItems { get; set; }
+    public DbSet<CrmVendorDemand> CrmVendorDemands { get; set; }
+    public DbSet<CrmVendorDemandItem> CrmVendorDemandItems { get; set; }
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
@@ -46,7 +46,6 @@ public class AppDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<CrmHerbBase>(entity =>
         {
-            entity.Ignore(herbBase => herbBase.HerbBaseName);
             entity.Property(herbBase => herbBase.BaseName).HasMaxLength(200);
             entity.Property(herbBase => herbBase.SubjectName).HasMaxLength(200);
             entity.Property(herbBase => herbBase.Scale).HasPrecision(18, 2);
@@ -113,15 +112,6 @@ public class AppDbContext : DbContext, IDbContext
                 attribute.AttributeValue
             });
 
-            entity.HasIndex(
-                    attribute => new
-                    {
-                        attribute.EntityId,
-                        attribute.AttributeValue
-                    },
-                    "IX_CrmBusinessEntityAttributes_PurchaseDemand_Product")
-                .IsUnique()
-                .HasFilter("[IsDeleted] = 0 AND [EntityType] = 'CRM_PURCHASE_DEMAND' AND [AttributeCode] = 'PURCHASE_PRODUCT'");
         });
 
         modelBuilder.Entity<CrmContact>(entity =>
@@ -149,8 +139,9 @@ public class AppDbContext : DbContext, IDbContext
             entity.HasIndex(vendor => new { vendor.OwnerUserId, vendor.NextFollowAt });
         });
 
-        modelBuilder.Entity<CrmPurchaseDemand>(entity =>
+        modelBuilder.Entity<CrmVendorDemand>(entity =>
         {
+            entity.ToTable("CrmVendorDemands");
             entity.Property(demand => demand.DemandNo).HasMaxLength(64);
             entity.Property(demand => demand.DemandName).HasMaxLength(500);
             entity.Property(demand => demand.Status).HasMaxLength(32);
@@ -159,16 +150,17 @@ public class AppDbContext : DbContext, IDbContext
             entity.HasIndex(demand => demand.DemandNo).IsUnique();
             entity.HasIndex(demand => new { demand.VendorId, demand.Status, demand.DemandAt });
             entity.HasIndex(demand => demand.ContactId);
-            entity.HasOne(demand => demand.Vendor).WithMany(vendor => vendor.PurchaseDemands).HasForeignKey(demand => demand.VendorId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(demand => demand.Vendor).WithMany(vendor => vendor.VendorDemands).HasForeignKey(demand => demand.VendorId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(demand => demand.Contact).WithMany().HasForeignKey(demand => demand.ContactId).OnDelete(DeleteBehavior.Restrict);
         });
-        modelBuilder.Entity<CrmPurchaseDemandItem>(entity =>
+        modelBuilder.Entity<CrmVendorDemandItem>(entity =>
         {
+            entity.ToTable("CrmVendorDemandItems");
             entity.Property(item => item.ProductName).HasMaxLength(200);
             entity.Property(item => item.Quantity).HasPrecision(18, 2);
             entity.Property(item => item.TargetPrice).HasPrecision(18, 2);
-            entity.HasIndex(item => new { item.PurchaseDemandId, item.SortOrder });
-            entity.HasOne(item => item.PurchaseDemand).WithMany(demand => demand.Items).HasForeignKey(item => item.PurchaseDemandId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(item => new { item.VendorDemandId, item.SortOrder });
+            entity.HasOne(item => item.VendorDemand).WithMany(demand => demand.Items).HasForeignKey(item => item.VendorDemandId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CrmTransferRecord>(entity =>

@@ -4,14 +4,14 @@ namespace QPS.Domain.Entities.Crm;
 
 public class CrmHerbBaseSubject : BaseEntity
 {
-    private const string PendingStatus = "PENDING";
-    private const string FollowingStatus = "FOLLOWING";
-    private const string InterestedStatus = "INTERESTED";
+    private const string PendingStatus = "待联系";
+    private const string FollowingStatus = "跟进中";
+    private const string InterestedStatus = "有意向";
 
     public string? SubjectName { get; private set; }
-    public string SubjectType { get; private set; } = "UNKNOWN";
+    public string SubjectType { get; private set; } = "未知";
     public Guid? OwnerUserId { get; private set; }
-    public string Status { get; private set; } = "PENDING";
+    public string Status { get; private set; } = "待联系";
     public string Grade { get; private set; } = string.Empty;
     public int Score { get; private set; }
     public decimal? Scale { get; private set; }

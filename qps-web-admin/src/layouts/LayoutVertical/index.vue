@@ -1,4 +1,4 @@
-﻿<!-- 纵向布局 -->
+<!-- 纵向布局 -->
 <template>
   <el-container class="layout">
     <el-aside>

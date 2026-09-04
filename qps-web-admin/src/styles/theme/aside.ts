@@ -1,4 +1,4 @@
-﻿import { Theme } from "@/hooks/interface";
+import { Theme } from "@/hooks/interface";
 
 export const asideTheme: Record<Theme.ThemeType, { [key: string]: string }> = {
   light: {

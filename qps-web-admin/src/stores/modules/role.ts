@@ -1,4 +1,4 @@
-﻿import { defineStore } from "pinia";
+import { defineStore } from "pinia";
 import { RoleType } from "@/stores/interface";
 
 const defaultRoles: RoleType[] = [

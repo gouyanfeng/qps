@@ -34,6 +34,8 @@ public class CrmVendorDto
 
     public int ProductCount { get; set; }
 
+    public List<string> ProductName { get; set; } = new();
+
     public int ContactCount { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -44,7 +46,7 @@ public class CrmVendorDto
 
     public List<CrmVendorProductDto> Products { get; set; } = new();
 
-    public List<CrmPurchaseDemandDto> PurchaseDemands { get; set; } = new();
+    public List<CrmVendorDemandDto> PurchaseDemands { get; set; } = new();
 
     public List<CrmTransferRecordDto> TransferRecords { get; set; } = new();
 }
@@ -60,7 +62,7 @@ public class CrmVendorProductDto
     public string Remark { get; set; } = string.Empty;
 }
 
-public class CrmPurchaseDemandDto
+public class CrmVendorDemandDto
 {
     public Guid Id { get; set; }
 
@@ -81,13 +83,13 @@ public class CrmPurchaseDemandDto
 
     public string Remark { get; set; } = string.Empty;
     public string ClosedReason { get; set; } = string.Empty;
-    public List<CrmPurchaseDemandItemDto> Items { get; set; } = new();
+    public List<CrmVendorDemandItemDto> Items { get; set; } = new();
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 }
-public class CrmPurchaseDemandItemDto
+public class CrmVendorDemandItemDto
 {
     public Guid Id { get; set; }
     public string ProductName { get; set; } = string.Empty;

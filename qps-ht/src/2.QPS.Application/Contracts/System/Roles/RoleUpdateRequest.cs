@@ -1,4 +1,4 @@
-﻿namespace QPS.Application.Contracts.System.Roles;
+namespace QPS.Application.Contracts.System.Roles;
 
 public class RoleUpdateRequest
 {

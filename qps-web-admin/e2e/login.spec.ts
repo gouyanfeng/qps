@@ -1,4 +1,4 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { mockLoginApi } from "./helpers/mockApi";
 
 test("login page renders the default login form", async ({ page }) => {

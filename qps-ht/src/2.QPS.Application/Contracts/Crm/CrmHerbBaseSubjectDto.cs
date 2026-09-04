@@ -18,7 +18,7 @@ public class CrmHerbBaseSubjectDto
     public string? Remark { get; set; }
     public int BaseCount { get; set; }
     public decimal TotalScale { get; set; }
-    public List<string> MainProducts { get; set; } = new();
+    public List<string> ProductName { get; set; } = new();
     public List<string> Regions { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

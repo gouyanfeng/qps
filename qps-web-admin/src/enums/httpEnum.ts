@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @description：请求配置
  */
 export enum ResultEnum {

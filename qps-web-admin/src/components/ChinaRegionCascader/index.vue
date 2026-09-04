@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-cascader
     v-model="selectedCodes"
     :options="regionOptions"

@@ -37,8 +37,7 @@ public class UpdateCrmHerbBaseCommandTests
             Id = customer.Id,
             Request = new CrmHerbBaseUpdateRequest
             {
-                HerbBaseName = "Codex Test Customer",
-                MainProducts = new List<string> { "HUANG_QI" },
+                BaseName = "Codex Test Customer",
                 Grade = "B",
                 Score = 80,
                 Province = "Gansu",

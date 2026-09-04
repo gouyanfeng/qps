@@ -1,4 +1,4 @@
-﻿import http from "@/api";
+import http from "@/api";
 
 /**
  * @description CRM 药材基地管理模块
@@ -28,19 +28,19 @@ export const crmHerbBaseApi = {
   createSubjectFollowRecord: (herbBaseSubjectId: string, params: any) => {
     return http.post<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/follow-records`, params);
   },
-  getCustomerList: (params: any) => {
+  getHerbBaseList: (params: any) => {
     return http.get<any>("/admin/crm/herb-bases", params);
   },
-  getCustomer: (id: string) => {
+  getHerbBase: (id: string) => {
     return http.get<any>(`/admin/crm/herb-bases/${id}`);
   },
-  createCustomer: (params: any) => {
+  createHerbBase: (params: any) => {
     return http.post<any>("/admin/crm/herb-bases", params);
   },
-  updateCustomer: (id: string, params: any) => {
+  updateHerbBase: (id: string, params: any) => {
     return http.put<any>(`/admin/crm/herb-bases/${id}`, params);
   },
-  deleteCustomer: (id: string) => {
+  deleteHerbBase: (id: string) => {
     return http.delete(`/admin/crm/herb-bases/${id}`);
   },
   getSupplies: (herbBaseId: string) => {
@@ -72,9 +72,6 @@ export const crmHerbBaseApi = {
   },
   updateContactStatus: (id: string, params: any) => {
     return http.patch<any>(`/admin/crm/contacts/${id}/status`, params);
-  },
-  getBusinessEntityAttributeOptions: (params: any) => {
-    return http.get<any>("/admin/crm/business-entity-attributes/options", params, { loading: false, cancel: false });
   },
 };
 

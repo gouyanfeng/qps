@@ -66,7 +66,7 @@ import { Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/components/ProductSelect/index.vue";
-import crmPurchaseDemandApi from "@/api/modules/crmPurchaseDemand";
+import crmVendorDemandApi from "@/api/modules/crmVendorDemand";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 
 const props = withDefaults(defineProps<{ modelValue: boolean; vendorId?: string; demand?: any; lockVendor?: boolean }>(), { vendorId: "", demand: null, lockVendor: false });
@@ -140,7 +140,7 @@ const reset = async () => {
     saving.value = true;
     try {
       const payload = { vendorId: form.vendorId, demandName: form.demandName.trim(), demandAt: form.demandAt, contactId: form.contactId || null, expectedDeliveryAt: form.expectedDeliveryAt || null, receivingAddress: form.receivingAddress, sourceUrl: form.sourceUrl, remark: form.remark, items };
-    if (form.id) await crmPurchaseDemandApi.update(form.id, payload); else await crmPurchaseDemandApi.create(payload);
+    if (form.id) await crmVendorDemandApi.update(form.id, payload); else await crmVendorDemandApi.create(payload);
     ElMessage.success("采购需求已保存"); dialogVisible.value = false; emit("saved");
   } finally { saving.value = false; }
 };

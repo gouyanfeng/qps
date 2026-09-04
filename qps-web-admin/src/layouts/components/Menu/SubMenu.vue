@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <template v-for="subItem in menuList" :key="subItem.path">
     <el-sub-menu v-if="subItem.children?.length" :index="subItem.path">
       <template #title>

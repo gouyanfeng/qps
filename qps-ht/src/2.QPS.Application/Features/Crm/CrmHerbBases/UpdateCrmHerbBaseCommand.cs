@@ -34,7 +34,6 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
         ApplyPrimaryContact(customer, request.Request);
         ApplyStatus(customer, request.Request);
 
-        await SyncMainProducts(customer.Id, request.Request.MainProducts, cancellationToken);
         await SyncSubjectScaleAsync(customer, cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -59,7 +58,7 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
 
     private static void UpdateBasicInfo(CrmHerbBase customer, CrmHerbBaseUpdateRequest request)
     {
-        var baseName = GetBaseName(request.BaseName, request.HerbBaseName);
+        var baseName = request.BaseName;
         customer.UpdateBasicInfo(
             baseName,
             request.Grade,
@@ -73,13 +72,6 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
             request.Lng,
             request.Remark,
             request.SubjectName);
-    }
-
-    private static string GetBaseName(string? baseName, string herbBaseName)
-    {
-        return string.IsNullOrWhiteSpace(baseName)
-            ? herbBaseName
-            : baseName;
     }
 
     private static void ApplySource(CrmHerbBase customer, CrmHerbBaseUpdateRequest request)
@@ -114,59 +106,6 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
         if (!string.IsNullOrEmpty(request.Status) && customer.Status != request.Status)
         {
             customer.UpdateStatus(request.Status, request.Remark);
-        }
-    }
-
-    private async Task SyncMainProducts(Guid herbBaseId, List<string> mainProducts, CancellationToken cancellationToken)
-    {
-        await CrmHerbProductDictionary.ValidateActiveNamesAsync(_dbContext, mainProducts, cancellationToken);
-        var oldAttributes = await _dbContext.CrmBusinessEntityAttributes
-            .Where(attribute =>
-                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
-                attribute.EntityId == herbBaseId &&
-                attribute.AttributeCode == CrmCodes.MainProductAttributeCode)
-            .ToListAsync(cancellationToken);
-        _dbContext.CrmBusinessEntityAttributes.RemoveRange(oldAttributes);
-
-        var values = mainProducts
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct()
-            .ToList();
-        for (var i = 0; i < values.Count; i++)
-        {
-            _dbContext.CrmBusinessEntityAttributes.Add(new CrmBusinessEntityAttribute(
-                CrmCodes.HerbBaseEntityType,
-                herbBaseId,
-                CrmCodes.MainProductAttributeCode,
-                values[i],
-                i));
-        }
-
-        var suppliedProducts = await _dbContext.CrmHerbBaseSupplies
-            .Where(supply => supply.HerbBaseId == herbBaseId)
-            .Select(supply => supply.ProductName)
-            .ToListAsync(cancellationToken);
-        var herbBase = await _dbContext.CrmHerbBases
-            .Where(item => item.Id == herbBaseId)
-            .Select(item => new { item.Id, item.HerbBaseSubjectId })
-            .FirstAsync(cancellationToken);
-        foreach (var productName in values.Where(productName => !suppliedProducts.Contains(productName)))
-        {
-            _dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(
-                herbBase.Id,
-                herbBase.HerbBaseSubjectId,
-                productName,
-                null,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                null,
-                string.Empty,
-                string.Empty,
-                null,
-                null,
-                string.Empty));
         }
     }
 

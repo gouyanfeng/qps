@@ -16,7 +16,7 @@ public class GetCrmVendorQuery : IRequest<CrmVendorDto>
 public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorDto>
 {
     private const string VendorEntityType = CrmCodes.VendorEntityType;
-    private const string InvalidContactStatus = "INVALID";
+    private const string InvalidContactStatus = "无效";
 
     private readonly IDbContext _dbContext;
 
@@ -60,7 +60,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             })
             .ToListAsync(cancellationToken);
 
-        var products = (await CrmPurchaseDemandProductQuery.GetProductsAsync(
+        var products = (await CrmVendorDemandProductQuery.GetProductsAsync(
                 _dbContext,
                 [vendor.Id],
                 cancellationToken))
@@ -87,7 +87,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             NextFollowAt = vendor.NextFollowAt,
             PrimaryContactName = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.ContactName ?? string.Empty,
             PrimaryContactPhone = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.Phone ?? string.Empty,
-            PurchaseDemandCount = await _dbContext.CrmPurchaseDemands.CountAsync(plan => !plan.IsDeleted && plan.VendorId == vendor.Id, cancellationToken),
+            PurchaseDemandCount = await _dbContext.CrmVendorDemands.CountAsync(plan => !plan.IsDeleted && plan.VendorId == vendor.Id, cancellationToken),
             ProductCount = products.Count,
             ContactCount = contacts.Count,
             CreatedAt = vendor.CreatedAt,

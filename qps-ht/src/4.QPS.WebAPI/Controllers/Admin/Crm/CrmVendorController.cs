@@ -84,6 +84,19 @@ public class CrmVendorController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("herb-product-options")]
+    public async Task<ActionResult<List<AttributeOptionDto>>> GetHerbProductOptions(
+        [FromQuery] string? keyword = null,
+        [FromQuery] int pageSize = 100)
+    {
+        var result = await _mediator.Send(new GetCrmHerbProductOptionsQuery
+        {
+            Keyword = keyword,
+            PageSize = pageSize
+        });
+        return Ok(result);
+    }
+
     [HttpPost("{id}/contacts")]
     public async Task<ActionResult<bool>> CreateContact(Guid id, [FromBody] CrmContactCreateRequest request)
     {
@@ -114,14 +127,14 @@ public class CrmVendorController : ControllerBase
     }
 
     [HttpGet("{id}/purchase-demands")]
-    public async Task<ActionResult<PaginationResponse<CrmPurchaseDemandDto>>> GetVendorPurchaseDemands(
+    public async Task<ActionResult<PaginationResponse<CrmVendorDemandDto>>> GetVendorPurchaseDemands(
         Guid id,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string sortField = "DemandAt",
         [FromQuery] string sortDirection = "Descending")
     {
-        var query = new GetCrmPurchaseDemandsQuery
+        var query = new GetCrmVendorDemandsQuery
         {
             VendorId = id,
             Page = page,

@@ -1,6 +1,6 @@
 import http from "@/api";
 
-export const crmPurchaseDemandApi = {
+export const crmVendorDemandApi = {
   getList: (params: any) => http.get<any>("/admin/crm/purchase-demands", params),
   getDetail: (id: string) => http.get<any>(`/admin/crm/purchase-demands/${id}`),
   create: (data: any) => http.post<any>("/admin/crm/purchase-demands", data),
@@ -9,4 +9,4 @@ export const crmPurchaseDemandApi = {
   changeStatus: (id: string, data: any) => http.patch<any>(`/admin/crm/purchase-demands/${id}/status`, data),
 };
 
-export default crmPurchaseDemandApi;
+export default crmVendorDemandApi;

@@ -7,7 +7,7 @@ using QPS.Domain.Exceptions;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
 
-public class GetCrmPurchaseDemandsQuery : PaginationRequest, IRequest<PaginationResponse<CrmPurchaseDemandDto>>
+public class GetCrmVendorDemandsQuery : PaginationRequest, IRequest<PaginationResponse<CrmVendorDemandDto>>
 {
     public Guid? Id { get; set; }
     public Guid? VendorId { get; set; }
@@ -20,17 +20,17 @@ public class GetCrmPurchaseDemandsQuery : PaginationRequest, IRequest<Pagination
     public DateTime? ExpectedDeliveryAtFrom { get; set; }
     public DateTime? ExpectedDeliveryAtTo { get; set; }
 }
-public class GetCrmPurchaseDemandsHandler : IRequestHandler<GetCrmPurchaseDemandsQuery, PaginationResponse<CrmPurchaseDemandDto>>
+public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQuery, PaginationResponse<CrmVendorDemandDto>>
 {
     private readonly IDbContext _dbContext;
 
-    public GetCrmPurchaseDemandsHandler(IDbContext dbContext)
+    public GetCrmVendorDemandsHandler(IDbContext dbContext)
     {
         _dbContext = dbContext;
     }
 
-    public async Task<PaginationResponse<CrmPurchaseDemandDto>> Handle(
-        GetCrmPurchaseDemandsQuery request,
+    public async Task<PaginationResponse<CrmVendorDemandDto>> Handle(
+        GetCrmVendorDemandsQuery request,
         CancellationToken cancellationToken)
     {
         if (request.VendorId.HasValue && !await _dbContext.CrmVendors.AnyAsync(vendor => vendor.Id == request.VendorId && !vendor.IsDeleted, cancellationToken))
@@ -41,7 +41,7 @@ public class GetCrmPurchaseDemandsHandler : IRequestHandler<GetCrmPurchaseDemand
         var page = Math.Max(request.Page, 1);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        var query = _dbContext.CrmPurchaseDemands.Where(plan => !plan.IsDeleted);
+        var query = _dbContext.CrmVendorDemands.Where(plan => !plan.IsDeleted);
         if (request.Id.HasValue) query = query.Where(plan => plan.Id == request.Id);
         if (request.VendorId.HasValue) query = query.Where(plan => plan.VendorId == request.VendorId);
         if (request.OwnerUserId.HasValue) query = query.Where(plan => plan.Vendor!.OwnerUserId == request.OwnerUserId);
@@ -58,13 +58,13 @@ public class GetCrmPurchaseDemandsHandler : IRequestHandler<GetCrmPurchaseDemand
         var isAscending = string.Equals(request.SortDirection, "Ascending", StringComparison.OrdinalIgnoreCase);
         var orderedQuery = request.SortField switch
         {
-            nameof(CrmPurchaseDemandDto.DemandName) => isAscending
+            nameof(CrmVendorDemandDto.DemandName) => isAscending
                 ? query.OrderBy(plan => plan.DemandName).ThenByDescending(plan => plan.CreatedAt)
                 : query.OrderByDescending(plan => plan.DemandName).ThenByDescending(plan => plan.CreatedAt),
-            nameof(CrmPurchaseDemandDto.CreatedAt) => isAscending
+            nameof(CrmVendorDemandDto.CreatedAt) => isAscending
                 ? query.OrderBy(plan => plan.CreatedAt)
                 : query.OrderByDescending(plan => plan.CreatedAt),
-            nameof(CrmPurchaseDemandDto.UpdatedAt) => isAscending
+            nameof(CrmVendorDemandDto.UpdatedAt) => isAscending
                 ? query.OrderBy(plan => plan.UpdatedAt)
                 : query.OrderByDescending(plan => plan.UpdatedAt),
             _ => isAscending
@@ -78,9 +78,9 @@ public class GetCrmPurchaseDemandsHandler : IRequestHandler<GetCrmPurchaseDemand
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var plans = await _dbContext.CrmPurchaseDemands
+        var plans = await _dbContext.CrmVendorDemands
             .Where(plan => demandIds.Contains(plan.Id))
-            .Select(plan => new CrmPurchaseDemandDto
+            .Select(plan => new CrmVendorDemandDto
             {
                 Id = plan.Id,
                 VendorId = plan.VendorId,
@@ -107,15 +107,15 @@ public class GetCrmPurchaseDemandsHandler : IRequestHandler<GetCrmPurchaseDemand
             .ToList();
 
         var planIds = plans.Select(plan => plan.Id).ToList();
-        var items = await _dbContext.CrmPurchaseDemandItems
-            .Where(item => planIds.Contains(item.PurchaseDemandId))
+        var items = await _dbContext.CrmVendorDemandItems
+            .Where(item => planIds.Contains(item.VendorDemandId))
             .OrderBy(item => item.SortOrder)
             .ToListAsync(cancellationToken);
         foreach (var plan in plans)
         {
-            plan.Items = items.Where(item => item.PurchaseDemandId == plan.Id).Select(item => new CrmPurchaseDemandItemDto { Id = item.Id, ProductName = item.ProductName, Quantity = item.Quantity, QuantityUnit = item.QuantityUnit, Specification = item.Specification, QualityRequirement = item.QualityRequirement, TargetPrice = item.TargetPrice, PriceUnit = item.PriceUnit, ExpectedDeliveryAt = item.ExpectedDeliveryAt, Remark = item.Remark, SortOrder = item.SortOrder }).ToList();
+            plan.Items = items.Where(item => item.VendorDemandId == plan.Id).Select(item => new CrmVendorDemandItemDto { Id = item.Id, ProductName = item.ProductName, Quantity = item.Quantity, QuantityUnit = item.QuantityUnit, Specification = item.Specification, QualityRequirement = item.QualityRequirement, TargetPrice = item.TargetPrice, PriceUnit = item.PriceUnit, ExpectedDeliveryAt = item.ExpectedDeliveryAt, Remark = item.Remark, SortOrder = item.SortOrder }).ToList();
         }
 
-        return new PaginationResponse<CrmPurchaseDemandDto>(plans, totalCount, page, pageSize);
+        return new PaginationResponse<CrmVendorDemandDto>(plans, totalCount, page, pageSize);
     }
 }

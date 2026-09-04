@@ -51,13 +51,6 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         }
 
         _dbContext.CrmHerbBases.Add(herbBase);
-        await CrmHerbProductDictionary.ValidateActiveNamesAsync(
-            _dbContext,
-            request.Request.MainProducts,
-            cancellationToken);
-        AddMainProducts(herbBase.Id, request.Request.MainProducts);
-        AddPendingSupplies(herbBase, request.Request.MainProducts);
-        
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (herbBase.HerbBaseSubjectId.HasValue)
         {
@@ -67,48 +60,9 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         return true;
     }
 
-    private void AddMainProducts(Guid herbBaseId, List<string> mainProducts)
-    {
-        var values = mainProducts
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct()
-            .ToList();
-        for (var i = 0; i < values.Count; i++)
-        {
-            _dbContext.CrmBusinessEntityAttributes.Add(new CrmBusinessEntityAttribute(
-                CrmCodes.HerbBaseEntityType,
-                herbBaseId,
-                CrmCodes.MainProductAttributeCode,
-                values[i],
-                i));
-        }
-    }
-
-    private void AddPendingSupplies(CrmHerbBase herbBase, List<string> mainProducts)
-    {
-        foreach (var productName in mainProducts.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct())
-        {
-            _dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(
-                herbBase.Id,
-                herbBase.HerbBaseSubjectId,
-                productName,
-                null,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                null,
-                string.Empty,
-                string.Empty,
-                null,
-                null,
-                string.Empty));
-        }
-    }
-
     private static CrmHerbBase CreateHerbBase(CrmHerbBaseCreateRequest request)
     {
-        var baseName = GetBaseName(request.BaseName, request.HerbBaseName);
+        var baseName = request.BaseName;
 
         return CrmHerbBase.Create(
             herbBaseName: baseName,
@@ -134,7 +88,7 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         return CrmHerbBaseSubject.Create(
             request.SubjectName,
             baseName,
-            hasSubjectName ? "UNKNOWN" : "BASE_ONLY",
+            hasSubjectName ? "未知" : "仅基地",
             ownerUserId,
             CrmCodes.Status.Pending,
             request.Grade,
@@ -170,13 +124,6 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         return existingSubject == null
             ? (CreateSubject(request, baseName, operatorUserId), true)
             : (existingSubject, false);
-    }
-
-    private static string GetBaseName(string? baseName, string herbBaseName)
-    {
-        return string.IsNullOrWhiteSpace(baseName)
-            ? herbBaseName
-            : baseName;
     }
 
     private static void ApplyPrimaryContact(CrmHerbBaseSubject subject, CrmHerbBaseCreateRequest request)

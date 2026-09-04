@@ -4,7 +4,7 @@ public class CrmVendorCreateRequest
 {
     public string VendorName { get; set; } = string.Empty;
 
-    public string PriorityLevel { get; set; } = "Medium";
+    public string PriorityLevel { get; set; } = "中";
 
     public Guid? OwnerUserId { get; set; }
 

@@ -1,4 +1,4 @@
-﻿/* Menu */
+/* Menu */
 declare namespace Menu {
   interface MenuOptions {
     path: string;

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="list-page operation-log-page">
     <QueryPage api="/admin/operation-logs" :searchParam="searchForm" @reset="handleReset">
       <template #searchConditions>
