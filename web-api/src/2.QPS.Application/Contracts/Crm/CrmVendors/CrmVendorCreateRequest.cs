@@ -1,0 +1,12 @@
+namespace QPS.Application.Contracts.Crm.CrmVendors;
+
+public class CrmVendorCreateRequest
+{
+    public string VendorName { get; set; } = string.Empty;
+
+    public string PriorityLevel { get; set; } = "中";
+
+    public Guid? OwnerUserId { get; set; }
+
+    public string Remark { get; set; } = string.Empty;
+}

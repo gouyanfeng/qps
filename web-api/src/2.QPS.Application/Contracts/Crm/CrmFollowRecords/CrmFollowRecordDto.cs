@@ -1,0 +1,30 @@
+namespace QPS.Application.Contracts.Crm.CrmFollowRecords;
+
+public class CrmFollowRecordDto
+{
+    public Guid Id { get; set; }
+
+    public string EntityType { get; set; } = string.Empty;
+
+    public Guid EntityId { get; set; }
+
+    public Guid? ContactId { get; set; }
+
+    public string? ContactName { get; set; }
+
+    public string FollowType { get; set; } = string.Empty;
+
+    public string FollowResult { get; set; } = string.Empty;
+
+    public string IntentLevel { get; set; } = string.Empty;
+
+    public string Content { get; set; } = string.Empty;
+
+    public DateTime? NextFollowAt { get; set; }
+
+    public Guid? OperatorUserId { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+}
+
+

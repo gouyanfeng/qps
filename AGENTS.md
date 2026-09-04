@@ -7,7 +7,7 @@
 - 所有回答使用中文。
 - 修改范围保持最小，只改完成当前任务所必需的源码或配置；不得回退其他未提交改动。
 - 普通临时产物（草稿、分析结果、实验脚本、调试输出、构建日志）统一放在 `E:\Code\QPS\codex-temp`；不得放入源码目录或提交。
-- Playwright UI 测试的 spec、调试脚本、截图和报告统一放在 `E:\Code\QPS\qps-ui-tests`；不得混入 `codex-temp` 或源码目录。
+- Playwright UI 测试的 spec、调试脚本、截图和报告统一放在 `E:\Code\QPS\ui-tests`；不得混入 `codex-temp` 或源码目录。
 - 不得使用 `C:\Users\Dust\AppData\Local\Temp\QPS`、`CodexTemp` 或其他系统临时目录保存项目产物。
 
 ## UI 测试
