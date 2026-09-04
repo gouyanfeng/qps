@@ -13,8 +13,8 @@ export const crmHerbBaseApi = {
   updateSubject: (id: string, params: any) => {
     return http.put<any>(`/admin/crm/herb-base-subjects/${id}`, params);
   },
-  changeOwner: (params: any) => {
-    return http.patch<any>("/admin/crm/herb-base-subjects/owner", params);
+  changeSubjectOwner: (herbBaseSubjectId: string, params: any) => {
+    return http.patch<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/owner`, params);
   },
   getSubjectContacts: (herbBaseSubjectId: string) => {
     return http.get<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts`);
@@ -22,11 +22,23 @@ export const crmHerbBaseApi = {
   createSubjectContact: (herbBaseSubjectId: string, params: any) => {
     return http.post<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts`, params);
   },
+  updateSubjectContact: (herbBaseSubjectId: string, contactId: string, params: any) => {
+    return http.put<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts/${contactId}`, params);
+  },
+  setPrimarySubjectContact: (herbBaseSubjectId: string, contactId: string) => {
+    return http.patch<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts/${contactId}/primary`);
+  },
+  updateSubjectContactStatus: (herbBaseSubjectId: string, contactId: string, params: any) => {
+    return http.patch<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/contacts/${contactId}/status`, params);
+  },
   getSubjectFollowRecords: (herbBaseSubjectId: string) => {
     return http.get<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/follow-records`);
   },
   createSubjectFollowRecord: (herbBaseSubjectId: string, params: any) => {
     return http.post<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/follow-records`, params);
+  },
+  getSubjectTransferRecords: (herbBaseSubjectId: string) => {
+    return http.get<any>(`/admin/crm/herb-base-subjects/${herbBaseSubjectId}/transfer-records`);
   },
   getHerbBaseList: (params: any) => {
     return http.get<any>("/admin/crm/herb-bases", params);
@@ -57,21 +69,6 @@ export const crmHerbBaseApi = {
   },
   changeSupplyStatus: (id: string, params: any) => {
     return http.patch<any>(`/admin/crm/herb-base-supplies/${id}/status`, params);
-  },
-  getContacts: (herbBaseId: string) => {
-    return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/contacts`);
-  },
-  createContact: (herbBaseId: string, params: any) => {
-    return http.post<any>(`/admin/crm/herb-bases/${herbBaseId}/contacts`, params);
-  },
-  updateContact: (id: string, params: any) => {
-    return http.put<any>(`/admin/crm/contacts/${id}`, params);
-  },
-  setPrimaryContact: (id: string) => {
-    return http.patch<any>(`/admin/crm/contacts/${id}/primary`);
-  },
-  updateContactStatus: (id: string, params: any) => {
-    return http.patch<any>(`/admin/crm/contacts/${id}/status`, params);
   },
 };
 

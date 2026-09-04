@@ -85,71 +85,23 @@
       </template>
     </QueryPage>
 
-    <el-dialog v-model="followDialogVisible" title="记录沟通" width="560px">
-      <el-form :model="followForm" label-width="100px">
-        <el-form-item label="联系人">
-          <el-select v-model="followForm.contactId" clearable placeholder="可不指定">
-            <el-option
-              v-for="contact in followContacts"
-              :key="contact.id"
-              :label="contact.contactName || contact.phone"
-              :value="contact.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="沟通方式">
-          <el-select v-model="followForm.followType">
-            <el-option label="电话" value="电话" />
-            <el-option label="微信" value="微信" />
-            <el-option label="拜访" value="拜访" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="沟通结果" required>
-          <el-select v-model="followForm.followResult" placeholder="请选择结果">
-            <el-option label="已接通" value="已接通" />
-            <el-option label="未接" value="未接" />
-            <el-option label="空号" value="空号" />
-            <el-option label="有意向" value="有意向" />
-            <el-option label="无意向" value="无意向" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="意向等级">
-          <el-select v-model="followForm.intentLevel" clearable placeholder="意向等级">
-            <el-option label="A" value="A" />
-            <el-option label="B" value="B" />
-            <el-option label="C" value="C" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="沟通内容">
-          <el-input v-model="followForm.content" type="textarea" :rows="4" placeholder="记录沟通要点" />
-        </el-form-item>
-        <el-form-item label="下次跟进">
-          <el-date-picker
-            v-model="followForm.nextFollowAt"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            placeholder="请选择时间"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="followDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="followSubmitting" @click="submitFollowRecord">保存</el-button>
-      </template>
-    </el-dialog>
+    <FollowDialog
+      v-model="followDialogVisible"
+      :entity-type="followTarget?.entityType"
+      :entity-id="followTarget?.entityId"
+      @saved="handleFollowSaved"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { Calendar, CircleCheckFilled, DocumentDelete, WarningFilled } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
-import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
 import { crmFollowTaskApi } from "@/api/modules/crmFollowTask";
-import { crmVendorApi } from "@/api/modules/crmVendor";
 import QueryPage from "@/components/QueryPage/index.vue";
 import Permission from "@/components/Permission/index.vue";
+import FollowDialog from "@/views/crm/components/follow/Dialog.vue";
 
 interface FollowTask {
   entityId: string;
@@ -170,20 +122,10 @@ interface FollowTaskOverview {
   completedLast7DaysCount: number;
 }
 
-interface FollowContact {
-  id: string;
-  contactName?: string;
-  phone?: string;
-  isPrimary?: boolean;
-  status?: string;
-}
-
 const router = useRouter();
 const queryPageRef = ref<InstanceType<typeof QueryPage>>();
 const followDialogVisible = ref(false);
-const followSubmitting = ref(false);
 const followTarget = ref<FollowTask>();
-const followContacts = ref<FollowContact[]>([]);
 const overview = ref<FollowTaskOverview>({
   overdueCount: 0,
   todayCount: 0,
@@ -195,15 +137,6 @@ const searchForm = reactive({
   entityType: "",
   keyword: "",
 });
-const followForm = reactive({
-  contactId: undefined as string | undefined,
-  followType: "电话",
-  followResult: "",
-  intentLevel: "",
-  content: "",
-  nextFollowAt: "",
-});
-
 const metrics = computed(() => [
   { label: "已逾期", value: overview.value.overdueCount, category: "OVERDUE", tone: "danger", icon: WarningFilled },
   { label: "今日待跟进", value: overview.value.todayCount, category: "TODAY", tone: "warning", icon: Calendar },
@@ -238,62 +171,14 @@ const detail = (row: FollowTask) => {
   );
 };
 
-const resetFollowForm = () => {
-  Object.assign(followForm, {
-    contactId: undefined,
-    followType: "电话",
-    followResult: "",
-    intentLevel: "",
-    content: "",
-    nextFollowAt: "",
-  });
-};
-
-const openFollowDialog = async (row: FollowTask) => {
+const openFollowDialog = (row: FollowTask) => {
   followTarget.value = row;
-  resetFollowForm();
-
-  const response = row.entityType === "CRM_VENDOR"
-    ? await crmVendorApi.getVendor(row.entityId)
-    : await crmHerbBaseApi.getSubject(row.entityId);
-
-  followContacts.value = (response.data?.contacts || []).filter((contact: FollowContact) => contact.status !== "无效");
-  followForm.contactId = followContacts.value.find(contact => contact.isPrimary)?.id;
   followDialogVisible.value = true;
 };
 
-const submitFollowRecord = async () => {
-  if (!followTarget.value) return;
-  if (!followForm.followResult) {
-    ElMessage.error("请选择沟通结果");
-    return;
-  }
-  if (followForm.nextFollowAt && new Date(followForm.nextFollowAt).getTime() <= Date.now()) {
-    ElMessage.error("下次跟进时间必须晚于当前时间");
-    return;
-  }
-
-  followSubmitting.value = true;
-  try {
-    const request = {
-      ...followForm,
-      contactId: followForm.contactId || null,
-      nextFollowAt: followForm.nextFollowAt || null,
-    };
-
-    if (followTarget.value.entityType === "CRM_VENDOR") {
-      await crmVendorApi.createFollowRecord(followTarget.value.entityId, request);
-    } else {
-      await crmHerbBaseApi.createSubjectFollowRecord(followTarget.value.entityId, request);
-    }
-
-    ElMessage.success("沟通记录已保存");
-    followDialogVisible.value = false;
-    reloadList();
-    await loadOverview();
-  } finally {
-    followSubmitting.value = false;
-  }
+const handleFollowSaved = async () => {
+  reloadList();
+  await loadOverview();
 };
 
 const formatDate = (value?: string) => (value ? value.replace("T", " ").slice(0, 16) : "-");

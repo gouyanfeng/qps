@@ -226,22 +226,14 @@
 
     <HerbBaseDetailDrawer v-model="detailDrawerVisible" :subject-id="currentHerbBaseSubjectId" @refresh-list="reloadList" />
 
-    <el-dialog v-model="transferDialogVisible" :title="transferDialogTitle" width="520px">
-      <el-form :model="transferForm" label-width="100px">
-        <el-form-item v-if="transferMode !== 'RETURN'" label="跟进人">
-          <el-select v-model="transferForm.ownerUserId" placeholder="请选择跟进人">
-            <el-option v-for="user in ownerOptions" :key="user.id" :label="user.realName" :value="user.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="transferForm.remark" type="textarea" :rows="3" placeholder="请输入流转备注" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="transferDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTransfer">保存</el-button>
-      </template>
-    </el-dialog>
+    <TransferDialog
+      v-model="transferDialogVisible"
+      entity-type="CRM_HERB_BASE_SUBJECT"
+      :entity-ids="transferEntityIds"
+      :mode="transferMode"
+      selected-label="已选主体"
+      @saved="reloadList"
+    />
   </div>
 </template>
 
@@ -254,8 +246,8 @@ import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/components/ProductSelect/index.vue";
 import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
-import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
+import TransferDialog from "@/views/crm/components/transfer/Dialog.vue";
 import HerbBaseDetailDrawer from "./components/HerbBaseDetailDrawer.vue";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useUserStore } from "@/stores/modules/user";
@@ -298,8 +290,8 @@ const isEdit = ref(false);
 const followFilter = ref("");
 const currentHerbBaseSubjectId = ref("");
 const selectedHerbBases = ref<HerbBaseSubjectDetail[]>([]);
-const ownerOptions = ref<any[]>([]);
 const regionPath = ref<string[]>([]);
+const transferEntityIds = ref<string[]>([]);
 
 // 列表筛选
 const searchForm = reactive({
@@ -336,19 +328,8 @@ const form = reactive({
   primaryContactPhone: "",
 });
 
-// 流转
-const transferForm = reactive({
-  entityIds: [] as string[],
-  ownerUserId: "",
-  remark: "",
-});
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
 const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
-const transferDialogTitle = computed(() => ({
-  ASSIGN: "分配跟进人",
-  TRANSFER: "转交跟进人",
-  RETURN: "退回待分配池",
-})[transferMode.value]);
 
 // 下拉选项
 const sourcePlatforms = ["百度地图", "政府网站", "手工录入", "Excel导入", "其他"];
@@ -481,12 +462,6 @@ const handleSelectionChange = (rows: HerbBaseSubjectDetail[]) => {
   selectedHerbBases.value = rows;
 };
 
-// 主体流转
-const loadOwnerOptions = async () => {
-  const res = await userApi.getUserList({ page: 1, pageSize: 100, username: "", realName: "", roleId: "", isActive: true });
-  ownerOptions.value = (res.data?.list || []).filter((user: any) => user.isActive);
-};
-
 const openDetail = (row: any) => {
   currentHerbBaseSubjectId.value = row.id;
   detailDrawerVisible.value = true;
@@ -526,29 +501,8 @@ const openTransferDialog = async (rows?: HerbBaseSubjectDetail[], mode: "ASSIGN"
   }
 
   transferMode.value = mode;
-  Object.assign(transferForm, {
-    entityIds: customers.map(customer => customer.id),
-    ownerUserId: "",
-    remark: "",
-  });
-  if (mode !== "RETURN") await loadOwnerOptions();
+  transferEntityIds.value = customers.map(customer => customer.id);
   transferDialogVisible.value = true;
-};
-
-const submitTransfer = async () => {
-  if (transferMode.value !== "RETURN" && !transferForm.ownerUserId) {
-    ElMessage.warning("请选择跟进人");
-    return;
-  }
-
-  await crmHerbBaseApi.changeOwner({
-    entityIds: [...transferForm.entityIds],
-    toOwnerUserId: transferMode.value === "RETURN" ? null : transferForm.ownerUserId,
-    remark: transferForm.remark || undefined,
-  });
-  ElMessage.success("流转成功");
-  transferDialogVisible.value = false;
-  reloadList();
 };
 
 // 路由入口

@@ -16,26 +16,32 @@ export const crmVendorApi = {
   updateVendor: (id: string, data: any) => {
     return http.put<any>(`/admin/crm/vendors/${id}`, data);
   },
-  changeOwner: (data: any) => {
-    return http.patch<any>("/admin/crm/vendors/owner", data);
+  changeVendorOwner: (id: string, data: any) => {
+    return http.patch<any>(`/admin/crm/vendors/${id}/owner`, data);
   },
-  createContact: (id: string, data: any) => {
+  getVendorContacts: (id: string) => {
+    return http.get<any>(`/admin/crm/vendors/${id}/contacts`);
+  },
+  createVendorContact: (id: string, data: any) => {
     return http.post<any>(`/admin/crm/vendors/${id}/contacts`, data);
   },
-  updateContact: (id: string, data: any) => {
-    return http.put<any>(`/admin/crm/contacts/${id}`, data);
+  updateVendorContact: (id: string, contactId: string, data: any) => {
+    return http.put<any>(`/admin/crm/vendors/${id}/contacts/${contactId}`, data);
   },
-  setPrimaryContact: (id: string) => {
-    return http.patch<any>(`/admin/crm/contacts/${id}/primary`);
+  setPrimaryVendorContact: (id: string, contactId: string) => {
+    return http.patch<any>(`/admin/crm/vendors/${id}/contacts/${contactId}/primary`);
   },
-  updateContactStatus: (id: string, data: any) => {
-    return http.patch<any>(`/admin/crm/contacts/${id}/status`, data);
+  updateVendorContactStatus: (id: string, contactId: string, data: any) => {
+    return http.patch<any>(`/admin/crm/vendors/${id}/contacts/${contactId}/status`, data);
   },
-  getFollowRecords: (id: string) => {
+  getVendorFollowRecords: (id: string) => {
     return http.get<any>(`/admin/crm/vendors/${id}/follow-records`);
   },
-  createFollowRecord: (id: string, data: any) => {
+  createVendorFollowRecord: (id: string, data: any) => {
     return http.post<any>(`/admin/crm/vendors/${id}/follow-records`, data);
+  },
+  getVendorTransferRecords: (id: string) => {
+    return http.get<any>(`/admin/crm/vendors/${id}/transfer-records`);
   },
   getHerbProductOptions: (params: any) => {
     return http.get<any>("/admin/crm/vendors/herb-product-options", params, { loading: false, cancel: false });

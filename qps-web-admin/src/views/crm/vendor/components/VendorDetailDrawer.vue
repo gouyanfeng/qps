@@ -34,35 +34,18 @@
       </section>
 
       <section class="detail-grid">
-        <section class="detail-card contacts-card">
-          <div class="section-title">
-            <h3>联系人</h3>
-            <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Plus" @click="openContactDialog()">新增联系人</el-button></Permission>
-          </div>
-          <el-table :data="currentVendor.contacts || []" border>
-            <el-table-column label="姓名" width="130">
-              <template #default="{ row }">
-                {{ row.contactName || "-" }}<el-tag v-if="row.isPrimary" size="small" type="success" class="ml8">主</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="phone" label="电话" width="150" />
-            <el-table-column label="类型" width="90"><template #default="{ row }">{{ row.phoneType || "-" }}</template></el-table-column>
-            <el-table-column label="角色" min-width="110"><template #default="{ row }">{{ row.roleName || "-" }}</template></el-table-column>
-            <el-table-column prop="remark" label="备注" min-width="180" />
-            <el-table-column label="状态" width="90">
-              <template #default="{ row }"><el-tag :type="row.status === '无效' ? 'danger' : 'info'" size="small">{{ row.status || "-" }}</el-tag></template>
-            </el-table-column>
-            <el-table-column label="操作" width="210">
-              <template #default="{ row }">
-                <Permission code="CRM_VENDOR_EDIT">
-                  <el-button type="primary" link :icon="Edit" @click="openContactDialog(row)">编辑</el-button>
-                  <el-button v-if="!row.isPrimary && row.status !== '无效'" type="primary" link @click="setPrimaryContact(row)">设为主</el-button>
-                  <el-button type="primary" link @click="toggleContactStatus(row)">{{ row.status === "无效" ? "启用" : "停用" }}</el-button>
-                </Permission>
-              </template>
-            </el-table-column>
-          </el-table>
-        </section>
+        <ContactList
+          :contacts="currentVendor.contacts || []"
+          add-permission="CRM_VENDOR_EDIT"
+          edit-permission="CRM_VENDOR_EDIT"
+          primary-permission="CRM_VENDOR_EDIT"
+          status-permission="CRM_VENDOR_EDIT"
+          show-status-action
+          @add="openContactDialog()"
+          @edit="openContactDialog"
+          @set-primary="setPrimaryContact"
+          @toggle-status="toggleContactStatus"
+        />
 
         <div class="detail-content">
           <section class="detail-card purchase-demand-card">
@@ -125,35 +108,8 @@
           </section>
 
           <div class="activity-row">
-            <section class="detail-card">
-              <div class="section-title">
-                <h3>沟通记录</h3>
-                <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog">记录</el-button></Permission>
-              </div>
-              <el-timeline v-if="followRecords.length">
-                <el-timeline-item v-for="record in followRecords" :key="record.id" :timestamp="formatDate(record.createdAt)">
-                  <div class="follow-item">
-                    <strong>{{ record.followResult || "沟通" }}</strong> <el-tag size="small">{{ record.followType || "-" }}</el-tag>
-                    <p>{{ record.content || "-" }}</p>
-                    <span>{{ record.contactName || "未指定联系人" }} · 下次 {{ formatDate(record.nextFollowAt) }}</span>
-                  </div>
-                </el-timeline-item>
-              </el-timeline>
-              <el-empty v-else description="暂无沟通记录" />
-            </section>
-            <section class="detail-card">
-              <div class="section-title"><h3>流转记录</h3></div>
-              <el-timeline v-if="currentVendor.transferRecords?.length">
-                <el-timeline-item v-for="record in currentVendor.transferRecords" :key="record.id" :timestamp="formatDate(record.createdAt)">
-                  <div class="follow-item">
-                    <strong>{{ record.actionType || "流转" }}：{{ record.fromOwnerUserName || "未分配" }} 至 {{ record.toOwnerUserName || "未分配" }}</strong>
-                    <p v-if="record.remark">{{ record.remark }}</p>
-                    <span>操作人 {{ record.operatorUserName || "-" }}</span>
-                  </div>
-                </el-timeline-item>
-              </el-timeline>
-              <el-empty v-else description="暂无流转记录" />
-            </section>
+            <FollowList :records="followRecords" add-permission="CRM_FOLLOW" @add="openFollowDialog" />
+            <TransferList :records="currentVendor.transferRecords || []" />
           </div>
         </div>
       </section>
@@ -182,101 +138,28 @@
     </template>
   </el-dialog>
 
-  <el-dialog v-model="transferDialogVisible" :title="transferDialogTitle" width="520px">
-    <el-form :model="transferForm" label-width="90px">
-      <el-form-item label="已选厂商">
-        <span>{{ transferForm.entityIds.length }} 个</span>
-      </el-form-item>
-      <el-form-item v-if="transferMode !== 'RETURN'" label="跟进人">
-        <el-select v-model="transferForm.ownerUserId" filterable placeholder="请选择跟进人">
-          <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input v-model="transferForm.remark" type="textarea" :rows="3" placeholder="可选" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="transferDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitTransfer">保存</el-button>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="contactDialogVisible" :title="contactForm.id ? '编辑联系人' : '新增联系人'" width="520px">
-    <el-form :model="contactForm" label-width="100px">
-      <el-form-item label="姓名"><el-input v-model="contactForm.contactName" clearable placeholder="联系人姓名" /></el-form-item>
-      <el-form-item label="电话"><el-input v-model="contactForm.phone" clearable placeholder="联系电话" /></el-form-item>
-      <el-form-item label="电话类型">
-        <el-select v-model="contactForm.phoneType">
-          <el-option label="手机" value="手机" />
-          <el-option label="座机" value="座机" />
-          <el-option label="未知" value="未知" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="微信"><el-input v-model="contactForm.wechat" clearable placeholder="微信号" /></el-form-item>
-      <el-form-item label="角色">
-        <el-select v-model="contactForm.roleName" clearable placeholder="请选择角色">
-          <el-option label="负责人" value="负责人" />
-          <el-option label="采购" value="采购" />
-          <el-option label="财务" value="财务" />
-          <el-option label="其他" value="其他" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="主联系人"><el-switch v-model="contactForm.isPrimary" /></el-form-item>
-      <el-form-item label="备注"><el-input v-model="contactForm.remark" type="textarea" :rows="3" /></el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="contactDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitContact">保存</el-button>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="followDialogVisible" title="记录沟通" width="560px">
-    <el-form :model="followForm" label-width="100px">
-      <el-form-item label="联系人">
-        <el-select v-model="followForm.contactId" clearable placeholder="可不指定">
-          <el-option v-for="contact in followContacts" :key="contact.id" :label="contact.contactName || contact.phone" :value="contact.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="沟通方式">
-        <el-select v-model="followForm.followType">
-          <el-option label="电话" value="电话" />
-          <el-option label="微信" value="微信" />
-          <el-option label="拜访" value="拜访" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="沟通结果" required>
-        <el-select v-model="followForm.followResult" placeholder="请选择结果">
-          <el-option label="已接通" value="已接通" />
-          <el-option label="未接" value="未接" />
-          <el-option label="空号" value="空号" />
-          <el-option label="有意向" value="有意向" />
-          <el-option label="无意向" value="无意向" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="意向等级">
-        <el-select v-model="followForm.intentLevel" clearable placeholder="意向等级">
-          <el-option label="A" value="A" />
-          <el-option label="B" value="B" />
-          <el-option label="C" value="C" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="沟通内容"><el-input v-model="followForm.content" type="textarea" :rows="4" placeholder="记录沟通要点" /></el-form-item>
-      <el-form-item label="下次跟进">
-        <el-date-picker
-          v-model="followForm.nextFollowAt"
-          type="datetime"
-          value-format="YYYY-MM-DDTHH:mm:ss"
-          :disabled-date="disablePastFollowDate"
-          placeholder="请选择时间"
-        />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="followDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitFollowRecord">保存</el-button>
-    </template>
-  </el-dialog>
+  <ContactDialog
+    v-model="contactDialogVisible"
+    entity-type="CRM_VENDOR"
+    :entity-id="currentVendor?.id"
+    :contact="editingContact"
+    @saved="handleRecordSaved"
+  />
+  <FollowDialog
+    v-model="followDialogVisible"
+    entity-type="CRM_VENDOR"
+    :entity-id="currentVendor?.id"
+    :contacts="currentVendor?.contacts || []"
+    @saved="handleRecordSaved"
+  />
+  <TransferDialog
+    v-model="transferDialogVisible"
+    entity-type="CRM_VENDOR"
+    :entity-ids="currentVendor ? [currentVendor.id] : []"
+    :mode="transferMode"
+    selected-label="已选厂商"
+    @saved="handleRecordSaved"
+  />
 
   <CrmVendorDemandEditor
     v-model="purchaseDemandDialogVisible"
@@ -289,13 +172,18 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
-import { Edit, Phone, Plus, Refresh } from "@element-plus/icons-vue";
+import { Edit, Plus, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import CrmVendorDemandEditor from "@/components/CrmVendorDemandEditor/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 import crmVendorDemandApi from "@/api/modules/crmVendorDemand";
-import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
+import ContactList from "@/views/crm/components/contact/List.vue";
+import ContactDialog from "@/views/crm/components/contact/Dialog.vue";
+import FollowList from "@/views/crm/components/follow/List.vue";
+import FollowDialog from "@/views/crm/components/follow/Dialog.vue";
+import TransferList from "@/views/crm/components/transfer/List.vue";
+import TransferDialog from "@/views/crm/components/transfer/Dialog.vue";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useUserStore } from "@/stores/modules/user";
 
@@ -340,14 +228,13 @@ const contactDialogVisible = ref(false);
 const purchaseDemandDialogVisible = ref(false);
 const editingPurchaseDemand = ref<any>(null);
 const followDialogVisible = ref(false);
-const ownerOptions = ref<any[]>([]);
+const editingContact = ref<any>(null);
 const purchaseDemands = ref<any[]>([]);
 const purchaseDemandLoading = ref(false);
 const purchaseDemandPage = ref(1);
 const purchaseDemandPageSize = ref(5);
 const purchaseDemandTotal = ref(0);
 const followRecords = ref<any[]>([]);
-const followContacts = computed(() => (currentVendor.value?.contacts || []).filter((contact: any) => contact.status !== "无效"));
 
 const vendorForm = reactive({
   id: "",
@@ -356,38 +243,8 @@ const vendorForm = reactive({
   remark: "",
 });
 
-const transferForm = reactive({
-  entityIds: [] as string[],
-  ownerUserId: "",
-  remark: "",
-});
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
 const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
-const transferDialogTitle = computed(() => ({
-  ASSIGN: "分配跟进人",
-  TRANSFER: "转交跟进人",
-  RETURN: "退回待分配池",
-})[transferMode.value]);
-
-const contactForm = reactive({
-  id: "",
-  contactName: "",
-  phone: "",
-  phoneType: "未知",
-  wechat: "",
-  roleName: "",
-  isPrimary: false,
-  remark: "",
-});
-
-const followForm = reactive({
-  contactId: undefined as string | undefined,
-  followType: "电话",
-  followResult: "",
-  intentLevel: "",
-  content: "",
-  nextFollowAt: "",
-});
 
 const priorityRules: Record<string, string> = {
   高: "高：有电话、有联系人、90天内有采购、品类数 >= 3",
@@ -409,13 +266,6 @@ const handleVisibleChange = (value: boolean) => {
 
 const notifyListChanged = () => {
   emit("refresh-list");
-};
-
-const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
-
-const loadOwnerOptions = async () => {
-  const res = await userApi.getUserList({ page: 1, pageSize: 100, username: "", realName: "", roleId: "", isActive: true });
-  ownerOptions.value = (res.data?.list || []).filter((user: any) => user.isActive);
 };
 
 const openDetail = async (vendorId: string) => {
@@ -440,7 +290,6 @@ const refreshDetail = async (showMessage = true) => {
 
 const openEditDialog = async () => {
   if (!currentVendor.value) return;
-  await loadOwnerOptions();
   Object.assign(vendorForm, {
     id: currentVendor.value.id,
     vendorName: currentVendor.value.vendorName || "",
@@ -467,86 +316,20 @@ const submitVendorForm = async () => {
   notifyListChanged();
 };
 
-const openTransferDialog = async (mode: "ASSIGN" | "TRANSFER" | "RETURN" = "TRANSFER") => {
+const openTransferDialog = (mode: "ASSIGN" | "TRANSFER" | "RETURN" = "TRANSFER") => {
   if (!currentVendor.value) return;
   transferMode.value = mode;
-  if (mode !== "RETURN") await loadOwnerOptions();
-  Object.assign(transferForm, {
-    entityIds: [currentVendor.value.id],
-    ownerUserId: "",
-    remark: "",
-  });
   transferDialogVisible.value = true;
 };
 
-const submitTransfer = async () => {
-  if (transferMode.value !== "RETURN" && !transferForm.ownerUserId) {
-    ElMessage.warning("请选择跟进人");
-    return;
-  }
-
-  await crmVendorApi.changeOwner({
-    entityIds: transferForm.entityIds,
-    toOwnerUserId: transferMode.value === "RETURN" ? null : transferForm.ownerUserId,
-    remark: transferForm.remark,
-  });
-  ElMessage.success("流转成功");
-  transferDialogVisible.value = false;
-  await refreshDetail(false);
-  notifyListChanged();
-};
-
-const resetContactForm = () => {
-  Object.assign(contactForm, {
-    id: "",
-    contactName: "",
-    phone: "",
-    phoneType: "未知",
-    wechat: "",
-    roleName: "",
-    isPrimary: false,
-    remark: "",
-  });
-};
-
 const openContactDialog = (row?: any) => {
-  resetContactForm();
-  if (row) Object.assign(contactForm, { ...row });
+  editingContact.value = row || null;
   contactDialogVisible.value = true;
-};
-
-const isValidPhone = (phone: string) => /^1[3-9]\d{9}$/.test(phone) || /^0\d{2,3}-?\d{7,8}(-\d{1,6})?$/.test(phone);
-
-const submitContact = async () => {
-  if (!currentVendor.value) return;
-  const phone = contactForm.phone.trim();
-  if (!contactForm.contactName.trim() && !phone) {
-    ElMessage.error("请填写联系人姓名或电话");
-    return;
-  }
-  if (phone && !isValidPhone(phone)) {
-    ElMessage.error("联系电话格式不正确");
-    return;
-  }
-
-  const request = {
-    ...contactForm,
-    contactName: contactForm.contactName.trim(),
-    phone,
-  };
-
-  if (contactForm.id) await crmVendorApi.updateContact(contactForm.id, request);
-  else await crmVendorApi.createContact(currentVendor.value.id, request);
-
-  ElMessage.success("联系人已保存");
-  contactDialogVisible.value = false;
-  await refreshDetail(false);
-  notifyListChanged();
 };
 
 const setPrimaryContact = async (row: any) => {
   if (!currentVendor.value) return;
-  await crmVendorApi.setPrimaryContact(row.id);
+  await crmVendorApi.setPrimaryVendorContact(currentVendor.value.id, row.id);
   ElMessage.success("主联系人已更新");
   await refreshDetail(false);
   notifyListChanged();
@@ -555,7 +338,7 @@ const setPrimaryContact = async (row: any) => {
 const toggleContactStatus = async (row: any) => {
   if (!currentVendor.value) return;
   const status = row.status === "无效" ? "有效" : "无效";
-  await crmVendorApi.updateContactStatus(row.id, {
+  await crmVendorApi.updateVendorContactStatus(currentVendor.value.id, row.id, {
     status,
     remark: row.remark || "",
   });
@@ -593,48 +376,15 @@ const closePurchaseDemand = async (row: any) => {
   notifyListChanged();
 };
 
-const resetFollowForm = () => {
-  Object.assign(followForm, {
-    contactId: undefined,
-    followType: "电话",
-    followResult: "",
-    intentLevel: "",
-    content: "",
-    nextFollowAt: "",
-  });
-};
-
 const openFollowDialog = () => {
   if (!currentVendor.value) return;
-  resetFollowForm();
-  const primaryContact = followContacts.value.find((contact: any) => contact.isPrimary);
-  followForm.contactId = primaryContact?.id;
   followDialogVisible.value = true;
 };
 
-const submitFollowRecord = async () => {
-  if (!currentVendor.value) return;
-  if (!followForm.followResult) {
-    ElMessage.error("请选择沟通结果");
-    return;
-  }
-  if (followForm.nextFollowAt && new Date(followForm.nextFollowAt).getTime() <= Date.now()) {
-    ElMessage.error("下次跟进时间必须晚于当前时间");
-    return;
-  }
-
-  await crmVendorApi.createFollowRecord(currentVendor.value.id, {
-    ...followForm,
-    contactId: followForm.contactId || null,
-    nextFollowAt: followForm.nextFollowAt || null,
-  });
-  ElMessage.success("沟通记录已保存");
-  followDialogVisible.value = false;
+const handleRecordSaved = async () => {
   await refreshDetail(false);
   notifyListChanged();
 };
-
-const disablePastFollowDate = (date: Date) => date.getTime() < new Date().setHours(0, 0, 0, 0);
 
 const loadPurchaseDemands = async () => {
   if (!currentVendor.value) return;
@@ -656,7 +406,7 @@ const loadPurchaseDemands = async () => {
 
 const loadFollowRecords = async () => {
   if (!currentVendor.value) return;
-  const result = await crmVendorApi.getFollowRecords(currentVendor.value.id);
+  const result = await crmVendorApi.getVendorFollowRecords(currentVendor.value.id);
   followRecords.value = result.data || [];
 };
 

@@ -144,25 +144,14 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="transferDialogVisible" :title="transferDialogTitle" width="520px">
-      <el-form :model="transferForm" label-width="90px">
-        <el-form-item label="已选厂商">
-          <span>{{ transferForm.entityIds.length }} 个</span>
-        </el-form-item>
-        <el-form-item v-if="transferMode !== 'RETURN'" label="跟进人">
-          <el-select v-model="transferForm.ownerUserId" filterable placeholder="请选择跟进人">
-            <el-option v-for="user in ownerOptions" :key="user.id" :label="getUserDisplayName(user)" :value="user.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="transferForm.remark" type="textarea" :rows="3" placeholder="可选" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="transferDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTransfer">保存</el-button>
-      </template>
-    </el-dialog>
+    <TransferDialog
+      v-model="transferDialogVisible"
+      entity-type="CRM_VENDOR"
+      :entity-ids="transferEntityIds"
+      :mode="transferMode"
+      selected-label="已选厂商"
+      @saved="reloadList"
+    />
 
   </div>
 </template>
@@ -174,8 +163,8 @@ import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
-import { userApi } from "@/api/modules/user";
 import Permission from "@/components/Permission/index.vue";
+import TransferDialog from "@/views/crm/components/transfer/Dialog.vue";
 import VendorDetailDrawer from "./components/VendorDetailDrawer.vue";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useUserStore } from "@/stores/modules/user";
@@ -213,7 +202,7 @@ const transferDialogVisible = ref(false);
 const isEdit = ref(false);
 const currentVendorId = ref("");
 const selectedVendors = ref<VendorDetail[]>([]);
-const ownerOptions = ref<any[]>([]);
+const transferEntityIds = ref<string[]>([]);
 
 const searchForm = reactive({
   keyword: "",
@@ -231,18 +220,8 @@ const vendorForm = reactive({
   remark: "",
 });
 
-const transferForm = reactive({
-  entityIds: [] as string[],
-  ownerUserId: "",
-  remark: "",
-});
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
 const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
-const transferDialogTitle = computed(() => ({
-  ASSIGN: "分配跟进人",
-  TRANSFER: "转交跟进人",
-  RETURN: "退回待分配池",
-})[transferMode.value]);
 
 const priorityRules: Record<string, string> = {
   高: "高：有电话、有联系人、90天内有采购、品类数 >= 3",
@@ -273,13 +252,6 @@ const handleSortChange = ({ prop, order }: { prop: "updatedAt"; order: "ascendin
   reloadList();
 };
 
-const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
-
-const loadOwnerOptions = async () => {
-  const res = await userApi.getUserList({ page: 1, pageSize: 100, username: "", realName: "", roleId: "", isActive: true });
-  ownerOptions.value = (res.data?.list || []).filter((user: any) => user.isActive);
-};
-
 const resetVendorForm = () => {
   Object.assign(vendorForm, {
     id: "",
@@ -292,13 +264,11 @@ const resetVendorForm = () => {
 const openCreateDialog = async () => {
   isEdit.value = false;
   resetVendorForm();
-  await loadOwnerOptions();
   vendorDialogVisible.value = true;
 };
 
 const openEditDialog = async (row: VendorDetail) => {
   isEdit.value = true;
-  await loadOwnerOptions();
   Object.assign(vendorForm, {
     id: row.id,
     vendorName: row.vendorName || "",
@@ -340,29 +310,8 @@ const openTransferDialog = async (vendors?: VendorDetail[], mode: "ASSIGN" | "TR
   }
 
   transferMode.value = mode;
-  if (mode !== "RETURN") await loadOwnerOptions();
-  Object.assign(transferForm, {
-    entityIds: rows.map(item => item.id),
-    ownerUserId: "",
-    remark: "",
-  });
+  transferEntityIds.value = rows.map(item => item.id);
   transferDialogVisible.value = true;
-};
-
-const submitTransfer = async () => {
-  if (transferMode.value !== "RETURN" && !transferForm.ownerUserId) {
-    ElMessage.warning("请选择跟进人");
-    return;
-  }
-
-  await crmVendorApi.changeOwner({
-    entityIds: transferForm.entityIds,
-    toOwnerUserId: transferMode.value === "RETURN" ? null : transferForm.ownerUserId,
-    remark: transferForm.remark,
-  });
-  ElMessage.success("流转成功");
-  transferDialogVisible.value = false;
-  reloadList();
 };
 
 const openDetail = (row: any) => {
