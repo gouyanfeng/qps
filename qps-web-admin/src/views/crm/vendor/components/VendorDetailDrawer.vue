@@ -23,6 +23,7 @@
           <el-button v-if="canManageTransfer || canReturn(currentVendor)" :icon="Edit" @click="openTransferDialog('RETURN')">退回</el-button>
           <Permission code="CRM_VENDOR_EDIT"><el-button :icon="Edit" @click="openEditDialog">编辑</el-button></Permission>
           <el-button :icon="Refresh" @click="refreshDetail()">刷新</el-button>
+          <el-button class="drawer-close-button" :icon="Close" circle title="关闭详情" @click="emit('update:modelValue', false)" />
         </div>
       </section>
 
@@ -172,7 +173,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
-import { Edit, Plus, Refresh } from "@element-plus/icons-vue";
+import { Close, Edit, Plus, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import CrmVendorDemandEditor from "@/components/CrmVendorDemandEditor/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";

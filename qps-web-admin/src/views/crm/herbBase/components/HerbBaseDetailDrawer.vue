@@ -42,6 +42,7 @@
             <el-button type="danger" plain @click="markCustomerStatus('已流失')">标记流失</el-button>
           </Permission>
           <el-button :icon="Refresh" @click="refreshDetail()">刷新</el-button>
+          <el-button class="drawer-close-button" :icon="Close" circle title="关闭详情" @click="emit('update:modelValue', false)" />
         </div>
       </section>
       <section class="drawer-grid">
@@ -249,7 +250,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
-import { ArrowDown, Delete, Edit, Phone, Plus, Refresh } from "@element-plus/icons-vue";
+import { ArrowDown, Close, Delete, Edit, Phone, Plus, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/components/ProductSelect/index.vue";
