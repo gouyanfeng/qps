@@ -83,7 +83,12 @@ const createOpportunity = async () => {
 };
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
 
-watch(() => props.demandItemId, () => { page.value = 1; loadCandidates(); }, { immediate: true });
+watch(() => props.demandItemId, () => {
+  page.value = 1;
+  total.value = 0;
+  candidates.value = [];
+  selectedSupplyIds.value = [];
+});
 </script>
 
 <style scoped>
