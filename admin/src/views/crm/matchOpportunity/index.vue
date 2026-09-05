@@ -47,7 +47,7 @@
           <el-table-column prop="demandProductName" label="品类" min-width="130" show-overflow-tooltip />
           <el-table-column prop="vendorName" label="需求厂商" min-width="180" show-overflow-tooltip />
           <el-table-column label="需求数量" width="130"><template #default="{ row }">{{ quantityLabel(row) }}</template></el-table-column>
-          <el-table-column label="候选数" width="90" align="center"><template #default="{ row }">{{ row.candidateCount ?? row.candidates?.length ?? '-' }}</template></el-table-column>
+          <el-table-column label="候选数" width="90" align="center"><template #default="{ row }">{{ row.candidateCount }}</template></el-table-column>
           <el-table-column label="状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="statusType(row.status)">{{ row.status || '-' }}</el-tag></template></el-table-column>
           <el-table-column prop="ownerUserName" label="撮合跟进人" width="120" show-overflow-tooltip />
           <el-table-column label="下一步时间" width="180"><template #default="{ row }">{{ formatDate(row.nextActionAt) }}</template></el-table-column>
@@ -129,19 +129,23 @@ const handleDemandItemSelected = (item: any) => {
 const closeCandidateSelector = async () => {
   selectedDemandItem.value = null;
   candidateSelectorVisible.value = false;
-  await router.replace({ path: route.path, query: {} });
+  await replaceWithoutDemandId();
 };
 const handleOpportunityCreated = async (opportunityId: string) => {
   selectedDemandItem.value = null;
   candidateSelectorVisible.value = false;
   currentDemand.value = null;
-  await router.replace({ path: route.path, query: {} });
+  await replaceWithoutDemandId();
   await reloadList();
   openDetail(opportunityId);
 };
 const openDetail = (opportunityId: string) => {
   currentOpportunityId.value = opportunityId;
   detailDrawerVisible.value = true;
+};
+const replaceWithoutDemandId = () => {
+  const { demandId: _demandId, ...query } = route.query;
+  return router.replace({ path: route.path, query });
 };
 const handleReset = () => {
   Object.assign(searchForm, { status: "", productName: "", vendorId: "", herbBaseSubjectId: "", ownerUserId: "", nextActionAtFrom: "", nextActionAtTo: "" });

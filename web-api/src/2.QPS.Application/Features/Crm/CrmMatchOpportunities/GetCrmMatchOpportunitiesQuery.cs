@@ -38,11 +38,12 @@ public class CrmMatchOpportunityListDto
     public string NextAction { get; set; } = string.Empty;
     public DateTime? NextActionAt { get; set; }
     public string ClosedReason { get; set; } = string.Empty;
+    public int CandidateCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
-public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext)
+public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext, ICurrentUserService currentUserService)
     : IRequestHandler<GetCrmMatchOpportunitiesQuery, PaginationResponse<CrmMatchOpportunityListDto>>
 {
     /// <summary>
@@ -52,6 +53,7 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext)
         GetCrmMatchOpportunitiesQuery request,
         CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureViewAsync(dbContext, currentUserService, cancellationToken);
         var opportunities = BuildFilteredQuery(request);
         var totalCount = await opportunities.CountAsync(cancellationToken);
         var page = Math.Max(request.Page, 1);
@@ -89,6 +91,7 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext)
                 NextAction = opportunity.NextAction,
                 NextActionAt = opportunity.NextActionAt,
                 ClosedReason = opportunity.ClosedReason,
+                CandidateCount = dbContext.CrmMatchCandidates.Count(candidate => candidate.MatchOpportunityId == opportunity.Id),
                 CreatedAt = opportunity.CreatedAt,
                 UpdatedAt = opportunity.UpdatedAt
             })

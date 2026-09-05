@@ -12,10 +12,11 @@ public class CreateCrmMatchOpportunityCommand : IRequest<Guid>
     public List<Guid> SupplyIds { get; set; } = [];
 }
 
-public class CreateCrmMatchOpportunityHandler(IDbContext dbContext) : IRequestHandler<CreateCrmMatchOpportunityCommand, Guid>
+public class CreateCrmMatchOpportunityHandler(IDbContext dbContext, ICurrentUserService currentUserService) : IRequestHandler<CreateCrmMatchOpportunityCommand, Guid>
 {
     public async Task<Guid> Handle(CreateCrmMatchOpportunityCommand request, CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureManageAsync(dbContext, currentUserService, cancellationToken);
         CrmMatchOpportunitySource.ValidateSupplyIds(request.SupplyIds);
         var demandItem = await CrmMatchOpportunitySource.LoadDemandItemAsync(dbContext, request.DemandItemId, cancellationToken);
         var demand = demandItem.VendorDemand!;
@@ -64,10 +65,11 @@ public class AddCrmMatchOpportunityCandidatesCommand : IRequest<bool>
     public List<Guid> SupplyIds { get; set; } = [];
 }
 
-public class AddCrmMatchOpportunityCandidatesHandler(IDbContext dbContext) : IRequestHandler<AddCrmMatchOpportunityCandidatesCommand, bool>
+public class AddCrmMatchOpportunityCandidatesHandler(IDbContext dbContext, ICurrentUserService currentUserService) : IRequestHandler<AddCrmMatchOpportunityCandidatesCommand, bool>
 {
     public async Task<bool> Handle(AddCrmMatchOpportunityCandidatesCommand request, CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureManageAsync(dbContext, currentUserService, cancellationToken);
         CrmMatchOpportunitySource.ValidateSupplyIds(request.SupplyIds);
         var opportunity = await dbContext.CrmMatchOpportunities.FirstOrDefaultAsync(item => item.Id == request.OpportunityId, cancellationToken)
             ?? throw new BusinessException(404, "撮合机会不存在");

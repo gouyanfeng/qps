@@ -14,10 +14,11 @@ public class UpdateCrmMatchCandidateStatusCommand : IRequest<bool>
     public string EliminationReason { get; set; } = string.Empty;
 }
 
-public class UpdateCrmMatchCandidateStatusHandler(IDbContext dbContext) : IRequestHandler<UpdateCrmMatchCandidateStatusCommand, bool>
+public class UpdateCrmMatchCandidateStatusHandler(IDbContext dbContext, ICurrentUserService currentUserService) : IRequestHandler<UpdateCrmMatchCandidateStatusCommand, bool>
 {
     public async Task<bool> Handle(UpdateCrmMatchCandidateStatusCommand request, CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureManageAsync(dbContext, currentUserService, cancellationToken);
         var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
         CrmMatchOpportunityCommandGuards.EnsureInProgress(opportunity);
         var candidate = await dbContext.CrmMatchCandidates.FirstOrDefaultAsync(item => item.Id == request.CandidateId && item.MatchOpportunityId == opportunity.Id, cancellationToken)
@@ -61,10 +62,11 @@ public class UpdateCrmMatchOpportunityNextActionCommand : IRequest<bool>
     public DateTime? NextActionAt { get; set; }
 }
 
-public class UpdateCrmMatchOpportunityNextActionHandler(IDbContext dbContext) : IRequestHandler<UpdateCrmMatchOpportunityNextActionCommand, bool>
+public class UpdateCrmMatchOpportunityNextActionHandler(IDbContext dbContext, ICurrentUserService currentUserService) : IRequestHandler<UpdateCrmMatchOpportunityNextActionCommand, bool>
 {
     public async Task<bool> Handle(UpdateCrmMatchOpportunityNextActionCommand request, CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureManageAsync(dbContext, currentUserService, cancellationToken);
         var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
         if (opportunity.Status == CrmMatchOpportunity.Closed)
         {
@@ -86,10 +88,11 @@ public class UpdateCrmMatchOpportunityStatusCommand : IRequest<bool>
     public string ClosedReason { get; set; } = string.Empty;
 }
 
-public class UpdateCrmMatchOpportunityStatusHandler(IDbContext dbContext) : IRequestHandler<UpdateCrmMatchOpportunityStatusCommand, bool>
+public class UpdateCrmMatchOpportunityStatusHandler(IDbContext dbContext, ICurrentUserService currentUserService) : IRequestHandler<UpdateCrmMatchOpportunityStatusCommand, bool>
 {
     public async Task<bool> Handle(UpdateCrmMatchOpportunityStatusCommand request, CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureManageAsync(dbContext, currentUserService, cancellationToken);
         var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
         var status = request.Status.Trim();
         string actionType;

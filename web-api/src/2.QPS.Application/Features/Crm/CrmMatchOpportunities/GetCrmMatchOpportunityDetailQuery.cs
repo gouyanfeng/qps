@@ -52,7 +52,7 @@ public class CrmMatchOpportunityActivityDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class GetCrmMatchOpportunityDetailHandler(IDbContext dbContext)
+public class GetCrmMatchOpportunityDetailHandler(IDbContext dbContext, ICurrentUserService currentUserService)
     : IRequestHandler<GetCrmMatchOpportunityDetailQuery, CrmMatchOpportunityDetailDto>
 {
     /// <summary>
@@ -62,6 +62,7 @@ public class GetCrmMatchOpportunityDetailHandler(IDbContext dbContext)
         GetCrmMatchOpportunityDetailQuery request,
         CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureViewAsync(dbContext, currentUserService, cancellationToken);
         var detail = await GetDetailAsync(request.Id, cancellationToken);
         detail.Candidates = await GetCandidatesAsync(request.Id, cancellationToken);
         detail.Activities = await CrmMatchOpportunityActivityQuery.GetAsync(dbContext, request.Id, cancellationToken);
@@ -138,7 +139,7 @@ public class GetCrmMatchOpportunityDetailHandler(IDbContext dbContext)
     }
 }
 
-public class GetCrmMatchOpportunityActivitiesHandler(IDbContext dbContext)
+public class GetCrmMatchOpportunityActivitiesHandler(IDbContext dbContext, ICurrentUserService currentUserService)
     : IRequestHandler<GetCrmMatchOpportunityActivitiesQuery, List<CrmMatchOpportunityActivityDto>>
 {
     /// <summary>
@@ -148,6 +149,7 @@ public class GetCrmMatchOpportunityActivitiesHandler(IDbContext dbContext)
         GetCrmMatchOpportunityActivitiesQuery request,
         CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureViewAsync(dbContext, currentUserService, cancellationToken);
         if (!await dbContext.CrmMatchOpportunities.AnyAsync(item => item.Id == request.OpportunityId, cancellationToken))
         {
             throw new BusinessException(404, "撮合机会不存在");

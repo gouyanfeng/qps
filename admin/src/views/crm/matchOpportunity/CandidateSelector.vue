@@ -19,7 +19,7 @@
     </el-form>
 
     <el-table :data="candidates" v-loading="loading" border row-key="herbBaseSupplyId" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="52" />
+      <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-table-column type="selection" width="52" /></Permission>
       <el-table-column prop="subjectName" label="主体" min-width="180" show-overflow-tooltip />
       <el-table-column prop="herbBaseName" label="基地" min-width="160" show-overflow-tooltip />
       <el-table-column label="可供量" min-width="120"><template #default="{ row }">{{ row.availableQuantity }}{{ row.quantityUnit || "" }}</template></el-table-column>
@@ -31,7 +31,7 @@
     </el-table>
     <div class="selector-footer">
       <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadCandidates" />
-      <el-button type="primary" :disabled="selectedSupplyIds.length === 0" :loading="creating" @click="createOpportunity">创建撮合机会</el-button>
+      <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button type="primary" :disabled="selectedSupplyIds.length === 0" :loading="creating" @click="createOpportunity">创建撮合机会</el-button></Permission>
     </div>
   </section>
 </template>
@@ -40,6 +40,7 @@
 import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import crmMatchOpportunityApi from "@/api/modules/crmMatchOpportunity";
+import Permission from "@/components/Permission/index.vue";
 
 const props = defineProps<{ demandItemId: string; demandItem?: any }>();
 const emit = defineEmits<{ created: [opportunityId: string] }>();

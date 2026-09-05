@@ -19,10 +19,11 @@ public class GetCrmMatchSupplyCandidatesQuery : PaginationRequest, IRequest<Pagi
     public decimal? MaxExpectedPrice { get; set; }
 }
 
-public class GetCrmMatchSupplyCandidatesHandler(IDbContext dbContext) : IRequestHandler<GetCrmMatchSupplyCandidatesQuery, PaginationResponse<CrmMatchSupplyCandidateDto>>
+public class GetCrmMatchSupplyCandidatesHandler(IDbContext dbContext, ICurrentUserService currentUserService) : IRequestHandler<GetCrmMatchSupplyCandidatesQuery, PaginationResponse<CrmMatchSupplyCandidateDto>>
 {
     public async Task<PaginationResponse<CrmMatchSupplyCandidateDto>> Handle(GetCrmMatchSupplyCandidatesQuery request, CancellationToken cancellationToken)
     {
+        await CrmMatchOpportunityAuthorization.EnsureManageAsync(dbContext, currentUserService, cancellationToken);
         var demandItem = await CrmMatchOpportunitySource.LoadDemandItemAsync(dbContext, request.DemandItemId, cancellationToken);
         var today = DateTime.Today;
         var supplies = dbContext.CrmHerbBaseSupplies
