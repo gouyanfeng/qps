@@ -32,6 +32,9 @@ public class AppDbContext : DbContext, IDbContext
     public DbSet<CrmVendor> CrmVendors { get; set; }
     public DbSet<CrmVendorDemand> CrmVendorDemands { get; set; }
     public DbSet<CrmVendorDemandItem> CrmVendorDemandItems { get; set; }
+    public DbSet<CrmMatchOpportunity> CrmMatchOpportunities { get; set; }
+    public DbSet<CrmMatchCandidate> CrmMatchCandidates { get; set; }
+    public DbSet<CrmBusinessActivity> CrmBusinessActivities { get; set; }
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
@@ -163,6 +166,61 @@ public class AppDbContext : DbContext, IDbContext
             entity.HasOne(item => item.VendorDemand).WithMany(demand => demand.Items).HasForeignKey(item => item.VendorDemandId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<CrmMatchOpportunity>(entity =>
+        {
+            entity.ToTable("CrmMatchOpportunities");
+            entity.Property(opportunity => opportunity.DemandProductName).HasMaxLength(200);
+            entity.Property(opportunity => opportunity.DemandQuantity).HasPrecision(18, 2);
+            entity.Property(opportunity => opportunity.QuantityUnit).HasMaxLength(32);
+            entity.Property(opportunity => opportunity.Specification).HasMaxLength(200);
+            entity.Property(opportunity => opportunity.QualityRequirement).HasMaxLength(500);
+            entity.Property(opportunity => opportunity.DeliveryAddress).HasMaxLength(500);
+            entity.Property(opportunity => opportunity.Status).HasMaxLength(32);
+            entity.Property(opportunity => opportunity.NextAction).HasMaxLength(500);
+            entity.Property(opportunity => opportunity.ClosedReason).HasMaxLength(500);
+            entity.HasIndex(opportunity => new { opportunity.DemandItemId, opportunity.Status });
+            entity.HasIndex(opportunity => new { opportunity.OwnerUserId, opportunity.NextActionAt });
+            entity.HasOne<CrmVendorDemandItem>()
+                .WithMany()
+                .HasForeignKey(opportunity => opportunity.DemandItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CrmMatchCandidate>(entity =>
+        {
+            entity.ToTable("CrmMatchCandidates");
+            entity.Property(candidate => candidate.SubjectName).HasMaxLength(200);
+            entity.Property(candidate => candidate.HerbBaseName).HasMaxLength(200);
+            entity.Property(candidate => candidate.ProductName).HasMaxLength(200);
+            entity.Property(candidate => candidate.AvailableQuantity).HasPrecision(18, 2);
+            entity.Property(candidate => candidate.QuantityUnit).HasMaxLength(32);
+            entity.Property(candidate => candidate.Specification).HasMaxLength(200);
+            entity.Property(candidate => candidate.QualityRequirement).HasMaxLength(500);
+            entity.Property(candidate => candidate.ExpectedPrice).HasPrecision(18, 2);
+            entity.Property(candidate => candidate.PriceUnit).HasMaxLength(32);
+            entity.Property(candidate => candidate.SupplyCycle).HasMaxLength(100);
+            entity.Property(candidate => candidate.Status).HasMaxLength(32);
+            entity.Property(candidate => candidate.EliminationReason).HasMaxLength(500);
+            entity.HasIndex(candidate => new { candidate.MatchOpportunityId, candidate.HerbBaseSupplyId }).IsUnique();
+            entity.HasOne<CrmMatchOpportunity>()
+                .WithMany()
+                .HasForeignKey(candidate => candidate.MatchOpportunityId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<CrmHerbBaseSupply>()
+                .WithMany()
+                .HasForeignKey(candidate => candidate.HerbBaseSupplyId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CrmBusinessActivity>(entity =>
+        {
+            entity.ToTable("CrmBusinessActivities");
+            entity.Property(activity => activity.EntityType).HasMaxLength(64);
+            entity.Property(activity => activity.ActionType).HasMaxLength(32);
+            entity.Property(activity => activity.Content).HasMaxLength(1000);
+            entity.HasIndex(activity => new { activity.EntityType, activity.EntityId, activity.CreatedAt });
+        });
+
         modelBuilder.Entity<CrmTransferRecord>(entity =>
         {
             entity.Property(record => record.ActionType).HasMaxLength(16).HasDefaultValue(CrmTransferActionType.Entry);
@@ -214,7 +272,7 @@ public class AppDbContext : DbContext, IDbContext
 
     private void SetAuditFields()
     {
-        var currentUser = _currentUserService.Username ?? "System";
+        var currentUser = _currentUserService.UserId ?? "System";
         var now = DateTime.Now;
 
         var entries = ChangeTracker.Entries()
