@@ -83,6 +83,9 @@
                   <el-table-column label="可供量" width="130">
                     <template #default="{ row }">{{ row.availableQuantity ?? "-" }}{{ row.availableQuantity != null && row.quantityUnit ? ` ${row.quantityUnit}` : "" }}</template>
                   </el-table-column>
+                  <el-table-column label="价格" width="130">
+                    <template #default="{ row }">{{ row.expectedPrice ?? "-" }}{{ row.expectedPrice != null && row.priceUnit ? ` ${row.priceUnit}` : "" }}</template>
+                  </el-table-column>
                   <el-table-column prop="specification" label="规格" min-width="120" />
                   <el-table-column prop="supplyCycle" label="供货周期" min-width="120" />
                   <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />

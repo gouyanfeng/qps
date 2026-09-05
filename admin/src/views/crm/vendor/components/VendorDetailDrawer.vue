@@ -63,14 +63,22 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="采购明细" min-width="250">
+              <el-table-column label="采购明细" width="280">
                 <template #default="{ row }">
-                  <div v-if="row.items?.length" class="demand-item-list">
-                    <el-tag v-for="item in row.items" :key="item.id || item.productName" size="small" effect="plain" class="demand-item-tag">
-                      <span>{{ item.productName || "未填写品类" }}</span>
-                      <b v-if="item.quantity">{{ item.quantity }}{{ item.quantityUnit || "" }}</b>
-                    </el-tag>
-                  </div>
+                  <el-tooltip
+                    v-if="row.items?.length"
+                    :content="getDemandItemsTooltip(row.items)"
+                    placement="top"
+                    :disabled="hiddenDemandItemCount(row.items) === 0"
+                  >
+                    <div class="demand-item-list demand-item-list--compact">
+                      <el-tag v-for="item in visibleDemandItems(row.items)" :key="item.id || item.productName" size="small" effect="plain" class="demand-item-tag">
+                        <span>{{ item.productName || "未填写品类" }}</span>
+                        <b v-if="item.quantity">{{ item.quantity }}{{ item.quantityUnit || "" }}</b>
+                      </el-tag>
+                      <el-tag v-if="hiddenDemandItemCount(row.items) > 0" size="small" effect="plain" class="demand-item-tag">+{{ hiddenDemandItemCount(row.items) }}</el-tag>
+                    </div>
+                  </el-tooltip>
                   <span v-else class="empty-value">-</span>
                 </template>
               </el-table-column>
@@ -87,8 +95,8 @@
                   <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
                     <div class="demand-actions">
                       <el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">编辑</el-button>
-                      <el-button v-if="row.status === '待确认'" type="success" link @click="changePurchaseDemandStatus(row, '有效')">确认有效</el-button>
-                      <el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" type="danger" link @click="closePurchaseDemand(row)">关闭</el-button>
+                      <el-button type="success" link @click="changePurchaseDemandStatus(row, '有效')">确认有效</el-button>
+                      <el-button type="danger" link @click="closePurchaseDemand(row)">关闭</el-button>
                     </div>
                   </Permission>
                 </template>
@@ -441,6 +449,19 @@ const getPurchaseDemandStatusType = (value?: string | null) => {
   return "";
 };
 
+const maxDemandItemCount = 8;
+
+const getDemandItemLabel = (item: any) => `${item.productName || "未填写品类"}${item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : ""}`;
+
+const visibleDemandItems = (items: any[]) => {
+  if (items.length <= maxDemandItemCount) return items;
+  return items.slice(0, maxDemandItemCount - 1);
+};
+
+const hiddenDemandItemCount = (items: any[]) => items.length - visibleDemandItems(items).length;
+
+const getDemandItemsTooltip = (items: any[]) => `采购明细：${items.map(getDemandItemLabel).join("、")}`;
+
 const canReturn = (row?: Partial<VendorDetail> | null) =>
   !!row?.ownerUserId && row.ownerUserId === userStore.userInfo.userId;
 
@@ -455,5 +476,5 @@ const formatDate = (value?: string | null) => {
 </script>
 
 <style scoped lang="scss">
-.drawer-layout { min-height: 100%; background: #fff; }.drawer-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; padding:22px 0 18px; border-bottom:1px solid var(--el-border-color-light); }.detail-kicker, .head-meta, .summary-band span, .follow-item span, .demand-title-cell span, .empty-value { color:var(--el-text-color-secondary); font-size:13px; }.title-row, .head-meta, .head-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }.title-row h2 { margin:0; font-size:25px; }.head-meta { margin-top:10px; }.head-actions { justify-content:flex-end; }.summary-band { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:14px 0; }.summary-band > div, .detail-card { display:flex; flex-direction:column; gap:5px; padding:16px; border:1px solid var(--el-border-color-light); border-radius:8px; }.detail-grid { display:grid; grid-template-columns:minmax(360px,.9fr) minmax(0,1.75fr); gap:16px; }.detail-content { display:grid; gap:16px; }.section-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -16px 14px; padding:0 16px 10px; border-bottom:1px solid var(--el-border-color-lighter); }.section-title h3 { margin:0; font-size:16px; }.activity-row { display:flex; gap:16px; }.activity-row > .detail-card { flex:1; min-width:0; }.follow-item p { margin:6px 0; }.item-tag,.ml8 { margin-right:4px; }.purchase-demand-card { gap:0; }.purchase-demand-table :deep(.el-table__cell) { padding:11px 0; }.purchase-demand-table :deep(.el-table__header th) { background:#fafcfc; color:var(--el-text-color-secondary); font-weight:500; }.demand-title-cell { display:grid; gap:5px; line-height:1.35; }.demand-title-cell strong { color:var(--el-text-color-primary); font-weight:600; }.demand-item-list, .demand-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }.demand-item-tag { margin:0; border-color:#bfe7e2; background:#f0fbf9; color:#177f78; }.demand-item-tag b { margin-left:5px; color:#0f766e; font-weight:600; }.demand-actions { flex-wrap:nowrap; white-space:nowrap; }.table-footer { display:flex; justify-content:flex-end; padding-top:12px; } @media(max-width:1200px){.summary-band,.detail-grid{grid-template-columns:1fr}.activity-row{flex-direction:column}} 
+.drawer-layout { min-height: 100%; background: #fff; }.drawer-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; padding:22px 0 18px; border-bottom:1px solid var(--el-border-color-light); }.detail-kicker, .head-meta, .summary-band span, .follow-item span, .demand-title-cell span, .empty-value { color:var(--el-text-color-secondary); font-size:13px; }.title-row, .head-meta, .head-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }.title-row h2 { margin:0; font-size:25px; }.head-meta { margin-top:10px; }.head-actions { justify-content:flex-end; }.summary-band { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:14px 0; }.summary-band > div, .detail-card { display:flex; flex-direction:column; gap:5px; padding:16px; border:1px solid var(--el-border-color-light); border-radius:8px; }.detail-grid { display:grid; grid-template-columns:minmax(360px,.9fr) minmax(0,1.75fr); gap:16px; }.detail-content { display:grid; gap:16px; }.section-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -16px 14px; padding:0 16px 10px; border-bottom:1px solid var(--el-border-color-lighter); }.section-title h3 { margin:0; font-size:16px; }.activity-row { display:flex; gap:16px; }.activity-row > .detail-card { flex:1; min-width:0; }.follow-item p { margin:6px 0; }.item-tag,.ml8 { margin-right:4px; }.purchase-demand-card { gap:0; }.purchase-demand-table :deep(.el-table__cell) { padding:11px 0; }.purchase-demand-table :deep(.el-table__header th) { background:#fafcfc; color:var(--el-text-color-secondary); font-weight:500; }.demand-title-cell { display:grid; gap:5px; line-height:1.35; }.demand-title-cell strong { color:var(--el-text-color-primary); font-weight:600; }.demand-item-list, .demand-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }.demand-item-list--compact { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(2,24px); overflow:hidden; }.demand-item-list--compact .demand-item-tag { display:flex; min-width:0; overflow:hidden; justify-content:center; text-overflow:ellipsis; white-space:nowrap; }.demand-item-tag { margin:0; border-color:#bfe7e2; background:#f0fbf9; color:#177f78; }.demand-item-tag span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.demand-item-tag b { margin-left:5px; color:#0f766e; font-weight:600; }.demand-actions { flex-wrap:nowrap; white-space:nowrap; }.table-footer { display:flex; justify-content:flex-end; padding-top:12px; } @media(max-width:1200px){.summary-band,.detail-grid{grid-template-columns:1fr}.activity-row{flex-direction:column}}
 </style>

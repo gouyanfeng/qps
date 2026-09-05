@@ -27,8 +27,6 @@ public class DeleteCrmVendorDemandHandler : IRequestHandler<DeleteCrmVendorDeman
         {
             throw new BusinessException(404, "采购需求不存在");
         }
-        if (plan.Status != QPS.Domain.Entities.Crm.CrmVendorDemand.Pending)
-            throw new BusinessException(400, "仅待确认采购需求可删除");
         var vendor = await _dbContext.CrmVendors.FirstOrDefaultAsync(item => item.Id == plan.VendorId, cancellationToken)
             ?? throw new BusinessException(404, "厂商不存在");
 

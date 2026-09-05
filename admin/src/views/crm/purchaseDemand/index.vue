@@ -24,11 +24,21 @@
         <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1530px" border>
           <el-table-column prop="demandNo" label="编号" min-width="180" />
           <el-table-column prop="demandName" label="需求名称" min-width="200" show-overflow-tooltip />
-          <el-table-column label="采购明细" min-width="220">
+          <el-table-column label="采购明细" width="280">
             <template #default="{ row }">
-              <el-tag v-for="item in row.items || []" :key="item.id || item.productName" size="small" class="item-tag">
-                {{ item.productName }}{{ item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : "" }}
-              </el-tag>
+              <el-tooltip
+                v-if="row.items?.length"
+                :content="getDemandItemsTooltip(row.items)"
+                placement="top"
+                :disabled="hiddenDemandItemCount(row.items) === 0"
+              >
+                <div class="demand-item-tags demand-item-tags--compact">
+                  <el-tag v-for="item in visibleDemandItems(row.items)" :key="item.id || item.productName" size="small">
+                    {{ getDemandItemLabel(item) }}
+                  </el-tag>
+                  <el-tag v-if="hiddenDemandItemCount(row.items) > 0" size="small">+{{ hiddenDemandItemCount(row.items) }}</el-tag>
+                </div>
+              </el-tooltip>
               <span v-if="!row.items?.length">-</span>
             </template>
           </el-table-column>
@@ -73,6 +83,19 @@ const editingDemand = ref<any>(null);
 const statuses = ["待确认", "有效", "匹配中", "已完成", "已关闭"];
 const searchForm = reactive({ keyword: "", status: "" });
 
+const maxDemandItemCount = 8;
+
+const getDemandItemLabel = (item: any) => `${item.productName}${item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : ""}`;
+
+const visibleDemandItems = (items: any[]) => {
+  if (items.length <= maxDemandItemCount) return items;
+  return items.slice(0, maxDemandItemCount - 1);
+};
+
+const hiddenDemandItemCount = (items: any[]) => items.length - visibleDemandItems(items).length;
+
+const getDemandItemsTooltip = (items: any[]) => `采购明细：${items.map(getDemandItemLabel).join("、")}`;
+
 const reloadList = () => queryPageRef.value?.getTableList();
 
 const handleReset = () => {
@@ -105,8 +128,26 @@ const formatDate = (value?: string | null) => value ? new Date(value).toLocaleSt
 </script>
 
 <style scoped>
-.item-tag {
-  margin-right: 4px;
-  margin-bottom: 4px;
+.demand-item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.demand-item-tags--compact {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 24px);
+  overflow: hidden;
+}
+
+.demand-item-tags--compact :deep(.el-tag) {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  justify-content: center;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

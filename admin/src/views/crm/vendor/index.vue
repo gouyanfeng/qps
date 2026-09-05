@@ -82,16 +82,26 @@
           <el-table-column label="跟进人" width="96" show-overflow-tooltip>
             <template #default="{ row }">{{ row.ownerUserName || "未分配" }}</template>
           </el-table-column>
-          <el-table-column label="采购需求" width="84" align="right">
+          <el-table-column label="采购次数" width="120" align="right">
             <template #default="{ row }">{{ row.purchaseDemandCount || 0 }}</template>
           </el-table-column>
-          <el-table-column label="采购品类" min-width="180">
+          <el-table-column label="采购品类" width="280">
             <template #default="{ row }">
-              <div v-if="row.productName?.length" class="main-product-tags">
-                <el-tag v-for="productName in row.productName" :key="productName" size="small" type="info" effect="plain">
-                  {{ productName }}
-                </el-tag>
-              </div>
+              <el-tooltip
+                v-if="row.productName?.length"
+                :content="getProductNamesTooltip(row.productName)"
+                placement="top"
+                :disabled="hiddenProductCount(row.productName) === 0"
+              >
+                <div class="main-product-tags main-product-tags--compact">
+                  <el-tag v-for="productName in visibleProductNames(row.productName)" :key="productName" size="small" type="info" effect="plain">
+                    {{ productName }}
+                  </el-tag>
+                  <el-tag v-if="hiddenProductCount(row.productName) > 0" size="small" type="info" effect="plain">
+                    +{{ hiddenProductCount(row.productName) }}
+                  </el-tag>
+                </div>
+              </el-tooltip>
               <span v-else class="muted">-</span>
             </template>
           </el-table-column>
@@ -247,6 +257,17 @@ const handleReset = () => {
   searchForm.sortField = "UpdatedAt";
   searchForm.sortDirection = "Descending";
 };
+
+const maxProductTagCount = 8;
+
+const visibleProductNames = (productNames: string[]) => {
+  if (productNames.length <= maxProductTagCount) return productNames;
+  return productNames.slice(0, maxProductTagCount - 1);
+};
+
+const hiddenProductCount = (productNames: string[]) => productNames.length - visibleProductNames(productNames).length;
+
+const getProductNamesTooltip = (productNames: string[]) => `采购品类：${productNames.join("、")}`;
 
 const reloadList = () => {
   queryPageRef.value?.getTableList();
@@ -691,6 +712,23 @@ const formatDate = (value?: string | null) => {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+  }
+
+  .main-product-tags--compact {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 24px);
+    overflow: hidden;
+
+    :deep(.el-tag) {
+      display: flex;
+      min-width: 0;
+      overflow: hidden;
+      justify-content: center;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   :deep(.actions-column .cell) {

@@ -99,23 +99,27 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="供应品类" width="148">
+          <el-table-column label="供应品类" width="280">
             <template #default="{ row }">
-              <div v-if="row.productName?.length" class="main-product-tags">
-                <el-tag
-                  v-for="value in row.productName"
-                  :key="value"
-                  size="small"
-                  type="info"
-                  effect="plain"
-                >
-                  {{ value }}
-                </el-tag>
-              </div>
+              <el-tooltip
+                v-if="row.productName?.length"
+                :content="getProductNamesTooltip(row.productName)"
+                placement="top"
+                :disabled="hiddenProductCount(row.productName) === 0"
+              >
+                <div class="main-product-tags main-product-tags--compact">
+                  <el-tag v-for="value in visibleProductNames(row.productName)" :key="value" size="small" type="info" effect="plain">
+                    {{ value }}
+                  </el-tag>
+                  <el-tag v-if="hiddenProductCount(row.productName) > 0" size="small" type="info" effect="plain">
+                    +{{ hiddenProductCount(row.productName) }}
+                  </el-tag>
+                </div>
+              </el-tooltip>
               <span v-else class="muted">-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="totalScale" label="总规模(亩)" width="118" align="right" sortable="custom">
+          <el-table-column prop="totalScale" label="总规模(亩)" width="150" align="right" sortable="custom">
             <template #default="{ row }">
               <span class="scale-cell">{{ row.totalScale ?? "-" }}</span>
             </template>
@@ -354,6 +358,17 @@ const formatNullableDate = (date?: string | null) => {
 };
 
 const formatRegions = (regions?: string[]) => regions?.filter(Boolean).join(" / ") || "-";
+
+const maxProductTagCount = 8;
+
+const visibleProductNames = (productNames: string[]) => {
+  if (productNames.length <= maxProductTagCount) return productNames;
+  return productNames.slice(0, maxProductTagCount - 1);
+};
+
+const hiddenProductCount = (productNames: string[]) => productNames.length - visibleProductNames(productNames).length;
+
+const getProductNamesTooltip = (productNames: string[]) => `供应品类：${productNames.join("、")}`;
 
 const handleRegionChange = (value: string[] | string) => {
   const path = Array.isArray(value) ? value : [];
@@ -666,6 +681,29 @@ onMounted(() => {
 
   .count-cell {
     font-weight: 700;
+  }
+
+  .main-product-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .main-product-tags--compact {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 24px);
+    overflow: hidden;
+
+    :deep(.el-tag) {
+      display: flex;
+      min-width: 0;
+      overflow: hidden;
+      justify-content: center;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .overdue {
