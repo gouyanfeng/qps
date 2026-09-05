@@ -56,6 +56,7 @@
           <el-table-column label="操作" width="230" fixed="right">
             <template #default="{ row }">
               <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button link type="primary" @click="open(row)">编辑</el-button></Permission>
+              <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canStartMatch(row)" link type="primary" @click="startMatch(row)">开始撮合</el-button></Permission>
               <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button v-if="row.status === '待确认'" link type="success" @click="changeStatus(row, '有效')">确认有效</el-button></Permission>
               <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" link type="danger" @click="close(row)">关闭</el-button></Permission>
             </template>
@@ -70,6 +71,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
 import crmVendorDemandApi from "@/api/modules/crmVendorDemand";
@@ -78,6 +80,7 @@ import Permission from "@/components/Permission/index.vue";
 import QueryPage from "@/components/QueryPage/index.vue";
 
 const queryPageRef = ref();
+const router = useRouter();
 const editorVisible = ref(false);
 const editingDemand = ref<any>(null);
 const statuses = ["待确认", "有效", "匹配中", "已完成", "已关闭"];
@@ -107,6 +110,9 @@ const open = (row?: any) => {
   editingDemand.value = row || null;
   editorVisible.value = true;
 };
+
+const canStartMatch = (row: any) => ["有效", "匹配中"].includes(row.status);
+const startMatch = (row: any) => router.push({ path: "/crm/match-opportunity", query: { demandId: row.id } });
 
 const changeStatus = async (row: any, status: string) => {
   await crmVendorDemandApi.changeStatus(row.id, { status });

@@ -92,6 +92,7 @@
               </el-table-column>
               <el-table-column label="操作" width="205" fixed="right">
                 <template #default="{ row }">
+                  <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canStartMatch(row)" type="primary" link @click="startMatch(row)">开始撮合</el-button></Permission>
                   <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
                     <div class="demand-actions">
                       <el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">编辑</el-button>
@@ -181,6 +182,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { Close, Edit, Plus, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import CrmVendorDemandEditor from "@/views/crm/components/vendorDemand/Editor.vue";
@@ -229,6 +231,7 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore();
 const userStore = useUserStore();
+const router = useRouter();
 
 const currentVendor = ref<VendorDetail | null>(null);
 const vendorDialogVisible = ref(false);
@@ -360,6 +363,9 @@ const openPurchaseDemandDialog = (row?: any) => {
   editingPurchaseDemand.value = row || null;
   purchaseDemandDialogVisible.value = true;
 };
+
+const canStartMatch = (row: any) => ["有效", "匹配中"].includes(row.status);
+const startMatch = (row: any) => router.push({ path: "/crm/match-opportunity", query: { demandId: row.id } });
 
 const handlePurchaseDemandSaved = async () => {
   purchaseDemandPage.value = 1;
