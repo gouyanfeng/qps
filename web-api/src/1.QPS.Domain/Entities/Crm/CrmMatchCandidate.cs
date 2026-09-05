@@ -49,6 +49,26 @@ public class CrmMatchCandidate : BaseEntity
         DateTime? validUntil,
         int sortOrder)
     {
+        if (matchOpportunityId == Guid.Empty)
+        {
+            throw new InvalidOperationException("撮合候选所属撮合机会不能为空");
+        }
+
+        if (herbBaseSupplyId == Guid.Empty)
+        {
+            throw new InvalidOperationException("撮合候选供应信息不能为空");
+        }
+
+        if (herbBaseId == Guid.Empty)
+        {
+            throw new InvalidOperationException("撮合候选基地不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            throw new InvalidOperationException("撮合候选供应品类不能为空");
+        }
+
         return new CrmMatchCandidate
         {
             MatchOpportunityId = matchOpportunityId,

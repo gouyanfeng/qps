@@ -15,6 +15,26 @@ public class CrmBusinessActivity : BaseEntity
 
     public static CrmBusinessActivity Create(string entityType, Guid entityId, string actionType, string content)
     {
+        if (string.IsNullOrWhiteSpace(entityType))
+        {
+            throw new InvalidOperationException("业务活动对象类型不能为空");
+        }
+
+        if (entityId == Guid.Empty)
+        {
+            throw new InvalidOperationException("业务活动对象不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(actionType))
+        {
+            throw new InvalidOperationException("业务活动类型不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new InvalidOperationException("业务活动内容不能为空");
+        }
+
         return new CrmBusinessActivity
         {
             EntityType = Trim(entityType),

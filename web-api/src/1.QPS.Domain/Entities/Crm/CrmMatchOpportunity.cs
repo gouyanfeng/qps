@@ -41,6 +41,26 @@ public class CrmMatchOpportunity : BaseEntity
         string deliveryAddress,
         Guid? ownerUserId)
     {
+        if (demandItemId == Guid.Empty)
+        {
+            throw new InvalidOperationException("撮合机会需求明细不能为空");
+        }
+
+        if (demandId == Guid.Empty)
+        {
+            throw new InvalidOperationException("撮合机会需求不能为空");
+        }
+
+        if (vendorId == Guid.Empty)
+        {
+            throw new InvalidOperationException("撮合机会需求厂商不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(demandProductName))
+        {
+            throw new InvalidOperationException("撮合机会需求品类不能为空");
+        }
+
         return new CrmMatchOpportunity
         {
             DemandItemId = demandItemId,
