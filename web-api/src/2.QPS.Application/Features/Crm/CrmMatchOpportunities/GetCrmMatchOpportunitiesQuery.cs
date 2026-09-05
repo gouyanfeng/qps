@@ -55,7 +55,7 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext)
         var opportunities = BuildFilteredQuery(request);
         var totalCount = await opportunities.CountAsync(cancellationToken);
         var page = Math.Max(request.Page, 1);
-        var pageSize = Math.Max(request.PageSize, 1);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
         var list = await (
             from opportunity in opportunities
