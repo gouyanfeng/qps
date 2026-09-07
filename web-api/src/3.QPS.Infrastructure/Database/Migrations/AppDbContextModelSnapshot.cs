@@ -674,6 +674,11 @@ namespace QPS.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CloseResult")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.Property<string>("ClosedReason")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -755,7 +760,9 @@ namespace QPS.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DemandItemId", "Status");
+                    b.HasIndex("DemandItemId")
+                        .IsUnique()
+                        .HasFilter("[Status] IN (N'推进中', N'暂停') AND [IsDeleted] = 0");
 
                     b.HasIndex("OwnerUserId", "NextActionAt");
 

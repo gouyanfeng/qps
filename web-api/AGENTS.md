@@ -24,6 +24,14 @@ dotnet test "E:\Code\QPS\web-api\QPS.sln" --no-build --logger "console;verbosity
 - 字典和值、权限编码统一使用全大写加下划线；前端展示名称，接口和入库使用编码值。
 - 客户负责人使用 `OwnerUserId` 关联 `SystemUsers`；查询层负责补齐负责人名称。
 
+## 权限与业务规则边界
+
+- 功能权限由 Application 层的 `PermissionAttribute` 与 MediatR `PermissionBehaviour` 校验；权限特性标记在对应 Query、Command 类型上，禁止在 Controller 或普通 HTTP 中间件维护“路由 -> 权限码”映射。
+- 权限码统一定义为 `QPS.Application.Features.System.SystemPermissionCodes` 常量；常量名必须与权限码字符串完全一致，例如 `CRM_MATCH_OPPORTUNITY_VIEW = "CRM_MATCH_OPPORTUNITY_VIEW"`；禁止在 Query、Command、Handler 中重复写权限码字符串字面量。
+- `PermissionBehaviour` 只负责当前用户有效性和功能权限，不得查询或改变 CRM 业务状态，也不得承担数据范围、对象归属、关联引用或状态流转校验。
+- Handler 只负责用例编排、资源存在性、数据范围和跨聚合协作；采购需求有效性、撮合机会关闭状态、候选可追加性等业务状态，必须由 Handler 调用领域实体或领域规则处理。
+- 通用权限行为尚未迁移到的存量模块，暂时沿用模块权限助手；禁止在新的 Handler 中直接重复查询用户、角色和 `SystemRolePermissions`。迁移完成后删除对应模块权限助手和手工权限调用。
+
 ## 语义重命名
 
 - 重命名实体、数据库表/列、实体编码、属性编码、权限码或接口路径前，必须先在实施计划或变更说明中列出“语义重命名影响清单”，不能只依赖源码全局替换。

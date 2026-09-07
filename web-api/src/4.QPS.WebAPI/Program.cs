@@ -144,11 +144,15 @@ builder.Services.AddMediatR(cfg =>
     var assembly = System.Reflection.Assembly.Load("QPS.Application");
     cfg.RegisterServicesFromAssembly(assembly);
 
-    // 添加验证行为（执行顺序1）
+    // 添加权限行为（执行顺序1）
+    // 用于校验当前用户是否拥有请求声明的功能权限
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(PermissionBehaviour<,>));
+
+    // 添加验证行为（执行顺序2）
     // 用于验证请求参数的合法性
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
 
-    // 添加事务行为（执行顺序2）
+    // 添加事务行为（执行顺序3）
     // 用于确保操作的原子性，自动处理事务的提交和回滚
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehaviour<,>));
 });

@@ -30,6 +30,7 @@ public class DeleteCrmVendorDemandHandler : IRequestHandler<DeleteCrmVendorDeman
         var vendor = await _dbContext.CrmVendors.FirstOrDefaultAsync(item => item.Id == plan.VendorId, cancellationToken)
             ?? throw new BusinessException(404, "厂商不存在");
 
+        await CrmVendorDemands.EnsureNoUnclosedMatchOpportunitiesAsync(_dbContext, plan.Id, cancellationToken);
         plan.IsDeleted = true;
         await CrmVendorDemands.RefreshLatestAsync(_dbContext, vendor, cancellationToken, excludedPlanId: plan.Id);
         await _dbContext.SaveChangesAsync(cancellationToken);

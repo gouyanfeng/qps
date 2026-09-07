@@ -113,9 +113,13 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
 
     private async Task<List<CrmDashboardChartItemDto>> GetVendorPriorityDistributionAsync(CancellationToken cancellationToken)
     {
-        var counts = await _dbContext.CrmVendors
+        var priorityLevels = await _dbContext.CrmVendors
             .Where(vendor => !vendor.IsDeleted && !string.IsNullOrWhiteSpace(vendor.PriorityLevel))
-            .GroupBy(vendor => vendor.PriorityLevel)
+            .Select(vendor => vendor.PriorityLevel)
+            .ToListAsync(cancellationToken);
+
+        var counts = priorityLevels
+            .GroupBy(CrmVendorRules.NormalizePriority)
             .Select(group => new CrmDashboardChartItemDto
             {
                 Code = group.Key,
@@ -124,7 +128,7 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
             })
             .OrderByDescending(item => item.Value)
             .ThenBy(item => item.Name)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return counts;
     }

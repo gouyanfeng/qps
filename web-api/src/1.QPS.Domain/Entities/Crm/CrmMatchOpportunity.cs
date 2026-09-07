@@ -7,6 +7,9 @@ public class CrmMatchOpportunity : BaseEntity
     public const string InProgress = "推进中";
     public const string Paused = "暂停";
     public const string Closed = "已关闭";
+    public const string Matched = "撮合成功";
+    public const string NotMatched = "未成交";
+    public const string DemandCancelled = "需求取消";
 
     public Guid DemandItemId { get; private set; }
     public Guid DemandId { get; private set; }
@@ -22,6 +25,7 @@ public class CrmMatchOpportunity : BaseEntity
     public string Status { get; private set; } = InProgress;
     public string NextAction { get; private set; } = string.Empty;
     public DateTime? NextActionAt { get; private set; }
+    public string CloseResult { get; private set; } = string.Empty;
     public string ClosedReason { get; private set; } = string.Empty;
 
     private CrmMatchOpportunity()
@@ -39,7 +43,9 @@ public class CrmMatchOpportunity : BaseEntity
         string qualityRequirement,
         DateTime? expectedDeliveryAt,
         string deliveryAddress,
-        Guid? ownerUserId)
+        Guid? ownerUserId,
+        string nextAction,
+        DateTime? nextActionAt)
     {
         if (demandItemId == Guid.Empty)
         {
@@ -61,6 +67,8 @@ public class CrmMatchOpportunity : BaseEntity
             throw new InvalidOperationException("撮合机会需求品类不能为空");
         }
 
+        EnsureNextAction(nextAction, nextActionAt);
+
         return new CrmMatchOpportunity
         {
             DemandItemId = demandItemId,
@@ -74,13 +82,16 @@ public class CrmMatchOpportunity : BaseEntity
             ExpectedDeliveryAt = expectedDeliveryAt,
             DeliveryAddress = Trim(deliveryAddress),
             OwnerUserId = ownerUserId,
-            Status = InProgress
+            Status = InProgress,
+            NextAction = Trim(nextAction),
+            NextActionAt = nextActionAt
         };
     }
 
     public void UpdateNextAction(string nextAction, DateTime? nextActionAt)
     {
         EnsureCanUpdate();
+        EnsureNextAction(nextAction, nextActionAt);
         NextAction = Trim(nextAction);
         NextActionAt = nextActionAt;
     }
@@ -105,17 +116,23 @@ public class CrmMatchOpportunity : BaseEntity
         Status = InProgress;
     }
 
-    public void Close(string closedReason)
+    public void Close(string closeResult, string closedReason)
     {
         EnsureCanUpdate();
 
-        if (string.IsNullOrWhiteSpace(closedReason))
+        if (closeResult != Matched && closeResult != NotMatched && closeResult != DemandCancelled)
         {
-            throw new InvalidOperationException("关闭撮合机会必须填写关闭原因");
+            throw new InvalidOperationException("撮合机会关闭结果无效");
+        }
+
+        if (closeResult != Matched && string.IsNullOrWhiteSpace(closedReason))
+        {
+            throw new InvalidOperationException("未成交或需求取消必须填写关闭原因");
         }
 
         Status = Closed;
-        ClosedReason = closedReason.Trim();
+        CloseResult = closeResult;
+        ClosedReason = Trim(closedReason);
     }
 
     private void EnsureCanUpdate()
@@ -123,6 +140,14 @@ public class CrmMatchOpportunity : BaseEntity
         if (Status == Closed)
         {
             throw new InvalidOperationException("已关闭撮合机会不可编辑");
+        }
+    }
+
+    private static void EnsureNextAction(string nextAction, DateTime? nextActionAt)
+    {
+        if (string.IsNullOrWhiteSpace(nextAction) || !nextActionAt.HasValue)
+        {
+            throw new InvalidOperationException("下一步动作和计划时间必须同时填写");
         }
     }
 

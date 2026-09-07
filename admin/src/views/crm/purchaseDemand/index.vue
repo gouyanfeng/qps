@@ -14,14 +14,8 @@
         </el-form>
       </template>
 
-      <template #headerButtons>
-        <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
-          <el-button type="primary" :icon="Plus" @click="open()">新增采购需求</el-button>
-        </Permission>
-      </template>
-
       <template #table="{ tableData }">
-        <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1530px" border>
+        <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1450px" border>
           <el-table-column prop="demandNo" label="编号" min-width="180" />
           <el-table-column prop="demandName" label="需求名称" min-width="200" show-overflow-tooltip />
           <el-table-column label="采购明细" width="280">
@@ -53,37 +47,31 @@
             <template #default="{ row }"><el-tag size="small">{{ row.status }}</el-tag></template>
           </el-table-column>
           <el-table-column prop="sourceType" label="来源" width="100" />
-          <el-table-column label="操作" width="230" fixed="right">
+          <el-table-column label="撮合进度" width="230" show-overflow-tooltip>
             <template #default="{ row }">
-              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button link type="primary" @click="open(row)">编辑</el-button></Permission>
+              <el-button v-if="canStartMatch(row)" class="match-progress" link type="primary" @click="startMatch(row)">{{ matchProgressLabel(row) }}</el-button>
+              <span v-else>{{ matchProgressLabel(row) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="110" fixed="right">
+            <template #default="{ row }">
               <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canStartMatch(row)" link type="primary" @click="startMatch(row)">开始撮合</el-button></Permission>
-              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button v-if="row.status === '待确认'" link type="success" @click="changeStatus(row, '有效')">确认有效</el-button></Permission>
-              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" link type="danger" @click="close(row)">关闭</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
       </template>
     </QueryPage>
-
-    <CrmVendorDemandEditor v-model="editorVisible" :demand="editingDemand" @saved="reloadList" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus } from "@element-plus/icons-vue";
-import crmVendorDemandApi from "@/api/modules/crmVendorDemand";
-import CrmVendorDemandEditor from "@/views/crm/components/vendorDemand/Editor.vue";
 import Permission from "@/components/Permission/index.vue";
 import QueryPage from "@/components/QueryPage/index.vue";
 
-const queryPageRef = ref();
 const router = useRouter();
-const editorVisible = ref(false);
-const editingDemand = ref<any>(null);
-const statuses = ["待确认", "有效", "匹配中", "已完成", "已关闭"];
+const statuses = ["待确认", "有效", "已完成", "已关闭"];
 const searchForm = reactive({ keyword: "", status: "" });
 
 const maxDemandItemCount = 8;
@@ -99,35 +87,22 @@ const hiddenDemandItemCount = (items: any[]) => items.length - visibleDemandItem
 
 const getDemandItemsTooltip = (items: any[]) => `采购明细：${items.map(getDemandItemLabel).join("、")}`;
 
-const reloadList = () => queryPageRef.value?.getTableList();
-
 const handleReset = () => {
   searchForm.keyword = "";
   searchForm.status = "";
 };
 
-const open = (row?: any) => {
-  editingDemand.value = row || null;
-  editorVisible.value = true;
-};
-
-const canStartMatch = (row: any) => ["有效", "匹配中"].includes(row.status);
+const canStartMatch = (row: any) => row.status === "有效";
 const startMatch = (row: any) => router.push({ path: "/crm/match-opportunity", query: { demandId: row.id } });
-
-const changeStatus = async (row: any, status: string) => {
-  await crmVendorDemandApi.changeStatus(row.id, { status });
-  ElMessage.success("状态已更新");
-  reloadList();
-};
-
-const close = async (row: any) => {
-  const { value } = await ElMessageBox.prompt("关闭原因", "关闭采购需求", {
-    inputPattern: /.+/,
-    inputErrorMessage: "请填写关闭原因",
-  });
-  await crmVendorDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
-  ElMessage.success("采购需求已关闭");
-  reloadList();
+const matchProgressLabel = (row: any) => {
+  const progress = row.matchProgress;
+  if (!progress?.totalItemCount) return "暂无采购明细";
+  const segments = [`已发起 ${progress.startedItemCount}/${progress.totalItemCount}`];
+  if (progress.inProgressItemCount) segments.push(`${progress.inProgressItemCount} 撮合中`);
+  if (progress.pausedItemCount) segments.push(`${progress.pausedItemCount} 已暂停`);
+  if (progress.closedItemCount) segments.push(`${progress.closedItemCount} 已结束`);
+  if (progress.pendingItemCount) segments.push(`${progress.pendingItemCount} 待撮合`);
+  return segments.join(" · ");
 };
 
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
@@ -156,4 +131,6 @@ const formatDate = (value?: string | null) => value ? new Date(value).toLocaleSt
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.match-progress { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

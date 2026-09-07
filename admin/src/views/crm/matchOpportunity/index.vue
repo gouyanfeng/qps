@@ -8,7 +8,9 @@
       <CandidateSelector
         :demand-item-id="selectedDemandItem?.id || ''"
         :demand-item="selectedDemandItem"
+        :opportunity-id="appendCandidateOpportunityId"
         @created="handleOpportunityCreated"
+        @appended="handleCandidatesAppended"
       />
     </div>
 
@@ -60,12 +62,12 @@
     </QueryPage>
 
     <DemandItemPickerDialog v-model="demandItemPickerVisible" :demand="currentDemand" @confirm="handleDemandItemSelected" />
-    <DetailDrawer v-model="detailDrawerVisible" :opportunity-id="currentOpportunityId" @refresh-list="reloadList" />
+    <DetailDrawer v-model="detailDrawerVisible" :opportunity-id="currentOpportunityId" @refresh-list="reloadList" @append-candidates="openCandidateAppend" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from "vue";
+import { onActivated, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
 import Permission from "@/components/Permission/index.vue";
@@ -86,18 +88,20 @@ const detailDrawerVisible = ref(false);
 const currentDemand = ref<any>(null);
 const selectedDemandItem = ref<any>(null);
 const currentOpportunityId = ref("");
+const appendCandidateOpportunityId = ref("");
 const nextActionAtRange = ref<string[]>([]);
 const vendorOptions = ref<any[]>([]);
 const subjectOptions = ref<any[]>([]);
 const ownerOptions = ref<any[]>([]);
 const statuses = ["推进中", "暂停", "已关闭"];
 const searchForm = reactive<any>({ status: "", productName: "", vendorId: "", herbBaseSubjectId: "", ownerUserId: "", nextActionAtFrom: "", nextActionAtTo: "" });
+let loadingDemandId = "";
 
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
 const quantityLabel = (row: any) => row.demandQuantity === null || row.demandQuantity === undefined ? "-" : `${row.demandQuantity}${row.quantityUnit || ""}`;
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
-const statusType = (status?: string) => ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[status || ""] || "");
-const reloadList = () => queryPageRef.value?.getTableList();
+const statusType = (status?: string) => ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[status || ""] || undefined);
+const reloadList = async () => await queryPageRef.value?.getTableList();
 
 const loadVendorOptions = async (keyword = "") => {
   const result = await crmVendorApi.getVendorList({ page: 1, pageSize: 50, keyword });
@@ -114,30 +118,82 @@ const loadOwnerOptions = async () => {
 
 const loadDemandFromRoute = async () => {
   const demandId = String(route.query.demandId || "");
-  if (!demandId) return;
-  const result = await crmVendorDemandApi.getDetail(demandId);
-  currentDemand.value = result.data;
+  if (!demandId) {
+    demandItemPickerVisible.value = false;
+    currentDemand.value = null;
+    selectedDemandItem.value = null;
+    candidateSelectorVisible.value = false;
+    appendCandidateOpportunityId.value = "";
+    return;
+  }
+
+  if (loadingDemandId === demandId) return;
+  loadingDemandId = demandId;
+
+  demandItemPickerVisible.value = false;
   selectedDemandItem.value = null;
   candidateSelectorVisible.value = false;
-  demandItemPickerVisible.value = true;
+  appendCandidateOpportunityId.value = "";
+  try {
+    const result = await crmVendorDemandApi.getDetail(demandId);
+    if (String(route.query.demandId || "") !== demandId) return;
+    currentDemand.value = result.data?.list?.[0] || null;
+    demandItemPickerVisible.value = !!currentDemand.value;
+  } catch (error: any) {
+    if (error?.code !== "ERR_CANCELED") {
+      console.error("加载采购需求失败:", error);
+    }
+  } finally {
+    if (loadingDemandId === demandId) loadingDemandId = "";
+  }
 };
 
 const handleDemandItemSelected = (item: any) => {
+  if (item.matchOpportunityId && ["推进中", "暂停"].includes(item.matchOpportunityStatus)) {
+    openDetail(item.matchOpportunityId);
+    return;
+  }
+
   selectedDemandItem.value = item;
   candidateSelectorVisible.value = true;
 };
 const closeCandidateSelector = async () => {
   selectedDemandItem.value = null;
   candidateSelectorVisible.value = false;
+  if (appendCandidateOpportunityId.value) {
+    const opportunityId = appendCandidateOpportunityId.value;
+    appendCandidateOpportunityId.value = "";
+    openDetail(opportunityId);
+    return;
+  }
   await replaceWithoutDemandId();
 };
 const handleOpportunityCreated = async (opportunityId: string) => {
   selectedDemandItem.value = null;
   candidateSelectorVisible.value = false;
+  appendCandidateOpportunityId.value = "";
   currentDemand.value = null;
-  await replaceWithoutDemandId();
+  openDetail(opportunityId);
+  await reloadList();
+};
+const handleCandidatesAppended = async (opportunityId: string) => {
+  selectedDemandItem.value = null;
+  candidateSelectorVisible.value = false;
+  appendCandidateOpportunityId.value = "";
   await reloadList();
   openDetail(opportunityId);
+};
+const openCandidateAppend = async (opportunity: any) => {
+  const result = await crmVendorDemandApi.getDetail(opportunity.demandId);
+  const demand = result.data?.list?.[0] || null;
+  const demandItem = demand?.items?.find((item: any) => item.id === opportunity.demandItemId);
+  if (!demandItem) return;
+
+  currentDemand.value = demand;
+  selectedDemandItem.value = demandItem;
+  appendCandidateOpportunityId.value = opportunity.id;
+  detailDrawerVisible.value = false;
+  candidateSelectorVisible.value = true;
 };
 const openDetail = (opportunityId: string) => {
   currentOpportunityId.value = opportunityId;
@@ -156,7 +212,13 @@ watch(nextActionAtRange, range => {
   searchForm.nextActionAtFrom = range?.[0] || "";
   searchForm.nextActionAtTo = range?.[1] || "";
 });
+watch(detailDrawerVisible, visible => {
+  if (!visible && !candidateSelectorVisible.value && route.query.demandId) {
+    void replaceWithoutDemandId();
+  }
+});
 watch(() => route.query.demandId, () => { void loadDemandFromRoute(); }, { immediate: true });
+onActivated(() => { void loadDemandFromRoute(); });
 onMounted(() => { void loadVendorOptions(); void loadSubjectOptions(); void loadOwnerOptions(); });
 </script>
 

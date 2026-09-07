@@ -86,6 +86,7 @@ public class CrmVendorDemandDto
 
     public string Remark { get; set; } = string.Empty;
     public string ClosedReason { get; set; } = string.Empty;
+    public CrmVendorDemandMatchProgressDto MatchProgress { get; set; } = new();
     public List<CrmVendorDemandItemDto> Items { get; set; } = new();
 
     public DateTime CreatedAt { get; set; }
@@ -105,6 +106,20 @@ public class CrmVendorDemandItemDto
     public DateTime? ExpectedDeliveryAt { get; set; }
     public string Remark { get; set; } = string.Empty;
     public int SortOrder { get; set; }
+    public Guid? MatchOpportunityId { get; set; }
+    public string MatchOpportunityStatus { get; set; } = string.Empty;
+    public int MatchCandidateCount { get; set; }
+    public string MatchDisplayStatus { get; set; } = "待撮合";
+}
+
+public class CrmVendorDemandMatchProgressDto
+{
+    public int TotalItemCount { get; set; }
+    public int StartedItemCount { get; set; }
+    public int PendingItemCount { get; set; }
+    public int InProgressItemCount { get; set; }
+    public int PausedItemCount { get; set; }
+    public int ClosedItemCount { get; set; }
 }
 
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QPS.Application.Contracts.Crm;
 using QPS.Application.Contracts.Crm.CrmVendors;
 using QPS.Application.Interfaces;
+using QPS.Domain.Entities.Crm;
 using QPS.Domain.Exceptions;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
@@ -19,7 +20,13 @@ public class ChangeCrmVendorDemandStatusHandler : IRequestHandler<ChangeCrmVendo
     public async Task<bool> Handle(ChangeCrmVendorDemandStatusCommand request, CancellationToken cancellationToken)
     {
         var demand = await _dbContext.CrmVendorDemands.Include(item => item.Items).FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken) ?? throw new BusinessException(404, "采购需求不存在");
-        demand.ChangeStatus(request.Request.Status.Trim(), request.Request.ClosedReason);
+        var targetStatus = request.Request.Status.Trim();
+        if (targetStatus is CrmVendorDemand.Completed or CrmVendorDemand.Closed)
+        {
+            await CrmVendorDemands.EnsureNoUnclosedMatchOpportunitiesAsync(_dbContext, demand.Id, cancellationToken);
+        }
+
+        demand.ChangeStatus(targetStatus, request.Request.ClosedReason);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }

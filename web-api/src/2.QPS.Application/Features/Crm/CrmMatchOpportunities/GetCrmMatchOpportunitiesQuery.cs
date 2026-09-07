@@ -1,13 +1,17 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Application.Attributes;
 using QPS.Application.Extensions;
+using QPS.Application.Features.System;
 using QPS.Application.Interfaces;
 using QPS.Domain.Entities.Crm;
 
 namespace QPS.Application.Features.Crm.CrmMatchOpportunities;
 
+[Permission(SystemPermissionCodes.CRM_MATCH_OPPORTUNITY_VIEW)]
 public class GetCrmMatchOpportunitiesQuery : PaginationRequest, IRequest<PaginationResponse<CrmMatchOpportunityListDto>>
 {
+    public Guid? DemandItemId { get; set; }
     public string? Status { get; set; }
     public string? ProductName { get; set; }
     public Guid? VendorId { get; set; }
@@ -37,13 +41,14 @@ public class CrmMatchOpportunityListDto
     public string Status { get; set; } = string.Empty;
     public string NextAction { get; set; } = string.Empty;
     public DateTime? NextActionAt { get; set; }
+    public string CloseResult { get; set; } = string.Empty;
     public string ClosedReason { get; set; } = string.Empty;
     public int CandidateCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
-public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext, ICurrentUserService currentUserService)
+public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext)
     : IRequestHandler<GetCrmMatchOpportunitiesQuery, PaginationResponse<CrmMatchOpportunityListDto>>
 {
     /// <summary>
@@ -53,7 +58,6 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext, ICurrentUserS
         GetCrmMatchOpportunitiesQuery request,
         CancellationToken cancellationToken)
     {
-        await CrmMatchOpportunityAuthorization.EnsureViewAsync(dbContext, currentUserService, cancellationToken);
         var opportunities = BuildFilteredQuery(request);
         var totalCount = await opportunities.CountAsync(cancellationToken);
         var page = Math.Max(request.Page, 1);
@@ -90,6 +94,7 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext, ICurrentUserS
                 Status = opportunity.Status,
                 NextAction = opportunity.NextAction,
                 NextActionAt = opportunity.NextActionAt,
+                CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,
                 CandidateCount = dbContext.CrmMatchCandidates.Count(candidate => candidate.MatchOpportunityId == opportunity.Id),
                 CreatedAt = opportunity.CreatedAt,
@@ -105,6 +110,11 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext, ICurrentUserS
     private IQueryable<CrmMatchOpportunity> BuildFilteredQuery(GetCrmMatchOpportunitiesQuery request)
     {
         var opportunities = dbContext.CrmMatchOpportunities.AsNoTracking().AsQueryable();
+
+        if (request.DemandItemId.HasValue)
+        {
+            opportunities = opportunities.Where(item => item.DemandItemId == request.DemandItemId.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Status))
         {

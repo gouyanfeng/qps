@@ -9,9 +9,10 @@
             <div class="head-meta"><span>需求厂商 {{ currentOpportunity.vendorName || "-" }}</span><span>跟进人 {{ currentOpportunity.ownerUserName || "-" }}</span></div>
           </div>
           <div class="head-actions">
+            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canMaintainCandidates" @click="emit('append-candidates', currentOpportunity)">追加候选</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canUpdateNextAction" @click="openNextActionDialog">更新下一步</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status === '推进中'" type="warning" @click="updateStatus('暂停')">暂停</el-button></Permission>
-            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status === '暂停'" type="success" @click="updateStatus('推进中')">恢复</el-button></Permission>
+            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status === '暂停'" type="success" @click="resumeOpportunity">恢复</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status !== '已关闭'" type="danger" @click="closeOpportunity">关闭</el-button></Permission>
             <el-button :icon="Refresh" @click="refreshDetail">刷新</el-button>
             <el-button :icon="Close" circle title="关闭详情" @click="handleVisibleChange(false)" />
@@ -29,6 +30,7 @@
             <el-descriptions-item label="收货地址">{{ currentOpportunity.deliveryAddress || "-" }}</el-descriptions-item>
             <el-descriptions-item label="下一步">{{ currentOpportunity.nextAction || "-" }}</el-descriptions-item>
             <el-descriptions-item label="下一步时间">{{ formatDate(currentOpportunity.nextActionAt) }}</el-descriptions-item>
+            <el-descriptions-item label="关闭结果">{{ currentOpportunity.closeResult || "-" }}</el-descriptions-item>
             <el-descriptions-item label="关闭原因">{{ currentOpportunity.closedReason || "-" }}</el-descriptions-item>
           </el-descriptions>
         </section>
@@ -42,12 +44,23 @@
             <el-table-column prop="specification" label="规格" min-width="120" show-overflow-tooltip />
             <el-table-column prop="qualityRequirement" label="质量" min-width="120" show-overflow-tooltip />
             <el-table-column label="预期价格" width="130"><template #default="{ row }">{{ priceLabel(row) }}</template></el-table-column>
+            <el-table-column label="当前状态" min-width="150">
+              <template #default="{ row }">
+                <el-popover v-if="row.currentState === '条件已变更'" width="320" trigger="hover">
+                  <template #reference><el-tag size="small" type="warning">条件已变更</el-tag></template>
+                  <div>变化字段：{{ row.currentChangedFields?.join("、") }}</div>
+                  <div v-if="row.currentSupply" class="current-supply">当前：{{ quantityLabelOf(row.currentSupply) }}，{{ row.currentSupply.specification || "无规格" }}，{{ priceLabel(row.currentSupply) }}</div>
+                </el-popover>
+                <el-tag v-else size="small" :type="row.currentState === '当前正常' ? 'success' : 'danger'">{{ row.currentState || "已失效" }}</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag size="small" :type="candidateStatusType(row.status)">{{ row.status || "-" }}</el-tag></template></el-table-column>
             <el-table-column prop="eliminationReason" label="淘汰原因" min-width="150" show-overflow-tooltip />
             <el-table-column label="操作" width="130" fixed="right">
               <template #default="{ row }">
                 <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE">
                   <el-button v-if="canMaintainCandidates && row.status !== '保留'" link type="success" @click="updateCandidateStatus(row, '保留')">保留</el-button>
+                  <el-button v-if="canMaintainCandidates && row.status !== '中选'" link type="primary" :disabled="row.currentState === '已失效'" @click="updateCandidateStatus(row, '中选')">中选</el-button>
                   <el-button v-if="canMaintainCandidates && row.status !== '淘汰'" link type="danger" @click="eliminateCandidate(row)">淘汰</el-button>
                 </Permission>
               </template>
@@ -73,9 +86,24 @@
   <el-dialog v-model="nextActionDialogVisible" title="更新下一步" width="520px">
     <el-form :model="nextActionForm" label-width="96px">
       <el-form-item label="下一步" required><el-input v-model="nextActionForm.nextAction" type="textarea" :rows="3" maxlength="500" show-word-limit /></el-form-item>
-      <el-form-item label="计划时间"><el-date-picker v-model="nextActionForm.nextActionAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" clearable /></el-form-item>
+      <el-form-item label="计划时间" required><el-date-picker v-model="nextActionForm.nextActionAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" /></el-form-item>
     </el-form>
     <template #footer><el-button @click="nextActionDialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveNextAction">保存</el-button></template>
+  </el-dialog>
+
+  <el-dialog v-model="closeDialogVisible" title="关闭撮合机会" width="460px">
+    <el-form :model="closeForm" label-width="96px">
+      <el-form-item label="关闭结果" required>
+        <el-select v-model="closeForm.closeResult" placeholder="请选择关闭结果" style="width: 100%">
+          <el-option label="撮合成功" value="撮合成功" />
+          <el-option label="未成交" value="未成交" />
+          <el-option label="需求取消" value="需求取消" />
+        </el-select>
+      </el-form-item>
+      <el-form-item v-if="closeForm.closeResult !== '撮合成功'" label="关闭原因" required><el-input v-model="closeForm.closedReason" type="textarea" :rows="3" maxlength="500" show-word-limit /></el-form-item>
+      <el-alert v-else title="撮合成功需要至少一条当前有效的中选候选。" type="info" :closable="false" />
+    </el-form>
+    <template #footer><el-button @click="closeDialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveCloseOpportunity">确认关闭</el-button></template>
   </el-dialog>
 </template>
 
@@ -87,12 +115,15 @@ import http from "@/api";
 import Permission from "@/components/Permission/index.vue";
 
 const props = defineProps<{ modelValue: boolean; opportunityId?: string }>();
-const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": [] }>();
+const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": []; "append-candidates": [opportunity: any] }>();
 const currentOpportunity = ref<any>(null);
 const loading = ref(false);
 const saving = ref(false);
 const nextActionDialogVisible = ref(false);
 const nextActionForm = reactive({ nextAction: "", nextActionAt: "" });
+const resumePending = ref(false);
+const closeDialogVisible = ref(false);
+const closeForm = reactive({ closeResult: "", closedReason: "" });
 const canMaintainCandidates = computed(() => currentOpportunity.value?.status === "推进中");
 const canUpdateNextAction = computed(() => currentOpportunity.value?.status !== "已关闭");
 const quantityLabel = computed(() => quantityLabelOf(currentOpportunity.value));
@@ -103,7 +134,7 @@ const quantityLabelOf = (row?: any) => row?.demandQuantity === null || row?.dema
   : `${row.demandQuantity}${row.quantityUnit || ""}`;
 const priceLabel = (row: any) => row.expectedPrice === null || row.expectedPrice === undefined ? "-" : `${row.expectedPrice}${row.priceUnit || ""}`;
 const statusType = (status?: string) => ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[status || ""] || "");
-const candidateStatusType = (status?: string) => ({ "保留": "success", "淘汰": "danger", "待评估": "warning" }[status || ""] || "");
+const candidateStatusType = (status?: string) => ({ "保留": "success", "中选": "primary", "淘汰": "danger", "待评估": "warning" }[status || ""] || "");
 
 const handleVisibleChange = (value: boolean) => emit("update:modelValue", value);
 const loadDetail = async () => {
@@ -129,7 +160,7 @@ const updateCandidateStatus = async (candidate: any, status: string, elimination
   saving.value = true;
   try {
     await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/candidates/${candidate.id}/status`, { status, eliminationReason });
-    ElMessage.success(status === "保留" ? "候选已保留" : "候选已淘汰");
+    ElMessage.success(status === "保留" ? "候选已保留" : status === "中选" ? "候选已中选" : "候选已淘汰");
     await refreshAfterOperation();
   } finally {
     saving.value = false;
@@ -144,18 +175,24 @@ const eliminateCandidate = async (candidate: any) => {
   }
 };
 const openNextActionDialog = () => {
+  resumePending.value = false;
   Object.assign(nextActionForm, { nextAction: currentOpportunity.value?.nextAction || "", nextActionAt: toDateTimeInputValue(currentOpportunity.value?.nextActionAt) });
   nextActionDialogVisible.value = true;
 };
 const saveNextAction = async () => {
-  if (!props.opportunityId || !nextActionForm.nextAction.trim()) {
-    ElMessage.warning("请填写下一步");
+  if (!props.opportunityId || !nextActionForm.nextAction.trim() || !nextActionForm.nextActionAt) {
+    ElMessage.warning("请填写下一步和计划时间");
     return;
   }
   saving.value = true;
   try {
-    await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/next-action`, { nextAction: nextActionForm.nextAction.trim(), nextActionAt: nextActionForm.nextActionAt || null });
-    ElMessage.success("下一步已更新");
+    if (resumePending.value) {
+      await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/status`, { status: "推进中", nextAction: nextActionForm.nextAction.trim(), nextActionAt: nextActionForm.nextActionAt });
+      ElMessage.success("撮合机会已恢复");
+    } else {
+      await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/next-action`, { nextAction: nextActionForm.nextAction.trim(), nextActionAt: nextActionForm.nextActionAt });
+      ElMessage.success("下一步已更新");
+    }
     nextActionDialogVisible.value = false;
     await refreshAfterOperation();
   } finally {
@@ -173,20 +210,40 @@ const updateStatus = async (status: string) => {
     saving.value = false;
   }
 };
+const resumeOpportunity = () => {
+  if (new Date(currentOpportunity.value?.nextActionAt || 0).getTime() < Date.now()) {
+    resumePending.value = true;
+    Object.assign(nextActionForm, { nextAction: currentOpportunity.value?.nextAction || "", nextActionAt: "" });
+    nextActionDialogVisible.value = true;
+    return;
+  }
+  void updateStatus("推进中");
+};
 const closeOpportunity = async () => {
-  if (!props.opportunityId) return;
+  Object.assign(closeForm, { closeResult: "", closedReason: "" });
+  closeDialogVisible.value = true;
+};
+const saveCloseOpportunity = async () => {
+  if (!props.opportunityId || !closeForm.closeResult) {
+    ElMessage.warning("请选择关闭结果");
+    return;
+  }
+  if (closeForm.closeResult !== "撮合成功" && !closeForm.closedReason.trim()) {
+    ElMessage.warning("请填写关闭原因");
+    return;
+  }
+  saving.value = true;
   try {
-    const { value } = await ElMessageBox.prompt("关闭原因", "关闭撮合机会", { inputPattern: /\S+/, inputErrorMessage: "请填写关闭原因" });
-    saving.value = true;
-    try {
-      await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/status`, { status: "已关闭", closedReason: value });
-      ElMessage.success("撮合机会已关闭");
-      await refreshAfterOperation();
-    } finally {
-      saving.value = false;
-    }
-  } catch (error: any) {
-    if (error !== "cancel" && error !== "close") throw error;
+    await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/status`, {
+      status: "已关闭",
+      closeResult: closeForm.closeResult,
+      closedReason: closeForm.closedReason.trim()
+    });
+    ElMessage.success("撮合机会已关闭");
+    closeDialogVisible.value = false;
+    await refreshAfterOperation();
+  } finally {
+    saving.value = false;
   }
 };
 const toDateTimeInputValue = (value?: string | null) => value ? value.replace(" ", "T").slice(0, 19) : "";
@@ -208,4 +265,5 @@ watch(() => [props.modelValue, props.opportunityId], ([visible, opportunityId]) 
 .section-title h3 { margin: 0 0 12px; font-size: 16px; }
 .activity-timeline { margin: 0; padding-left: 8px; }
 .activity-timeline small { display: block; margin-top: 4px; color: var(--el-text-color-secondary); }
+.current-supply { margin-top: 8px; color: var(--el-text-color-secondary); }
 </style>

@@ -10,6 +10,12 @@ public static class CrmVendorRules
 
     public static string NormalizePriority(string? priorityLevel)
     {
-        return priorityLevel is "高" or "中" or "低" ? priorityLevel : "中";
+        return priorityLevel?.Trim() switch
+        {
+            "高" or "High" => "高",
+            "中" or "Medium" => "中",
+            "低" or "Low" => "低",
+            _ => "中"
+        };
     }
 }

@@ -177,8 +177,11 @@ public class AppDbContext : DbContext, IDbContext
             entity.Property(opportunity => opportunity.DeliveryAddress).HasMaxLength(500);
             entity.Property(opportunity => opportunity.Status).HasMaxLength(32);
             entity.Property(opportunity => opportunity.NextAction).HasMaxLength(500);
+            entity.Property(opportunity => opportunity.CloseResult).HasMaxLength(32);
             entity.Property(opportunity => opportunity.ClosedReason).HasMaxLength(500);
-            entity.HasIndex(opportunity => new { opportunity.DemandItemId, opportunity.Status });
+            entity.HasIndex(opportunity => opportunity.DemandItemId)
+                .IsUnique()
+                .HasFilter("[Status] IN (N'推进中', N'暂停') AND [IsDeleted] = 0");
             entity.HasIndex(opportunity => new { opportunity.OwnerUserId, opportunity.NextActionAt });
             entity.HasOne<CrmVendorDemandItem>()
                 .WithMany()

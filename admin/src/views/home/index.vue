@@ -61,6 +61,25 @@ const vendorFollowTrend = ref<CrmDashboardTrendItem[]>([]);
 const newPurchaseDemandTrend = ref<CrmDashboardNewPurchaseDemandTrendItem[]>([]);
 const vendorPurchaseProductDistribution = ref<CrmDashboardChartItem[]>([]);
 
+const normalizeVendorPriority = (items: CrmDashboardChartItem[]) => {
+  const labelMap: Record<string, string> = {
+    High: "高",
+    Medium: "中",
+    Low: "低",
+    high: "高",
+    medium: "中",
+    low: "低",
+  };
+  const counts = new Map<string, number>();
+  items.forEach(item => {
+    const name = labelMap[item.name] || item.name || labelMap[item.code] || item.code || "中";
+    counts.set(name, (counts.get(name) || 0) + item.value);
+  });
+  return ["高", "中", "低"]
+    .filter(name => counts.has(name))
+    .map(name => ({ code: name, name, value: counts.get(name) || 0 }));
+};
+
 const loadDashboard = async () => {
   loading.value = true;
   errorMessage.value = "";
@@ -79,7 +98,7 @@ const loadDashboard = async () => {
     supplyProductDistribution.value = supplyProductResult.data;
     followTrend.value = followTrendResult.data;
     newBaseTrend.value = newBaseTrendResult.data;
-    vendorPriorityDistribution.value = vendorPriorityResult.data;
+    vendorPriorityDistribution.value = normalizeVendorPriority(vendorPriorityResult.data);
     vendorFollowTrend.value = vendorFollowTrendResult.data;
     newPurchaseDemandTrend.value = newPurchaseDemandTrendResult.data;
     vendorPurchaseProductDistribution.value = vendorPurchaseProductResult.data;

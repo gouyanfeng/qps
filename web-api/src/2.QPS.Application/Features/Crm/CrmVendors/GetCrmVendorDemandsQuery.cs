@@ -4,6 +4,7 @@ using QPS.Application.Contracts.Crm;
 using QPS.Application.Contracts.Crm.CrmVendors;
 using QPS.Application.Extensions;
 using QPS.Application.Interfaces;
+using QPS.Domain.Entities.Crm;
 using QPS.Domain.Exceptions;
 
 namespace QPS.Application.Features.Crm.CrmVendors;
@@ -112,11 +113,94 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
             .Where(item => planIds.Contains(item.VendorDemandId))
             .OrderBy(item => item.SortOrder)
             .ToListAsync(cancellationToken);
+
+        var itemIds = items.Select(item => item.Id).ToList();
+        var latestOpportunities = await _dbContext.CrmMatchOpportunities
+            .AsNoTracking()
+            .Where(opportunity => itemIds.Contains(opportunity.DemandItemId))
+            .OrderByDescending(opportunity => opportunity.CreatedAt)
+            .Select(opportunity => new MatchOpportunitySummary
+            {
+                Id = opportunity.Id,
+                DemandItemId = opportunity.DemandItemId,
+                Status = opportunity.Status
+            })
+            .ToListAsync(cancellationToken);
+        var latestOpportunityByItemId = latestOpportunities
+            .GroupBy(opportunity => opportunity.DemandItemId)
+            .ToDictionary(group => group.Key, group => group.First());
+        var latestOpportunityIds = latestOpportunityByItemId.Values.Select(opportunity => opportunity.Id).ToList();
+        var candidateCounts = await _dbContext.CrmMatchCandidates
+            .Where(candidate => latestOpportunityIds.Contains(candidate.MatchOpportunityId))
+            .GroupBy(candidate => candidate.MatchOpportunityId)
+            .Select(group => new { OpportunityId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.OpportunityId, item => item.Count, cancellationToken);
+
         foreach (var plan in plans)
         {
-            plan.Items = items.Where(item => item.VendorDemandId == plan.Id).Select(item => new CrmVendorDemandItemDto { Id = item.Id, ProductName = item.ProductName, Quantity = item.Quantity, QuantityUnit = item.QuantityUnit, Specification = item.Specification, QualityRequirement = item.QualityRequirement, TargetPrice = item.TargetPrice, PriceUnit = item.PriceUnit, ExpectedDeliveryAt = item.ExpectedDeliveryAt, Remark = item.Remark, SortOrder = item.SortOrder }).ToList();
+            plan.Items = items
+                .Where(item => item.VendorDemandId == plan.Id)
+                .Select(item => ToItemDto(item, latestOpportunityByItemId, candidateCounts))
+                .ToList();
+            plan.MatchProgress = BuildMatchProgress(plan.Items);
         }
 
         return new PaginationResponse<CrmVendorDemandDto>(plans, totalCount, page, pageSize);
+    }
+
+    private static CrmVendorDemandItemDto ToItemDto(
+        CrmVendorDemandItem item,
+        IReadOnlyDictionary<Guid, MatchOpportunitySummary> latestOpportunityByItemId,
+        IReadOnlyDictionary<Guid, int> candidateCounts)
+    {
+        latestOpportunityByItemId.TryGetValue(item.Id, out var latestOpportunity);
+        var status = latestOpportunity?.Status ?? string.Empty;
+        return new CrmVendorDemandItemDto
+        {
+            Id = item.Id,
+            ProductName = item.ProductName,
+            Quantity = item.Quantity,
+            QuantityUnit = item.QuantityUnit,
+            Specification = item.Specification,
+            QualityRequirement = item.QualityRequirement,
+            TargetPrice = item.TargetPrice,
+            PriceUnit = item.PriceUnit,
+            ExpectedDeliveryAt = item.ExpectedDeliveryAt,
+            Remark = item.Remark,
+            SortOrder = item.SortOrder,
+            MatchOpportunityId = latestOpportunity?.Id,
+            MatchOpportunityStatus = status,
+            MatchCandidateCount = latestOpportunity == null || !candidateCounts.TryGetValue(latestOpportunity.Id, out var count) ? 0 : count,
+            MatchDisplayStatus = GetDisplayStatus(status)
+        };
+    }
+
+    private static CrmVendorDemandMatchProgressDto BuildMatchProgress(IEnumerable<CrmVendorDemandItemDto> items)
+    {
+        var values = items.ToList();
+        return new CrmVendorDemandMatchProgressDto
+        {
+            TotalItemCount = values.Count,
+            StartedItemCount = values.Count(item => item.MatchOpportunityId.HasValue),
+            PendingItemCount = values.Count(item => item.MatchDisplayStatus == "待撮合"),
+            InProgressItemCount = values.Count(item => item.MatchDisplayStatus == "撮合中"),
+            PausedItemCount = values.Count(item => item.MatchDisplayStatus == "已暂停"),
+            ClosedItemCount = values.Count(item => item.MatchDisplayStatus == "已结束")
+        };
+    }
+
+    private static string GetDisplayStatus(string status) => status switch
+    {
+        CrmMatchOpportunity.InProgress => "撮合中",
+        CrmMatchOpportunity.Paused => "已暂停",
+        CrmMatchOpportunity.Closed => "已结束",
+        _ => "待撮合"
+    };
+
+    private sealed class MatchOpportunitySummary
+    {
+        public Guid Id { get; init; }
+        public Guid DemandItemId { get; init; }
+        public string Status { get; init; } = string.Empty;
     }
 }

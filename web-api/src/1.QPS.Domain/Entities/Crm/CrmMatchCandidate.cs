@@ -6,6 +6,7 @@ public class CrmMatchCandidate : BaseEntity
 {
     public const string PendingEvaluation = "待评估";
     public const string Kept = "保留";
+    public const string Selected = "中选";
     public const string Eliminated = "淘汰";
 
     public Guid MatchOpportunityId { get; private set; }
@@ -94,6 +95,12 @@ public class CrmMatchCandidate : BaseEntity
     public void Keep()
     {
         Status = Kept;
+        EliminationReason = string.Empty;
+    }
+
+    public void Select()
+    {
+        Status = Selected;
         EliminationReason = string.Empty;
     }
 
