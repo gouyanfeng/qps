@@ -176,7 +176,9 @@ public class AppDbContext : DbContext, IDbContext
             entity.Property(opportunity => opportunity.QualityRequirement).HasMaxLength(500);
             entity.Property(opportunity => opportunity.DeliveryAddress).HasMaxLength(500);
             entity.Property(opportunity => opportunity.Status).HasMaxLength(32);
+            entity.Property(opportunity => opportunity.Stage).HasMaxLength(32);
             entity.Property(opportunity => opportunity.NextAction).HasMaxLength(500);
+            entity.Property(opportunity => opportunity.NextActionRemark).HasMaxLength(500);
             entity.Property(opportunity => opportunity.CloseResult).HasMaxLength(32);
             entity.Property(opportunity => opportunity.ClosedReason).HasMaxLength(500);
             entity.HasIndex(opportunity => opportunity.DemandItemId)

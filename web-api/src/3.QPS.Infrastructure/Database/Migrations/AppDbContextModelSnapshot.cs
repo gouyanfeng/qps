@@ -725,6 +725,11 @@ namespace QPS.Infrastructure.Database.Migrations
                     b.Property<DateTime?>("NextActionAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("NextActionRemark")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<Guid?>("OwnerUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -742,6 +747,11 @@ namespace QPS.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("Status")
                         .IsRequired()

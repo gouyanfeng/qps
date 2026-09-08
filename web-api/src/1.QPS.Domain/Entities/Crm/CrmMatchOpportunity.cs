@@ -23,7 +23,9 @@ public class CrmMatchOpportunity : BaseEntity
     public string DeliveryAddress { get; private set; } = string.Empty;
     public Guid? OwnerUserId { get; private set; }
     public string Status { get; private set; } = InProgress;
+    public string Stage { get; private set; } = CrmMatchOpportunityStage.MatchingVerification;
     public string NextAction { get; private set; } = string.Empty;
+    public string NextActionRemark { get; private set; } = string.Empty;
     public DateTime? NextActionAt { get; private set; }
     public string CloseResult { get; private set; } = string.Empty;
     public string ClosedReason { get; private set; } = string.Empty;
@@ -45,7 +47,8 @@ public class CrmMatchOpportunity : BaseEntity
         string deliveryAddress,
         Guid? ownerUserId,
         string nextAction,
-        DateTime? nextActionAt)
+        DateTime? nextActionAt,
+        string nextActionRemark = "")
     {
         if (demandItemId == Guid.Empty)
         {
@@ -83,9 +86,28 @@ public class CrmMatchOpportunity : BaseEntity
             DeliveryAddress = Trim(deliveryAddress),
             OwnerUserId = ownerUserId,
             Status = InProgress,
+            Stage = CrmMatchOpportunityStage.MatchingVerification,
             NextAction = Trim(nextAction),
+            NextActionRemark = Trim(nextActionRemark),
             NextActionAt = nextActionAt
         };
+    }
+
+    public void Advance(string stage, string nextAction, string nextActionRemark, DateTime? nextActionAt)
+    {
+        EnsureCanUpdate();
+
+        if (!CrmMatchOpportunityStage.IsValid(stage) || !CrmMatchOpportunityStage.CanTransit(Stage, stage))
+        {
+            throw new InvalidOperationException("撮合阶段仅允许保持当前阶段或相邻跳转");
+        }
+
+        CrmMatchOpportunityNextAction.Validate(nextAction, nextActionRemark);
+        EnsureNextAction(nextAction, nextActionAt);
+        Stage = Trim(stage);
+        NextAction = Trim(nextAction);
+        NextActionRemark = Trim(nextActionRemark);
+        NextActionAt = nextActionAt;
     }
 
     public void UpdateNextAction(string nextAction, DateTime? nextActionAt)
