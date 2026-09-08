@@ -260,6 +260,21 @@ test("人工供需撮合机会：真实页面创建、推进和完整回查", as
   await expectVisibleText(opportunityDrawer, "加入候选");
   await shot(page, "crm-05-match-opportunity", "05-opportunity-created");
 
+  await openMenu(page, "我的待办", /#\/crm\/follow-tasks$/);
+  await resetFilters(page);
+  await chooseSelectByLabel(page, page, "对象类型", "撮合机会");
+  await page.getByRole("button", { name: "搜索", exact: true }).click();
+  await waitIdle(page);
+  const opportunityTaskRow = tableBody(page).locator("tbody tr").filter({ hasText: data.vendorName }).first();
+  await expect(opportunityTaskRow).toContainText(data.productName);
+  await expect(opportunityTaskRow).toContainText(data.nextAction);
+  await expect(opportunityTaskRow.getByRole("button", { name: "记录沟通" })).toHaveCount(0);
+  await opportunityTaskRow.getByRole("button", { name: "推进" }).click();
+  await expect(page).toHaveURL(/#\/crm\/match-opportunity\?detailId=/);
+  await expect(opportunityDrawer.getByText("撮合机会详情", { exact: true })).toBeVisible();
+  await expect(opportunityDrawer.getByRole("button", { name: "推进机会" })).toBeVisible();
+  await shot(page, "crm-05-match-opportunity", "05-my-todo-opportunity");
+
   await opportunityCandidateRows.nth(0).getByRole("button", { name: "中选" }).click();
   await expectToast(page, "候选已中选");
   await waitIdle(page);

@@ -5,6 +5,7 @@ public static class CrmCodes
     public const string HerbBaseEntityType = "CRM_HERB_BASE";
     public const string HerbBaseSubjectEntityType = "CRM_HERB_BASE_SUBJECT";
     public const string VendorEntityType = "CRM_VENDOR";
+    public const string MatchOpportunityEntityType = "CRM_MATCH_OPPORTUNITY";
     public const string HerbProductDictionaryCode = "CRM_HERB_PRODUCT";
 
     public static class Status

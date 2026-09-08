@@ -20,7 +20,7 @@
       "path": "/crm/follow-tasks",
       "name": "followTask",
       "component": "/crm/followTask/index",
-      "meta": { "icon": "List", "title": "跟进任务", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_FOLLOW_TASK" }
+      "meta": { "icon": "List", "title": "我的待办", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_FOLLOW_TASK" }
     },
     {
       "path": "/crm/herb-base",

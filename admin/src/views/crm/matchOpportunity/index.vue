@@ -180,7 +180,7 @@ const closeCandidateSelector = async () => {
     openDetail(opportunityId);
     return;
   }
-  await replaceWithoutDemandId();
+  await replaceWithoutRouteParams();
 };
 const handleOpportunityCreated = async (opportunityId: string) => {
   selectedDemandItem.value = null;
@@ -217,8 +217,8 @@ const openProgress = (opportunity: any) => {
   progressOpportunity.value = opportunity;
   progressDialogVisible.value = true;
 };
-const replaceWithoutDemandId = () => {
-  const { demandId: _demandId, ...query } = route.query;
+const replaceWithoutRouteParams = () => {
+  const { demandId: _demandId, detailId: _detailId, ...query } = route.query;
   return router.replace({ path: route.path, query });
 };
 const handleReset = () => {
@@ -231,10 +231,13 @@ watch(nextActionAtRange, range => {
   searchForm.nextActionAtTo = range?.[1] || "";
 });
 watch(detailDrawerVisible, visible => {
-  if (!visible && !candidateSelectorVisible.value && route.query.demandId) {
-    void replaceWithoutDemandId();
+  if (!visible && !candidateSelectorVisible.value && (route.query.demandId || route.query.detailId)) {
+    void replaceWithoutRouteParams();
   }
 });
+watch(() => route.query.detailId, detailId => {
+  if (typeof detailId === "string" && detailId) openDetail(detailId);
+}, { immediate: true });
 watch(() => route.query.demandId, () => { void loadDemandFromRoute(); }, { immediate: true });
 onActivated(() => { void loadDemandFromRoute(); });
 onMounted(() => { void loadVendorOptions(); void loadSubjectOptions(); void loadOwnerOptions(); });

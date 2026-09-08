@@ -5,10 +5,12 @@ public class CrmFollowTaskDto
     public Guid EntityId { get; set; }
     public string EntityType { get; set; } = string.Empty;
     public string EntityName { get; set; } = string.Empty;
+    public string EntitySubtitle { get; set; } = string.Empty;
     public string ContactName { get; set; } = string.Empty;
     public string ContactPhone { get; set; } = string.Empty;
     public DateTime? LastFollowAt { get; set; }
     public string LastFollowResult { get; set; } = string.Empty;
+    public string TaskContent { get; set; } = string.Empty;
     public DateTime? NextFollowAt { get; set; }
     public string Category { get; set; } = string.Empty;
 }

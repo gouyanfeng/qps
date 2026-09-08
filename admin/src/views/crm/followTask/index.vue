@@ -1,6 +1,6 @@
 <template>
   <div class="follow-task page-content">
-    <section class="task-overview" aria-label="跟进任务概览">
+    <section class="task-overview" aria-label="我的待办概览">
       <div
         v-for="item in metrics"
         :key="item.category"
@@ -38,6 +38,7 @@
             <el-select v-model="searchForm.entityType" clearable placeholder="全部对象">
               <el-option label="基地主体" value="CRM_HERB_BASE_SUBJECT" />
               <el-option label="厂商" value="CRM_VENDOR" />
+              <el-option label="撮合机会" value="CRM_MATCH_OPPORTUNITY" />
             </el-select>
           </el-form-item>
           <el-form-item label="关键词">
@@ -51,6 +52,7 @@
           <el-table-column label="跟进对象" min-width="290" show-overflow-tooltip>
             <template #default="{ row }">
               <b>{{ row.entityName }}</b>
+              <span v-if="row.entitySubtitle" class="entity-subtitle">{{ row.entitySubtitle }}</span>
             </template>
           </el-table-column>
           <el-table-column label="类型" width="120">
@@ -75,9 +77,15 @@
               {{ row.lastFollowResult || "-" }}
             </template>
           </el-table-column>
+          <el-table-column label="待办内容" min-width="180" show-overflow-tooltip>
+            <template #default="{ row }">
+              {{ row.taskContent || "-" }}
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <Permission code="CRM_FOLLOW"><el-button type="primary" link @click="openFollowDialog(row)">记录沟通</el-button></Permission>
+              <Permission v-if="row.entityType !== 'CRM_MATCH_OPPORTUNITY'" code="CRM_FOLLOW"><el-button type="primary" link @click="openFollowDialog(row)">记录沟通</el-button></Permission>
+              <Permission v-else code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button type="primary" link @click="advance(row)">推进</el-button></Permission>
               <el-button link @click="detail(row)">详情</el-button>
             </template>
           </el-table-column>
@@ -107,10 +115,12 @@ interface FollowTask {
   entityId: string;
   entityType: string;
   entityName: string;
+  entitySubtitle: string;
   contactName: string;
   contactPhone: string;
   lastFollowAt?: string;
   lastFollowResult: string;
+  taskContent: string;
   nextFollowAt?: string;
   category: string;
 }
@@ -161,14 +171,23 @@ const handleReset = () => {
   });
 };
 
-const entityTypeText = (entityType: string) => (entityType === "CRM_VENDOR" ? "厂商" : "基地主体");
+const entityTypeText = (entityType: string) => ({
+  CRM_VENDOR: "厂商",
+  CRM_MATCH_OPPORTUNITY: "撮合机会",
+}[entityType] || "基地主体");
 
 const detail = (row: FollowTask) => {
   router.push(
-    row.entityType === "CRM_VENDOR"
+    row.entityType === "CRM_MATCH_OPPORTUNITY"
+      ? { path: "/crm/match-opportunity", query: { detailId: row.entityId } }
+      : row.entityType === "CRM_VENDOR"
       ? { path: "/crm/vendor", query: { detailId: row.entityId } }
       : { path: "/crm/herb-base", query: { detailId: row.entityId } },
   );
+};
+
+const advance = (row: FollowTask) => {
+  router.push({ path: "/crm/match-opportunity", query: { detailId: row.entityId } });
 };
 
 const openFollowDialog = (row: FollowTask) => {
@@ -293,6 +312,11 @@ onMounted(() => {
 
 .follow-task :deep(.follow-task-table .cell) {
   font-size: 13px;
+}
+
+.entity-subtitle {
+  margin-left: 8px;
+  color: var(--el-text-color-secondary);
 }
 
 .follow-task :deep(.follow-task-table .actions-column .cell) {
