@@ -31,8 +31,13 @@
       <el-table-column prop="supplyCycle" label="供货周期" min-width="130" show-overflow-tooltip />
       <el-table-column label="有效期" min-width="170"><template #default="{ row }">{{ formatDate(row.validUntil) }}</template></el-table-column>
     </el-table>
-    <el-form v-if="!opportunityId" :model="nextActionForm" class="next-action-form" label-width="88px">
-      <el-form-item label="下一步" required><el-input v-model="nextActionForm.nextAction" maxlength="500" show-word-limit /></el-form-item>
+    <el-form v-if="!opportunityId" :model="nextActionForm" class="next-action-form" label-width="108px">
+      <el-form-item label="下一步动作" required>
+        <el-select v-model="nextActionForm.nextAction" :loading="progressOptionsLoading" placeholder="请选择下一步动作">
+          <el-option v-for="action in initialNextActions" :key="action" :label="action" :value="action" />
+        </el-select>
+      </el-form-item>
+      <el-form-item v-if="nextActionForm.nextAction === otherAction" label="其他待办说明" required><el-input v-model="nextActionForm.nextActionRemark" maxlength="500" show-word-limit /></el-form-item>
       <el-form-item label="计划时间" required><el-date-picker v-model="nextActionForm.nextActionAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" /></el-form-item>
     </el-form>
     <div class="selector-footer">
@@ -43,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import crmMatchOpportunityApi from "@/api/modules/crmMatchOpportunity";
 import Permission from "@/components/Permission/index.vue";
@@ -59,9 +64,24 @@ const selectedSupplyIds = ref<string[]>([]);
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
-const nextActionForm = reactive({ nextAction: "", nextActionAt: "" });
+const progressOptionsLoading = ref(false);
+const progressOptions = ref<any>({ nextActionsByStage: {} });
+const nextActionForm = reactive({ nextAction: "", nextActionRemark: "", nextActionAt: "" });
 const filters = reactive<any>({ productName: props.demandItem?.productName || "", region: "", minAvailableQuantity: undefined, specification: "", qualityRequirement: "", supplyCycle: "", maxExpectedPrice: undefined });
 const quantityLabel = computed(() => props.demandItem?.quantity ? `${props.demandItem.quantity}${props.demandItem.quantityUnit || ""}` : "-");
+const initialStage = "匹配核实";
+const otherAction = "其他";
+const initialNextActions = computed(() => progressOptions.value.nextActionsByStage?.[initialStage] || []);
+
+const loadProgressOptions = async () => {
+  progressOptionsLoading.value = true;
+  try {
+    const result = await crmMatchOpportunityApi.getProgressOptions();
+    progressOptions.value = result.data || { nextActionsByStage: {} };
+  } finally {
+    progressOptionsLoading.value = false;
+  }
+};
 
 const loadCandidates = async () => {
   if (!props.demandItemId) return;
@@ -87,8 +107,12 @@ const reset = () => { Object.assign(filters, { productName: props.demandItem?.pr
 const handleSelectionChange = (rows: any[]) => { selectedSupplyIds.value = rows.map(row => row.herbBaseSupplyId); };
 const submit = async () => {
   if (!selectedSupplyIds.value.length) return;
-  if (!props.opportunityId && (!nextActionForm.nextAction.trim() || !nextActionForm.nextActionAt)) {
-    ElMessage.warning("请填写下一步和计划时间");
+  if (!props.opportunityId && (!nextActionForm.nextAction || !nextActionForm.nextActionAt)) {
+    ElMessage.warning("请选择下一步动作和计划时间");
+    return;
+  }
+  if (!props.opportunityId && nextActionForm.nextAction === otherAction && !nextActionForm.nextActionRemark.trim()) {
+    ElMessage.warning("请填写其他待办说明");
     return;
   }
   creating.value = true;
@@ -100,7 +124,8 @@ const submit = async () => {
     } else {
       const result = await crmMatchOpportunityApi.create(props.demandItemId, {
         supplyIds: selectedSupplyIds.value,
-        nextAction: nextActionForm.nextAction.trim(),
+        nextAction: nextActionForm.nextAction,
+        nextActionRemark: nextActionForm.nextActionRemark.trim(),
         nextActionAt: nextActionForm.nextActionAt
       });
       ElMessage.success("撮合机会已创建");
@@ -118,8 +143,12 @@ watch(() => props.demandItemId, () => {
   total.value = 0;
   candidates.value = [];
   selectedSupplyIds.value = [];
-  Object.assign(nextActionForm, { nextAction: "", nextActionAt: "" });
+  Object.assign(nextActionForm, { nextAction: "", nextActionRemark: "", nextActionAt: "" });
 });
+watch(() => nextActionForm.nextAction, action => {
+  if (action !== otherAction) nextActionForm.nextActionRemark = "";
+});
+onMounted(() => { void loadProgressOptions(); });
 </script>
 
 <style scoped>

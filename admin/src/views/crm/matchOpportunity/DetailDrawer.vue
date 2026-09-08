@@ -10,9 +10,8 @@
           </div>
           <div class="head-actions">
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canMaintainCandidates" @click="emit('append-candidates', currentOpportunity)">追加候选</el-button></Permission>
-            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canUpdateNextAction" @click="openNextActionDialog">更新下一步</el-button></Permission>
+            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canAdvance" type="primary" @click="progressDialogVisible = true">推进机会</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status === '推进中'" type="warning" @click="updateStatus('暂停')">暂停</el-button></Permission>
-            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status === '暂停'" type="success" @click="resumeOpportunity">恢复</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status !== '已关闭'" type="danger" @click="closeOpportunity">关闭</el-button></Permission>
             <el-button :icon="Refresh" @click="refreshDetail">刷新</el-button>
             <el-button :icon="Close" circle title="关闭详情" @click="handleVisibleChange(false)" />
@@ -28,8 +27,10 @@
             <el-descriptions-item label="质量">{{ currentOpportunity.qualityRequirement || "-" }}</el-descriptions-item>
             <el-descriptions-item label="期望到货">{{ formatDate(currentOpportunity.expectedDeliveryAt) }}</el-descriptions-item>
             <el-descriptions-item label="收货地址">{{ currentOpportunity.deliveryAddress || "-" }}</el-descriptions-item>
-            <el-descriptions-item label="下一步">{{ currentOpportunity.nextAction || "-" }}</el-descriptions-item>
-            <el-descriptions-item label="下一步时间">{{ formatDate(currentOpportunity.nextActionAt) }}</el-descriptions-item>
+            <el-descriptions-item label="撮合阶段">{{ currentOpportunity.stage || "-" }}</el-descriptions-item>
+            <el-descriptions-item label="当前待办">{{ currentOpportunity.nextAction || "-" }}</el-descriptions-item>
+            <el-descriptions-item label="其他待办说明">{{ currentOpportunity.nextActionRemark || "-" }}</el-descriptions-item>
+            <el-descriptions-item label="计划时间">{{ formatDate(currentOpportunity.nextActionAt) }}</el-descriptions-item>
             <el-descriptions-item label="关闭结果">{{ currentOpportunity.closeResult || "-" }}</el-descriptions-item>
             <el-descriptions-item label="关闭原因">{{ currentOpportunity.closedReason || "-" }}</el-descriptions-item>
           </el-descriptions>
@@ -83,13 +84,7 @@
     </div>
   </el-drawer>
 
-  <el-dialog v-model="nextActionDialogVisible" title="更新下一步" width="520px">
-    <el-form :model="nextActionForm" label-width="96px">
-      <el-form-item label="下一步" required><el-input v-model="nextActionForm.nextAction" type="textarea" :rows="3" maxlength="500" show-word-limit /></el-form-item>
-      <el-form-item label="计划时间" required><el-date-picker v-model="nextActionForm.nextActionAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" /></el-form-item>
-    </el-form>
-    <template #footer><el-button @click="nextActionDialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveNextAction">保存</el-button></template>
-  </el-dialog>
+  <ProgressDialog v-model="progressDialogVisible" :opportunity="currentOpportunity" @submitted="refreshAfterOperation" />
 
   <el-dialog v-model="closeDialogVisible" title="关闭撮合机会" width="460px">
     <el-form :model="closeForm" label-width="96px">
@@ -113,19 +108,18 @@ import { Close, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import http from "@/api";
 import Permission from "@/components/Permission/index.vue";
+import ProgressDialog from "./ProgressDialog.vue";
 
 const props = defineProps<{ modelValue: boolean; opportunityId?: string }>();
 const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": []; "append-candidates": [opportunity: any] }>();
 const currentOpportunity = ref<any>(null);
 const loading = ref(false);
 const saving = ref(false);
-const nextActionDialogVisible = ref(false);
-const nextActionForm = reactive({ nextAction: "", nextActionAt: "" });
-const resumePending = ref(false);
+const progressDialogVisible = ref(false);
 const closeDialogVisible = ref(false);
 const closeForm = reactive({ closeResult: "", closedReason: "" });
 const canMaintainCandidates = computed(() => currentOpportunity.value?.status === "推进中");
-const canUpdateNextAction = computed(() => currentOpportunity.value?.status !== "已关闭");
+const canAdvance = computed(() => currentOpportunity.value?.status !== "已关闭");
 const quantityLabel = computed(() => quantityLabelOf(currentOpportunity.value));
 
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
@@ -174,50 +168,16 @@ const eliminateCandidate = async (candidate: any) => {
     if (error !== "cancel" && error !== "close") throw error;
   }
 };
-const openNextActionDialog = () => {
-  resumePending.value = false;
-  Object.assign(nextActionForm, { nextAction: currentOpportunity.value?.nextAction || "", nextActionAt: toDateTimeInputValue(currentOpportunity.value?.nextActionAt) });
-  nextActionDialogVisible.value = true;
-};
-const saveNextAction = async () => {
-  if (!props.opportunityId || !nextActionForm.nextAction.trim() || !nextActionForm.nextActionAt) {
-    ElMessage.warning("请填写下一步和计划时间");
-    return;
-  }
-  saving.value = true;
-  try {
-    if (resumePending.value) {
-      await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/status`, { status: "推进中", nextAction: nextActionForm.nextAction.trim(), nextActionAt: nextActionForm.nextActionAt });
-      ElMessage.success("撮合机会已恢复");
-    } else {
-      await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/next-action`, { nextAction: nextActionForm.nextAction.trim(), nextActionAt: nextActionForm.nextActionAt });
-      ElMessage.success("下一步已更新");
-    }
-    nextActionDialogVisible.value = false;
-    await refreshAfterOperation();
-  } finally {
-    saving.value = false;
-  }
-};
 const updateStatus = async (status: string) => {
   if (!props.opportunityId) return;
   saving.value = true;
   try {
     await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/status`, { status });
-    ElMessage.success(status === "暂停" ? "撮合机会已暂停" : "撮合机会已恢复");
+    ElMessage.success("撮合机会已暂停");
     await refreshAfterOperation();
   } finally {
     saving.value = false;
   }
-};
-const resumeOpportunity = () => {
-  if (new Date(currentOpportunity.value?.nextActionAt || 0).getTime() < Date.now()) {
-    resumePending.value = true;
-    Object.assign(nextActionForm, { nextAction: currentOpportunity.value?.nextAction || "", nextActionAt: "" });
-    nextActionDialogVisible.value = true;
-    return;
-  }
-  void updateStatus("推进中");
 };
 const closeOpportunity = async () => {
   Object.assign(closeForm, { closeResult: "", closedReason: "" });
@@ -246,8 +206,6 @@ const saveCloseOpportunity = async () => {
     saving.value = false;
   }
 };
-const toDateTimeInputValue = (value?: string | null) => value ? value.replace(" ", "T").slice(0, 19) : "";
-
 watch(() => [props.modelValue, props.opportunityId], ([visible, opportunityId]) => {
   if (visible && opportunityId) void loadDetail();
 }, { immediate: true });
