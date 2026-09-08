@@ -102,19 +102,11 @@ public class CrmMatchOpportunity : BaseEntity
             throw new InvalidOperationException("撮合阶段仅允许保持当前阶段或相邻跳转");
         }
 
-        CrmMatchOpportunityNextAction.Validate(nextAction, nextActionRemark);
+        CrmMatchOpportunityNextAction.Validate(stage, nextAction, nextActionRemark);
         EnsureNextAction(nextAction, nextActionAt);
         Stage = Trim(stage);
         NextAction = Trim(nextAction);
         NextActionRemark = Trim(nextActionRemark);
-        NextActionAt = nextActionAt;
-    }
-
-    public void UpdateNextAction(string nextAction, DateTime? nextActionAt)
-    {
-        EnsureCanUpdate();
-        EnsureNextAction(nextAction, nextActionAt);
-        NextAction = Trim(nextAction);
         NextActionAt = nextActionAt;
     }
 

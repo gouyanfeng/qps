@@ -39,7 +39,9 @@ public class CrmMatchOpportunityListDto
     public Guid? OwnerUserId { get; set; }
     public string OwnerUserName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string Stage { get; set; } = string.Empty;
     public string NextAction { get; set; } = string.Empty;
+    public string NextActionRemark { get; set; } = string.Empty;
     public DateTime? NextActionAt { get; set; }
     public string CloseResult { get; set; } = string.Empty;
     public string ClosedReason { get; set; } = string.Empty;
@@ -92,7 +94,9 @@ public class GetCrmMatchOpportunitiesHandler(IDbContext dbContext)
                     ? string.Empty
                     : !string.IsNullOrWhiteSpace(owner.RealName) ? owner.RealName : owner.Username,
                 Status = opportunity.Status,
+                Stage = opportunity.Stage,
                 NextAction = opportunity.NextAction,
+                NextActionRemark = opportunity.NextActionRemark,
                 NextActionAt = opportunity.NextActionAt,
                 CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,

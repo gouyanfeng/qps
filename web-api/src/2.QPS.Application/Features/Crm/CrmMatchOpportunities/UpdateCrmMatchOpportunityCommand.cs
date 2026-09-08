@@ -65,16 +65,19 @@ public class UpdateCrmMatchCandidateStatusHandler(IDbContext dbContext) : IReque
 }
 
 [Permission(SystemPermissionCodes.CRM_MATCH_OPPORTUNITY_MANAGE)]
-public class UpdateCrmMatchOpportunityNextActionCommand : IRequest<bool>
+public class AdvanceCrmMatchOpportunityCommand : IRequest<bool>
 {
     public Guid OpportunityId { get; set; }
+    public string Stage { get; set; } = string.Empty;
+    public string CurrentResult { get; set; } = string.Empty;
     public string NextAction { get; set; } = string.Empty;
+    public string NextActionRemark { get; set; } = string.Empty;
     public DateTime? NextActionAt { get; set; }
 }
 
-public class UpdateCrmMatchOpportunityNextActionHandler(IDbContext dbContext) : IRequestHandler<UpdateCrmMatchOpportunityNextActionCommand, bool>
+public class AdvanceCrmMatchOpportunityHandler(IDbContext dbContext) : IRequestHandler<AdvanceCrmMatchOpportunityCommand, bool>
 {
-    public async Task<bool> Handle(UpdateCrmMatchOpportunityNextActionCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(AdvanceCrmMatchOpportunityCommand request, CancellationToken cancellationToken)
     {
         var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
         if (opportunity.Status == CrmMatchOpportunity.Closed)
@@ -82,9 +85,34 @@ public class UpdateCrmMatchOpportunityNextActionHandler(IDbContext dbContext) : 
             throw new BusinessException(400, "已关闭撮合机会不可编辑");
         }
 
-        CrmMatchOpportunitySource.ValidateNextAction(request.NextAction, request.NextActionAt);
-        opportunity.UpdateNextAction(request.NextAction, request.NextActionAt);
-        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "更新下一步", $"更新下一步：{opportunity.NextAction}，计划时间：{request.NextActionAt!.Value:yyyy-MM-dd HH:mm}"));
+        if (string.IsNullOrWhiteSpace(request.CurrentResult))
+        {
+            throw new BusinessException(400, "本次结果不能为空");
+        }
+
+        try
+        {
+            if (opportunity.Status == CrmMatchOpportunity.Paused)
+            {
+                if (request.NextActionAt <= DateTime.Now)
+                {
+                    throw new BusinessException(400, "恢复暂停机会时计划时间必须晚于当前时间");
+                }
+
+                opportunity.Resume();
+            }
+
+            opportunity.Advance(request.Stage, request.NextAction, request.NextActionRemark, request.NextActionAt);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new BusinessException(400, exception.Message);
+        }
+
+        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
+            opportunity.Id,
+            "推进",
+            $"推进阶段：{opportunity.Stage}；本次结果：{request.CurrentResult.Trim()}；下一步：{CrmMatchOpportunitySource.DescribeNextAction(opportunity.NextAction, opportunity.NextActionRemark)}；计划时间：{opportunity.NextActionAt:yyyy-MM-dd HH:mm}"));
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -97,8 +125,6 @@ public class UpdateCrmMatchOpportunityStatusCommand : IRequest<bool>
     public string Status { get; set; } = string.Empty;
     public string CloseResult { get; set; } = string.Empty;
     public string ClosedReason { get; set; } = string.Empty;
-    public string NextAction { get; set; } = string.Empty;
-    public DateTime? NextActionAt { get; set; }
 }
 
 public class UpdateCrmMatchOpportunityStatusHandler(IDbContext dbContext) : IRequestHandler<UpdateCrmMatchOpportunityStatusCommand, bool>
@@ -120,25 +146,6 @@ public class UpdateCrmMatchOpportunityStatusHandler(IDbContext dbContext) : IReq
             actionType = "暂停";
             content = "暂停撮合机会";
         }
-        else if (status == CrmMatchOpportunity.InProgress)
-        {
-            if (opportunity.Status != CrmMatchOpportunity.Paused)
-            {
-                throw new BusinessException(400, "仅暂停的撮合机会可以恢复");
-            }
-
-            if (opportunity.NextActionAt < DateTime.Now)
-            {
-                CrmMatchOpportunitySource.ValidateNextAction(request.NextAction, request.NextActionAt);
-                opportunity.UpdateNextAction(request.NextAction, request.NextActionAt);
-            }
-
-            opportunity.Resume();
-            actionType = "恢复";
-            content = opportunity.NextActionAt == request.NextActionAt
-                ? $"恢复撮合机会，并重新安排下一步：{opportunity.NextAction}，计划时间：{opportunity.NextActionAt:yyyy-MM-dd HH:mm}"
-                : "恢复撮合机会";
-        }
         else if (status == CrmMatchOpportunity.Closed)
         {
             if (opportunity.Status == CrmMatchOpportunity.Closed)
@@ -150,6 +157,11 @@ public class UpdateCrmMatchOpportunityStatusHandler(IDbContext dbContext) : IReq
             if (closeResult is not (CrmMatchOpportunity.Matched or CrmMatchOpportunity.NotMatched or CrmMatchOpportunity.DemandCancelled))
             {
                 throw new BusinessException(400, "撮合机会关闭结果无效");
+            }
+
+            if (closeResult == CrmMatchOpportunity.Matched && opportunity.Stage != CrmMatchOpportunityStage.IntentConfirmation)
+            {
+                throw new BusinessException(400, "仅意向确认阶段可以撮合成功关闭");
             }
 
             var selectedSupplyIds = await dbContext.CrmMatchCandidates

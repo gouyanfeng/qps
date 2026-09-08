@@ -52,6 +52,35 @@ public static class CrmMatchOpportunityNextAction
         Other
     ];
 
+    public static IReadOnlyList<string> GetAvailableActions(string stage) => stage switch
+    {
+        CrmMatchOpportunityStage.MatchingVerification =>
+        [
+            VerifyQuantity,
+            VerifySpecificationAndQuality,
+            VerifyDeliveryDate,
+            ArrangeSampleOrInspection,
+            AddCandidate,
+            Other
+        ],
+        CrmMatchOpportunityStage.BusinessNegotiation =>
+        [
+            DiscussPrice,
+            DiscussPaymentAndTransport,
+            AwaitResponse,
+            AddCandidate,
+            Other
+        ],
+        CrmMatchOpportunityStage.IntentConfirmation =>
+        [
+            ConfirmCooperationIntent,
+            ConfirmSelectedSupply,
+            AddCandidate,
+            Other
+        ],
+        _ => []
+    };
+
     public static void Validate(string action, string? remark)
     {
         if (!All.Contains(action))
@@ -62,6 +91,15 @@ public static class CrmMatchOpportunityNextAction
         if (action == Other && string.IsNullOrWhiteSpace(remark))
         {
             throw new InvalidOperationException("选择其他待办时必须填写说明");
+        }
+    }
+
+    public static void Validate(string stage, string action, string? remark)
+    {
+        Validate(action, remark);
+        if (!GetAvailableActions(stage).Contains(action))
+        {
+            throw new InvalidOperationException("下一步动作不适用于当前撮合阶段");
         }
     }
 }

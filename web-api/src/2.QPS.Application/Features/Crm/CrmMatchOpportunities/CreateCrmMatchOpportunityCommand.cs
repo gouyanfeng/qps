@@ -14,6 +14,7 @@ public class CreateCrmMatchOpportunityCommand : IRequest<Guid>
     public Guid DemandItemId { get; set; }
     public List<Guid> SupplyIds { get; set; } = [];
     public string NextAction { get; set; } = string.Empty;
+    public string NextActionRemark { get; set; } = string.Empty;
     public DateTime? NextActionAt { get; set; }
 }
 
@@ -23,6 +24,17 @@ public class CreateCrmMatchOpportunityHandler(IDbContext dbContext) : IRequestHa
     {
         CrmMatchOpportunitySource.ValidateSupplyIds(request.SupplyIds);
         CrmMatchOpportunitySource.ValidateNextAction(request.NextAction, request.NextActionAt);
+        try
+        {
+            CrmMatchOpportunityNextAction.Validate(
+                CrmMatchOpportunityStage.MatchingVerification,
+                request.NextAction.Trim(),
+                request.NextActionRemark);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new BusinessException(400, exception.Message);
+        }
         var demandItem = await CrmMatchOpportunitySource.LoadDemandItemAsync(dbContext, request.DemandItemId, cancellationToken);
         var demand = demandItem.VendorDemand!;
         if (await dbContext.CrmMatchOpportunities.AnyAsync(
@@ -50,7 +62,8 @@ public class CreateCrmMatchOpportunityHandler(IDbContext dbContext) : IRequestHa
             demand.ReceivingAddress,
             vendor.OwnerUserId,
             request.NextAction,
-            request.NextActionAt);
+            request.NextActionAt,
+            request.NextActionRemark);
         dbContext.CrmMatchOpportunities.Add(opportunity);
 
         foreach (var (supply, index) in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)).Select((item, index) => (item, index)))
@@ -58,7 +71,10 @@ public class CreateCrmMatchOpportunityHandler(IDbContext dbContext) : IRequestHa
             dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(opportunity, supply, index + 1));
         }
 
-        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "创建机会", $"创建撮合机会：采购品类{demandItem.ProductName}"));
+        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
+            opportunity.Id,
+            "创建机会",
+            $"创建撮合机会：采购品类{demandItem.ProductName}；初始阶段：{opportunity.Stage}；下一步：{CrmMatchOpportunitySource.DescribeNextAction(opportunity.NextAction, opportunity.NextActionRemark)}；计划时间：{opportunity.NextActionAt:yyyy-MM-dd HH:mm}"));
         foreach (var supply in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)))
         {
             dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "加入候选", $"加入候选：{supply.HerbBase!.BaseName} - {supply.ProductName}"));

@@ -168,6 +168,11 @@ internal static class CrmMatchOpportunitySource
         }
     }
 
+    public static string DescribeNextAction(string nextAction, string nextActionRemark) =>
+        nextAction == CrmMatchOpportunityNextAction.Other
+            ? $"{nextAction}（{nextActionRemark}）"
+            : nextAction;
+
     public static CrmMatchCandidate CreateCandidate(CrmMatchOpportunity opportunity, CrmHerbBaseSupply supply, int sortOrder)
     {
         var herbBase = supply.HerbBase!;

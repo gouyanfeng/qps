@@ -12,6 +12,10 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<object>> GetList([FromQuery] GetCrmMatchOpportunitiesQuery query)
         => Ok(await mediator.Send(query));
 
+    [HttpGet("match-opportunity-progress-options")]
+    public async Task<ActionResult<object>> GetProgressOptions()
+        => Ok(await mediator.Send(new GetCrmMatchOpportunityProgressOptionsQuery()));
+
     [HttpGet("match-opportunities/{id:guid}")]
     public async Task<ActionResult<object>> GetDetail(Guid id)
         => Ok(await mediator.Send(new GetCrmMatchOpportunityDetailQuery { Id = id }));
@@ -48,10 +52,10 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(command));
     }
 
-    [HttpPatch("match-opportunities/{id:guid}/next-action")]
-    public async Task<ActionResult<bool>> UpdateNextAction(
+    [HttpPatch("match-opportunities/{id:guid}/progress")]
+    public async Task<ActionResult<bool>> Advance(
         Guid id,
-        [FromBody] UpdateCrmMatchOpportunityNextActionCommand command)
+        [FromBody] AdvanceCrmMatchOpportunityCommand command)
     {
         command.OpportunityId = id;
         return Ok(await mediator.Send(command));

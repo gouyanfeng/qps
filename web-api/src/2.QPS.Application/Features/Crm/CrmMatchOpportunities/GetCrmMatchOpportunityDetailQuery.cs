@@ -118,7 +118,9 @@ public class GetCrmMatchOpportunityDetailHandler(IDbContext dbContext)
                     ? string.Empty
                     : !string.IsNullOrWhiteSpace(owner.RealName) ? owner.RealName : owner.Username,
                 Status = opportunity.Status,
+                Stage = opportunity.Stage,
                 NextAction = opportunity.NextAction,
+                NextActionRemark = opportunity.NextActionRemark,
                 NextActionAt = opportunity.NextActionAt,
                 CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,
