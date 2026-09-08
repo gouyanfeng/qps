@@ -45,17 +45,27 @@
       </template>
 
       <template #table="{ tableData }">
-        <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1230px" border>
+        <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1410px" border>
           <el-table-column prop="demandProductName" label="品类" min-width="130" show-overflow-tooltip />
           <el-table-column prop="vendorName" label="需求厂商" min-width="180" show-overflow-tooltip />
           <el-table-column label="需求数量" width="130"><template #default="{ row }">{{ quantityLabel(row) }}</template></el-table-column>
           <el-table-column label="候选数" width="90" align="center"><template #default="{ row }">{{ row.candidateCount }}</template></el-table-column>
           <el-table-column label="状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="statusType(row.status)">{{ row.status || '-' }}</el-tag></template></el-table-column>
+          <el-table-column prop="stage" label="撮合阶段" width="120" show-overflow-tooltip />
           <el-table-column prop="ownerUserName" label="撮合跟进人" width="120" show-overflow-tooltip />
-          <el-table-column label="下一步时间" width="180"><template #default="{ row }">{{ formatDate(row.nextActionAt) }}</template></el-table-column>
+          <el-table-column label="当前待办" min-width="220" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span>{{ row.nextAction || '-' }}</span>
+              <span v-if="row.nextActionRemark">（{{ row.nextActionRemark }}）</span>
+              <span v-if="row.nextActionAt" class="next-action-time">{{ formatDate(row.nextActionAt) }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="更新时间" width="180"><template #default="{ row }">{{ formatDate(row.updatedAt) }}</template></el-table-column>
-          <el-table-column label="操作" width="90" fixed="right">
-            <template #default="{ row }"><Permission code="CRM_MATCH_OPPORTUNITY_VIEW"><el-button link type="primary" @click="openDetail(row.id)">详情</el-button></Permission></template>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="row.status !== '已关闭'" link type="primary" @click="openProgress(row)">推进</el-button></Permission>
+              <Permission code="CRM_MATCH_OPPORTUNITY_VIEW"><el-button link type="primary" @click="openDetail(row.id)">详情</el-button></Permission>
+            </template>
           </el-table-column>
         </el-table>
       </template>
@@ -63,6 +73,7 @@
 
     <DemandItemPickerDialog v-model="demandItemPickerVisible" :demand="currentDemand" @confirm="handleDemandItemSelected" />
     <DetailDrawer v-model="detailDrawerVisible" :opportunity-id="currentOpportunityId" @refresh-list="reloadList" @append-candidates="openCandidateAppend" />
+    <ProgressDialog v-model="progressDialogVisible" :opportunity="progressOpportunity" @submitted="reloadList" />
   </div>
 </template>
 
@@ -78,6 +89,7 @@ import userApi from "@/api/modules/user";
 import DemandItemPickerDialog from "./DemandItemPickerDialog.vue";
 import CandidateSelector from "./CandidateSelector.vue";
 import DetailDrawer from "./DetailDrawer.vue";
+import ProgressDialog from "./ProgressDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -85,9 +97,11 @@ const queryPageRef = ref();
 const demandItemPickerVisible = ref(false);
 const candidateSelectorVisible = ref(false);
 const detailDrawerVisible = ref(false);
+const progressDialogVisible = ref(false);
 const currentDemand = ref<any>(null);
 const selectedDemandItem = ref<any>(null);
 const currentOpportunityId = ref("");
+const progressOpportunity = ref<any>(null);
 const appendCandidateOpportunityId = ref("");
 const nextActionAtRange = ref<string[]>([]);
 const vendorOptions = ref<any[]>([]);
@@ -199,6 +213,10 @@ const openDetail = (opportunityId: string) => {
   currentOpportunityId.value = opportunityId;
   detailDrawerVisible.value = true;
 };
+const openProgress = (opportunity: any) => {
+  progressOpportunity.value = opportunity;
+  progressDialogVisible.value = true;
+};
 const replaceWithoutDemandId = () => {
   const { demandId: _demandId, ...query } = route.query;
   return router.replace({ path: route.path, query });
@@ -225,4 +243,5 @@ onMounted(() => { void loadVendorOptions(); void loadSubjectOptions(); void load
 <style scoped>
 .candidate-panel { padding: 20px; }
 .candidate-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-weight: 600; }
+.next-action-time { display: block; margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; }
 </style>
