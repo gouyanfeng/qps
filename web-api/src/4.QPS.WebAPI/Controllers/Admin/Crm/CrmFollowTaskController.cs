@@ -16,4 +16,8 @@ public class CrmFollowTaskController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<CrmFollowTaskResponse>> Get([FromQuery] GetCrmFollowTasksQuery query)
         => Ok(await _mediator.Send(query));
+
+    [HttpGet("overview")]
+    public async Task<ActionResult<CrmFollowTaskOverviewDto>> GetOverview()
+        => Ok(await _mediator.Send(new GetCrmFollowTaskOverviewQuery()));
 }

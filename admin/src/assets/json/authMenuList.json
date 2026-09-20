@@ -53,6 +53,12 @@
       }
     },
     {
+      "path": "/crm/herb-base-supply",
+      "name": "herbBaseSupply",
+      "component": "/crm/herbBaseSupply/index",
+      "meta": { "icon": "Goods", "title": "供应列表", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_HERB_BASE" }
+    },
+    {
       "path": "/crm/purchase-demand",
       "name": "purchaseDemand",
       "component": "/crm/purchaseDemand/index",

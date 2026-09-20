@@ -8,7 +8,7 @@ namespace QPS.WebAPI.Controllers.Admin.System;
 
 [ApiController]
 [Route("api/admin/china-regions")]
-[Authorize]
+[AllowAnonymous]
 public class ChinaRegionController : ControllerBase
 {
     private readonly IMediator _mediator;

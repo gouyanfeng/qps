@@ -52,8 +52,7 @@ watch(
       title: route.meta.title as string,
       path: route.fullPath,
       name: route.name as string,
-      close: !route.meta.isAffix,
-      isKeepAlive: route.meta.isKeepAlive as boolean
+      close: !route.meta.isAffix
     };
     tabStore.addTabs(tabsParams);
   },
@@ -69,8 +68,7 @@ const initTabs = () => {
         title: item.meta.title,
         path: item.path,
         name: item.name,
-        close: !item.meta.isAffix,
-        isKeepAlive: item.meta.isKeepAlive
+        close: !item.meta.isAffix
       };
       tabStore.addTabs(tabsParams);
     }

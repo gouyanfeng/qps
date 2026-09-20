@@ -99,6 +99,12 @@
       :entity-id="followTarget?.entityId"
       @saved="handleFollowSaved"
     />
+
+    <ProgressDialog
+      v-model="progressDialogVisible"
+      :opportunity="progressOpportunity"
+      @submitted="handleProgressSubmitted"
+    />
   </div>
 </template>
 
@@ -110,6 +116,7 @@ import { crmFollowTaskApi } from "@/api/modules/crmFollowTask";
 import QueryPage from "@/components/QueryPage/index.vue";
 import Permission from "@/components/Permission/index.vue";
 import FollowDialog from "@/views/crm/components/follow/Dialog.vue";
+import ProgressDialog from "@/views/crm/matchOpportunity/ProgressDialog.vue";
 
 interface FollowTask {
   entityId: string;
@@ -123,6 +130,7 @@ interface FollowTask {
   taskContent: string;
   nextFollowAt?: string;
   category: string;
+  stage?: string;
 }
 
 interface FollowTaskOverview {
@@ -136,6 +144,8 @@ const router = useRouter();
 const queryPageRef = ref<InstanceType<typeof QueryPage>>();
 const followDialogVisible = ref(false);
 const followTarget = ref<FollowTask>();
+const progressDialogVisible = ref(false);
+const progressOpportunity = ref<any>();
 const overview = ref<FollowTaskOverview>({
   overdueCount: 0,
   todayCount: 0,
@@ -155,8 +165,8 @@ const metrics = computed(() => [
 ]);
 
 const loadOverview = async () => {
-  const { data } = await crmFollowTaskApi.getList({ page: 1, pageSize: 1 });
-  overview.value = data.overview || overview.value;
+  const { data } = await crmFollowTaskApi.getOverview();
+  overview.value = data || overview.value;
 };
 
 const reloadList = () => {
@@ -171,23 +181,35 @@ const handleReset = () => {
   });
 };
 
-const entityTypeText = (entityType: string) => ({
+const entityTypeLabels: Record<string, string> = {
+  CRM_HERB_BASE_SUBJECT: "基地主体",
   CRM_VENDOR: "厂商",
   CRM_MATCH_OPPORTUNITY: "撮合机会",
-}[entityType] || "基地主体");
+};
+
+const entityTypeText = (entityType: string) => entityTypeLabels[entityType] || entityType;
+
+const detailRoutes: Record<string, string> = {
+  CRM_MATCH_OPPORTUNITY: "/crm/match-opportunity",
+  CRM_VENDOR: "/crm/vendor",
+  CRM_HERB_BASE_SUBJECT: "/crm/herb-base",
+};
 
 const detail = (row: FollowTask) => {
-  router.push(
-    row.entityType === "CRM_MATCH_OPPORTUNITY"
-      ? { path: "/crm/match-opportunity", query: { detailId: row.entityId } }
-      : row.entityType === "CRM_VENDOR"
-      ? { path: "/crm/vendor", query: { detailId: row.entityId } }
-      : { path: "/crm/herb-base", query: { detailId: row.entityId } },
-  );
+  const path = detailRoutes[row.entityType];
+  if (!path) throw new Error(`未知的 entityType: ${row.entityType}`);
+  router.push({ path, query: { detailId: row.entityId } });
 };
 
 const advance = (row: FollowTask) => {
-  router.push({ path: "/crm/match-opportunity", query: { detailId: row.entityId } });
+  progressOpportunity.value = { id: row.entityId, stage: row.stage || "", status: "进行中" };
+  progressDialogVisible.value = true;
+};
+
+const handleProgressSubmitted = () => {
+  progressDialogVisible.value = false;
+  reloadList();
+  void loadOverview();
 };
 
 const openFollowDialog = (row: FollowTask) => {

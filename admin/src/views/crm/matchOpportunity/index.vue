@@ -235,7 +235,8 @@ watch(detailDrawerVisible, visible => {
     void replaceWithoutRouteParams();
   }
 });
-watch(() => route.query.detailId, detailId => {
+watch(() => ({ path: route.path, detailId: route.query.detailId }), ({ path, detailId }) => {
+  if (path !== "/crm/match-opportunity") return;
   if (typeof detailId === "string" && detailId) openDetail(detailId);
 }, { immediate: true });
 watch(() => route.query.demandId, () => { void loadDemandFromRoute(); }, { immediate: true });

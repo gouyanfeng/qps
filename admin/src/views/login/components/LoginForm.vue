@@ -53,7 +53,6 @@ import { ElNotification } from "element-plus";
 import { clearUserPermissionsCache, loginApi } from "@/api/modules/login";
 import { useUserStore } from "@/stores/modules/user";
 import { useTabsStore } from "@/stores/modules/tabs";
-import { useKeepAliveStore } from "@/stores/modules/keepAlive";
 import { initDynamicRouter } from "@/routers/modules/dynamicRouter";
 import { User, Lock, ChatDotSquare } from "@element-plus/icons-vue";
 import type { ElForm } from "element-plus";
@@ -62,7 +61,6 @@ import md5 from "md5";
 const router = useRouter();
 const userStore = useUserStore();
 const tabsStore = useTabsStore();
-const keepAliveStore = useKeepAliveStore();
 
 const activeTab = ref("account");
 const rememberMe = ref(false);
@@ -96,7 +94,6 @@ const login = (formEl: FormInstance | undefined) => {
 
       await initDynamicRouter();
       tabsStore.setTabs([]);
-      keepAliveStore.setKeepAliveName([]);
       router.push(HOME_URL);
 
       ElNotification({

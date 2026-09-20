@@ -76,7 +76,7 @@ const searchForm = reactive({ keyword: "", status: "" });
 
 const maxDemandItemCount = 8;
 
-const getDemandItemLabel = (item: any) => `${item.productName}${item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : ""}`;
+const getDemandItemLabel = (item: any) => `${item.productName || "未填写品类"}${item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : ""}`;
 
 const visibleDemandItems = (items: any[]) => {
   if (items.length <= maxDemandItemCount) return items;
@@ -116,19 +116,15 @@ const formatDate = (value?: string | null) => value ? new Date(value).toLocaleSt
 }
 
 .demand-item-tags--compact {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(2, 24px);
+  max-height: 52px;
   overflow: hidden;
 }
 
 .demand-item-tags--compact :deep(.el-tag) {
   display: flex;
-  min-width: 0;
-  overflow: hidden;
+  padding: 0 6px;
   justify-content: center;
   text-align: center;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

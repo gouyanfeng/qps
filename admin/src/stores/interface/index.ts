@@ -41,7 +41,6 @@ export interface TabsMenuProps {
   path: string;
   name: string;
   close: boolean;
-  isKeepAlive: boolean;
 }
 
 /* TabsState */
@@ -60,11 +59,6 @@ export interface RoleType {
 export interface AuthState {
   authMenuList: Menu.MenuOptions[];
   userPermissions: string[];
-}
-
-/* KeepAliveState */
-export interface KeepAliveState {
-  keepAliveName: string[];
 }
 
 

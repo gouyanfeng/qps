@@ -36,25 +36,19 @@ import { inject, nextTick } from "vue";
 import { HOME_URL } from "@/config";
 import { useTabsStore } from "@/stores/modules/tabs";
 import { useGlobalStore } from "@/stores/modules/global";
-import { useKeepAliveStore } from "@/stores/modules/keepAlive";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
 const tabStore = useTabsStore();
 const globalStore = useGlobalStore();
-const keepAliveStore = useKeepAliveStore();
 
 // refresh current page
 const refreshCurrentPage: Function = inject("refresh") as Function;
 const refresh = () => {
   setTimeout(() => {
-    route.meta.isKeepAlive && keepAliveStore.removeKeepAliveName(route.fullPath as string);
     refreshCurrentPage(false);
-    nextTick(() => {
-      route.meta.isKeepAlive && keepAliveStore.addKeepAliveName(route.fullPath as string);
-      refreshCurrentPage(true);
-    });
+    nextTick(() => refreshCurrentPage(true));
   }, 0);
 };
 

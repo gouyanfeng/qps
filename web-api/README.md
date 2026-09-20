@@ -48,7 +48,9 @@ tests/
 | CrmHerbBaseController | /api/admin/crm/herb-base-subjects, /api/admin/crm/herb-bases | 基地主体、基地及供应信息 |
 | CrmVendorController | /api/admin/crm/vendors | 厂商、联系人、跟进和厂商采购需求 |
 | CrmVendorDemandController | /api/admin/crm/purchase-demands | 采购需求维护与状态流转 |
+| CrmMatchOpportunityController | /api/admin/crm/match-opportunities | 候选供应筛选、撮合机会、候选处置与阶段推进 |
 | CrmFollowTaskController | /api/admin/crm/follow-tasks | 当前负责人跟进任务工作台 |
+| CrmBusinessEntityAttributeController | /api/admin/crm/business-entity-attributes | CRM 业务实体扩展属性维护 |
 | DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
 
 ## 运行

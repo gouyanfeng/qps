@@ -51,18 +51,18 @@ public class GetCrmFollowTasksHandler : IRequestHandler<GetCrmFollowTasksQuery, 
                 EntityName = _dbContext.CrmVendors.Where(v => v.Id == x.VendorId).Select(v => v.VendorName).FirstOrDefault() ?? string.Empty,
                 EntitySubtitle = x.DemandProductName,
                 LastFollowResult = x.Stage,
+                Stage = x.Stage,
                 TaskContent = string.IsNullOrWhiteSpace(x.NextActionRemark) ? x.NextAction : $"{x.NextAction}（{x.NextActionRemark}）",
                 NextFollowAt = x.NextActionAt
             })
             .ToListAsync(cancellationToken);
         var tasks = subjects.Concat(vendors).Concat(opportunities).Select(x => { x.Category = GetCategory(x.NextFollowAt, now, today, tomorrow); return x; }).ToList();
-        var overview = new CrmFollowTaskOverviewDto { OverdueCount = tasks.Count(x => x.Category == "OVERDUE"), TodayCount = tasks.Count(x => x.Category == "TODAY"), NoPlanCount = tasks.Count(x => x.Category == "NO_PLAN"), CompletedLast7DaysCount = await _dbContext.CrmFollowRecords.CountAsync(x => !x.IsDeleted && x.OperatorUserId == ownerId && x.CreatedAt >= today.AddDays(-6) && x.CreatedAt < tomorrow, cancellationToken) };
         IEnumerable<CrmFollowTaskDto> query = tasks;
         if (!string.IsNullOrWhiteSpace(request.Category)) query = query.Where(x => x.Category == request.Category);
         if (!string.IsNullOrWhiteSpace(request.EntityType)) query = query.Where(x => x.EntityType == request.EntityType);
         if (!string.IsNullOrWhiteSpace(request.Keyword)) { var key = request.Keyword.Trim(); query = query.Where(x => x.EntityName.Contains(key, StringComparison.OrdinalIgnoreCase) || x.ContactName.Contains(key, StringComparison.OrdinalIgnoreCase) || x.ContactPhone.Contains(key, StringComparison.OrdinalIgnoreCase)); }
         var ordered = query.OrderBy(x => x.Category switch { "OVERDUE" => 0, "TODAY" => 1, "NO_PLAN" => 2, _ => 3 }).ThenBy(x => x.NextFollowAt ?? x.LastFollowAt).ThenBy(x => x.EntityName).ToList();
-        return new CrmFollowTaskResponse { Overview = overview, TotalCount = ordered.Count, CurrentPage = request.Page, PageSize = request.PageSize, List = ordered.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToList() };
+        return new CrmFollowTaskResponse { TotalCount = ordered.Count, CurrentPage = request.Page, PageSize = request.PageSize, List = ordered.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToList() };
     }
 
     private static string GetCategory(DateTime? next, DateTime now, DateTime today, DateTime tomorrow) => !next.HasValue ? "NO_PLAN" : next < now ? "OVERDUE" : next < tomorrow ? "TODAY" : "FUTURE";

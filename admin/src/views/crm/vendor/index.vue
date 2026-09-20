@@ -174,10 +174,10 @@
 </template>
 
 <script setup lang="ts" name="vendor">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
 import { crmVendorApi } from "@/api/modules/crmVendor";
 import Permission from "@/components/Permission/index.vue";
@@ -211,6 +211,7 @@ interface VendorDetail {
 
 const queryPageRef = ref();
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 
@@ -371,6 +372,20 @@ const applyRouteEntrypoint = async () => {
     openDetail({ id: detailId });
   }
 };
+
+// 关抽屉时清 URL 里的 detailId，保证下次 push 能触发导航
+watch(detailDrawerVisible, visible => {
+  if (!visible && (route.query.detailId || route.query.followId)) {
+    const { detailId, followId, ...query } = route.query;
+    void router.replace({ path: route.path, query });
+  }
+});
+
+// detailId 变化时重新打开抽屉
+watch(() => route.query.detailId, detailId => {
+  if (route.path !== "/crm/vendor") return;
+  if (typeof detailId === "string" && detailId) openDetail({ id: detailId });
+});
 
 onMounted(() => {
   void applyRouteEntrypoint();

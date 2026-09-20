@@ -38,6 +38,11 @@ public class UpdateCrmMatchCandidateStatusHandler(IDbContext dbContext) : IReque
         else if (status == CrmMatchCandidate.Selected)
         {
             await CrmMatchOpportunitySource.LoadEligibleSuppliesAsync(dbContext, [candidate.HerbBaseSupplyId], cancellationToken);
+            await CrmMatchOpportunitySource.EnsureSupplyNotSelectedElsewhereAsync(
+                dbContext,
+                candidate.HerbBaseSupplyId,
+                opportunity.Id,
+                cancellationToken);
             candidate.Select();
             actionType = "中选候选";
             content = $"中选候选：{candidate.HerbBaseName} - {candidate.ProductName}";
@@ -176,6 +181,14 @@ public class UpdateCrmMatchOpportunityStatusHandler(IDbContext dbContext) : IReq
                 }
 
                 await CrmMatchOpportunitySource.LoadEligibleSuppliesAsync(dbContext, selectedSupplyIds, cancellationToken);
+                foreach (var supplyId in selectedSupplyIds)
+                {
+                    await CrmMatchOpportunitySource.EnsureSupplyNotSelectedElsewhereAsync(
+                        dbContext,
+                        supplyId,
+                        opportunity.Id,
+                        cancellationToken);
+                }
             }
             else if (selectedSupplyIds.Count > 0)
             {

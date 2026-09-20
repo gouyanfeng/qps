@@ -1,16 +1,16 @@
 <template>
   <el-dialog :model-value="modelValue" title="选择采购明细" width="920px" destroy-on-close @update:model-value="handleVisibleChange">
     <el-table :data="demand?.items || []" border highlight-current-row @current-change="handleCurrentChange">
-      <el-table-column prop="productName" label="品类" min-width="160" />
-      <el-table-column label="数量" min-width="120">
+      <el-table-column prop="productName" label="品类" min-width="130" />
+      <el-table-column label="数量" min-width="100">
         <template #default="{ row }">{{ row.quantity || "-" }}{{ row.quantity ? row.quantityUnit || "" : "" }}</template>
       </el-table-column>
-      <el-table-column prop="specification" label="规格" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="qualityRequirement" label="质量" min-width="160" show-overflow-tooltip />
-      <el-table-column label="撮合状态" min-width="110" align="center">
+      <el-table-column prop="specification" label="规格" min-width="130" show-overflow-tooltip />
+      <el-table-column prop="qualityRequirement" label="质量" min-width="130" show-overflow-tooltip />
+      <el-table-column label="撮合状态" min-width="100" align="center">
         <template #default="{ row }"><el-tag size="small" :type="statusType(row.matchDisplayStatus)">{{ row.matchDisplayStatus || "待撮合" }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="交期" min-width="180">
+      <el-table-column label="交期" min-width="150">
         <template #default="{ row }">{{ formatDate(row.expectedDeliveryAt || demand?.expectedDeliveryAt) }}</template>
       </el-table-column>
     </el-table>

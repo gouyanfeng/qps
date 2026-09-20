@@ -249,8 +249,8 @@
 </template>
 
 <script setup lang="ts" name="customer">
-import { computed, onMounted, reactive, ref } from "vue";
-import { useRoute } from "vue-router";
+import { computed, onMounted, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
@@ -292,6 +292,7 @@ interface HerbBaseSubjectDetail {
 // 页面状态
 const queryPageRef = ref();
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 
@@ -576,6 +577,23 @@ const applyRouteEntrypoint = async () => {
     detailDrawerVisible.value = true;
   }
 };
+
+// 关抽屉时清 URL 里的 detailId，保证下次 push 能触发导航
+watch(detailDrawerVisible, visible => {
+  if (!visible && (route.query.detailId || route.query.followId)) {
+    const { detailId, followId, ...query } = route.query;
+    void router.replace({ path: route.path, query });
+  }
+});
+
+// detailId 变化时重新打开抽屉
+watch(() => route.query.detailId, detailId => {
+  if (route.path !== "/crm/herb-base") return;
+  if (typeof detailId === "string" && detailId) {
+    currentHerbBaseSubjectId.value = detailId;
+    detailDrawerVisible.value = true;
+  }
+});
 
 onMounted(() => {
   void applyRouteEntrypoint();

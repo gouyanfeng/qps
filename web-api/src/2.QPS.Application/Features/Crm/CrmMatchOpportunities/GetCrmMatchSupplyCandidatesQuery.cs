@@ -168,6 +168,27 @@ internal static class CrmMatchOpportunitySource
         }
     }
 
+    public static async Task EnsureSupplyNotSelectedElsewhereAsync(
+        IDbContext dbContext,
+        Guid supplyId,
+        Guid opportunityId,
+        CancellationToken cancellationToken)
+    {
+        var isSelectedElsewhere = await dbContext.CrmMatchCandidates.AnyAsync(candidate =>
+            candidate.HerbBaseSupplyId == supplyId &&
+            candidate.MatchOpportunityId != opportunityId &&
+            candidate.Status == CrmMatchCandidate.Selected &&
+            dbContext.CrmMatchOpportunities.Any(opportunity =>
+                opportunity.Id == candidate.MatchOpportunityId &&
+                opportunity.Status != CrmMatchOpportunity.Closed),
+            cancellationToken);
+
+        if (isSelectedElsewhere)
+        {
+            throw new BusinessException(400, "供应信息已在其他撮合机会中中选");
+        }
+    }
+
     public static string DescribeNextAction(string nextAction, string nextActionRemark) =>
         nextAction == CrmMatchOpportunityNextAction.Other
             ? $"{nextAction}（{nextActionRemark}）"

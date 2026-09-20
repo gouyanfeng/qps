@@ -13,6 +13,7 @@ public class CrmFollowTaskDto
     public string TaskContent { get; set; } = string.Empty;
     public DateTime? NextFollowAt { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string Stage { get; set; } = string.Empty;
 }
 
 public class CrmFollowTaskOverviewDto
@@ -25,7 +26,6 @@ public class CrmFollowTaskOverviewDto
 
 public class CrmFollowTaskResponse
 {
-    public CrmFollowTaskOverviewDto Overview { get; set; } = new();
     public List<CrmFollowTaskDto> List { get; set; } = new();
     public int TotalCount { get; set; }
     public int CurrentPage { get; set; }

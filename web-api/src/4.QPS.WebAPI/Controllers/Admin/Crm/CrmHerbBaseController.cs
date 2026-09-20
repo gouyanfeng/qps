@@ -260,6 +260,11 @@ public class CrmHerbBaseController : ControllerBase
     public async Task<ActionResult<List<CrmHerbBaseSupplyDto>>> GetSupplies(Guid herbBaseId)
         => Ok(await _mediator.Send(new GetCrmHerbBaseSuppliesQuery { HerbBaseId = herbBaseId }));
 
+    [HttpGet("/api/admin/crm/herb-base-supplies")]
+    public async Task<ActionResult<PaginationResponse<CrmHerbBaseSupplyListDto>>> GetSupplyList(
+        [FromQuery] GetCrmHerbBaseSupplyListQuery query)
+        => Ok(await _mediator.Send(query));
+
     [HttpPost("{herbBaseId:guid}/supplies")]
     public async Task<ActionResult<bool>> CreateSupply(Guid herbBaseId, [FromBody] CrmHerbBaseSupplySaveRequest request)
         => Ok(await _mediator.Send(new CreateCrmHerbBaseSupplyCommand { HerbBaseId = herbBaseId, Request = request }));

@@ -58,6 +58,9 @@ export const crmHerbBaseApi = {
   getSupplies: (herbBaseId: string) => {
     return http.get<any>(`/admin/crm/herb-bases/${herbBaseId}/supplies`);
   },
+  getSupplyList: (params: any) => {
+    return http.get<any>("/admin/crm/herb-base-supplies", params);
+  },
   createSupply: (herbBaseId: string, params: any) => {
     return http.post<any>(`/admin/crm/herb-bases/${herbBaseId}/supplies`, params);
   },
