@@ -1,4 +1,4 @@
-using QPS.Domain.Entities.System;
+using QPS.System.Domain.Entities;
 using Xunit;
 
 namespace QPS.UnitTests.Domain.Entities.System;

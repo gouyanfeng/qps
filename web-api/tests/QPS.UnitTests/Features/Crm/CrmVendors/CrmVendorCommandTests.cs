@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using QPS.Application.Contracts.Crm;
-using QPS.Application.Contracts.Crm.CrmVendors;
-using QPS.Application.Features.Crm.CrmVendors;
-using QPS.Domain.Entities.Crm;
-using QPS.Domain.Entities.System;
+using QPS.Crm.Contracts.DTOs;
+using QPS.Crm.Contracts.DTOs.CrmVendors;
+using QPS.Crm.Application.Features.CrmVendors;
+using QPS.Crm.Domain.Entities;
+using QPS.System.Domain.Entities;
 using QPS.UnitTests.Common;
 using Xunit;
 
@@ -20,7 +20,9 @@ public class CrmVendorCommandTests
         dbContext.SystemUsers.AddRange(operatorUser, requestedOwner);
         await dbContext.SaveChangesAsync();
 
-        var handler = new CreateCrmVendorHandler(dbContext, new TestCurrentUserService(operatorUser.Id.ToString()));
+        var handler = new CreateCrmVendorHandler(
+            dbContext,
+            new TestCurrentUserService(operatorUser.Id.ToString()));
 
         var result = await handler.Handle(new CreateCrmVendorCommand
         {

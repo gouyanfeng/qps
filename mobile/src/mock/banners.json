@@ -1,0 +1,22 @@
+﻿{
+  "banners": [
+    {
+      "id": "banner-001",
+      "image": "/static/images/photo-1556228578-0d85b1a47d85.jpg",
+      "title": "中药材精品推荐",
+      "link": ""
+    },
+    {
+      "id": "banner-002",
+      "image": "/static/images/photo-1615485290382-441e4d049cb5.jpg",
+      "title": "新人专享优惠",
+      "link": ""
+    },
+    {
+      "id": "banner-003",
+      "image": "/static/images/photo-1512069772995-ec65ed45afd6.jpg",
+      "title": "限时特惠活动",
+      "link": ""
+    }
+  ]
+}

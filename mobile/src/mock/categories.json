@@ -1,0 +1,60 @@
+{
+  "categories": [
+    {
+      "id": "cat-001",
+      "name": "根茎类",
+      "icon": "medicine-box",
+      "children": [
+        { "id": "cat-001-01", "name": "人参" },
+        { "id": "cat-001-02", "name": "黄芪" },
+        { "id": "cat-001-03", "name": "当归" },
+        { "id": "cat-001-04", "name": "白术" },
+        { "id": "cat-001-05", "name": "甘草" }
+      ]
+    },
+    {
+      "id": "cat-002",
+      "name": "花叶类",
+      "icon": "shop",
+      "children": [
+        { "id": "cat-002-01", "name": "菊花" },
+        { "id": "cat-002-02", "name": "金银花" },
+        { "id": "cat-002-03", "name": "薄荷" },
+        { "id": "cat-002-04", "name": "桑叶" }
+      ]
+    },
+    {
+      "id": "cat-003",
+      "name": "果实类",
+      "icon": "gift",
+      "children": [
+        { "id": "cat-003-01", "name": "枸杞" },
+        { "id": "cat-003-02", "name": "山楂" },
+        { "id": "cat-003-03", "name": "陈皮" },
+        { "id": "cat-003-04", "name": "五味子" }
+      ]
+    },
+    {
+      "id": "cat-004",
+      "name": "动物类",
+      "icon": "box",
+      "children": [
+        { "id": "cat-004-01", "name": "鹿茸" },
+        { "id": "cat-004-02", "name": "阿胶" },
+        { "id": "cat-004-03", "name": "全蝎" },
+        { "id": "cat-004-04", "name": "蜈蚣" }
+      ]
+    },
+    {
+      "id": "cat-005",
+      "name": "矿物类",
+      "icon": "diamond",
+      "children": [
+        { "id": "cat-005-01", "name": "石膏" },
+        { "id": "cat-005-02", "name": "朱砂" },
+        { "id": "cat-005-03", "name": "龙骨" },
+        { "id": "cat-005-04", "name": "磁石" }
+      ]
+    }
+  ]
+}

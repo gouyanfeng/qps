@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using QPS.Application.Contracts.Crm;
-using QPS.Application.Contracts.Crm.CrmHerbBases;
-using QPS.Application.Features.Crm.CrmHerbBaseSubjects;
-using QPS.Application.Features.Crm.CrmHerbBases;
-using QPS.Domain.Entities.Crm;
-using QPS.Domain.Entities.System;
+using QPS.Crm.Contracts.DTOs;
+using QPS.Crm.Contracts.DTOs.CrmHerbBases;
+using QPS.Crm.Application.Features.CrmHerbBaseSubjects;
+using QPS.Crm.Application.Features.CrmHerbBases;
+using QPS.Crm.Domain.Entities;
+using QPS.System.Domain.Entities;
 using QPS.UnitTests.Common;
 using Xunit;
 
@@ -118,7 +118,7 @@ public class CrmHerbBaseCommandTests
     }
 
     private static CrmHerbBaseSubject AddSubjectWithSupply(
-        QPS.Infrastructure.Database.AppDbContext dbContext,
+        QPS.Persistence.Database.AppDbContext dbContext,
         string subjectName,
         string productName)
     {

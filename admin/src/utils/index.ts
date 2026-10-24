@@ -149,6 +149,19 @@ export const getAllBreadcrumbList = (
 };
 
 /**
+ * @description 将后端返回的相对文件地址拼接为可访问地址
+ * @param path 相对地址或完整地址
+ * @returns 可直接用于 img src 的地址
+ */
+export function resolveFileUrl(path?: string | null): string {
+  if (!path) return "";
+  if (/^(https?:)?\/\//i.test(path) || path.startsWith("data:")) return path;
+
+  const apiUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+  return `${apiUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+/**
  * @description 格式化日期显示，避免 "Invalid Date"
  * @param dateString 后端返回的日期字符串
  * @param fallback 空值时的回退文案

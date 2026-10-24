@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using QPS.Application.Contracts.Crm;
-using QPS.Application.Contracts.Crm.CrmHerbBases;
-using QPS.Application.Features.Crm.CrmHerbBases;
-using QPS.Domain.Entities.Crm;
+using QPS.Crm.Contracts.DTOs;
+using QPS.Crm.Contracts.DTOs.CrmHerbBases;
+using QPS.Crm.Application.Features.CrmHerbBases;
+using QPS.Crm.Domain.Entities;
 using QPS.UnitTests.Common;
 using Xunit;
 

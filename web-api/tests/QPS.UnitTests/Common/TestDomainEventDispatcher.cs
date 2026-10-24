@@ -1,5 +1,4 @@
-using QPS.Application.Interfaces;
-using QPS.Domain.Events;
+using QPS.Shared.Contracts;
 
 namespace QPS.UnitTests.Common;
 

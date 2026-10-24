@@ -6,7 +6,7 @@ import http from "@/api";
  */
 // 图片上传
 export const uploadImg = (params: FormData) => {
-  return http.post<Upload.ResFileUrl>(`/file/upload/img`, params, {
+  return http.post<Upload.ResFileUrl>(`/admin/file/upload/img`, params, {
     cancel: false,
   });
 };

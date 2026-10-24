@@ -17,7 +17,7 @@ dotnet test "E:\Code\QPS\web-api\QPS.sln" --no-build --logger "console;verbosity
 - 继承 `BaseEntity` 的实体默认走 EF 全局软删除过滤；常规查询不要重复写 `!IsDeleted`，只有必须查全量时才使用 `IgnoreQueryFilters()`。
 - 不要为了调试清空数据库；优先增量补齐或使用初始化逻辑。
 - CRM 不使用 `CRM_CUSTOMER` 业务编码：具体基地属性使用 `CRM_HERB_BASE`；基地主体的联系人、跟进和负责人流转使用 `CRM_HERB_BASE_SUBJECT`；厂商使用 `CRM_VENDOR`。
-- CRM 相关硬编码收敛到 `QPS.Application.Features.Crm.CrmCodes`，避免在 Handler 中散落业务编码和状态值。
+- CRM 相关硬编码收敛到 `QPS.Crm.Contracts.CrmCodes`，避免在 Handler 中散落业务编码和状态值。
 - 客户来源字段使用 `SourceId`，不要使用 `SourceLeadId`。
 - 标签、资质等扩展属性统一使用 `CrmBusinessEntityAttributes`；基地品类仅通过 `CrmHerbBaseSupplies.ProductName` 维护，采购品类仅通过 `CrmVendorDemandItems.ProductName` 维护。
 - `CrmBusinessEntityAttributes.EntityType` 使用实体编码，`AttributeCode` 使用属性编码。
@@ -27,7 +27,7 @@ dotnet test "E:\Code\QPS\web-api\QPS.sln" --no-build --logger "console;verbosity
 ## 权限与业务规则边界
 
 - 功能权限由 Application 层的 `PermissionAttribute` 与 MediatR `PermissionBehaviour` 校验；权限特性标记在对应 Query、Command 类型上，禁止在 Controller 或普通 HTTP 中间件维护“路由 -> 权限码”映射。
-- 权限码统一定义为 `QPS.Application.Features.System.SystemPermissionCodes` 常量；常量名必须与权限码字符串完全一致，例如 `CRM_MATCH_OPPORTUNITY_VIEW = "CRM_MATCH_OPPORTUNITY_VIEW"`；禁止在 Query、Command、Handler 中重复写权限码字符串字面量。
+- 权限码按模块归属定义：CRM 权限码在 `QPS.Crm.Contracts.Permissions.CrmPermissionCodes`；常量名必须与权限码字符串完全一致，例如 `CRM_MATCH_OPPORTUNITY_VIEW = "CRM_MATCH_OPPORTUNITY_VIEW"`；禁止在 Query、Command、Handler 中重复写权限码字符串字面量。
 - `PermissionBehaviour` 只负责当前用户有效性和功能权限，不得查询或改变 CRM 业务状态，也不得承担数据范围、对象归属、关联引用或状态流转校验。
 - Handler 只负责用例编排、资源存在性、数据范围和跨聚合协作；采购需求有效性、撮合机会关闭状态、候选可追加性等业务状态，必须由 Handler 调用领域实体或领域规则处理。
 - 通用权限行为尚未迁移到的存量模块，暂时沿用模块权限助手；禁止在新的 Handler 中直接重复查询用户、角色和 `SystemRolePermissions`。迁移完成后删除对应模块权限助手和手工权限调用。
