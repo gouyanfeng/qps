@@ -7,33 +7,42 @@
       <!-- 冷链配送地址卡 -->
       <section class="card address-card">
         <view class="address-head">
-          <view class="tag tag-green tag-lg">
-            <q-icon name="vehicle" size="26" color="#FFFFFF" />
-            <text>顺丰冷链</text>
+          <view class="addr-pill">
+            <q-icon name="snowflake" size="24" color="#2E7D32" />
+            <text>顺丰冷链 · 避光恒温保效直发</text>
           </view>
           <view class="address-head-right" @tap="editAddress">
             <text class="link">更换地址</text>
-            <q-icon name="chevron-right" size="28" color="#999999" />
+            <q-icon name="chevron-right" size="24" color="#9A9A96" />
           </view>
         </view>
         <view class="address-user">
-          <text class="name">李时珍</text>
-          <text class="phone">138****9527</text>
-          <view class="tag tag-default tag-sm">默认</view>
+          <text class="name">{{ address?.receiverName || '请选择收货地址' }}</text>
+          <text class="phone">{{ address?.receiverPhone || '' }}</text>
+          <view v-if="address?.isDefault" class="tag-default tag-sm">默认</view>
         </view>
         <view class="address-detail">
-          湖北省黄冈市蕲春县李时珍大道 88 号·本草国医馆 1 楼
+          <q-icon name="location" size="28" color="#2E7D32" />
+          <text class="address-text">{{ address?.fullAddress || '点击更换地址并新增收货地址' }}</text>
         </view>
         <view class="time-pill">
-          <q-icon name="time" size="24" color="#FFFFFF" />
-          <text>预计明天 14:00 前送达·中药密封温控箱配送</text>
+          <q-icon name="time" size="24" color="#E2601F" />
+          <text class="time-text">预计<text class="time-strong">明天 14:00</text>前送达（中药密封温控箱配送）</text>
         </view>
+        <!-- 卡片底部的信封封边 -->
+        <view class="rx-divider"></view>
       </section>
 
-      <!-- 包邮专享横幅 -->
-      <section class="banner-free">
-        <q-icon name="check-circle-filled" size="36" color="#FF9800" />
-        <text>已享全场满 ¥99 免运费</text>
+      <!-- 配送方式 -->
+      <section class="card delivery-card">
+        <view class="delivery-icon">
+          <q-icon name="vehicle" size="30" color="#2E7D32" />
+        </view>
+        <view class="delivery-text">
+          <text class="delivery-name">顺丰特快</text>
+          <text class="delivery-desc">已免运费（已满 ¥99 免邮，为您减免 ¥15.00）</text>
+        </view>
+        <view class="delivery-tag">包邮专享</view>
       </section>
 
       <!-- 商品清单店铺分组 -->
@@ -60,10 +69,6 @@
               </view>
             </view>
           </view>
-          <view class="gift-row" v-for="(g, idx) in gifts" :key="idx">
-            <view class="tag tag-orange tag-sm">赠品</view>
-            <text class="gift-name">{{ g }}</text>
-          </view>
         </view>
         <view class="dashed-divider"></view>
         <view class="shop-subtotal">
@@ -80,19 +85,17 @@
             <text>优惠券</text>
           </view>
           <view class="discount-row-right">
-            <text class="discount-neg">-¥40.00</text>
-            <text class="discount-hint">满300减40</text>
+            <text class="discount-hint">暂无可用优惠券</text>
             <q-icon name="chevron-right" size="28" color="#999999" />
           </view>
         </view>
-        <view class="discount-row">
+        <view class="discount-row promotion-row">
           <view class="discount-row-left">
-            <q-icon name="star" size="30" color="#2E7D32" />
-            <text>积分抵扣</text>
+            <q-icon name="coupon" size="30" color="#E2601F" />
+            <text>促销活动</text>
           </view>
           <view class="discount-row-right">
-            <text class="discount-hint">500 积分抵 ¥5.00</text>
-            <t-switch v-model="usePoints" theme="#2E7D32" size="small" />
+            <text class="discount-hint">下单时自动匹配，优惠金额以结算结果为准</text>
           </view>
         </view>
         <view class="discount-row" @tap="addRemark">
@@ -117,40 +120,38 @@
             <text class="fee-label">运费</text>
             <text class="fee-value fee-free">已免</text>
           </view>
-          <view class="fee-line">
-            <text class="fee-label">优惠券</text>
-            <text class="fee-value fee-neg">-¥40.00</text>
-          </view>
-          <view class="fee-line" v-if="usePoints">
-            <text class="fee-label">积分抵扣</text>
-            <text class="fee-value fee-neg">-¥5.00</text>
-          </view>
         </view>
       </section>
 
-      <!-- 支付方式 -->
-      <section class="card pay-card">
-        <view class="card-title">支付方式</view>
-        <view class="pay-row" @tap="payMethod = 'wechat'">
-          <view class="pay-row-left">
-            <view class="pay-icon wechat">微</view>
-            <view class="pay-text">
+      <!-- 选择支付方式 -->
+      <view class="pay-section">
+        <view class="pay-section-title">选择支付方式</view>
+        <view :class="['pay-option', { 'pay-option-on': payMethod === 'wechat' }]" @tap="payMethod = 'wechat'">
+          <view class="pay-logo wechat">微</view>
+          <view class="pay-main">
+            <view class="pay-title-row">
               <text class="pay-name">微信支付</text>
-              <text class="pay-tag">推荐</text>
+              <view class="pay-tag">推荐</view>
             </view>
+            <text class="pay-desc">微信立减金可用，支持微信分期</text>
           </view>
-          <t-radio :checked="payMethod === 'wechat'" theme="#2E7D32" />
+          <view :class="['pay-radio', { 'pay-radio-on': payMethod === 'wechat' }]">
+            <q-icon v-if="payMethod === 'wechat'" name="check" size="18" color="#ffffff" />
+          </view>
         </view>
-        <view class="pay-row" @tap="payMethod = 'alipay'">
-          <view class="pay-row-left">
-            <view class="pay-icon alipay">支</view>
-            <view class="pay-text">
-              <text class="pay-name">支付宝</text>
+        <view :class="['pay-option', { 'pay-option-on': payMethod === 'alipay' }]" @tap="payMethod = 'alipay'">
+          <view class="pay-logo alipay">支</view>
+          <view class="pay-main">
+            <view class="pay-title-row">
+              <text class="pay-name">支付宝支付</text>
             </view>
+            <text class="pay-desc">支持花呗分期还款</text>
           </view>
-          <t-radio :checked="payMethod === 'alipay'" theme="#2E7D32" />
+          <view :class="['pay-radio', { 'pay-radio-on': payMethod === 'alipay' }]">
+            <q-icon v-if="payMethod === 'alipay'" name="check" size="18" color="#ffffff" />
+          </view>
         </view>
-      </section>
+      </view>
 
       <!-- 药房品质保证 -->
       <section class="card guar-card">
@@ -186,12 +187,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { getCartItems, clearCart } from '@/api'
+import { onShow } from '@dcloudio/uni-app'
+import { getCartItems, clearCart, getAddresses, getStoreId, createOrder, isLoggedIn } from '@/api'
+import type { MallAddress } from '@/api'
 import type { CartItem } from '@/api/types'
 
 const items = ref<CartItem[]>([])
-const gifts = ref<string[]>(['正宗宁夏枸杞 10g', '道地黄芪片 试用品'])
-const usePoints = ref(false)
+const address = ref<MallAddress | null>(null)
 const payMethod = ref('wechat')
 const remark = ref('')
 
@@ -200,18 +202,30 @@ const subtotal = computed(() =>
 )
 
 const finalPrice = computed(() => {
-  let p = subtotal.value - 40
-  if (usePoints.value) p -= 5
-  return Math.max(p, 0)
+  return subtotal.value
 })
 
-items.value = getCartItems().length > 0 ? getCartItems() : [
-  { productId: '1', productName: '长白山十五年野生生晒参', productImage: '/static/images/photo-1549737557-0e4e05d31f9c.jpg', skuId: 's1', specName: '600g礼盒装', price: 298, quantity: 1, weightGram: 600, selected: true },
-  { productId: '2', productName: '宁夏中宁特级枸杞', productImage: '/static/images/photo-1599909533730-3c5c6589a060.jpg', skuId: 's2', specName: '250g精品装', price: 72, quantity: 1, weightGram: 250, selected: true }
-]
+onShow(async () => {
+  try {
+    items.value = (await getCartItems()).filter(item => item.selected)
+    if (!isLoggedIn()) {
+      address.value = null
+      return
+    }
+    const addresses = await getAddresses()
+    const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
+    address.value = addresses.find(item => item.id === selectedAddressId)
+      ?? addresses.find(item => item.isDefault)
+      ?? addresses[0]
+      ?? null
+  } catch (error) {
+    console.error('加载结算数据失败', error)
+    uni.showToast({ title: '结算数据加载失败', icon: 'none' })
+  }
+})
 
-function editAddress() { uni.showToast({ title: '地址管理开发中', icon: 'none' }) }
-function selectCoupon() { uni.showToast({ title: '优惠券选择开发中', icon: 'none' }) }
+function editAddress() { uni.navigateTo({ url: '/pages/addresses/index' }) }
+function selectCoupon() { uni.showToast({ title: '暂无可用优惠券', icon: 'none' }) }
 function addRemark() {
   uni.showModal({
     title: '订单备注', editable: true, placeholderText: '选填',
@@ -219,14 +233,56 @@ function addRemark() {
   })
 }
 function submitOrder() {
+  if (!isLoggedIn()) {
+    uni.showToast({ title: '请先登录后再提交订单', icon: 'none' })
+    uni.navigateTo({ url: '/pages/account/index' })
+    return
+  }
+  if (!address.value) {
+    uni.showToast({ title: '请先添加收货地址', icon: 'none' })
+    editAddress()
+    return
+  }
+  if (items.value.length === 0) {
+    uni.showToast({ title: '购物车没有已选商品', icon: 'none' })
+    return
+  }
+
   uni.showModal({
     title: '确认提交',
-    content: `实付 ¥${finalPrice.value.toFixed(2)}，使用${payMethod.value === 'wechat' ? '微信' : '支付宝'}支付？`,
-    success: r => {
-      if (r.confirm) {
-        clearCart()
-        uni.showToast({ title: '下单成功！', icon: 'success' })
-        setTimeout(() => uni.switchTab({ url: '/pages/index/index' }), 1200)
+    content: `商品金额（优惠前）¥${finalPrice.value.toFixed(2)}，促销优惠将在下单时自动核算。确认创建订单？`,
+    success: async r => {
+      if (!r.confirm || !address.value) return
+      try {
+        const order = await createOrder({
+          storeId: await getStoreId(),
+          receiverName: address.value.receiverName,
+          receiverPhone: address.value.receiverPhone,
+          provinceCode: address.value.provinceCode,
+          provinceName: address.value.provinceName,
+          cityCode: address.value.cityCode,
+          cityName: address.value.cityName,
+          districtCode: address.value.districtCode,
+          districtName: address.value.districtName,
+          receiverAddress: address.value.detailAddress,
+          remark: remark.value,
+          items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity }))
+        })
+        try {
+          await clearCart()
+        } catch (error) {
+          console.error('订单已创建但清空购物车失败', error)
+          uni.showToast({ title: '订单已创建，购物车同步失败', icon: 'none' })
+        }
+        uni.showModal({
+          title: '订单已创建',
+          content: `订单号：${order.orderNo}\n促销优惠：¥${Number(order.promotionDiscountAmount || 0).toFixed(2)}\n实付金额：¥${Number(order.payableAmount).toFixed(2)}`,
+          showCancel: false,
+          success: () => uni.switchTab({ url: '/pages/profile/index' })
+        })
+      } catch (error) {
+        console.error('创建订单失败', error)
+        uni.showToast({ title: '下单失败，请检查库存和收货信息', icon: 'none' })
       }
     }
   })
@@ -280,72 +336,151 @@ $page-padding: 24rpx;
   padding: 6rpx 16rpx;
   line-height: 1;
 }
-.tag-lg { font-size: 24rpx; padding: 10rpx 22rpx; }
 .tag-sm { font-size: 20rpx; padding: 4rpx 12rpx; }
 .tag-green { background: $theme-primary; color: #FFFFFF; }
 .tag-orange { background: $theme-accent; color: #FFFFFF; }
 .tag-default { background: #F0F0F0; color: #666; }
 
 /* ===== 地址卡 ===== */
-.address-card { padding: 28rpx 28rpx 24rpx; }
+.address-card {
+  position: relative;
+  overflow: hidden;
+  padding: 26rpx 28rpx 34rpx;
+  border: 1rpx solid #F0EBE1;
+}
 .address-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+.addr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  height: 48rpx;
+  padding: 0 18rpx;
+  background: #EDF4E4;
+  border-radius: 100rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: $theme-primary;
+}
 .address-head-right {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  color: #999;
-  font-size: 26rpx;
+  gap: 2rpx;
+  color: #9A9A96;
+  font-size: 24rpx;
 }
-.link { color: #999; font-size: 26rpx; }
+.link { color: #9A9A96; font-size: 24rpx; }
 .address-user {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 14rpx;
   margin-top: 20rpx;
 }
 .address-user .name {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 700;
-  color: #1B5E20;
+  color: #1B1C1C;
+  letter-spacing: 1rpx;
 }
 .address-user .phone {
   font-size: 26rpx;
   color: #555;
 }
+.address-user .tag-default {
+  background: $theme-primary;
+  color: #FFFFFF;
+  font-weight: 600;
+}
 .address-detail {
-  font-size: 26rpx;
-  color: #444;
-  margin-top: 10rpx;
-  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin-top: 14rpx;
+}
+.address-detail .q-icon { flex-shrink: 0; margin-top: 4rpx; }
+.address-text {
+  flex: 1;
+  font-size: 27rpx;
+  color: #333;
+  line-height: 1.55;
 }
 .time-pill {
-  margin-top: 20rpx;
+  margin-top: 18rpx;
   display: flex;
   align-items: center;
   gap: 8rpx;
-  background: $theme-primary;
-  color: #FFFFFF;
-  padding: 16rpx 22rpx;
-  border-radius: 16rpx;
+  background: #FDF1E7;
+  padding: 14rpx 18rpx;
+  border-radius: 12rpx;
+}
+.time-text {
+  flex: 1;
   font-size: 24rpx;
+  color: #C0622F;
   line-height: 1.4;
 }
+.time-strong { font-weight: 700; color: #C24A18; }
 
-/* ===== 包邮横幅 ===== */
-.banner-free {
-  margin-top: 24rpx;
-  background: #FFF8E1;
-  border-radius: 16rpx;
-  padding: 20rpx 24rpx;
+/* ===== 红绿相间药方虚线（信封封边，贴在地址卡内侧底部） ===== */
+.rx-divider {
+  position: absolute;
+  left: -24rpx;
+  right: -24rpx;
+  bottom: 0;
+  height: 10rpx;
+  transform: skewX(-20deg);
+  background: repeating-linear-gradient(
+    to right,
+    $theme-primary 0 20rpx,
+    transparent 20rpx 26rpx,
+    #C62828 26rpx 46rpx,
+    transparent 46rpx 52rpx
+  );
+}
+
+/* ===== 配送方式 ===== */
+.delivery-card {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  font-size: 26rpx;
-  color: #E65100;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  border: 1rpx solid #F0EBE1;
+}
+.delivery-icon {
+  width: 76rpx;
+  height: 76rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #EFF5E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.delivery-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 23rpx;
+  color: #6B6B6B;
+  line-height: 1.5;
+}
+.delivery-name {
+  font-weight: 700;
+  color: #1B1C1C;
+}
+.delivery-tag {
+  flex-shrink: 0;
+  height: 44rpx;
+  padding: 0 18rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 100rpx;
+  background: $theme-primary;
+  color: #FFFFFF;
+  font-size: 22rpx;
+  font-weight: 600;
 }
 
 /* ===== 商品清单 ===== */
@@ -469,6 +604,11 @@ $page-padding: 24rpx;
   color: #999;
 }
 .discount-hint.placeholder { color: #BBB; }
+.points-switch {
+  transform: scale(0.75);
+  transform-origin: right center;
+  margin-left: 4rpx;
+}
 
 .fee-detail {
   margin-top: 16rpx;
@@ -486,47 +626,88 @@ $page-padding: 24rpx;
 .fee-free { color: $theme-primary; }
 .fee-neg { color: $theme-accent; }
 
-/* ===== 支付方式 ===== */
-.pay-card { padding: 28rpx; }
-.pay-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20rpx 0;
+/* ===== 选择支付方式 ===== */
+.pay-section { margin-top: 24rpx; }
+.pay-section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1B1C1C;
+  margin: 4rpx 0 18rpx;
 }
-.pay-row-left {
+.pay-option {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-}
-.pay-icon {
-  width: 64rpx;
-  height: 64rpx;
+  gap: 20rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 16rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #E8E3D8;
   border-radius: 16rpx;
+}
+.pay-option-on {
+  background: #F4F9EF;
+  border-color: $theme-primary;
+}
+.pay-logo {
+  width: 76rpx;
+  height: 76rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 700;
 }
-.pay-icon.wechat { background: #07C160; }
-.pay-icon.alipay { background: #1677FF; }
-.pay-text {
+.pay-logo.wechat { background: #E4F3E5; color: $theme-primary; }
+.pay-logo.alipay { background: #E8F0FE; color: #1677FF; }
+.pay-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.pay-title-row {
   display: flex;
   align-items: center;
   gap: 10rpx;
 }
 .pay-name {
-  font-size: 28rpx;
-  color: #222;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1B1C1C;
+}
+.pay-desc {
+  font-size: 22rpx;
+  color: #8A8578;
 }
 .pay-tag {
+  height: 34rpx;
+  padding: 0 10rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 6rpx;
+  background: $theme-primary;
+  color: #FFFFFF;
   font-size: 20rpx;
-  background: #FFF0E0;
-  color: $theme-accent;
-  padding: 2rpx 12rpx;
-  border-radius: 8rpx;
+  font-weight: 600;
+}
+.pay-radio {
+  width: 44rpx;
+  height: 44rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2rpx solid #C9C5BA;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.pay-radio-on {
+  background: $theme-primary;
+  border-color: $theme-primary;
 }
 
 /* ===== 品质保证 ===== */

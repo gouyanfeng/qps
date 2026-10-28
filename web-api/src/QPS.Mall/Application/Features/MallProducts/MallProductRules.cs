@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallProducts;
@@ -130,6 +131,17 @@ internal static class MallProductRules
         }
     }
 
+    /// <summary>
+    /// 市场价是划线展示价，允许不设置（0），设置时不能为负数。
+    /// </summary>
+    public static void ValidateMarketPrice(decimal marketPrice)
+    {
+        if (marketPrice < 0)
+        {
+            throw new BusinessException(400, "规格市场价不能小于 0");
+        }
+    }
+
     public static void ValidateWeight(int weightGram)
     {
         if (weightGram <= 0)
@@ -233,7 +245,7 @@ internal static class MallProductRules
     {
         if (!categoryId.HasValue)
         {
-            return;
+            throw new BusinessException(400, "请选择商品末级分类");
         }
 
         var category = await dbContext.MallCategories
@@ -249,6 +261,46 @@ internal static class MallProductRules
         {
             throw new BusinessException(400, "商品分类已停用");
         }
+
+        if (category.ParentId.HasValue)
+        {
+            var parentIsActive = await dbContext.MallCategories.AnyAsync(
+                item => item.Id == category.ParentId.Value &&
+                        item.StoreId == category.StoreId &&
+                        item.IsActive &&
+                        !item.IsDeleted,
+                cancellationToken);
+            if (!parentIsActive)
+            {
+                throw new BusinessException(400, "商品分类的父级分类已停用");
+            }
+        }
+
+        var hasChildren = await dbContext.MallCategories
+            .AnyAsync(item => item.ParentId == categoryId.Value && !item.IsDeleted, cancellationToken);
+        if (hasChildren)
+        {
+            throw new BusinessException(400, "商品必须归属末级分类");
+        }
+    }
+
+    public static async Task<List<MallTag>> GetActiveTagsAsync(
+        IMallDbContext dbContext,
+        IEnumerable<Guid>? tagIds,
+        CancellationToken cancellationToken)
+    {
+        var ids = tagIds?.Distinct().ToArray() ?? Array.Empty<Guid>();
+        if (ids.Length == 0) return new List<MallTag>();
+
+        var tags = await dbContext.MallTags
+            .Where(tag => ids.Contains(tag.Id) && tag.IsActive && !tag.IsDeleted)
+            .ToListAsync(cancellationToken);
+        if (tags.Count != ids.Length)
+        {
+            throw new BusinessException(400, "所选商品标签不存在或已停用");
+        }
+
+        return tags;
     }
 
     public static void ValidateStock(int stock)

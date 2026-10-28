@@ -19,10 +19,8 @@
           </swiper-item>
         </swiper>
 
-        <!-- 左上角 GAP 胶囊角标 -->
-        <view class="gap-badge">
-          <q-icon name="check-circle-filled" size="13" color="#2E7D32" />
-          <text>GAP道地认证</text>
+        <view v-if="product.tags.length" class="gap-badge">
+          <text>{{ product.tags[0].name }}</text>
         </view>
 
         <!-- 右下角分式指示器 + 缩放放大镜 -->
@@ -42,18 +40,15 @@
           <view class="price-main">
             <text class="price-symbol">¥</text>
             <text class="price-value">{{ currentSku.price }}</text>
-            <text class="price-original">¥{{ Math.round(currentSku.price * 1.48) }}</text>
+            <text v-if="currentSku.marketPrice > 0" class="price-original">¥{{ currentSku.marketPrice }}</text>
           </view>
-          <view class="cert-pill">
-            <q-icon name="check-circle-filled" size="14" color="#2E7D32" />
-            <text>GAP道地认证</text>
+          <view v-if="product.tags.length" class="cert-pill">
+            <text>{{ product.tags[0].name }}</text>
           </view>
         </view>
         <text class="product-name">{{ product.name }}</text>
-        <view class="meta-row">
-          <text class="meta-item">产地：吉林长白山抚松产区</text>
-          <view class="meta-divider"></view>
-          <text class="meta-item">参龄：2009年生长 · 足十五年</text>
+        <view v-if="product.tags.length" class="product-tags-row">
+          <text v-for="tag in product.tags" :key="tag.id" class="product-tag">{{ tag.name }}</text>
         </view>
       </view>
 
@@ -62,7 +57,7 @@
         <view class="spec-head">
           <view class="spec-head-left">
             <text class="spec-title">选择规格</text>
-            <view class="spec-tag"><text>典藏道地</text></view>
+            <view v-if="product.tags.length" class="spec-tag"><text>{{ product.tags[0].name }}</text></view>
           </view>
           <text class="spec-stock">库存 {{ currentSku.stock }} 件</text>
         </view>
@@ -180,9 +175,9 @@ const selectedSpecs = ref<Record<string, string>>({})
 
 const swiperIdx = ref(0)
 
-onLoad((opts) => {
+onLoad(async (opts) => {
   if (opts?.id) {
-    product.value = getProductById(opts.id) ?? null
+    product.value = (await getProductById(opts.id)) ?? null
     const firstSku = product.value?.skus[0]
     if (firstSku) selectedSpecs.value = { 规格: firstSku.specName }
   }
@@ -190,7 +185,7 @@ onLoad((opts) => {
 
 const currentSku = computed(() => {
   const skus = product.value?.skus ?? []
-  return skus.find(s => s.specName === selectedSpecs.value['规格']) ?? skus[0] ?? { id: '', specName: '', price: 0, stock: 0, weightGram: 0 }
+  return skus.find(s => s.specName === selectedSpecs.value['规格']) ?? skus[0] ?? { id: '', specName: '', price: 0, marketPrice: 0, stock: 0, weightGram: 0 }
 })
 
 function unitPriceText(sku: Sku) {
@@ -208,22 +203,34 @@ function selectSpec(name: string, opt: string) { selectedSpecs.value[name] = opt
 function onSwiperChange(e: { detail: { current: number } }) { swiperIdx.value = e.detail.current }
 function consult() { uni.showToast({ title: '正在连接药师…', icon: 'none' }) }
 
-function addToCart() {
-  if (!product.value) return
-  addCart({
-    skuId: currentSku.value.id,
-    productId: product.value.id,
-    productName: product.value.name,
-    productImage: product.value.images[0],
-    specName: Object.values(selectedSpecs.value).join('/') || '默认规格',
-    price: currentSku.value.price,
-    quantity: quantity.value,
-    weightGram: currentSku.value.weightGram,
-    selected: true
-  })
-  uni.showToast({ title: '已加入购物车', icon: 'success' })
+async function addToCart(): Promise<boolean> {
+  if (!product.value) return false
+  try {
+    await addCart({
+      skuId: currentSku.value.id,
+      productId: product.value.id,
+      productName: product.value.name,
+      productImage: product.value.images[0] || '',
+      specName: currentSku.value.specName || '默认规格',
+      price: currentSku.value.price,
+      quantity: quantity.value,
+      weightGram: currentSku.value.weightGram,
+      selected: true,
+      badge: product.value.tags[0]?.name,
+      certText: product.value.tags[1]?.name || product.value.tags[0]?.name
+    })
+    uni.showToast({ title: '已加入购物车', icon: 'success' })
+    return true
+  } catch (error) {
+    console.error('加入购物车失败', error)
+    uni.showToast({ title: '加入购物车失败', icon: 'none' })
+    return false
+  }
 }
-function buyNow() { addToCart(); setTimeout(() => uni.navigateTo({ url: '/pages/checkout/index' }), 500) }
+async function buyNow() {
+  if (!await addToCart()) return
+  setTimeout(() => uni.navigateTo({ url: '/pages/checkout/index' }), 500)
+}
 function goCart() { uni.switchTab({ url: '/pages/cart/index' }) }
 </script>
 

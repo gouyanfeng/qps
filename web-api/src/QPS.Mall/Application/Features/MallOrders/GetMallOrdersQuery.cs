@@ -29,6 +29,11 @@ public class GetMallOrdersQuery : PaginationRequest, IRequest<PaginationResponse
     public Guid? StoreId { get; set; }
 
     /// <summary>
+    /// 会员ID，C端过滤自己的订单。
+    /// </summary>
+    public Guid? MemberId { get; set; }
+
+    /// <summary>
     /// 关键字，匹配订单号、收货人或电话。
     /// </summary>
     public string? Keyword { get; set; }
@@ -74,6 +79,11 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
             query = query.Where(item => item.Order.StoreId == request.StoreId.Value);
         }
 
+        if (request.MemberId.HasValue)
+        {
+            query = query.Where(item => item.Order.MemberId == request.MemberId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = request.Keyword.Trim();
@@ -98,11 +108,16 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
             Id = item.Order.Id,
             OrderNo = item.Order.OrderNo,
             StoreId = item.Order.StoreId,
+            MemberId = item.Order.MemberId,
             StoreName = item.Store.Name,
             Status = item.Order.Status,
             ReceiverName = item.Order.ReceiverName,
             ReceiverPhone = item.Order.ReceiverPhone,
             GoodsAmount = item.Order.GoodsAmount,
+            PromotionDiscountAmount = _dbContext.MallOrderItems
+                .Where(orderItem => orderItem.OrderId == item.Order.Id && !orderItem.IsDeleted &&
+                                    !orderItem.IsGift && orderItem.OriginalUnitPrice.HasValue)
+                .Sum(orderItem => (orderItem.OriginalUnitPrice!.Value - orderItem.UnitPrice) * orderItem.Quantity),
             FreightAmount = item.Order.FreightAmount,
             PayableAmount = item.Order.PayableAmount,
             PaidAmount = item.Order.PaidAmount,

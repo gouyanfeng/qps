@@ -58,7 +58,12 @@
         <div class="section-title"><h3>商品明细</h3></div>
         <el-table :data="detail.items || []" border style="width: 100%">
           <el-table-column prop="productName" label="商品" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="specName" label="规格" min-width="140" show-overflow-tooltip />
+          <el-table-column label="规格" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span v-if="formatCombination(row.combination)">{{ formatCombination(row.combination) }}</span>
+              <span v-else>{{ row.specName || '-' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="skuCode" label="规格编码" min-width="140" show-overflow-tooltip />
           <el-table-column label="单价" width="100" align="right">
             <template #default="{ row }">¥{{ Number(row.unitPrice).toFixed(2) }}</template>
@@ -393,6 +398,11 @@ const getRefundStatusText = (status: string) => {
     Failed: '失败'
   }
   return map[status] || status
+}
+
+const formatCombination = (combo: Record<string, string>) => {
+  if (!combo) return ''
+  return Object.entries(combo).map(([k, v]) => `${k}:${v}`).join(' / ')
 }
 </script>
 

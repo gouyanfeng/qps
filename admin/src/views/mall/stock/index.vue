@@ -35,7 +35,12 @@
           <el-table-column type="selection" width="50" align="center" />
           <el-table-column prop="productName" label="商品" min-width="160" show-overflow-tooltip />
           <el-table-column prop="productCode" label="商品编码" min-width="140" show-overflow-tooltip />
-          <el-table-column prop="specName" label="规格名称" min-width="140" show-overflow-tooltip />
+          <el-table-column label="规格组合" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span v-if="formatCombination(row.combination)">{{ formatCombination(row.combination) }}</span>
+              <span v-else>{{ row.specName || '-' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="skuCode" label="规格编码" min-width="140" show-overflow-tooltip />
           <el-table-column label="价格" width="110" align="right">
             <template #default="{ row }">¥{{ Number(row.price).toFixed(2) }}</template>
@@ -204,7 +209,7 @@ const adjustForm = reactive({
 
 const openAdjustDialog = (row: any) => {
   currentSkuId.value = row.id
-  currentSkuName.value = `${row.productName} / ${row.specName}`
+  currentSkuName.value = `${row.productName} / ${formatCombination(row.combination) || row.specName || row.skuCode}`
   currentStock.value = row.stock
   Object.assign(adjustForm, {
     targetStock: row.stock,
@@ -329,6 +334,11 @@ const changeTypeTag = (changeType: string) => {
   if (changeType === 'OrderDeduct') return 'danger'
   if (changeType === 'ManualAdjust') return 'warning'
   return 'success'
+}
+
+const formatCombination = (combo: Record<string, string>) => {
+  if (!combo) return ''
+  return Object.entries(combo).map(([k, v]) => `${k}:${v}`).join(' / ')
 }
 </script>
 

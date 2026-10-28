@@ -24,14 +24,24 @@ public class MallSku : BaseEntity
     public string SpecName { get; private set; } = string.Empty;
 
     /// <summary>
-    /// 单价。
+    /// 销售价。
     /// </summary>
     public decimal Price { get; private set; }
+
+    /// <summary>
+    /// 市场价（划线价），0 表示未设置。
+    /// </summary>
+    public decimal MarketPrice { get; private set; }
 
     /// <summary>
     /// 单件重量（克），用于运费计算。
     /// </summary>
     public int WeightGram { get; private set; }
+
+    /// <summary>
+    /// 单件体积（立方厘米），按体积计费时使用，默认 0。
+    /// </summary>
+    public int VolumeCm3 { get; private set; }
 
     /// <summary>
     /// 可售库存。
@@ -57,7 +67,9 @@ public class MallSku : BaseEntity
         string skuCode,
         string specName,
         decimal price,
+        decimal marketPrice,
         int weightGram,
+        int volumeCm3,
         int stock,
         int warnStock,
         bool isActive)
@@ -66,7 +78,9 @@ public class MallSku : BaseEntity
         SkuCode = skuCode;
         SpecName = specName;
         Price = price;
+        MarketPrice = marketPrice;
         WeightGram = weightGram;
+        VolumeCm3 = volumeCm3;
         Stock = stock;
         WarnStock = warnStock;
         IsActive = isActive;
@@ -80,9 +94,11 @@ public class MallSku : BaseEntity
         int weightGram,
         int stock,
         int warnStock,
-        bool isActive)
+        bool isActive,
+        int volumeCm3 = 0,
+        decimal marketPrice = 0)
     {
-        return new MallSku(productId, skuCode, specName, price, weightGram, stock, warnStock, isActive);
+        return new MallSku(productId, skuCode, specName, price, marketPrice, weightGram, volumeCm3, stock, warnStock, isActive);
     }
 
     public void Update(
@@ -91,12 +107,16 @@ public class MallSku : BaseEntity
         decimal price,
         int weightGram,
         int stock,
-        int warnStock)
+        int warnStock,
+        int volumeCm3 = 0,
+        decimal marketPrice = 0)
     {
         SkuCode = skuCode;
         SpecName = specName;
         Price = price;
+        MarketPrice = marketPrice;
         WeightGram = weightGram;
+        VolumeCm3 = volumeCm3;
         Stock = stock;
         WarnStock = warnStock;
     }

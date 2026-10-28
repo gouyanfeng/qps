@@ -69,6 +69,13 @@ public class SimulateMallRefundHandler : IRequestHandler<SimulateMallRefundComma
             order,
             MallStockChangeType.RefundRestore,
             cancellationToken);
+
+        await MallOrderResolver.ReleasePromotionUsageAsync(
+            _dbContext,
+            order,
+            null,
+            cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

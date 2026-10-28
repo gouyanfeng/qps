@@ -165,6 +165,20 @@
           }
         },
         {
+          "path": "/mall/promotion",
+          "name": "mallPromotion",
+          "component": "/mall/promotion/index",
+          "meta": {
+            "icon": "Discount",
+            "title": "促销管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
           "path": "/mall/category",
           "name": "mallCategory",
           "component": "/mall/category/index",
@@ -347,5 +361,4 @@
   ],
   "msg": "成功"
 }
-
 

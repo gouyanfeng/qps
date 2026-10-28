@@ -13,10 +13,9 @@
       <view class="page-body-inner">
       <!-- 空车态 -->
       <view v-if="cartItems.length === 0" class="empty-wrap">
-        <t-empty description="购物车还是空的，快去挑选心仪的中药材吧" />
-        <t-button theme="primary" variant="base" block class="empty-btn" @click="goToIndex">
-          去逛逛
-        </t-button>
+        <q-icon name="cart" size="72" color="#D8D3C8" />
+        <text class="empty-desc">购物车还是空的，快去挑选心仪的中药材吧</text>
+        <view class="empty-btn" @click="goToIndex">去逛逛</view>
       </view>
 
       <block v-else>
@@ -92,9 +91,9 @@
                 </view>
 
                 <!-- 库存紧张红色提示 -->
-                <view v-if="item.stockTip" class="stock-tip">
+                <view v-if="item.stockTip || item.isValid === false" class="stock-tip">
                   <q-icon name="error-circle" size="12" color="#D32F2F" />
-                  <text class="stock-tip-text">{{ item.stockTip }}</text>
+                  <text class="stock-tip-text">{{ item.stockTip || item.invalidReason || '该商品暂不可购买' }}</text>
                 </view>
 
                 <!-- 底部价格+小计 / stepper -->
@@ -204,30 +203,43 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, addToCart, updateCartItemQuantity, removeCartItem, toggleCartItemSelection, saveCartItems } from '@/api'
-import type { CartItem } from '@/api/types'
+import { getCartItems, getProducts, addToCart, updateCartItemQuantity, removeCartItem, toggleCartItemSelection, saveCartItems } from '@/api'
+import type { CartItem, Product } from '@/api/types'
 
 const cartItems = ref<CartItem[]>([])
 const editMode = ref(false)
 
 // 换购商品（静态示例，与设计稿一致）
-const bonusItems = ref([
-  {
-    id: 'b1',
-    name: '平阴重瓣红玫瑰茶 30g 尝鲜罐',
-    desc: '天然低温烘焙 疏肝解郁',
-    price: 9.9,
-    originPrice: 28,
-    image: '/static/images/herb-rose.jpg'
-  }
-])
+const bonusItems = ref<Array<{
+  id: string
+  skuId: string
+  name: string
+  desc: string
+  price: number
+  originPrice: number
+  image: string
+  weightGram: number
+  specName: string
+}>>([])
 
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const selectedCount = computed(() => selectedItems.value.length)
 const totalPrice = computed(() => selectedItems.value.reduce((s, i) => s + i.price * i.quantity, 0))
 const isAllSelected = computed(() => cartItems.value.length > 0 && selectedCount.value === cartItems.value.length)
 
-onShow(() => { cartItems.value = getCartItems() })
+onShow(async () => {
+  try {
+    const [items, products] = await Promise.all([getCartItems(), getProducts()])
+    cartItems.value = items
+    bonusItems.value = products
+      .filter(product => product.skus.length > 0 && !items.some(item => item.productId === product.id))
+      .slice(0, 1)
+      .map(mapBonusProduct)
+  } catch (error) {
+    console.error('加载购物车失败', error)
+    uni.showToast({ title: '购物车加载失败', icon: 'none' })
+  }
+})
 
 function toggleEditMode() { editMode.value = !editMode.value }
 function toggleSelection(skuId: string) { cartItems.value = toggleCartItemSelection(skuId) }
@@ -236,35 +248,78 @@ function toggleSelectAll() {
   cartItems.value = cartItems.value.map(i => ({ ...i, selected: v }))
   saveCartItems(cartItems.value)
 }
-function increaseQuantity(skuId: string) {
+async function increaseQuantity(skuId: string) {
   const it = cartItems.value.find(i => i.skuId === skuId)
-  if (it) cartItems.value = updateCartItemQuantity(skuId, it.quantity + 1)
+  if (it) await updateQuantity(skuId, it.quantity + 1)
 }
-function decreaseQuantity(skuId: string) {
+async function decreaseQuantity(skuId: string) {
   const it = cartItems.value.find(i => i.skuId === skuId)
-  if (it && it.quantity > 1) cartItems.value = updateCartItemQuantity(skuId, it.quantity - 1)
+  if (it && it.quantity > 1) await updateQuantity(skuId, it.quantity - 1)
+}
+async function updateQuantity(skuId: string, quantity: number) {
+  try {
+    cartItems.value = await updateCartItemQuantity(skuId, quantity)
+  } catch (error) {
+    console.error('更新购物车数量失败', error)
+    uni.showToast({ title: '更新数量失败', icon: 'none' })
+  }
 }
 function deleteItem(skuId: string) {
-  uni.showModal({ title: '提示', content: '确定删除？', success: r => { if (r.confirm) cartItems.value = removeCartItem(skuId) } })
+  uni.showModal({
+    title: '提示',
+    content: '确定删除？',
+    success: async r => {
+      if (!r.confirm) return
+      try {
+        cartItems.value = await removeCartItem(skuId)
+      } catch (error) {
+        console.error('删除购物车商品失败', error)
+        uni.showToast({ title: '删除失败', icon: 'none' })
+      }
+    }
+  })
 }
 function checkout() {
   if (selectedCount.value === 0) { uni.showToast({ title: '请选择商品', icon: 'none' }); return }
+  if (selectedItems.value.some(item => item.isValid === false)) {
+    uni.showToast({ title: '请先处理不可购买的商品', icon: 'none' })
+    return
+  }
   uni.navigateTo({ url: '/pages/checkout/index' })
 }
 function goToIndex() { uni.switchTab({ url: '/pages/index/index' }) }
-function addBonus(b: { id: string; name: string; price: number; image: string }) {
-  cartItems.value = addToCart({
+async function addBonus(b: (typeof bonusItems.value)[number]) {
+  try {
+    cartItems.value = await addToCart({
     productId: b.id,
     productName: b.name,
     productImage: b.image,
-    skuId: b.id,
-    specName: '换购装',
+    skuId: b.skuId,
+    specName: b.specName,
     price: b.price,
     quantity: 1,
-    weightGram: 30,
+    weightGram: b.weightGram,
     selected: true
   })
-  uni.showToast({ title: '已加入购物车', icon: 'none' })
+    uni.showToast({ title: '已加入购物车', icon: 'none' })
+  } catch (error) {
+    console.error('加入购物车失败', error)
+    uni.showToast({ title: '加入购物车失败', icon: 'none' })
+  }
+}
+function mapBonusProduct(product: Product) {
+  const sku = product.skus[0]
+  return {
+    id: product.id,
+    skuId: sku.id,
+    name: product.name,
+    desc: product.description,
+    price: sku.price,
+    originPrice: sku.price * 1.15,
+    image: product.images[0] || '',
+    weightGram: sku.weightGram,
+    specName: sku.specName
+  }
 }
 </script>
 
@@ -321,7 +376,25 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
   padding: 120rpx 60rpx;
   display: flex; flex-direction: column; align-items: center; gap: 32rpx;
 }
-.empty-btn { width: 360rpx; margin-top: 20rpx; }
+.empty-desc {
+  font-size: 24rpx;
+  color: #A9A498;
+  text-align: center;
+  line-height: 1.6;
+}
+.empty-btn {
+  width: 360rpx;
+  height: 80rpx;
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100rpx;
+  background: $theme-primary;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 600;
+}
 
 // ============ section 满额免邮横幅 ============
 .promo-section {

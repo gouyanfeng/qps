@@ -6,6 +6,7 @@ using QPS.Host.Registration;
 using QPS.Mall;
 using QPS.Persistence;
 using QPS.Persistence.Database;
+using QPS.Persistence.Seeds;
 using QPS.Shared;
 using QPS.Shared.Common;
 using QPS.System;
@@ -58,10 +59,30 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Database");
 
     if (app.Environment.IsDevelopment())
     {
         await dbContext.Database.MigrateAsync();
+
+        var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
+        while (workspaceDirectory is not null &&
+               !Directory.Exists(Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock")))
+        {
+            workspaceDirectory = workspaceDirectory.Parent;
+        }
+
+        var mockPath = workspaceDirectory is null
+            ? string.Empty
+            : Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock");
+        if (Directory.Exists(mockPath))
+        {
+            await MallMockDataSeeder.SeedAsync(dbContext, logger, mockPath);
+        }
+        else
+        {
+            logger.LogWarning("⚠️  Mock 数据目录不存在: {Path}", mockPath);
+        }
     }
     else
     {

@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using QPS.Shared.Contracts;
 using QPS.Shared.Exceptions;
 
@@ -8,7 +10,8 @@ namespace QPS.Shared.Pipeline;
 
 public class PermissionBehaviour<TRequest, TResponse>(
     IPermissionChecker permissionChecker,
-    ICurrentUserService currentUserService) : IPipelineBehavior<TRequest, TResponse>
+    ICurrentUserService currentUserService,
+    IHttpContextAccessor httpContextAccessor) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     public async Task<TResponse> Handle(
@@ -16,7 +19,8 @@ public class PermissionBehaviour<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        if (typeof(IAllowAnonymousRequest).IsAssignableFrom(typeof(TRequest)))
+        if (typeof(IAllowAnonymousRequest).IsAssignableFrom(typeof(TRequest)) ||
+            httpContextAccessor.HttpContext?.GetEndpoint()?.Metadata.GetMetadata<IAllowAnonymous>() is not null)
         {
             return await next(cancellationToken);
         }

@@ -57,6 +57,26 @@ public class MallOrderItem : BaseEntity
     /// </summary>
     public decimal ItemAmount { get; private set; }
 
+    /// <summary>
+    /// 是否赠品。
+    /// </summary>
+    public bool IsGift { get; private set; }
+
+    /// <summary>
+    /// 命中的促销规则 ID。
+    /// </summary>
+    public Guid? PromotionId { get; private set; }
+
+    /// <summary>
+    /// 促销规则名称快照。
+    /// </summary>
+    public string PromotionName { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 原价快照（折扣/秒杀场景记录原价）。
+    /// </summary>
+    public decimal? OriginalUnitPrice { get; private set; }
+
     private MallOrderItem()
     {
     }
@@ -70,7 +90,11 @@ public class MallOrderItem : BaseEntity
         string specName,
         decimal unitPrice,
         int quantity,
-        int weightGram)
+        int weightGram,
+        bool isGift = false,
+        Guid? promotionId = null,
+        string promotionName = "",
+        decimal? originalUnitPrice = null)
     {
         OrderId = orderId;
         SkuId = skuId;
@@ -81,6 +105,10 @@ public class MallOrderItem : BaseEntity
         UnitPrice = unitPrice;
         Quantity = quantity;
         WeightGram = weightGram;
+        IsGift = isGift;
+        PromotionId = promotionId;
+        PromotionName = promotionName;
+        OriginalUnitPrice = originalUnitPrice;
         ItemAmount = unitPrice * quantity;
     }
 
@@ -93,7 +121,11 @@ public class MallOrderItem : BaseEntity
         string specName,
         decimal unitPrice,
         int quantity,
-        int weightGram)
+        int weightGram,
+        bool isGift = false,
+        Guid? promotionId = null,
+        string promotionName = "",
+        decimal? originalUnitPrice = null)
     {
         return new MallOrderItem(
             orderId,
@@ -104,6 +136,10 @@ public class MallOrderItem : BaseEntity
             specName,
             unitPrice,
             quantity,
-            weightGram);
+            weightGram,
+            isGift,
+            promotionId,
+            promotionName,
+            originalUnitPrice);
     }
 }

@@ -40,6 +40,7 @@ public class UpdateMallSkuHandler : IRequestHandler<UpdateMallSkuCommand, bool>
         var skuCode = MallProductRules.NormalizeSkuCode(request.Request.SkuCode);
         var specName = MallProductRules.NormalizeSpecName(request.Request.SpecName);
         MallProductRules.ValidatePrice(request.Request.Price);
+        MallProductRules.ValidateMarketPrice(request.Request.MarketPrice);
         MallProductRules.ValidateWeight(request.Request.WeightGram);
         MallProductRules.ValidateStock(request.Request.Stock);
         MallProductRules.ValidateWarnStock(request.Request.WarnStock);
@@ -54,7 +55,8 @@ public class UpdateMallSkuHandler : IRequestHandler<UpdateMallSkuCommand, bool>
             request.Request.Price,
             request.Request.WeightGram,
             request.Request.Stock,
-            request.Request.WarnStock);
+            request.Request.WarnStock,
+            marketPrice: request.Request.MarketPrice);
 
         if (beforeStock != sku.Stock)
         {

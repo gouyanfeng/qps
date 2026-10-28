@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallCategories;
@@ -74,6 +75,69 @@ internal static class MallCategoryRules
         if (duplicated)
         {
             throw new BusinessException(400, "分类编码已存在");
+        }
+    }
+
+    public static async Task EnsureParentValidAsync(
+        IMallDbContext dbContext,
+        Guid storeId,
+        Guid? parentId,
+        Guid? excludeId,
+        CancellationToken cancellationToken)
+    {
+        var storeExists = await dbContext.MallStores.AnyAsync(
+            store => store.Id == storeId && store.IsActive,
+            cancellationToken);
+        if (!storeExists)
+        {
+            throw new BusinessException(400, "请选择有效门店");
+        }
+
+        if (!parentId.HasValue)
+        {
+            if (excludeId.HasValue)
+            {
+                var hasChildren = await dbContext.MallCategories.AnyAsync(
+                    category => category.ParentId == excludeId.Value && !category.IsDeleted,
+                    cancellationToken);
+                if (hasChildren)
+                {
+                    throw new BusinessException(400, "请先调整子分类后再设置为顶级分类");
+                }
+            }
+
+            return;
+        }
+
+        if (excludeId == parentId)
+        {
+            throw new BusinessException(400, "分类不能以自身作为父级");
+        }
+
+        var parent = await dbContext.MallCategories
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                category => category.Id == parentId.Value && category.StoreId == storeId,
+                cancellationToken);
+        if (parent is null || !parent.IsActive || parent.IsDeleted)
+        {
+            throw new BusinessException(400, "请选择同一门店下已启用的父级分类");
+        }
+
+        if (parent.ParentId.HasValue)
+        {
+            throw new BusinessException(400, "分类仅支持两级结构，父级必须为顶级分类");
+        }
+
+        if (excludeId.HasValue)
+        {
+            var hasChildren = await dbContext.MallCategories.AnyAsync(
+                category => category.ParentId == excludeId.Value && !category.IsDeleted,
+                cancellationToken);
+            if (hasChildren)
+            {
+                throw new BusinessException(400, "请先调整子分类后再设置父级");
+            }
         }
     }
 }

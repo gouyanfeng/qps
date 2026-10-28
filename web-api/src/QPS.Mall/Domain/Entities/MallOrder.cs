@@ -19,6 +19,11 @@ public class MallOrder : BaseEntity
     public Guid StoreId { get; private set; }
 
     /// <summary>
+    /// 下单会员ID，关联 MallMember。后台代下单可为空。
+    /// </summary>
+    public Guid? MemberId { get; private set; }
+
+    /// <summary>
     /// 订单状态，取值见 <see cref="MallOrderStatus"/>。
     /// </summary>
     public string Status { get; private set; } = MallOrderStatus.PendingPayment;
@@ -37,6 +42,11 @@ public class MallOrder : BaseEntity
     /// 收货地址。
     /// </summary>
     public string ReceiverAddress { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 收货地址ID，关联 MallAddress。
+    /// </summary>
+    public Guid? AddressId { get; private set; }
 
     /// <summary>
     /// 商品金额。
@@ -105,16 +115,19 @@ public class MallOrder : BaseEntity
     private MallOrder(
         string orderNo,
         Guid storeId,
+        Guid? memberId,
         string receiverName,
         string receiverPhone,
         string receiverAddress,
         decimal goodsAmount,
         decimal freightAmount,
         int totalWeightGram,
-        string remark)
+        string remark,
+        Guid? addressId)
     {
         OrderNo = orderNo;
         StoreId = storeId;
+        MemberId = memberId;
         ReceiverName = receiverName;
         ReceiverPhone = receiverPhone;
         ReceiverAddress = receiverAddress;
@@ -123,30 +136,35 @@ public class MallOrder : BaseEntity
         PayableAmount = goodsAmount + freightAmount;
         TotalWeightGram = totalWeightGram;
         Remark = remark;
+        AddressId = addressId;
         Status = MallOrderStatus.PendingPayment;
     }
 
     public static MallOrder Create(
         string orderNo,
         Guid storeId,
+        Guid? memberId,
         string receiverName,
         string receiverPhone,
         string receiverAddress,
         decimal goodsAmount,
         decimal freightAmount,
         int totalWeightGram,
-        string remark)
+        string remark,
+        Guid? addressId = null)
     {
         return new MallOrder(
             orderNo,
             storeId,
+            memberId,
             receiverName,
             receiverPhone,
             receiverAddress,
             goodsAmount,
             freightAmount,
             totalWeightGram,
-            remark);
+            remark,
+            addressId);
     }
 
     /// <summary>
@@ -245,5 +263,46 @@ public class MallOrder : BaseEntity
         }
 
         Status = MallOrderStatus.Paid;
+    }
+
+    /// <summary>
+    /// 进入退货流程，已发货/已完成订单可发起。
+    /// </summary>
+    public void BeginReturn()
+    {
+        if (Status != MallOrderStatus.Shipped && Status != MallOrderStatus.Completed)
+        {
+            throw new BusinessException(400, "仅已发货或已完成订单可以申请退货");
+        }
+
+        Status = MallOrderStatus.Returning;
+    }
+
+    /// <summary>
+    /// 退货完成（收到退货并退款成功）。
+    /// </summary>
+    public void CompleteReturn()
+    {
+        if (Status != MallOrderStatus.Returning)
+        {
+            throw new BusinessException(400, "当前订单不在退货流程中");
+        }
+
+        Status = MallOrderStatus.Returned;
+        RefundedAmount = PaidAmount;
+        RefundedAt = DateTime.Now;
+    }
+
+    /// <summary>
+    /// 退货申请被拒绝，订单回到原状态。
+    /// </summary>
+    public void FailReturn(string previousStatus)
+    {
+        if (Status != MallOrderStatus.Returning)
+        {
+            throw new BusinessException(400, "当前订单不在退货流程中");
+        }
+
+        Status = previousStatus;
     }
 }

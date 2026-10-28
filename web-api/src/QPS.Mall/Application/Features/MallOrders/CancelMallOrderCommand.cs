@@ -42,6 +42,12 @@ public class CancelMallOrderHandler : IRequestHandler<CancelMallOrderCommand, bo
             MallStockChangeType.OrderCancel,
             cancellationToken);
 
+        await MallOrderResolver.ReleasePromotionUsageAsync(
+            _dbContext,
+            order,
+            null,
+            cancellationToken);
+
         var pendingPayments = await _dbContext.MallPayments
             .Where(payment =>
                 payment.OrderId == order.Id &&

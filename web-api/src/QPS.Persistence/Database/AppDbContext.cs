@@ -44,16 +44,34 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
     public DbSet<CrmBusinessActivity> CrmBusinessActivities { get; set; }
 
     public DbSet<MallStore> MallStores { get; set; }
+    public DbSet<MallAddress> MallAddresses { get; set; }
     public DbSet<MallCategory> MallCategories { get; set; }
+    public DbSet<MallTag> MallTags { get; set; }
     public DbSet<MallProduct> MallProducts { get; set; }
     public DbSet<MallSku> MallSkus { get; set; }
     public DbSet<MallOrder> MallOrders { get; set; }
     public DbSet<MallOrderItem> MallOrderItems { get; set; }
     public DbSet<MallPayment> MallPayments { get; set; }
     public DbSet<MallRefund> MallRefunds { get; set; }
+    public DbSet<MallReturn> MallReturns { get; set; }
     public DbSet<MallShipment> MallShipments { get; set; }
-    public DbSet<MallFreightRule> MallFreightRules { get; set; }
+    public DbSet<MallFreightTemplate> MallFreightTemplates { get; set; }
+    public DbSet<MallFreightRegion> MallFreightRegions { get; set; }
     public DbSet<MallStockLog> MallStockLogs { get; set; }
+    public DbSet<MallPromotion> MallPromotions { get; set; }
+    public DbSet<MallPromotionScope> MallPromotionScopes { get; set; }
+    public DbSet<MallPromotionUsage> MallPromotionUsages { get; set; }
+    public DbSet<MallCart> MallCarts { get; set; }
+    public DbSet<MallCartItem> MallCartItems { get; set; }
+    public DbSet<MallBanner> MallBanners { get; set; }
+    public DbSet<MallNotice> MallNotices { get; set; }
+    public DbSet<MallArticle> MallArticles { get; set; }
+    public DbSet<MallPage> MallPages { get; set; }
+    public DbSet<MallMember> MallMembers { get; set; }
+    public DbSet<MallMemberLevel> MallMemberLevels { get; set; }
+    public DbSet<MallMemberPoint> MallMemberPoints { get; set; }
+    public DbSet<MallCoupon> MallCoupons { get; set; }
+    public DbSet<MallMemberCoupon> MallMemberCoupons { get; set; }
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,

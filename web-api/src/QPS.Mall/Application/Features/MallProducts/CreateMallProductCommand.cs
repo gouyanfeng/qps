@@ -34,8 +34,12 @@ public class CreateMallProductHandler : IRequestHandler<CreateMallProductCommand
 
         await MallProductRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, null, cancellationToken);
         await MallProductRules.EnsureCategoryValidAsync(_dbContext, request.Request.CategoryId, cancellationToken);
+        var tags = await MallProductRules.GetActiveTagsAsync(
+            _dbContext,
+            request.Request.TagIds,
+            cancellationToken);
 
-        _dbContext.MallProducts.Add(MallProduct.Create(
+        var product = MallProduct.Create(
             code,
             name,
             description,
@@ -44,7 +48,14 @@ public class CreateMallProductHandler : IRequestHandler<CreateMallProductCommand
             MallProductRules.SerializeAlbumImages(albumImages),
             detailHtml,
             request.Request.SortOrder,
-            request.Request.IsActive));
+            request.Request.IsActive,
+            request.Request.IsHot);
+        foreach (var tag in tags)
+        {
+            product.Tags.Add(tag);
+        }
+
+        _dbContext.MallProducts.Add(product);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

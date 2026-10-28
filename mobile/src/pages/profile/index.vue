@@ -1,4 +1,4 @@
-﻿<template>
+﻿﻿﻿<template>
   <view class="page">
     <!-- ============ 顶栏 ============ -->
     <q-page-header background="#ffffff">
@@ -24,7 +24,7 @@
       <!-- ============ Hero 会员卡片 ============ -->
       <view class="hero-card">
         <view class="hero-top">
-          <view class="user-row">
+          <view class="user-row" @click="openAccount">
             <view class="avatar-ring">
               <image class="avatar-img" :src="'/static/images/avatar-elder.jpg'" mode="aspectFill" />
               <view class="cert-badge">
@@ -33,10 +33,10 @@
             </view>
             <view class="user-info">
               <view class="user-top">
-                <text class="nickname">君安用户</text>
+                <text class="nickname">{{ profile?.nickname || '登录 / 注册' }}</text>
                 <view class="member-pill">
                   <q-icon name="user-vip" size="16" color="#5A3E00" />
-                  <text class="member-text">本草金牌会员</text>
+                  <text class="member-text">{{ profile?.levelName || '会员中心' }}</text>
                 </view>
               </view>
               <view class="constitution-pill">
@@ -54,8 +54,8 @@
 
         <view class="growth-row">
           <text class="growth-label">成长值</text>
-          <text class="growth-value">2880 / 5000</text>
-          <text class="growth-tip">（距白金会员仅差 2120）</text>
+          <text class="growth-value">{{ profile?.availablePoints ?? 0 }}</text>
+          <text class="growth-tip">可用积分</text>
           <view class="growth-more">
             <text>权益明细</text>
             <q-icon name="chevron-right" size="15" color="rgba(255,255,255,0.9)" />
@@ -69,22 +69,22 @@
         <view class="asset-grid">
           <view class="asset-item">
             <view class="asset-value-row">
-              <text class="asset-val">6</text>
+              <text class="asset-val">{{ couponsCount }}</text>
               <text class="asset-unit">张</text>
             </view>
             <text class="asset-label">专享优惠券</text>
           </view>
           <view class="asset-item">
-            <text class="asset-val">2880</text>
+            <text class="asset-val">{{ profile?.availablePoints ?? 0 }}</text>
             <text class="asset-label">道地积分</text>
           </view>
           <view class="asset-item">
-            <text class="asset-val">¥128.5</text>
-            <text class="asset-label">养生钱包</text>
+            <text class="asset-val">¥{{ (profile?.totalSpent ?? 0).toFixed(2) }}</text>
+            <text class="asset-label">累计消费</text>
           </view>
           <view class="asset-item">
             <view class="asset-value-row">
-              <text class="asset-val">1</text>
+              <text class="asset-val">{{ profile?.totalOrders ?? 0 }}</text>
               <text class="asset-unit">份</text>
             </view>
             <text class="asset-label">健康档案</text>
@@ -109,14 +109,14 @@
           <view class="order-item" @click="goOrder('unpaid')">
             <view class="order-icon">
               <q-icon name="order" size="16" color="#2E7D32" />
-              <view class="order-badge">2</view>
+              <view v-if="orderCount('PendingPayment')" class="order-badge">{{ orderCount('PendingPayment') }}</view>
             </view>
             <text class="order-label">待付款</text>
           </view>
           <view class="order-item" @click="goOrder('ship')">
             <view class="order-icon">
               <q-icon name="task" size="16" color="#2E7D32" />
-              <view class="order-badge">1</view>
+              <view v-if="orderCount('Paid')" class="order-badge">{{ orderCount('Paid') }}</view>
             </view>
             <text class="order-label">待发货</text>
           </view>
@@ -134,16 +134,16 @@
           </view>
         </view>
 
-        <view class="logistics-strip" @click="goOrder('logistics')">
+        <view v-if="orders.length" class="logistics-strip" @click="goOrder('all')">
           <view class="logistics-icon">
             <q-icon name="send" size="18" color="#2E7D32" />
           </view>
           <view class="logistics-text">
             <view class="logistics-title-row">
               <view class="logistics-chip">道地专送</view>
-              <text class="logistics-title">新会陈皮十年老树陈化…</text>
+              <text class="logistics-title">订单 {{ orders[0].orderNo }}</text>
             </view>
-            <text class="logistics-desc">顺丰冷链特快已发出 · 距抵达您家预计明…</text>
+            <text class="logistics-desc">{{ orderStatusText(orders[0].status) }} · {{ orders[0].createdAt.slice(0, 10) }}</text>
           </view>
           <view class="logistics-btn">
             <text class="logistics-btn-text">查进度</text>
@@ -254,6 +254,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { getMemberProfile, getMyOrders, getMyCoupons, isLoggedIn } from '@/api'
+import type { MallOrder, MemberCoupon, MemberProfile } from '@/api'
+
 interface ServiceItem {
   key: string
   icon: string
@@ -276,8 +281,63 @@ const services: ServiceItem[] = [
   { key: 'help', icon: 'help-circle', label: '帮助客服', sub: '服务指南', bg: '#EFEFEC', color: '#40493D' }
 ]
 
-function goOrder(status: string) { uni.showToast({ title: status, icon: 'none' }) }
-function goService(key: string) { uni.showToast({ title: key, icon: 'none' }) }
+const profile = ref<MemberProfile | null>(null)
+const orders = ref<MallOrder[]>([])
+const coupons = ref<MemberCoupon[]>([])
+const couponsCount = computed(() => coupons.value.filter(coupon => coupon.status === 'claimed').length)
+
+onShow(async () => {
+  if (!isLoggedIn()) {
+    profile.value = null
+    orders.value = []
+    coupons.value = []
+    return
+  }
+  try {
+    const [member, orderResponse, memberCoupons] = await Promise.all([
+      getMemberProfile(),
+      getMyOrders(),
+      getMyCoupons()
+    ])
+    profile.value = member
+    orders.value = orderResponse.list ?? orderResponse.items ?? []
+    coupons.value = memberCoupons
+  } catch (error) {
+    console.error('加载会员资料失败', error)
+    uni.showToast({ title: '会员信息加载失败', icon: 'none' })
+  }
+})
+
+function orderCount(status: string): number {
+  return orders.value.filter(order => order.status === status).length
+}
+
+function orderStatusText(status: string): string {
+  const labels: Record<string, string> = {
+    PendingPayment: '待付款',
+    Paid: '待发货',
+    Shipped: '待收货',
+    Completed: '已完成',
+    Cancelled: '已取消'
+  }
+  return labels[status] || status
+}
+
+function openAccount() {
+  if (!isLoggedIn()) uni.navigateTo({ url: '/pages/account/index' })
+}
+
+function goOrder(status: string) {
+  uni.navigateTo({ url: `/pages/orders/index?status=${encodeURIComponent(status)}` })
+}
+
+function goService(key: string) {
+  if (key === 'address') {
+    uni.navigateTo({ url: '/pages/addresses/index' })
+    return
+  }
+  uni.showToast({ title: `${key}功能暂未开放`, icon: 'none' })
+}
 </script>
 
 <style lang="scss" scoped>

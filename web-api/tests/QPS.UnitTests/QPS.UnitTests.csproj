@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\src\QPS.Shared\QPS.Shared.csproj" />
     <ProjectReference Include="..\..\src\QPS.System\QPS.System.csproj" />
     <ProjectReference Include="..\..\src\QPS.Crm\QPS.Crm.csproj" />
+    <ProjectReference Include="..\..\src\QPS.Mall\QPS.Mall.csproj" />
     <ProjectReference Include="..\..\src\QPS.Persistence\QPS.Persistence.csproj" />
   </ItemGroup>
 

@@ -52,6 +52,23 @@ public class MallProduct : BaseEntity
     /// </summary>
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// 是否热销。
+    /// </summary>
+    public bool IsHot { get; private set; }
+
+    /// <summary>
+    /// 累计销量。
+    /// </summary>
+    public int Sales { get; private set; }
+
+    /// <summary>
+    /// 运费模板ID，为空时使用门店默认模板。
+    /// </summary>
+    public Guid? FreightTemplateId { get; private set; }
+
+    public ICollection<MallTag> Tags { get; private set; } = new List<MallTag>();
+
     private MallProduct()
     {
     }
@@ -65,7 +82,9 @@ public class MallProduct : BaseEntity
         string albumImages,
         string detailHtml,
         int sortOrder,
-        bool isActive)
+        bool isActive,
+        bool isHot,
+        Guid? freightTemplateId)
     {
         Code = code;
         Name = name;
@@ -76,6 +95,8 @@ public class MallProduct : BaseEntity
         DetailHtml = detailHtml;
         SortOrder = sortOrder;
         IsActive = isActive;
+        IsHot = isHot;
+        FreightTemplateId = freightTemplateId;
     }
 
     public static MallProduct Create(
@@ -87,7 +108,9 @@ public class MallProduct : BaseEntity
         string albumImages,
         string detailHtml,
         int sortOrder,
-        bool isActive)
+        bool isActive,
+        bool isHot = false,
+        Guid? freightTemplateId = null)
     {
         return new MallProduct(
             code,
@@ -98,7 +121,9 @@ public class MallProduct : BaseEntity
             albumImages,
             detailHtml,
             sortOrder,
-            isActive);
+            isActive,
+            isHot,
+            freightTemplateId);
     }
 
     public void Update(
@@ -109,7 +134,9 @@ public class MallProduct : BaseEntity
         string mainImageUrl,
         string albumImages,
         string detailHtml,
-        int sortOrder)
+        int sortOrder,
+        bool isHot,
+        Guid? freightTemplateId)
     {
         Code = code;
         Name = name;
@@ -119,10 +146,22 @@ public class MallProduct : BaseEntity
         AlbumImages = albumImages;
         DetailHtml = detailHtml;
         SortOrder = sortOrder;
+        IsHot = isHot;
+        FreightTemplateId = freightTemplateId;
     }
 
     public void ChangeStatus(bool isActive)
     {
         IsActive = isActive;
+    }
+
+    public void SetHot(bool isHot)
+    {
+        IsHot = isHot;
+    }
+
+    public void AddSales(int amount)
+    {
+        if (amount > 0) Sales += amount;
     }
 }

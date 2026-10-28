@@ -41,6 +41,41 @@
 				"navigationBarTitleText": "确认订单",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/search/index",
+			"style": {
+				"navigationBarTitleText": "搜索商品",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/account/index",
+			"style": {
+				"navigationBarTitleText": "会员登录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/addresses/index",
+			"style": {
+				"navigationBarTitleText": "收货地址",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/orders/index",
+			"style": {
+				"navigationBarTitleText": "我的订单",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {

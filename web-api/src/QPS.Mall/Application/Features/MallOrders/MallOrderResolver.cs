@@ -6,9 +6,6 @@ using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallOrders;
 
-/// <summary>
-/// 订单定位：管理端使用 Id，外部接口使用订单号。
-/// </summary>
 internal static class MallOrderResolver
 {
     public static async Task<MallOrder> ResolveAsync(
@@ -43,9 +40,6 @@ internal static class MallOrderResolver
         return order;
     }
 
-    /// <summary>
-    /// 回补订单明细对应的 SKU 库存并记录流水，用于取消与退款。
-    /// </summary>
     public static async Task RestoreStockAsync(
         IMallDbContext dbContext,
         MallOrder order,
@@ -87,6 +81,32 @@ internal static class MallOrderResolver
                 beforeStock,
                 sku.Stock,
                 relatedOrderNo: order.OrderNo));
+        }
+    }
+
+    public static async Task ReleasePromotionUsageAsync(
+        IMallDbContext dbContext,
+        MallOrder order,
+        Guid? userId,
+        CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue) return;
+
+        var promotionIds = await dbContext.MallOrderItems
+            .Where(item => item.OrderId == order.Id && item.PromotionId != null && !item.IsDeleted)
+            .Select(item => item.PromotionId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (promotionIds.Count == 0) return;
+
+        var usages = await dbContext.MallPromotionUsages
+            .Where(u => promotionIds.Contains(u.PromotionId) && u.UserId == userId.Value && !u.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        foreach (var usage in usages)
+        {
+            usage.Decrement();
         }
     }
 }

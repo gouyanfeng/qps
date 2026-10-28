@@ -28,6 +28,7 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
     public async Task<bool> Handle(UpdateMallProductCommand request, CancellationToken cancellationToken)
     {
         var product = await _dbContext.MallProducts
+            .Include(item => item.Tags)
             .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
 
         if (product is null)
@@ -45,6 +46,10 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
 
         await MallProductRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, request.Id, cancellationToken);
         await MallProductRules.EnsureCategoryValidAsync(_dbContext, request.Request.CategoryId, cancellationToken);
+        var tags = await MallProductRules.GetActiveTagsAsync(
+            _dbContext,
+            request.Request.TagIds,
+            cancellationToken);
 
         product.Update(
             code,
@@ -54,7 +59,14 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
             mainImageUrl,
             MallProductRules.SerializeAlbumImages(albumImages),
             detailHtml,
-            request.Request.SortOrder);
+            request.Request.SortOrder,
+            request.Request.IsHot,
+            request.Request.FreightTemplateId);
+        product.Tags.Clear();
+        foreach (var tag in tags)
+        {
+            product.Tags.Add(tag);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

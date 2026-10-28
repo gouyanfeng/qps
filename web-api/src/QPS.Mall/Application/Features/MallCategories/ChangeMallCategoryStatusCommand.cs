@@ -37,6 +37,31 @@ public class ChangeMallCategoryStatusHandler : IRequestHandler<ChangeMallCategor
             throw new BusinessException(404, "分类不存在");
         }
 
+        if (!request.Request.IsActive && !category.ParentId.HasValue)
+        {
+            var hasActiveChildren = await _dbContext.MallCategories.AnyAsync(
+                item => item.ParentId == category.Id && item.IsActive && !item.IsDeleted,
+                cancellationToken);
+            if (hasActiveChildren)
+            {
+                throw new BusinessException(400, "请先停用子分类，再停用顶级分类");
+            }
+        }
+
+        if (request.Request.IsActive && category.ParentId.HasValue)
+        {
+            var parentIsActive = await _dbContext.MallCategories.AnyAsync(
+                item => item.Id == category.ParentId.Value &&
+                        item.StoreId == category.StoreId &&
+                        item.IsActive &&
+                        !item.IsDeleted,
+                cancellationToken);
+            if (!parentIsActive)
+            {
+                throw new BusinessException(400, "请先启用父级分类");
+            }
+        }
+
         category.ChangeStatus(request.Request.IsActive);
 
         await _dbContext.SaveChangesAsync(cancellationToken);

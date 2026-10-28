@@ -44,11 +44,23 @@
           <view class="filter-row">
             <view
               v-for="tab in filterTabs"
-              :key="tab"
-              :class="['filter-pill', { active: activeFilter === tab }]"
-              @click="activeFilter = tab"
+              :key="tab.id"
+              :class="['filter-pill', { active: activeFilter === tab.id }]"
+              @click="selectFilter(tab.id)"
             >
-              <text>{{ tab }}</text>
+              <text>{{ tab.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
+        <scroll-view v-if="availableTags.length" scroll-x enhanced show-scrollbar="false" class="tag-filter-scroll">
+          <view class="filter-row">
+            <view
+              v-for="tag in availableTags"
+              :key="tag.code"
+              :class="['tag-filter', { active: activeTagCode === tag.code }]"
+              @click="activeTagCode = activeTagCode === tag.code ? '' : tag.code"
+            >
+              {{ tag.name }}
             </view>
           </view>
         </scroll-view>
@@ -81,6 +93,9 @@
             </view>
             <view class="p-info">
               <text class="p-name">{{ p.name }}</text>
+              <view v-if="p.tags.length" class="product-tags">
+                <text v-for="tag in p.tags" :key="tag.id" class="product-tag">{{ tag.name }}</text>
+              </view>
               <text class="p-desc">{{ p.description }}</text>
               <view class="p-divider"></view>
               <view class="p-bottom">
@@ -111,75 +126,110 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { getProducts, addToCart } from '@/api'
-import type { Product } from '@/api/types'
+import { getCategories, getProducts, addToCart } from '@/api'
+import type { Category, Product } from '@/api/types'
 
 interface SideNavItem {
   key: string
   label: string
-  names: string[] | null
+  categoryIds: string[] | null
 }
 
-const sideNav: SideNavItem[] = [
-  { key: 'daodi', label: '道地药材', names: null },
-  { key: 'yinpian', label: '精品饮片', names: ['当归', '黄芪', '白术', '甘草'] },
-  { key: 'zibu', label: '滋补养生', names: ['人参', '枸杞', '鹿茸', '阿胶'] },
-  { key: 'huacha', label: '养生花茶', names: ['菊花', '金银花', '花茶'] },
-  { key: 'gaofang', label: '传统膏方', names: ['阿胶'] },
-  { key: 'keli', label: '配方颗粒', names: ['石膏'] },
-  { key: 'shiyao', label: '药食同源', names: ['陈皮', '枸杞', '当归'] },
-  { key: 'shenrong', label: '参茸燕窝', names: ['人参', '鹿茸'] },
-  { key: 'shanshi', label: '养生药膳', names: ['黄芪', '当归', '枸杞'] },
-  { key: 'qixie', label: '中医器械', names: [] }
-]
+interface FilterTab {
+  id: string
+  name: string
+}
 
+const sideNav = ref<SideNavItem[]>([])
 const products = ref<Product[]>([])
-const activeKey = ref('daodi')
-const activeFilter = ref('全部')
+const activeKey = ref('all')
+const activeFilter = ref('all')
+const activeTagCode = ref('')
 
-onMounted(() => {
-  products.value = getProducts()
+onMounted(async () => {
+  try {
+    const [categories, loadedProducts] = await Promise.all([getCategories(), getProducts()])
+    sideNav.value = [
+      { key: 'all', label: '全部商品', categoryIds: null },
+      ...categories.map((category: Category) => ({
+        key: category.id,
+        label: category.name,
+        categoryIds: category.children.map(child => child.id)
+      }))
+    ]
+    products.value = loadedProducts
+  } catch (error) {
+    console.error('加载商城分类数据失败', error)
+    uni.showToast({ title: '分类数据加载失败', icon: 'none' })
+  }
 })
 
 const baseProducts = computed(() => {
-  const nav = sideNav.find(item => item.key === activeKey.value)
-  if (!nav || nav.names === null) return products.value
-  return products.value.filter(p => nav.names!.includes(p.categoryName))
+  const nav = sideNav.value.find(item => item.key === activeKey.value)
+  if (!nav || nav.categoryIds === null) return products.value
+  return products.value.filter(product => nav.categoryIds!.includes(product.categoryId || ''))
 })
 
-const filterTabs = computed(() => {
-  const names = Array.from(new Set(baseProducts.value.map(p => p.categoryName)))
-  return ['全部', ...names.slice(0, 3)]
+const filterTabs = computed<FilterTab[]>(() => {
+  const nav = sideNav.value.find(item => item.key === activeKey.value)
+  const children = nav?.categoryIds || []
+  const names = new Map(products.value.map(product => [product.categoryId || '', product.categoryName]))
+  return [{ id: 'all', name: '全部' }, ...children.map(id => ({ id, name: names.get(id) || '' })).filter(item => item.name)]
+})
+
+const categoryFilteredProducts = computed(() => baseProducts.value.filter(product =>
+  activeFilter.value === 'all' || product.categoryId === activeFilter.value
+))
+
+const availableTags = computed(() => {
+  const tags = new Map<string, Product['tags'][number]>()
+  for (const product of categoryFilteredProducts.value) {
+    for (const tag of product.tags) tags.set(tag.code, tag)
+  }
+  return [...tags.values()].sort((a, b) => a.sortOrder - b.sortOrder)
 })
 
 const visibleProducts = computed(() => {
-  if (activeFilter.value === '全部') return baseProducts.value
-  return baseProducts.value.filter(p => p.categoryName === activeFilter.value)
+  return categoryFilteredProducts.value.filter(product =>
+    !activeTagCode.value || product.tags.some(tag => tag.code === activeTagCode.value)
+  )
 })
 
 function selectSide(key: string) {
   activeKey.value = key
-  activeFilter.value = '全部'
+  activeFilter.value = 'all'
+  activeTagCode.value = ''
+}
+
+function selectFilter(id: string) {
+  activeFilter.value = id
+  activeTagCode.value = ''
 }
 
 function formatPrice(price: number): string {
   return price % 1 === 0 ? String(price) : price.toFixed(1)
 }
 
-function quickAdd(p: Product) {
+async function quickAdd(p: Product) {
   const sku = p.skus[0]
-  addToCart({
-    productId: p.id,
-    productName: p.name,
-    productImage: p.images[0],
-    skuId: sku.id,
-    specName: sku.specName,
-    price: sku.price,
-    quantity: 1,
-    weightGram: sku.weightGram,
-    selected: true
-  })
-  uni.showToast({ title: '已加入购物车', icon: 'none' })
+  if (!sku) return
+  try {
+    await addToCart({
+      productId: p.id,
+      productName: p.name,
+      productImage: p.images[0] || '',
+      skuId: sku.id,
+      specName: sku.specName,
+      price: sku.price,
+      quantity: 1,
+      weightGram: sku.weightGram,
+      selected: true
+    })
+    uni.showToast({ title: '已加入购物车', icon: 'none' })
+  } catch (error) {
+    console.error('加入购物车失败', error)
+    uni.showToast({ title: '加入购物车失败', icon: 'none' })
+  }
 }
 
 function goToProductDetail(id: string) {
@@ -187,7 +237,7 @@ function goToProductDetail(id: string) {
 }
 
 function goSearch() {
-  uni.showToast({ title: '搜索功能演示', icon: 'none' })
+  uni.navigateTo({ url: '/pages/search/index' })
 }
 </script>
 
@@ -267,7 +317,6 @@ $price: #8B5000;
   flex: 1;
   display: flex;
   min-height: 0;
-  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 }
 
 // ============ 左侧导航 ============
@@ -504,6 +553,21 @@ $price: #8B5000;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+.product-tag, .tag-filter {
+  padding: 4rpx 12rpx;
+  border: 1rpx solid #d5e3d1;
+  border-radius: 20rpx;
+  color: #52714f;
+  font-size: 19rpx;
+}
+.tag-filter-scroll { padding: 0 24rpx 12rpx; }
+.tag-filter.active { color: #fff; background: #2e7d32; border-color: #2e7d32; }
 .p-divider {
   height: 1rpx;
   background: #EFEAE0;

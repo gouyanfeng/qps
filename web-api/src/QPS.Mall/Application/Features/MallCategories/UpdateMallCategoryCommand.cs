@@ -40,8 +40,14 @@ public class UpdateMallCategoryHandler : IRequestHandler<UpdateMallCategoryComma
         MallCategoryRules.ValidateSortOrder(request.Request.SortOrder);
 
         await MallCategoryRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, request.Id, cancellationToken);
+        await MallCategoryRules.EnsureParentValidAsync(
+            _dbContext,
+            category.StoreId,
+            request.Request.ParentId,
+            request.Id,
+            cancellationToken);
 
-        category.Update(code, name, request.Request.SortOrder);
+        category.Update(code, name, request.Request.ParentId, request.Request.Icon, request.Request.SortOrder);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

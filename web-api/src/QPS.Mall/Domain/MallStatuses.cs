@@ -25,6 +25,12 @@ public static class MallOrderStatus
 
     /// <summary>已退款。</summary>
     public const string Refunded = "Refunded";
+
+    /// <summary>退货中。</summary>
+    public const string Returning = "Returning";
+
+    /// <summary>已退货。</summary>
+    public const string Returned = "Returned";
 }
 
 /// <summary>
@@ -61,6 +67,27 @@ public static class MallRefundStatus
 }
 
 /// <summary>
+/// 商场退货单状态。
+/// </summary>
+public static class MallReturnStatus
+{
+    /// <summary>待审核。</summary>
+    public const string Pending = "Pending";
+
+    /// <summary>审核通过，等待商家收到退货。</summary>
+    public const string Approved = "Approved";
+
+    /// <summary>商家已收到退货。</summary>
+    public const string Received = "Received";
+
+    /// <summary>退货完成（退款成功）。</summary>
+    public const string Completed = "Completed";
+
+    /// <summary>审核拒绝。</summary>
+    public const string Rejected = "Rejected";
+}
+
+/// <summary>
 /// 商场库存变更类型。
 /// </summary>
 public static class MallStockChangeType
@@ -73,6 +100,9 @@ public static class MallStockChangeType
 
     /// <summary>退款成功回补。</summary>
     public const string RefundRestore = "RefundRestore";
+
+    /// <summary>退货收货回补。</summary>
+    public const string ReturnRestore = "ReturnRestore";
 
     /// <summary>手动调整。</summary>
     public const string ManualAdjust = "ManualAdjust";

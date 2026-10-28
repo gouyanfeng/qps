@@ -80,6 +80,9 @@
             <view class="result-info">
               <text class="result-name">{{ product.name }}</text>
               <text class="result-category">{{ product.categoryName }}</text>
+              <view v-if="product.tags.length" class="result-tags">
+                <text v-for="tag in product.tags" :key="tag.id" class="result-tag">{{ tag.name }}</text>
+              </view>
               <text class="result-desc">{{ product.description }}</text>
               <view class="result-bottom">
                 <view class="price-row">
@@ -114,13 +117,17 @@ onMounted(() => {
   loadSearchHistory()
 })
 
-function handleSearch() {
+async function handleSearch() {
   if (!keyword.value.trim()) return
 
-  searchResults.value = searchProducts(keyword.value.trim())
-  hasSearched.value = true
-
-  saveToHistory(keyword.value.trim())
+  try {
+    searchResults.value = await searchProducts(keyword.value.trim())
+    hasSearched.value = true
+    saveToHistory(keyword.value.trim())
+  } catch (error) {
+    console.error('搜索商品失败', error)
+    uni.showToast({ title: '搜索失败，请稍后重试', icon: 'none' })
+  }
 }
 
 function handleClear() {
@@ -380,6 +387,20 @@ function goBack() {
   border-radius: 12rpx;
   display: inline-block;
   width: fit-content;
+}
+
+.result-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.result-tag {
+  padding: 4rpx 12rpx;
+  border: 1rpx solid #d5e3d1;
+  border-radius: 20rpx;
+  color: #52714f;
+  font-size: 19rpx;
 }
 
 .result-desc {

@@ -25,6 +25,11 @@ public class GetMallCategoriesQuery : PaginationRequest, IRequest<PaginationResp
     public string? Keyword { get; set; }
 
     /// <summary>
+    /// 按门店过滤。
+    /// </summary>
+    public Guid? StoreId { get; set; }
+
+    /// <summary>
     /// 按启用状态过滤。
     /// </summary>
     public bool? IsActive { get; set; }
@@ -47,6 +52,11 @@ public class GetMallCategoriesHandler : IRequestHandler<GetMallCategoriesQuery, 
             .Where(category => !category.IsDeleted)
             .AsQueryable();
 
+        if (request.StoreId.HasValue)
+        {
+            query = query.Where(category => category.StoreId == request.StoreId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = request.Keyword.Trim();
@@ -63,8 +73,15 @@ public class GetMallCategoriesHandler : IRequestHandler<GetMallCategoriesQuery, 
         var dtoQuery = query.Select(category => new MallCategoryDto
         {
             Id = category.Id,
+            StoreId = category.StoreId,
             Code = category.Code,
             Name = category.Name,
+            ParentId = category.ParentId,
+            ParentName = _dbContext.MallCategories
+                .Where(parent => parent.Id == category.ParentId)
+                .Select(parent => parent.Name)
+                .FirstOrDefault() ?? string.Empty,
+            Icon = category.Icon,
             SortOrder = category.SortOrder,
             IsActive = category.IsActive,
             CreatedAt = category.CreatedAt,

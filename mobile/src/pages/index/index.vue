@@ -33,22 +33,12 @@
 
     <!-- ============ main 主内容区 ============ -->
     <scroll-view scroll-y class="page-body" enhanced>
-      <!-- ===== Hero Banner ===== -->
-      <view class="hero-banner" @click="goToCategory">
-        <view class="hero-info">
-          <view class="hero-tag">
-            <q-icon name="check-circle-filled" size="17" color="#ffffff" />
-            <text class="hero-tag-text">原产地溯源保真 · 药典级正品</text>
-          </view>
-          <text class="hero-title">道地药材 · 健康之选</text>
-          <text class="hero-desc">古法炮制 · 一物一码溯源 · 核心产区直供</text>
-          <view class="hero-cta">
-            <text class="hero-cta-text">抢金秋养生券</text>
-            <q-icon name="chevron-right" size="18" color="#ffffff" />
-          </view>
-        </view>
-        <image class="hero-image" :src="'/static/images/hero-herbs.jpg'" mode="aspectFill" />
-      </view>
+      <swiper v-if="banners.length" class="catalog-banner" autoplay circular indicator-dots>
+        <swiper-item v-for="banner in banners" :key="banner.id">
+          <image :src="banner.image" mode="aspectFill" class="catalog-banner-image" />
+          <view class="catalog-banner-title">{{ banner.title }}</view>
+        </swiper-item>
+      </swiper>
 
       <!-- ===== 品质背书横条 ===== -->
       <view class="trust-bar">
@@ -73,17 +63,19 @@
         </view>
       </view>
 
-      <!-- ===== 6 分类入口 ===== -->
+      <!-- ===== 分类入口 ===== -->
       <view class="category-grid">
         <view
-          v-for="(item, idx) in categoryItems"
-          :key="idx"
+          v-for="item in categoryItems"
+          :key="item.id"
           class="category-item"
           @click="goToCategory"
         >
-          <image class="category-dot" :src="item.icon" mode="aspectFill" />
+          <image v-if="item.icon" class="category-dot" :src="item.icon" mode="aspectFill" />
+          <view v-else class="category-dot category-dot-empty">
+            <q-icon name="tea" size="36" color="#2E7D32" />
+          </view>
           <text class="category-name">{{ item.name }}</text>
-          <text class="category-origin">{{ item.origin }}</text>
         </view>
       </view>
 
@@ -128,7 +120,7 @@
                 <view class="mini-tag" :style="{ borderColor: p.tone, color: p.tone }">
                   <text>{{ p.cert }}</text>
                 </view>
-                <text class="mini-tag-sub">{{ p.certSub }}</text>
+                <text v-if="p.certSub" class="mini-tag-sub">{{ p.certSub }}</text>
               </view>
               <text class="product-name">{{ p.name }}</text>
               <text class="product-spec">规格：{{ p.spec }}</text>
@@ -137,6 +129,7 @@
                   <view class="price-row">
                     <text class="price-symbol">¥</text>
                     <text class="price-value">{{ p.price }}</text>
+                    <text v-if="p.marketPrice > 0" class="price-original">¥{{ p.marketPrice }}</text>
                   </view>
                   <text class="sales-text">已售 {{ p.sales }}+</text>
                 </view>
@@ -159,77 +152,93 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getProductById, addToCart } from '@/api'
+import { getCategories, getHotProducts, getBanners, addToCart } from '@/api'
+import type { Category, Banner, Product } from '@/api/types'
 
 interface FeaturedItem {
   id: string
+  skuId: string
   name: string
   image: string
   price: string
+  marketPrice: number
   spec: string
+  skuSpecName: string
+  weightGram: number
   cert: string
   certSub: string
   tone: string
   sales: string
 }
 
-const categoryItems = [
-  { name: '人参', origin: '吉林抚松', icon: '/static/images/cat-icon-1.jpg' },
-  { name: '饮片', origin: '甘肃岷县', icon: '/static/images/cat-icon-2.jpg' },
-  { name: '滋补', origin: '养生膏方', icon: '/static/images/cat-icon-3.jpg' },
-  { name: '花茶', origin: '平阴玫瑰', icon: '/static/images/cat-icon-4.jpg' },
-  { name: '膏方', origin: '古法熬制', icon: '/static/images/cat-icon-5.jpg' },
-  { name: '颗粒', origin: '国医对症', icon: '/static/images/cat-icon-6.jpg' }
-]
-
-/** 与设计稿一致的商品顺序与卖点文案 */
-const featuredMeta = [
-  { id: 'prod-101', cert: 'GAP道地认证', certSub: '支支防伪', tone: '#2E7D32', sales: '2400', spec: '50g（8支精装）' },
-  { id: 'prod-102', cert: '干仓储存', certSub: '茶香浓郁', tone: '#D97700', sales: '5100', spec: '250g密封金罐' },
-  { id: 'prod-103', cert: '头茬免洗', certSub: '泡水上浮', tone: '#2E7D32', sales: '1.2万', spec: '500g充氮双罐' },
-  { id: 'prod-104', cert: '气血双补', certSub: '油润微辛', tone: '#2E7D32', sales: '8700', spec: '300g锁鲜装' },
-  { id: 'prod-105', cert: '天然花青素', certSub: '舒肝解郁', tone: '#C2185B', sales: '6400', spec: '120g精制茶罐' },
-  { id: 'prod-106', cert: '真驴皮熬制', certSub: '浓厚滋补', tone: '#D97700', sales: '3200', spec: '400g独立片装礼盒' }
-]
+const categoryItems = ref<Array<{ id: string; name: string; icon: string }>>([])
+const banners = ref<Banner[]>([])
 
 const featured = ref<FeaturedItem[]>([])
 
-onMounted(() => {
-  featured.value = featuredMeta
-    .map((meta) => {
-      const product = getProductById(meta.id)
-      if (!product) return null
+onMounted(async () => {
+  try {
+    const [categories, products, loadedBanners] = await Promise.all([
+      getCategories(),
+      getHotProducts(),
+      getBanners()
+    ])
+    const childCategories = categories.flatMap((category: Category) => category.children)
+    categoryItems.value = childCategories.slice(0, 6).map((category) => ({
+      id: category.id,
+      name: category.name,
+      icon: category.icon
+    }))
+    banners.value = loadedBanners
+    featured.value = products.filter(product => product.skus.length > 0).slice(0, 6).map((product: Product) => {
       const sku = product.skus[0]
+      const firstTag = product.tags[0]
+      const secondTag = product.tags[1]
       return {
-        ...meta,
+        id: product.id,
+        skuId: sku.id,
         name: product.name,
-        image: product.images[0],
-        price: sku.price % 1 === 0 ? String(sku.price) : sku.price.toFixed(1)
-      } as FeaturedItem
+        image: product.images[0] || '',
+        price: sku.price % 1 === 0 ? String(sku.price) : sku.price.toFixed(1),
+        marketPrice: sku.marketPrice || 0,
+        spec: sku.specName,
+        skuSpecName: sku.specName,
+        weightGram: sku.weightGram,
+        sales: String(product.sales),
+        cert: firstTag?.name || product.categoryName,
+        certSub: secondTag?.name || '',
+        tone: firstTag?.color === 'danger' ? '#C2185B' : firstTag?.color === 'warning' ? '#D97700' : '#2E7D32'
+      }
     })
-    .filter((item): item is FeaturedItem => item !== null)
+  } catch (error) {
+    console.error('加载商城首页数据失败', error)
+    uni.showToast({ title: '首页数据加载失败', icon: 'none' })
+  }
 })
 
-function quickAdd(item: FeaturedItem) {
-  const product = getProductById(item.id)
-  if (!product) return
-  const sku = product.skus[0]
-  addToCart({
-    productId: product.id,
-    productName: product.name,
-    productImage: product.images[0],
-    skuId: sku.id,
-    specName: sku.specName,
-    price: sku.price,
-    quantity: 1,
-    weightGram: sku.weightGram,
-    selected: true,
-    certText: item.cert
-  })
-  uni.showToast({ title: '已加入购物车', icon: 'none' })
+async function quickAdd(item: FeaturedItem) {
+  try {
+    await addToCart({
+      productId: item.id,
+      productName: item.name,
+      productImage: item.image,
+      skuId: item.skuId,
+      specName: item.skuSpecName,
+      price: Number(item.price),
+      quantity: 1,
+      weightGram: item.weightGram,
+      selected: true,
+      badge: item.cert,
+      certText: item.cert
+    })
+    uni.showToast({ title: '已加入购物车', icon: 'none' })
+  } catch (error) {
+    console.error('加入购物车失败', error)
+    uni.showToast({ title: '加入购物车失败', icon: 'none' })
+  }
 }
 
-function goToSearch() { uni.switchTab({ url: '/pages/search/index' }) }
+function goToSearch() { uni.navigateTo({ url: '/pages/search/index' }) }
 function goToCategory() { uni.switchTab({ url: '/pages/category/index' }) }
 function goToProductDetail(id: string) { uni.navigateTo({ url: `/pages/product-detail/index?id=${id}` }) }
 function handleVerify() { uni.showToast({ title: '扫码验真功能演示', icon: 'none' }) }
@@ -349,82 +358,27 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 }
 
 // ============ Hero Banner ============
-.hero-banner {
+.catalog-banner {
   position: relative;
+  height: 300rpx;
   margin: 20rpx 24rpx 0;
-  padding: 26rpx 26rpx 28rpx;
-  border-radius: 22rpx;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 12rpx 12rpx, rgba(255, 255, 255, 0.10) 2rpx, transparent 3rpx) 0 0 / 44rpx 44rpx,
-    linear-gradient(135deg, #23611F 0%, #2E7D32 60%, #2F8036 100%);
-  box-shadow: $shadow-card;
+  border-radius: 22rpx;
 }
 
-.hero-info {
-  position: relative;
-  z-index: 2;
-  padding-right: 200rpx;
-  display: flex;
-  flex-direction: column;
+.catalog-banner-image {
+  width: 100%;
+  height: 100%;
 }
 
-.hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6rpx;
-  align-self: flex-start;
-  padding: 6rpx 16rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 100rpx;
-}
-
-.hero-tag-text {
-  font-size: 19rpx;
-  color: #ffffff;
-}
-
-.hero-title {
-  margin-top: 22rpx;
-  font-size: 42rpx;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 2rpx;
-}
-
-.hero-desc {
-  margin-top: 10rpx;
-  font-size: 23rpx;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.hero-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4rpx;
-  align-self: flex-start;
-  margin-top: 24rpx;
-  padding: 14rpx 26rpx;
-  background: linear-gradient(135deg, #F57C00 0%, #FB8C00 100%);
-  border-radius: 100rpx;
-  box-shadow: 0 8rpx 20rpx -6rpx rgba(245, 124, 0, 0.7);
-}
-
-.hero-cta-text {
-  font-size: 24rpx;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.hero-image {
+.catalog-banner-title {
   position: absolute;
-  top: 26rpx;
-  right: 24rpx;
-  width: 178rpx;
-  height: 178rpx;
-  border-radius: 16rpx;
-  z-index: 1;
+  left: 24rpx;
+  bottom: 34rpx;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 700;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.6);
 }
 
 // ============ 品质背书 ============
@@ -484,15 +438,17 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   display: block;
 }
 
+.category-dot-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $primary-light;
+}
+
 .category-name {
   font-size: 24rpx;
   font-weight: 700;
   color: $text-primary;
-}
-
-.category-origin {
-  font-size: 17rpx;
-  color: $text-secondary;
   white-space: nowrap;
 }
 
@@ -685,6 +641,13 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   font-weight: 800;
   color: $primary-dark;
   line-height: 1;
+}
+
+.price-original {
+  margin-left: 8rpx;
+  font-size: 20rpx;
+  color: #B0ACA9;
+  text-decoration: line-through;
 }
 
 .sales-text {

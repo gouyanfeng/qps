@@ -31,8 +31,15 @@ public class GetMallCategoryHandler : IRequestHandler<GetMallCategoryQuery, Mall
             .Select(category => new MallCategoryDto
             {
                 Id = category.Id,
+                StoreId = category.StoreId,
                 Code = category.Code,
                 Name = category.Name,
+                ParentId = category.ParentId,
+                ParentName = _dbContext.MallCategories
+                    .Where(parent => parent.Id == category.ParentId)
+                    .Select(parent => parent.Name)
+                    .FirstOrDefault() ?? string.Empty,
+                Icon = category.Icon,
                 SortOrder = category.SortOrder,
                 IsActive = category.IsActive,
                 CreatedAt = category.CreatedAt,

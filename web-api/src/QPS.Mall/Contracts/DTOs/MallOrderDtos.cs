@@ -11,6 +11,8 @@ public class MallOrderDto
 
     public Guid StoreId { get; set; }
 
+    public Guid? MemberId { get; set; }
+
     public string StoreName { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
@@ -20,6 +22,8 @@ public class MallOrderDto
     public string ReceiverPhone { get; set; } = string.Empty;
 
     public decimal GoodsAmount { get; set; }
+
+    public decimal PromotionDiscountAmount { get; set; }
 
     public decimal FreightAmount { get; set; }
 
@@ -86,6 +90,14 @@ public class MallOrderItemDto
     public int WeightGram { get; set; }
 
     public decimal ItemAmount { get; set; }
+
+    public bool IsGift { get; set; }
+
+    public Guid? PromotionId { get; set; }
+
+    public string PromotionName { get; set; } = string.Empty;
+
+    public decimal? OriginalUnitPrice { get; set; }
 }
 
 /// <summary>
@@ -164,6 +176,11 @@ public class CreateMallOrderRequest
     public Guid StoreId { get; set; }
 
     /// <summary>
+    /// 下单会员ID，移动端JWT解析后自动注入，后台代下单可空。
+    /// </summary>
+    public Guid? MemberId { get; set; }
+
+    /// <summary>
     /// 外部订单号，为空时由系统生成。
     /// </summary>
     public string? OrderNo { get; set; }
@@ -171,6 +188,18 @@ public class CreateMallOrderRequest
     public string ReceiverName { get; set; } = string.Empty;
 
     public string ReceiverPhone { get; set; } = string.Empty;
+
+    public string ProvinceCode { get; set; } = string.Empty;
+
+    public string ProvinceName { get; set; } = string.Empty;
+
+    public string CityCode { get; set; } = string.Empty;
+
+    public string CityName { get; set; } = string.Empty;
+
+    public string DistrictCode { get; set; } = string.Empty;
+
+    public string DistrictName { get; set; } = string.Empty;
 
     public string ReceiverAddress { get; set; } = string.Empty;
 

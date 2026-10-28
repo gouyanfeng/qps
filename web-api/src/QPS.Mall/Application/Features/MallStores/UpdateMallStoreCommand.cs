@@ -42,7 +42,7 @@ public class UpdateMallStoreHandler : IRequestHandler<UpdateMallStoreCommand, bo
 
         await MallStoreRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, request.Id, cancellationToken);
 
-        store.Update(code, name, address);
+        store.Update(code, name, address, request.Request.DefaultFreightTemplateId);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

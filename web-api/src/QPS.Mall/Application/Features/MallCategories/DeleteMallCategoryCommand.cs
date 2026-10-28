@@ -40,6 +40,13 @@ public class DeleteMallCategoryHandler : IRequestHandler<DeleteMallCategoryComma
             throw new BusinessException(400, "分类下存在商品，无法删除");
         }
 
+        var hasChildren = await _dbContext.MallCategories
+            .AnyAsync(item => item.ParentId == request.Id && !item.IsDeleted, cancellationToken);
+        if (hasChildren)
+        {
+            throw new BusinessException(400, "分类下存在子分类，无法删除");
+        }
+
         category.IsDeleted = true;
 
         await _dbContext.SaveChangesAsync(cancellationToken);

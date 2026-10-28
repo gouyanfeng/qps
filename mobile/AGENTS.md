@@ -14,7 +14,7 @@
 
 | 路径 | 说明 |
 |---|---|
-| `src/pages/` | 页面：`index`（首页）、`category`（分类）、`cart`（购物车）、`profile`（我的）、`product-detail`（商品详情）、`checkout`（确认订单）、`search`（搜索） |
+| `src/pages/` | 页面：`index`（首页）、`category`（分类）、`cart`（购物车）、`profile`（我的）、`product-detail`（商品详情）、`checkout`（确认订单）、`login`（登录）、`search`（搜索，未注册） |
 | `src/components/` | 通用组件：`q-icon`（图标）、`q-page-header`（普通顶栏外壳）、`q-page-header-back`（带返回键顶栏），easycom 自动注册 |
 | `src/icons/` | 图标字体子集（`iconfont.scss`）与码位映射（`iconfont.ts`） |
 | `src/mock/` | `products.json` 等静态数据 |

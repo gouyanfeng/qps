@@ -66,9 +66,17 @@ internal static class MallOrderDetailLoader
                 UnitPrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 WeightGram = item.WeightGram,
-                ItemAmount = item.ItemAmount
+                ItemAmount = item.ItemAmount,
+                IsGift = item.IsGift,
+                PromotionId = item.PromotionId,
+                PromotionName = item.PromotionName,
+                OriginalUnitPrice = item.OriginalUnitPrice
             })
             .ToListAsync(cancellationToken);
+
+        dto.PromotionDiscountAmount = dto.Items
+            .Where(item => !item.IsGift && item.OriginalUnitPrice.HasValue)
+            .Sum(item => (item.OriginalUnitPrice!.Value - item.UnitPrice) * item.Quantity);
 
         dto.Payments = await dbContext.MallPayments
             .AsNoTracking()

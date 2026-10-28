@@ -8,24 +8,37 @@ export interface Category {
 export interface CategoryChild {
   id: string
   name: string
+  icon: string
+}
+
+export interface ProductTag {
+  id: string
+  code: string
+  name: string
+  color: string
+  sortOrder: number
+  isActive: boolean
 }
 
 export interface Product {
   id: string
+  code: string
   name: string
-  categoryId: string
+  categoryId: string | null
   categoryName: string
   description: string
   images: string[]
   skus: Sku[]
   sales: number
   isHot: boolean
+  tags: ProductTag[]
 }
 
 export interface Sku {
   id: string
   specName: string
   price: number
+  marketPrice: number
   stock: number
   weightGram: number
 }
@@ -47,6 +60,10 @@ export interface CartItem {
   quantity: number
   weightGram: number
   selected: boolean
+  stock?: number
+  availableStock?: number
+  isValid?: boolean
+  invalidReason?: string | null
   /** 商品图左上角斜角标文案，如「道地药材」 */
   badge?: string
   /** 绿色认证 chip 文案，如「吉林长白山道地认证·一物一码」 */

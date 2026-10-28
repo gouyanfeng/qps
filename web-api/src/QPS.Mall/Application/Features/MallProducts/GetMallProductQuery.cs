@@ -56,12 +56,27 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
                 SkuCode = sku.SkuCode,
                 SpecName = sku.SpecName,
                 Price = sku.Price,
+                MarketPrice = sku.MarketPrice,
                 WeightGram = sku.WeightGram,
                 Stock = sku.Stock,
                 WarnStock = sku.WarnStock,
                 IsActive = sku.IsActive,
                 CreatedAt = sku.CreatedAt,
                 UpdatedAt = sku.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        dto.Tags = await _dbContext.MallTags
+            .Where(tag => tag.Products.Any(product => product.Id == request.Id) && tag.IsActive && !tag.IsDeleted)
+            .OrderBy(tag => tag.SortOrder)
+            .Select(tag => new MallTagDto
+            {
+                Id = tag.Id,
+                Code = tag.Code,
+                Name = tag.Name,
+                Color = tag.Color,
+                SortOrder = tag.SortOrder,
+                IsActive = tag.IsActive
             })
             .ToListAsync(cancellationToken);
 

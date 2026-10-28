@@ -1,96 +1,156 @@
 <template>
   <div class="list-page">
-    <div class="card table-main">
-      <div class="table-header">
-        <div class="header-button-lf">
-          <el-input
-            v-model="keyword"
-            placeholder="门店编码 / 名称"
-            clearable
-            style="width: 240px"
-            :prefix-icon="Search"
-          />
-        </div>
-        <div class="header-button-ri">
-          <el-button :icon="Refresh" @click="loadData">刷新</el-button>
-        </div>
-      </div>
+    <QueryPage api="/admin/mall/freight-templates" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
+      <template #searchConditions>
+        <el-form :model="searchForm" :inline="true">
+          <el-form-item label="门店">
+            <el-select v-model="searchForm.storeId" placeholder="请选择门店" clearable>
+              <el-option v-for="s in storeOptions" :key="s.id" :label="s.name" :value="s.id" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="计费方式">
+            <el-select v-model="searchForm.billingType" placeholder="全部" clearable>
+              <el-option label="按重量" :value="0" />
+              <el-option label="按件数" :value="1" />
+              <el-option label="按体积" :value="2" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="关键字">
+            <el-input v-model="searchForm.keyword" placeholder="模板名称" clearable />
+          </el-form-item>
+        </el-form>
+      </template>
 
-      <div class="table-container">
-        <el-table :data="filteredRows" :fit="true" style="width: 100%" border v-loading="loading">
-          <el-table-column prop="code" label="门店编码" min-width="140" show-overflow-tooltip />
-          <el-table-column prop="name" label="门店名称" min-width="180" show-overflow-tooltip />
-          <el-table-column label="首重" min-width="150" align="center">
-            <template #default="{ row }">
-              <span v-if="row.rule">{{ row.rule.firstWeightGram }} 克 / ¥{{ Number(row.rule.firstWeightFee).toFixed(2) }}</span>
-              <el-tag v-else type="info" size="small">未配置</el-tag>
-            </template>
+      <template #headerButtons>
+        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增模板</el-button>
+      </template>
+
+      <template #table="{ tableData }">
+        <el-table :data="tableData" :fit="true" style="width: 100%" border>
+          <el-table-column prop="name" label="模板名称" min-width="180" show-overflow-tooltip />
+          <el-table-column label="计费方式" width="100" align="center">
+            <template #default="{ row }">{{ billingTypeMap[row.billingType] }}</template>
           </el-table-column>
-          <el-table-column label="续重" min-width="170" align="center">
+          <el-table-column prop="regionCount" label="区域数" width="90" align="center" />
+          <el-table-column label="默认" width="80" align="center">
             <template #default="{ row }">
-              <span v-if="row.rule">
-                每 {{ row.rule.additionalWeightGram }} 克 +¥{{ Number(row.rule.additionalWeightFee).toFixed(2) }}
-              </span>
+              <el-tag v-if="row.isDefault" type="warning">默认</el-tag>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column label="满额包邮" width="130" align="center">
+          <el-table-column label="状态" width="80" align="center">
             <template #default="{ row }">
-              <span v-if="row.rule?.freeShippingAmount">满 ¥{{ Number(row.rule.freeShippingAmount).toFixed(2) }}</span>
-              <span v-else>不包邮</span>
+              <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="100" align="center">
+          <el-table-column label="操作" align="center" width="200" fixed="right">
             <template #default="{ row }">
-              <el-tag v-if="row.rule" :type="row.rule.isActive ? 'success' : 'info'" size="small">
-                {{ row.rule.isActive ? '启用' : '停用' }}
-              </el-tag>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="更新时间" width="180" align="center">
-            <template #default="{ row }">{{ row.rule ? formatDate(row.rule.updatedAt) : '-' }}</template>
-          </el-table-column>
-          <el-table-column label="操作" width="110" align="center" fixed="right">
-            <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog(row)">
-                {{ row.rule ? '编辑' : '新增' }}
-              </el-button>
+              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
-      </div>
-    </div>
+      </template>
+    </QueryPage>
 
-    <!-- 运费规则编辑 -->
-    <el-dialog v-model="dialogVisible" :title="`运费规则 - ${currentStoreName}`" width="540px">
-      <el-form :model="form" label-width="130px">
-        <el-form-item label="首重重量(克)" required>
-          <el-input-number v-model="form.firstWeightGram" :min="1" :max="1000000" :step="500" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="首重价格(元)" required>
-          <el-input-number v-model="form.firstWeightFee" :precision="2" :min="0" :max="999999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="续重步长(克)" required>
-          <el-input-number v-model="form.additionalWeightGram" :min="1" :max="1000000" :step="500" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="续重价格(元)" required>
-          <el-input-number v-model="form.additionalWeightFee" :precision="2" :min="0" :max="999999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="满额包邮">
-          <el-switch v-model="freeShippingEnabled" active-text="启用" inactive-text="关闭" />
-          <el-input-number
-            v-if="freeShippingEnabled"
-            v-model="form.freeShippingAmount"
-            :precision="2"
-            :min="0.01"
-            :max="9999999"
-            style="width: 180px; margin-left: 12px"
-          />
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-switch v-model="form.isActive" active-text="启用" inactive-text="停用" />
-        </el-form-item>
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="900px" top="3vh">
+      <el-form :model="form" label-width="100px">
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="门店" required>
+              <el-select v-model="form.storeId" style="width: 100%" :disabled="dialogType === '编辑'">
+                <el-option v-for="s in storeOptions" :key="s.id" :label="s.name" :value="s.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="模板名称" required>
+              <el-input v-model="form.name" maxlength="100" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="计费方式">
+              <el-select v-model="form.billingType" style="width: 100%">
+                <el-option label="按重量（克）" :value="0" />
+                <el-option label="按件数" :value="1" />
+                <el-option label="按体积（cm³）" :value="2" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="设为默认">
+              <el-switch v-model="form.isDefault" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">区域规则（至少 1 条）</el-divider>
+
+        <div v-for="(region, idx) in form.regions" :key="idx" class="region-block">
+          <div class="region-header">
+            <span class="region-title">区域 #{{ idx + 1 }}</span>
+            <el-button v-if="form.regions.length > 1" type="danger" link @click="removeRegion(idx)">删除</el-button>
+          </div>
+          <el-row :gutter="12">
+            <el-col :span="16">
+              <el-form-item label="覆盖地区" label-width="80px">
+                <el-tree-select
+                  v-model="region.selectedRegionCodes"
+                  :data="regionTree"
+                  :props="regionTreeProps"
+                  multiple
+                  filterable
+                  clearable
+                  show-checkbox
+                  :check-strictly="false"
+                  collapse-tags
+                  value-key="code"
+                  node-key="code"
+                  placeholder="请选择省 / 市 / 区县"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="兜底区域" label-width="80px">
+                <el-switch v-model="region.isDefaultRegion" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="12">
+            <el-col :span="6">
+              <el-form-item label="首值" label-width="80px">
+                <el-input-number v-model="region.firstValue" :min="0.01" :precision="2" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="首费" label-width="80px">
+                <el-input-number v-model="region.firstFee" :min="0" :precision="2" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="续步长" label-width="80px">
+                <el-input-number v-model="region.additionalStep" :min="0.01" :precision="2" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="续费" label-width="80px">
+                <el-input-number v-model="region.additionalFee" :min="0" :precision="2" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="满额包邮" label-width="80px">
+                <el-input-number v-model="region.freeShippingAmount" :min="0" :precision="2" placeholder="0 表示不包邮" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <el-button type="primary" link :icon="Plus" @click="addRegion">+ 添加区域规则</el-button>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -102,143 +162,255 @@
   </div>
 </template>
 
-<script setup lang="ts" name="mallFreight">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { EditPen, Refresh, Search } from '@element-plus/icons-vue'
+<script setup lang="ts" name="mallFreightTemplate">
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { CirclePlus, EditPen, Delete, Plus } from '@element-plus/icons-vue'
+import { mallFreightTemplateApi } from '@/api/modules/mallFreightTemplate'
 import { mallStoreApi } from '@/api/modules/mallStore'
-import { mallFreightApi } from '@/api/modules/mallFreight'
-import { formatDate } from '@/utils'
+import { regionApi } from '@/api/modules/region'
+import QueryPage from '@/components/QueryPage/index.vue'
 
-const loading = ref(false)
-const keyword = ref('')
-const rows = ref<any[]>([])
+const billingTypeMap: Record<number, string> = { 0: '按重量', 1: '按件数', 2: '按体积' }
+
+const queryPageRef = ref()
 const dialogVisible = ref(false)
 const submitting = ref(false)
-const currentStoreId = ref('')
-const currentStoreName = ref('')
-const freeShippingEnabled = ref(false)
+const dialogTitle = ref('')
+const dialogType = ref('')
+const currentId = ref('')
+const storeOptions = ref<any[]>([])
 
-const form = reactive({
-  firstWeightGram: 1000,
-  firstWeightFee: 10,
-  additionalWeightGram: 1000,
-  additionalWeightFee: 5,
-  freeShippingAmount: 99,
-  isActive: true
-})
+const searchForm = reactive({ storeId: '', billingType: '' as number | '', keyword: '' })
+const regionTree = ref<any[]>([])
+const regionTreeProps = { children: 'children', value: 'code', label: 'name' }
+const regionMap = ref<Map<string, any>>(new Map())
 
-const filteredRows = computed(() => {
-  const value = keyword.value.trim()
-  if (!value) return rows.value
-  return rows.value.filter(
-    (row) => (row.code || '').includes(value) || (row.name || '').includes(value)
-  )
-})
-
-const loadData = async () => {
-  loading.value = true
-  try {
-    const [storeResult, ruleResult] = await Promise.all([
-      mallStoreApi.getStoreList({ page: 1, pageSize: 100 }),
-      mallFreightApi.getFreightRules()
-    ])
-    const stores = storeResult.data?.list || []
-    const rules = ruleResult.data || []
-    const ruleMap = new Map<string, any>(rules.map((rule: any) => [rule.storeId, rule]))
-
-    rows.value = stores.map((store: any) => ({
-      storeId: store.id,
-      code: store.code,
-      name: store.name,
-      rule: ruleMap.get(store.id) || null
-    }))
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-  }
+const normalizeCodes = (codes: string | null | undefined) => {
+  if (!codes) return []
+  return Array.from(new Set((codes || '').split(',').map(item => item.trim()).filter(Boolean)))
 }
 
-const openDialog = (row: any) => {
-  currentStoreId.value = row.storeId
-  currentStoreName.value = row.name
+const buildRegionTree = (regions: any[]) => {
+  const map = new Map<string, any>()
+  const tree: any[] = []
 
-  if (row.rule) {
-    Object.assign(form, {
-      firstWeightGram: row.rule.firstWeightGram,
-      firstWeightFee: Number(row.rule.firstWeightFee),
-      additionalWeightGram: row.rule.additionalWeightGram,
-      additionalWeightFee: Number(row.rule.additionalWeightFee),
-      freeShippingAmount: row.rule.freeShippingAmount ? Number(row.rule.freeShippingAmount) : 99,
-      isActive: row.rule.isActive
+  regions.filter(item => item && item.code && item.name).forEach((item) => {
+    const node = {
+      code: item.code,
+      name: item.name,
+      level: item.level,
+      parentCode: item.parentCode,
+      children: []
+    }
+    map.set(item.code, node)
+  })
+
+  regions.filter(item => item && item.code && item.name).forEach((item) => {
+    const node = map.get(item.code)
+    if (!node) return
+    if (item.parentCode && map.has(item.parentCode)) {
+      map.get(item.parentCode).children.push(node)
+    } else {
+      tree.push(node)
+    }
+  })
+
+  const cleanChildren = (nodes: any[]): any[] => nodes.map(node => ({
+    ...node,
+    children: cleanChildren(node.children || [])
+  })).filter(node => node.children.length || node.level >= 1)
+
+  regionMap.value = map
+  regionTree.value = cleanChildren(tree)
+}
+
+const syncRegionSelection = (region: any) => {
+  const selected = Array.from(new Set((region.selectedRegionCodes as Array<string | number> || [])
+    .filter((code): code is string | number => Boolean(code))
+    .map(code => String(code))))
+
+  const selectedSet = new Set(selected)
+  const topLevelSelection = selected.filter(code => {
+    let parentCode = regionMap.value.get(code)?.parentCode
+    while (parentCode) {
+      if (selectedSet.has(parentCode)) return false
+      parentCode = regionMap.value.get(parentCode)?.parentCode
+    }
+    return true
+  })
+  const provinceCodes = topLevelSelection.filter(code => Number(regionMap.value.get(code)?.level) === 1)
+  const cityCodes = topLevelSelection
+    .map(code => {
+      const node = regionMap.value.get(code)
+      if (Number(node?.level) === 2) return code
+      if (Number(node?.level) === 3) return node.parentCode
+      return null
     })
-    freeShippingEnabled.value = !!row.rule.freeShippingAmount
-  } else {
-    Object.assign(form, {
-      firstWeightGram: 1000,
-      firstWeightFee: 10,
-      additionalWeightGram: 1000,
-      additionalWeightFee: 5,
-      freeShippingAmount: 99,
-      isActive: true
-    })
-    freeShippingEnabled.value = true
+    .filter((code): code is string => Boolean(code))
+
+  region.provinceCodes = provinceCodes.join(',')
+  region.cityCodes = Array.from(new Set(cityCodes)).join(',')
+}
+
+const createRegion = () => ({
+  id: '',
+  provinceCodes: '',
+  cityCodes: '',
+  selectedRegionCodes: [] as string[],
+  isDefaultRegion: false,
+  firstValue: 1000,
+  firstFee: 10,
+  additionalStep: 1000,
+  additionalFee: 5,
+  freeShippingAmount: 0
+})
+
+const form = reactive({
+  storeId: '',
+  name: '',
+  billingType: 0,
+  isDefault: false,
+  isActive: true,
+  regions: [createRegion()] as any[]
+})
+
+onMounted(async () => {
+  const [storeRes, regionRes] = await Promise.all([
+    mallStoreApi.getStoreList({ pageNum: 1, pageSize: 200 }),
+    regionApi.getChinaRegionList({ activeOnly: true })
+  ])
+
+  storeOptions.value = storeRes?.data?.records || storeRes?.data || []
+  if (storeOptions.value.length) {
+    searchForm.storeId = storeOptions.value[0].id
+    form.storeId = storeOptions.value[0].id
   }
 
+  buildRegionTree(regionRes?.data || [])
+})
+
+const handleReset = () => { searchForm.billingType = ''; searchForm.keyword = '' }
+
+const resetForm = () => {
+  form.name = ''; form.billingType = 0; form.isDefault = false; form.isActive = true
+  form.regions = [createRegion()]
+}
+
+const addRegion = () => { form.regions.push(createRegion()) }
+const removeRegion = (idx: number) => { form.regions.splice(idx, 1) }
+
+const openDialog = async (type: string, row?: any) => {
+  dialogTitle.value = type; dialogType.value = type
+
+  if (type === '新增') {
+    resetForm(); currentId.value = ''
+    if (storeOptions.value.length) form.storeId = storeOptions.value[0].id
+  } else if (row) {
+    const detail = await mallFreightTemplateApi.get(row.id)
+    const data = detail?.data || detail
+    Object.assign(form, {
+      storeId: data.storeId,
+      name: data.name,
+      billingType: data.billingType,
+      isDefault: data.isDefault,
+      isActive: data.isActive,
+      regions: (data.regions || []).map((r: any) => {
+        const selected = [
+          ...normalizeCodes(r.provinceCodes),
+          ...normalizeCodes(r.cityCodes)
+        ]
+        return {
+          id: r.id || '',
+          provinceCodes: r.provinceCodes || '',
+          cityCodes: r.cityCodes || '',
+          selectedRegionCodes: selected,
+          isDefaultRegion: r.isDefaultRegion,
+          firstValue: r.firstValue,
+          firstFee: r.firstFee,
+          additionalStep: r.additionalStep,
+          additionalFee: r.additionalFee,
+          freeShippingAmount: r.freeShippingAmount || 0
+        }
+      })
+    })
+    if (!form.regions.length) form.regions = [createRegion()]
+    currentId.value = row.id
+  }
   dialogVisible.value = true
 }
 
+const validateRegions = () => {
+  if (!form.regions.length) { ElMessage.warning('至少添加 1 条区域规则'); return false }
+  let defaultCount = 0
+  for (const r of form.regions) {
+    if (r.isDefaultRegion) defaultCount++
+    r.selectedRegionCodes = Array.from(new Set((r.selectedRegionCodes || []).filter(Boolean)))
+    if (!r.isDefaultRegion && (!r.selectedRegionCodes || r.selectedRegionCodes.length === 0)) {
+      ElMessage.warning('请选择该区域规则的覆盖地区')
+      return false
+    }
+    syncRegionSelection(r)
+    if (r.firstValue <= 0) { ElMessage.warning('首值必须大于 0'); return false }
+    if (r.additionalStep <= 0) { ElMessage.warning('续步长必须大于 0'); return false }
+  }
+  if (defaultCount > 1) { ElMessage.warning('只能有 1 个兜底区域'); return false }
+  return true
+}
+
 const submitForm = async () => {
-  if (form.firstWeightGram <= 0) {
-    ElMessage.warning('首重重量必须大于 0')
-    return
-  }
-  if (form.additionalWeightGram <= 0) {
-    ElMessage.warning('续重步长必须大于 0')
-    return
-  }
-  if (freeShippingEnabled.value && (!form.freeShippingAmount || form.freeShippingAmount <= 0)) {
-    ElMessage.warning('满额包邮金额必须大于 0')
-    return
-  }
+  if (!form.storeId) { ElMessage.warning('请选择门店'); return }
+  if (!form.name.trim()) { ElMessage.warning('请输入模板名称'); return }
+  if (!validateRegions()) return
 
   submitting.value = true
   try {
-    await mallFreightApi.upsertFreightRule(currentStoreId.value, {
-      firstWeightGram: form.firstWeightGram,
-      firstWeightFee: form.firstWeightFee,
-      additionalWeightGram: form.additionalWeightGram,
-      additionalWeightFee: form.additionalWeightFee,
-      freeShippingAmount: freeShippingEnabled.value ? form.freeShippingAmount : null,
-      isActive: form.isActive
-    })
-    ElMessage.success('保存运费规则成功')
+    const payload = {
+      storeId: form.storeId,
+      name: form.name.trim(),
+      billingType: form.billingType,
+      isDefault: form.isDefault,
+      isActive: form.isActive,
+      regions: form.regions.map(r => {
+        syncRegionSelection(r)
+        return {
+          id: r.id || undefined,
+          provinceCodes: r.provinceCodes,
+          cityCodes: r.cityCodes,
+          isDefaultRegion: r.isDefaultRegion,
+          firstValue: r.firstValue,
+          firstFee: r.firstFee,
+          additionalStep: r.additionalStep,
+          additionalFee: r.additionalFee,
+          freeShippingAmount: r.freeShippingAmount
+        }
+      })
+    }
+
+    if (dialogType.value === '新增') {
+      await mallFreightTemplateApi.add(payload)
+      ElMessage.success('新增成功')
+    } else {
+      await mallFreightTemplateApi.update(currentId.value, payload)
+      ElMessage.success('更新成功')
+    }
     dialogVisible.value = false
-    await loadData()
-  } catch {
-    // 错误提示已由请求拦截器统一处理
-  } finally {
-    submitting.value = false
-  }
+    queryPageRef.value?.getTableList()
+  } catch {} finally { submitting.value = false }
 }
 
-onMounted(() => {
-  loadData()
-})
+const remove = async (row: any) => {
+  try {
+    await ElMessageBox.confirm(`确定要删除模板“${row.name}”吗？`, '删除', { type: 'warning' })
+    await mallFreightTemplateApi.remove(row.id)
+    ElMessage.success('删除成功')
+    queryPageRef.value?.getTableList()
+  } catch {}
+}
 </script>
 
 <style scoped lang="scss">
-.table-header {
-  height: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.table-container {
-  min-width: 0;
-  overflow-x: auto;
-}
+.region-block { border: 1px solid #e4e7ed; border-radius: 4px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
+.region-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.region-title { font-weight: 600; color: #303133; font-size: 14px; }
 </style>

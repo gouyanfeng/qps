@@ -27,13 +27,29 @@ public class MallProductDto
 
     public bool IsActive { get; set; }
 
+    public bool IsHot { get; set; }
+
+    public List<MallTagDto> Tags { get; set; } = new();
+
+    public int Sales { get; set; }
+
+    public Guid? FreightTemplateId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 
-    /// <summary>
-    /// 规格列表，仅详情查询返回。
-    /// </summary>
+    public List<string> Images
+    {
+        get
+        {
+            var list = new List<string>();
+            if (!string.IsNullOrEmpty(MainImageUrl)) list.Add(MainImageUrl);
+            if (AlbumImages != null) list.AddRange(AlbumImages);
+            return list;
+        }
+    }
+
     public List<MallSkuDto> Skus { get; set; } = new();
 }
 
@@ -52,7 +68,11 @@ public class MallSkuDto
 
     public decimal Price { get; set; }
 
+    public decimal MarketPrice { get; set; }
+
     public int WeightGram { get; set; }
+
+    public int VolumeCm3 { get; set; }
 
     public int Stock { get; set; }
 
@@ -87,11 +107,14 @@ public class MallProductCreateRequest
     public int SortOrder { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    public bool IsHot { get; set; }
+
+    public List<Guid> TagIds { get; set; } = new();
+
+    public Guid? FreightTemplateId { get; set; }
 }
 
-/// <summary>
-/// 编辑商品请求。
-/// </summary>
 public class MallProductUpdateRequest
 {
     public string Code { get; set; } = string.Empty;
@@ -109,6 +132,12 @@ public class MallProductUpdateRequest
     public string DetailHtml { get; set; } = string.Empty;
 
     public int SortOrder { get; set; }
+
+    public bool IsHot { get; set; }
+
+    public List<Guid> TagIds { get; set; } = new();
+
+    public Guid? FreightTemplateId { get; set; }
 }
 
 /// <summary>
@@ -117,6 +146,14 @@ public class MallProductUpdateRequest
 public class MallProductStatusRequest
 {
     public bool IsActive { get; set; }
+}
+
+/// <summary>
+/// 商品首页精选状态请求。
+/// </summary>
+public class MallProductHotRequest
+{
+    public bool IsHot { get; set; }
 }
 
 /// <summary>
@@ -130,7 +167,11 @@ public class MallSkuCreateRequest
 
     public decimal Price { get; set; }
 
+    public decimal MarketPrice { get; set; }
+
     public int WeightGram { get; set; }
+
+    public int VolumeCm3 { get; set; }
 
     public int Stock { get; set; }
 
@@ -150,7 +191,11 @@ public class MallSkuUpdateRequest
 
     public decimal Price { get; set; }
 
+    public decimal MarketPrice { get; set; }
+
     public int WeightGram { get; set; }
+
+    public int VolumeCm3 { get; set; }
 
     public int Stock { get; set; }
 
