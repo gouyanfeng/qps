@@ -27,14 +27,14 @@
 ## 运行与构建
 
 ```bash
-npm run dev:h5      # 本地 H5 调试，默认 5173；端口被占用会自动递增
+npm run dev:h5 -- --port 5174 --strictPort  # 本地 H5 调试；UI 测试使用隔离端口 6174
 npm run build:h5    # 产物 dist/build/h5
 npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 ```
 
 - App 端：在 HBuilderX 里「运行到手机」，产物在 `dist/dev/app-plus`
 - 改完源码必须**停止再重新运行**到手机，差量编译不会把旧的逻辑层包替换掉
-- 后端接口/本地服务端口按工作区规则：开发 `5173` + `5000`，UI 测试 `5174` + `5001`
+- 后端接口/本地服务端口按工作区规则：管理端 `5173`、移动端 H5 `5174`、后端 `5000`，UI 测试 `6174` + `5001`
 - `node_modules`、`dist` 已在 `.gitignore` 中排除
 
 ## 图标规范（重要）

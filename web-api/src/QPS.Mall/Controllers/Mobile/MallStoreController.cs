@@ -9,10 +9,10 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
+[Authorize(Policy = "MallMember")]
 public sealed class MallStoreController(IMediator mediator) : ControllerBase
 {
     [HttpGet("store/default")]
-    [AllowAnonymous]
     public async Task<ActionResult<MallStoreDto>> GetDefaultStore(CancellationToken cancellationToken)
     {
         var stores = await mediator.Send(new GetMallStoresQuery

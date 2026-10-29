@@ -179,6 +179,20 @@
           }
         },
         {
+          "path": "/mall/activity",
+          "name": "mallActivity",
+          "component": "/mall/activity/index",
+          "meta": {
+            "icon": "Tickets",
+            "title": "活动管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
           "path": "/mall/category",
           "name": "mallCategory",
           "component": "/mall/category/index",

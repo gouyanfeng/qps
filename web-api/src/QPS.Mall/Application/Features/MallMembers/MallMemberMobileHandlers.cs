@@ -89,6 +89,7 @@ public class MallMemberOrderBadgeDto
     public int PendingPayment { get; set; }
     public int Paid { get; set; }
     public int Shipped { get; set; }
+    public int Completed { get; set; }
     public int Returning { get; set; }
 }
 
@@ -99,18 +100,24 @@ public class GetMallMemberOrderBadgeHandler : IRequestHandler<GetMallMemberOrder
 
     public async Task<MallMemberOrderBadgeDto> Handle(GetMallMemberOrderBadgeQuery req, CancellationToken ct)
     {
-        var orders = await _db.MallOrders
+        var counts = await _db.MallOrders
             .AsNoTracking()
             .Where(x => x.MemberId == req.MemberId && x.StoreId == req.StoreId && !x.IsDeleted)
             .Select(x => x.Status)
-            .ToListAsync(ct);
+            .GroupBy(status => status)
+            .Select(group => new { Status = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.Status, group => group.Count, ct);
 
         return new MallMemberOrderBadgeDto
         {
-            PendingPayment = orders.Count(s => s == MallOrderStatus.PendingPayment),
-            Paid = orders.Count(s => s == MallOrderStatus.Paid),
-            Shipped = orders.Count(s => s == MallOrderStatus.Shipped),
-            Returning = orders.Count(s => s == MallOrderStatus.Returning)
+            PendingPayment = GetCount(counts, MallOrderStatus.PendingPayment),
+            Paid = GetCount(counts, MallOrderStatus.Paid),
+            Shipped = GetCount(counts, MallOrderStatus.Shipped),
+            Completed = GetCount(counts, MallOrderStatus.Completed),
+            Returning = GetCount(counts, MallOrderStatus.Returning)
         };
     }
+
+    private static int GetCount(IReadOnlyDictionary<string, int> counts, string status) =>
+        counts.TryGetValue(status, out var count) ? count : 0;
 }

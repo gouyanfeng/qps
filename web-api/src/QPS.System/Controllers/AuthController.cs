@@ -8,6 +8,7 @@ namespace QPS.System.Controllers;
 
 [ApiController]
 [Route("api/admin/auth")]
+[Authorize]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -18,6 +19,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
         var command = new LoginCommand { Request = request };
@@ -59,4 +61,3 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 }
-

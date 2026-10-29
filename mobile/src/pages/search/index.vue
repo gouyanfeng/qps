@@ -103,6 +103,7 @@
 import { ref, onMounted } from 'vue'
 import { searchProducts } from '@/api'
 import type { Product } from '@/api/types'
+import { UnauthorizedError } from '@/utils/http'
 
 const keyword = ref('')
 const hasSearched = ref(false)
@@ -126,6 +127,7 @@ async function handleSearch() {
     saveToHistory(keyword.value.trim())
   } catch (error) {
     console.error('搜索商品失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '搜索失败，请稍后重试', icon: 'none' })
   }
 }

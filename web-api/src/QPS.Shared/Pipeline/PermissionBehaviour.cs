@@ -19,8 +19,19 @@ public class PermissionBehaviour<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
+        var httpContext = httpContextAccessor.HttpContext;
+        var endpoint = httpContext?.GetEndpoint();
+
         if (typeof(IAllowAnonymousRequest).IsAssignableFrom(typeof(TRequest)) ||
-            httpContextAccessor.HttpContext?.GetEndpoint()?.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+            endpoint?.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+        {
+            return await next(cancellationToken);
+        }
+
+        if (httpContext?.User.Identity?.IsAuthenticated == true &&
+            httpContext.User.IsInRole("member") &&
+            endpoint?.Metadata.GetOrderedMetadata<IAuthorizeData>()
+                .Any(authorize => authorize.Policy == "MallMember") == true)
         {
             return await next(cancellationToken);
         }

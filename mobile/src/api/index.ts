@@ -1,9 +1,16 @@
-import { request, setToken, clearToken, isLoggedIn, resolveFileUrl } from '@/utils/http'
+import {
+  request,
+  setToken,
+  clearToken,
+  isLoggedIn,
+  resolveFileUrl
+} from '@/utils/http'
 import type { Category, Product, ProductTag, Banner, CartItem } from './types'
 
-const CART_STORAGE_KEY = 'qps_cart_items'
+const LEGACY_CART_STORAGE_KEY = 'qps_cart_items'
 const STORE_ID_STORAGE_KEY = 'qps_mall_store_id'
 const MEMBER_ID_STORAGE_KEY = 'qps_member_id'
+const deselectedCartSkuIds = new Set<string>()
 export { isLoggedIn }
 
 interface ApiSku {
@@ -137,22 +144,9 @@ export async function getBanners(): Promise<Banner[]> {
   return list.map(mapBanner)
 }
 
-function getLocalCartItems(): CartItem[] {
-  try {
-    const items = uni.getStorageSync(CART_STORAGE_KEY)
-    return items ? JSON.parse(items) : []
-  } catch {
-    return []
-  }
-}
-
 export async function getCartItems(): Promise<CartItem[]> {
-  if (isLoggedIn() && getMemberId()) return getRemoteCart()
-  return getLocalCartItems()
-}
-
-export function saveCartItems(items: CartItem[]): void {
-  uni.setStorageSync(CART_STORAGE_KEY, JSON.stringify(items))
+  uni.removeStorageSync(LEGACY_CART_STORAGE_KEY)
+  return getRemoteCart()
 }
 
 interface MallCartResponse {
@@ -177,11 +171,10 @@ function isGuid(value: string): boolean {
 }
 
 async function getRemoteCart(): Promise<CartItem[]> {
-  const memberId = getMemberId()
+  const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
   const storeId = await getStoreId()
   const cart = await request<MallCartResponse>(`/api/mall/carts/${memberId}/store/${storeId}`)
-  const selectedBySku = new Map(getLocalCartItems().map(item => [item.skuId, item.selected]))
-  const items = (cart.items || []).map(item => ({
+  return (cart.items || []).map(item => ({
     productId: item.productId,
     productName: item.productName,
     productImage: item.productImage,
@@ -190,97 +183,71 @@ async function getRemoteCart(): Promise<CartItem[]> {
     price: item.price,
     quantity: item.quantity,
     weightGram: item.weightGram,
-    selected: selectedBySku.get(item.skuId) ?? true,
+    selected: !deselectedCartSkuIds.has(item.skuId),
     stock: item.stock,
     availableStock: item.availableStock,
     isValid: item.isValid,
     invalidReason: item.invalidReason
   }))
-  saveCartItems(items)
-  return items
 }
 
 export async function addToCart(item: CartItem): Promise<CartItem[]> {
-  if (isLoggedIn() && getMemberId() && isGuid(item.skuId)) {
-    const storeId = await getStoreId()
-    await request<MallCartResponse>('/api/mall/carts/add', 'POST', {
-      userId: getMemberId(),
-      storeId,
-      skuId: item.skuId,
-      quantity: item.quantity
-    })
-    return getRemoteCart()
-  }
-
-  const items = getLocalCartItems()
-  const existingIndex = items.findIndex(
-    i => i.productId === item.productId && i.skuId === item.skuId
-  )
-  if (existingIndex >= 0) {
-    items[existingIndex].quantity += item.quantity
-  } else {
-    items.push({ ...item, selected: true })
-  }
-  saveCartItems(items)
-  return items
+  if (!isGuid(item.skuId)) throw new Error('商品规格信息无效，请刷新后重试')
+  const storeId = await getStoreId()
+  await request<MallCartResponse>('/api/mall/carts/add', 'POST', {
+    userId: getMemberId() || '00000000-0000-0000-0000-000000000000',
+    storeId,
+    skuId: item.skuId,
+    quantity: item.quantity
+  })
+  return getRemoteCart()
 }
 
 export async function updateCartItemQuantity(skuId: string, quantity: number): Promise<CartItem[]> {
-  if (isLoggedIn() && getMemberId() && isGuid(skuId)) {
-    if (quantity <= 0) return removeCartItem(skuId)
-    const storeId = await getStoreId()
-    await request<MallCartResponse>('/api/mall/carts/update-item', 'PUT', {
-      userId: getMemberId(),
-      storeId,
-      skuId,
-      quantity
-    })
-    return getRemoteCart()
-  }
-
-  const items = getLocalCartItems()
-  const item = items.find(i => i.skuId === skuId)
-  if (item) {
-    if (quantity <= 0) {
-      return removeCartItem(skuId)
-    }
-    item.quantity = quantity
-    saveCartItems(items)
-  }
-  return items
+  if (!isGuid(skuId)) throw new Error('商品规格信息无效，请刷新后重试')
+  if (quantity <= 0) return removeCartItem(skuId)
+  const storeId = await getStoreId()
+  await request<MallCartResponse>('/api/mall/carts/update-item', 'PUT', {
+    userId: getMemberId() || '00000000-0000-0000-0000-000000000000',
+    storeId,
+    skuId,
+    quantity
+  })
+  return getRemoteCart()
 }
 
 export async function removeCartItem(skuId: string): Promise<CartItem[]> {
-  if (isLoggedIn() && getMemberId() && isGuid(skuId)) {
-    const storeId = await getStoreId()
-    await request(
-      `/api/mall/carts/${getMemberId()}/store/${storeId}/items/${skuId}`,
-      'DELETE'
-    )
-    return getRemoteCart()
-  }
-
-  const items = getLocalCartItems().filter(i => i.skuId !== skuId)
-  saveCartItems(items)
-  return items
+  if (!isGuid(skuId)) throw new Error('商品规格信息无效，请刷新后重试')
+  const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
+  const storeId = await getStoreId()
+  await request(`/api/mall/carts/${memberId}/store/${storeId}/items/${skuId}`, 'DELETE')
+  deselectedCartSkuIds.delete(skuId)
+  return getRemoteCart()
 }
 
-export function toggleCartItemSelection(skuId: string): CartItem[] {
-  const items = getLocalCartItems()
-  const item = items.find(i => i.skuId === skuId)
-  if (item) {
-    item.selected = !item.selected
-    saveCartItems(items)
+export function toggleCartItemSelection(items: CartItem[], skuId: string): CartItem[] {
+  const item = items.find(cartItem => cartItem.skuId === skuId)
+  if (!item) return items
+  if (item.selected) deselectedCartSkuIds.add(skuId)
+  else deselectedCartSkuIds.delete(skuId)
+  return items.map(cartItem =>
+    cartItem.skuId === skuId ? { ...cartItem, selected: !cartItem.selected } : cartItem
+  )
+}
+
+export function setCartItemsSelection(items: CartItem[], selected: boolean): CartItem[] {
+  for (const item of items) {
+    if (selected) deselectedCartSkuIds.delete(item.skuId)
+    else deselectedCartSkuIds.add(item.skuId)
   }
-  return items
+  return items.map(item => ({ ...item, selected }))
 }
 
 export async function clearCart(): Promise<void> {
-  if (isLoggedIn() && getMemberId()) {
-    const storeId = await getStoreId()
-    await request(`/api/mall/carts/${getMemberId()}/store/${storeId}`, 'DELETE')
-  }
-  saveCartItems([])
+  const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
+  const storeId = await getStoreId()
+  await request(`/api/mall/carts/${memberId}/store/${storeId}`, 'DELETE')
+  deselectedCartSkuIds.clear()
 }
 
 export interface LoginRequest { phone: string; password: string }
@@ -295,20 +262,22 @@ interface MallAuthResponse {
 }
 
 export async function register(req: RegisterRequest): Promise<AuthResponse> {
-  const response = saveAuthResponse(await request<MallAuthResponse>('/api/mall/auth/register', 'POST', req))
-  await syncGuestCart()
+  const authResponse = await request<MallAuthResponse>('/api/mall/auth/register', 'POST', req)
+  const response = saveAuthResponse(authResponse)
   return response
 }
 
 export async function login(req: LoginRequest): Promise<AuthResponse> {
-  const response = saveAuthResponse(await request<MallAuthResponse>('/api/mall/auth/login', 'POST', req))
-  await syncGuestCart()
+  const authResponse = await request<MallAuthResponse>('/api/mall/auth/login', 'POST', req)
+  const response = saveAuthResponse(authResponse)
   return response
 }
 
 function saveAuthResponse(response: MallAuthResponse): AuthResponse {
   setToken(response.token)
   uni.setStorageSync(MEMBER_ID_STORAGE_KEY, response.memberId)
+  uni.removeStorageSync(LEGACY_CART_STORAGE_KEY)
+  deselectedCartSkuIds.clear()
   return {
     accessToken: response.token,
     tokenType: 'Bearer',
@@ -316,20 +285,6 @@ function saveAuthResponse(response: MallAuthResponse): AuthResponse {
     phone: response.phone,
     nickname: response.nickname
   }
-}
-
-async function syncGuestCart(): Promise<void> {
-  const localItems = getLocalCartItems().filter(item => isGuid(item.skuId))
-  const storeId = await getStoreId()
-  for (const item of localItems) {
-    await request('/api/mall/carts/add', 'POST', {
-      userId: getMemberId(),
-      storeId,
-      skuId: item.skuId,
-      quantity: item.quantity
-    })
-  }
-  await getRemoteCart()
 }
 
 export function getMemberId(): string {
@@ -349,6 +304,23 @@ export interface MemberProfile {
 
 export function getMemberProfile(): Promise<MemberProfile> {
   return request<MemberProfile>('/api/mall/member/me')
+}
+
+export interface MallMemberOrderBadge {
+  pendingPayment: number
+  paid: number
+  shipped: number
+  completed: number
+  returning: number
+}
+
+export async function getMemberOrderBadge(): Promise<MallMemberOrderBadge> {
+  const storeId = await getStoreId()
+  return request<MallMemberOrderBadge>(`/api/mall/member/me/order-badge?storeId=${storeId}`)
+}
+
+export function getMyCouponCount(): Promise<number> {
+  return request<number>('/api/mall/member/me/coupon-count')
 }
 
 export interface MemberCoupon {
@@ -458,5 +430,6 @@ export interface MallOrderDetail extends MallOrder {
 export function logout(): void {
   clearToken()
   uni.removeStorageSync(MEMBER_ID_STORAGE_KEY)
-  saveCartItems([])
+  uni.removeStorageSync(LEGACY_CART_STORAGE_KEY)
+  deselectedCartSkuIds.clear()
 }

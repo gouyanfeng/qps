@@ -311,6 +311,30 @@ public static class MallModelConfiguration
             entity.HasIndex(u => new { u.PromotionId, u.UserId }).IsUnique();
         });
 
+        modelBuilder.Entity<MallActivity>(entity =>
+        {
+            entity.ToTable("MallActivities");
+            entity.Property(a => a.Name).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.Subtitle).HasMaxLength(100);
+            entity.Property(a => a.CoverImage).HasMaxLength(500);
+            entity.Property(a => a.Description).HasMaxLength(500);
+            entity.Property(a => a.DetailHtml).HasColumnType("nvarchar(max)");
+            entity.HasIndex(a => a.IsActive);
+            entity.HasMany(a => a.Promotions)
+                .WithOne()
+                .HasForeignKey(link => link.ActivityId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MallActivityPromotion>(entity =>
+        {
+            entity.ToTable("MallActivityPromotions");
+            entity.HasIndex(link => link.PromotionId);
+            entity.HasIndex(link => new { link.ActivityId, link.PromotionId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+        });
+
         modelBuilder.Entity<MallCart>(entity =>
         {
             entity.ToTable("MallCarts");

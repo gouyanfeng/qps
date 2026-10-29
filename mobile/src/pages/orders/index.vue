@@ -21,8 +21,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getMyOrders, isLoggedIn } from '@/api'
+import { getMyOrders } from '@/api'
 import type { MallOrder } from '@/api'
+import { UnauthorizedError } from '@/utils/http'
 
 const orders = ref<MallOrder[]>([])
 const loading = ref(false)
@@ -39,16 +40,13 @@ onLoad(options => {
 })
 
 onShow(async () => {
-  if (!isLoggedIn()) {
-    uni.navigateTo({ url: '/pages/account/index' })
-    return
-  }
   loading.value = true
   try {
     const response = await getMyOrders(status.value || undefined)
     orders.value = response.list ?? response.items ?? []
   } catch (error) {
     console.error('加载订单失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '订单加载失败', icon: 'none' })
   } finally {
     loading.value = false

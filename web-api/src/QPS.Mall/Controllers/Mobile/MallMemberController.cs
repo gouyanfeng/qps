@@ -79,6 +79,13 @@ public class MallMemberController : ControllerBase
         }));
     }
 
+    [HttpGet("member/me/coupon-count")]
+    public async Task<ActionResult<int>> GetMyCouponCount()
+    {
+        var memberId = _currentUser.GetUserId();
+        return Ok(await _mediator.Send(new GetMallMemberCouponCountQuery { MemberId = memberId }));
+    }
+
     [HttpPost("member/me/coupons/{couponId}/claim")]
     public async Task<ActionResult<MallMemberCouponDto>> ClaimCoupon(Guid couponId)
     {

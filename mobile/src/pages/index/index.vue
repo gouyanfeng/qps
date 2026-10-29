@@ -69,7 +69,7 @@
           v-for="item in categoryItems"
           :key="item.id"
           class="category-item"
-          @click="goToCategory"
+          @click="goToCategory(item.id)"
         >
           <image v-if="item.icon" class="category-dot" :src="item.icon" mode="aspectFill" />
           <view v-else class="category-dot category-dot-empty">
@@ -154,6 +154,7 @@
 import { ref, onMounted } from 'vue'
 import { getCategories, getHotProducts, getBanners, addToCart } from '@/api'
 import type { Category, Banner, Product } from '@/api/types'
+import { UnauthorizedError } from '@/utils/http'
 
 interface FeaturedItem {
   id: string
@@ -212,6 +213,7 @@ onMounted(async () => {
     })
   } catch (error) {
     console.error('加载商城首页数据失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '首页数据加载失败', icon: 'none' })
   }
 })
@@ -234,12 +236,17 @@ async function quickAdd(item: FeaturedItem) {
     uni.showToast({ title: '已加入购物车', icon: 'none' })
   } catch (error) {
     console.error('加入购物车失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '加入购物车失败', icon: 'none' })
   }
 }
 
 function goToSearch() { uni.navigateTo({ url: '/pages/search/index' }) }
-function goToCategory() { uni.switchTab({ url: '/pages/category/index' }) }
+function goToCategory(catId?: string) {
+  if (catId) uni.setStorageSync('pendingCategoryId', catId)
+  else uni.removeStorageSync('pendingCategoryId')
+  uni.switchTab({ url: '/pages/category/index' })
+}
 function goToProductDetail(id: string) { uni.navigateTo({ url: `/pages/product-detail/index?id=${id}` }) }
 function handleVerify() { uni.showToast({ title: '扫码验真功能演示', icon: 'none' }) }
 </script>

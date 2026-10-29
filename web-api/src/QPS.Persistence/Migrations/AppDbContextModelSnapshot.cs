@@ -1085,6 +1085,112 @@ namespace QPS.Persistence.Migrations
                     b.ToTable("CrmVendorDemandItems", (string)null);
                 });
 
+            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CoverImage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DetailHtml")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Subtitle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("MallActivities", (string)null);
+                });
+
+            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivityPromotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActivityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PromotionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PromotionId");
+
+                    b.HasIndex("ActivityId", "PromotionId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("MallActivityPromotions", (string)null);
+                });
+
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallAddress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3629,6 +3735,15 @@ namespace QPS.Persistence.Migrations
                     b.Navigation("VendorDemand");
                 });
 
+            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivityPromotion", b =>
+                {
+                    b.HasOne("QPS.Mall.Domain.Entities.MallActivity", null)
+                        .WithMany("Promotions")
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallCartItem", b =>
                 {
                     b.HasOne("QPS.Mall.Domain.Entities.MallCart", null)
@@ -3801,6 +3916,11 @@ namespace QPS.Persistence.Migrations
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmVendorDemand", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivity", b =>
+                {
+                    b.Navigation("Promotions");
                 });
 
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallCart", b =>

@@ -8,6 +8,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
+[Authorize(Policy = "MallMember")]
 public class MallBannerController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -18,7 +19,6 @@ public class MallBannerController : ControllerBase
     }
 
     [HttpGet("banners")]
-    [AllowAnonymous]
     public async Task<ActionResult<List<MallBannerDto>>> GetActive(
         [FromQuery] Guid storeId,
         [FromQuery] string? position,

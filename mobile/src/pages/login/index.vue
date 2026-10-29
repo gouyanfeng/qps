@@ -22,12 +22,8 @@
       <!-- 登录表单 -->
       <view class="form">
         <view class="tabs">
-          <view :class="['tab', { active: mode === 'sms' }]" @click="switchMode('sms')">
-            <q-icon name="tea" size="17" :color="mode === 'sms' ? '#2E7D32' : '#8A8578'" />
-            <text>手机验证码登录</text>
-          </view>
-          <view :class="['tab', { active: mode === 'pwd' }]" @click="switchMode('pwd')">
-            <q-icon name="lock-on" size="17" :color="mode === 'pwd' ? '#2E7D32' : '#8A8578'" />
+          <view class="tab active">
+            <q-icon name="lock-on" size="17" color="#2E7D32" />
             <text>账号密码登录</text>
           </view>
         </view>
@@ -46,22 +42,7 @@
           />
         </view>
 
-        <view v-if="mode === 'sms'" class="field">
-          <q-icon name="lock-on" size="19" color="#2E7D32" />
-          <input
-            v-model="code"
-            class="input code-input"
-            type="number"
-            maxlength="6"
-            placeholder="请输入验证码"
-            placeholder-class="input-placeholder"
-          />
-          <view :class="['code-btn', { disabled: countdown > 0 }]" @click="sendCode">
-            <text>{{ codeBtnText }}</text>
-          </view>
-        </view>
-
-        <view v-else class="field">
+        <view class="field">
           <q-icon name="lock-on" size="19" color="#2E7D32" />
           <input
             v-model="password"
@@ -118,69 +99,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { login as loginApi } from '@/api'
+import { consumeLoginRedirectPath } from '@/utils/http'
 
-type LoginMode = 'sms' | 'pwd'
-
-const mode = ref<LoginMode>('sms')
 const phone = ref('')
-const code = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const agreed = ref(true)
-const countdown = ref(0)
 const submitting = ref(false)
-
-let timer: ReturnType<typeof setInterval> | null = null
-
-const codeBtnText = computed(() => (countdown.value > 0 ? `${countdown.value}s 后重发` : '获取验证码'))
 
 function toast(title: string) {
   uni.showToast({ title, icon: 'none' })
-}
-
-function switchMode(next: LoginMode) {
-  mode.value = next
 }
 
 function isValidPhone() {
   return /^1[3-9]\d{9}$/.test(phone.value)
 }
 
-function sendCode() {
-  if (countdown.value > 0) return
-  if (!isValidPhone()) return toast('请输入正确的手机号')
-
-  toast('验证码已发送')
-  countdown.value = 60
-  timer = setInterval(() => {
-    if (countdown.value <= 1) {
-      if (timer) clearInterval(timer)
-      timer = null
-      countdown.value = 0
-      return
-    }
-    countdown.value--
-  }, 1000)
-}
-
 async function submit() {
   if (submitting.value) return
   if (!agreed.value) return toast('请先阅读并同意用户协议')
   if (!isValidPhone()) return toast('请输入正确的手机号')
-  if (mode.value === 'sms') {
-    toast('短信登录暂未开通，请使用账号密码登录')
-    switchMode('pwd')
-    return
-  }
   if (password.value.length < 6) return toast('请输入至少 6 位密码')
 
   submitting.value = true
   try {
     await loginApi({ phone: phone.value, password: password.value })
     uni.showToast({ title: '登录成功', icon: 'success' })
-    setTimeout(() => uni.switchTab({ url: '/pages/index/index' }), 600)
+    const redirectPath = consumeLoginRedirectPath()
+    setTimeout(() => {
+      uni.reLaunch({
+        url: redirectPath || '/pages/index/index',
+        fail: (error) => {
+          console.error('登录成功后跳转目标页面失败', error)
+          toast('登录成功，但页面跳转失败')
+        }
+      })
+    }, 300)
   } catch (err) {
     toast(err instanceof Error ? err.message : '登录失败，请稍后重试')
   } finally {
@@ -195,10 +151,6 @@ function thirdLogin(name: string) {
 function goBack() {
   uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
 }
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
 </script>
 
 <style lang="scss" scoped>
@@ -346,24 +298,8 @@ $hairline: #E8E3D6;
   color: $on-surface;
   letter-spacing: 1rpx;
 }
-.code-input {
-  letter-spacing: 4rpx;
-}
 .input-placeholder {
   color: rgba(138, 133, 120, 0.5);
-}
-.code-btn {
-  flex-shrink: 0;
-  padding: 12rpx 28rpx;
-  border-radius: 100rpx;
-  background: rgba(46, 125, 50, 0.1);
-  font-size: 24rpx;
-  font-weight: 600;
-  color: $primary;
-
-  &.disabled {
-    opacity: 0.5;
-  }
 }
 .eye {
   flex-shrink: 0;

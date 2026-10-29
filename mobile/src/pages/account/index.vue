@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { login, register } from '@/api'
+import { consumeLoginRedirectPath } from '@/utils/http'
 
 const phone = ref('')
 const password = ref('')
@@ -47,7 +48,16 @@ async function submit() {
       await login({ phone: phone.value, password: password.value })
     }
     uni.showToast({ title: '登录成功', icon: 'success' })
-    setTimeout(() => uni.navigateBack(), 300)
+    const redirectPath = consumeLoginRedirectPath()
+    setTimeout(() => {
+      uni.reLaunch({
+        url: redirectPath || '/pages/index/index',
+        fail: (error) => {
+          console.error('会员登录成功后跳转目标页面失败', error)
+          uni.showToast({ title: '登录成功，但页面跳转失败', icon: 'none' })
+        }
+      })
+    }, 300)
   } catch (error) {
     console.error('会员登录/注册失败', error)
     uni.showToast({ title: error instanceof Error ? error.message : '登录失败，请稍后重试', icon: 'none' })

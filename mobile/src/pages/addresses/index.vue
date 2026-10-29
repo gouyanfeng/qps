@@ -38,8 +38,9 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { deleteAddress, getAddresses, isLoggedIn, saveAddress } from '@/api'
+import { deleteAddress, getAddresses, saveAddress } from '@/api'
 import type { MallAddress } from '@/api'
+import { UnauthorizedError } from '@/utils/http'
 
 const addresses = ref<MallAddress[]>([])
 const saving = ref(false)
@@ -54,10 +55,6 @@ const form = reactive({
 })
 
 onShow(async () => {
-  if (!isLoggedIn()) {
-    uni.navigateTo({ url: '/pages/account/index' })
-    return
-  }
   await loadAddresses()
 })
 
@@ -66,6 +63,7 @@ async function loadAddresses() {
     addresses.value = await getAddresses()
   } catch (error) {
     console.error('加载收货地址失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '地址加载失败', icon: 'none' })
   }
 }
@@ -81,6 +79,7 @@ async function removeAddress(addressId: string) {
     addresses.value = addresses.value.filter(address => address.id !== addressId)
   } catch (error) {
     console.error('删除收货地址失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '删除失败', icon: 'none' })
   }
 }
@@ -112,6 +111,7 @@ async function submit() {
     uni.showToast({ title: '地址已保存', icon: 'success' })
   } catch (error) {
     console.error('保存收货地址失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '地址保存失败', icon: 'none' })
   } finally {
     saving.value = false

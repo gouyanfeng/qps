@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallCoupons;
 using QPS.Mall.Contracts.DTOs.MallCoupons;
@@ -9,6 +10,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
+[Authorize(Policy = "MallMember")]
 public class MallCouponController : ControllerBase
 {
     private readonly IMediator _mediator;

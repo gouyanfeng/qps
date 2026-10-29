@@ -168,6 +168,7 @@ import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getProductById, addToCart as addCart } from '@/api'
 import type { Product, Sku } from '@/api/types'
+import { UnauthorizedError } from '@/utils/http'
 
 const product = ref<Product | null>(null)
 const quantity = ref(1)
@@ -176,10 +177,15 @@ const selectedSpecs = ref<Record<string, string>>({})
 const swiperIdx = ref(0)
 
 onLoad(async (opts) => {
-  if (opts?.id) {
+  if (!opts?.id) return
+  try {
     product.value = (await getProductById(opts.id)) ?? null
     const firstSku = product.value?.skus[0]
     if (firstSku) selectedSpecs.value = { 规格: firstSku.specName }
+  } catch (error) {
+    console.error('加载商品详情失败', error)
+    if (error instanceof UnauthorizedError) return
+    uni.showToast({ title: '商品详情加载失败', icon: 'none' })
   }
 })
 
@@ -223,6 +229,7 @@ async function addToCart(): Promise<boolean> {
     return true
   } catch (error) {
     console.error('加入购物车失败', error)
+    if (error instanceof UnauthorizedError) return false
     uni.showToast({ title: '加入购物车失败', icon: 'none' })
     return false
   }

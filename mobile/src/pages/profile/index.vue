@@ -109,47 +109,40 @@
           <view class="order-item" @click="goOrder('unpaid')">
             <view class="order-icon">
               <q-icon name="order" size="16" color="#2E7D32" />
-              <view v-if="orderCount('PendingPayment')" class="order-badge">{{ orderCount('PendingPayment') }}</view>
+              <view v-if="orderBadge.pendingPayment" class="order-badge">{{ orderBadge.pendingPayment }}</view>
             </view>
             <text class="order-label">待付款</text>
           </view>
           <view class="order-item" @click="goOrder('ship')">
             <view class="order-icon">
               <q-icon name="task" size="16" color="#2E7D32" />
-              <view v-if="orderCount('Paid')" class="order-badge">{{ orderCount('Paid') }}</view>
+              <view v-if="orderBadge.paid" class="order-badge">{{ orderBadge.paid }}</view>
             </view>
             <text class="order-label">待发货</text>
           </view>
           <view class="order-item" @click="goOrder('receive')">
-            <view class="order-icon"><q-icon name="send" size="16" color="#2E7D32" /></view>
+            <view class="order-icon">
+              <q-icon name="send" size="16" color="#2E7D32" />
+              <view v-if="orderBadge.shipped" class="order-badge">{{ orderBadge.shipped }}</view>
+            </view>
             <text class="order-label">待收货</text>
           </view>
           <view class="order-item" @click="goOrder('done')">
-            <view class="order-icon"><q-icon name="check-circle" size="16" color="#2E7D32" /></view>
+            <view class="order-icon">
+              <q-icon name="check-circle" size="16" color="#2E7D32" />
+              <view v-if="orderBadge.completed" class="order-badge">{{ orderBadge.completed }}</view>
+            </view>
             <text class="order-label">已完成</text>
           </view>
           <view class="order-item" @click="goOrder('refund')">
-            <view class="order-icon"><q-icon name="refresh" size="16" color="#2E7D32" /></view>
+            <view class="order-icon">
+              <q-icon name="refresh" size="16" color="#2E7D32" />
+              <view v-if="orderBadge.returning" class="order-badge">{{ orderBadge.returning }}</view>
+            </view>
             <text class="order-label">退款/售后</text>
           </view>
         </view>
 
-        <view v-if="orders.length" class="logistics-strip" @click="goOrder('all')">
-          <view class="logistics-icon">
-            <q-icon name="send" size="18" color="#2E7D32" />
-          </view>
-          <view class="logistics-text">
-            <view class="logistics-title-row">
-              <view class="logistics-chip">道地专送</view>
-              <text class="logistics-title">订单 {{ orders[0].orderNo }}</text>
-            </view>
-            <text class="logistics-desc">{{ orderStatusText(orders[0].status) }} · {{ orders[0].createdAt.slice(0, 10) }}</text>
-          </view>
-          <view class="logistics-btn">
-            <text class="logistics-btn-text">查进度</text>
-            <q-icon name="chevron-right" size="14" color="#2E7D32" />
-          </view>
-        </view>
       </view>
 
       <!-- ============ 节气滋补定制 ============ -->
@@ -254,10 +247,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getMemberProfile, getMyOrders, getMyCoupons, isLoggedIn } from '@/api'
-import type { MallOrder, MemberCoupon, MemberProfile } from '@/api'
+import { getMemberProfile, getMemberOrderBadge, getMyCouponCount } from '@/api'
+import type { MallMemberOrderBadge, MemberProfile } from '@/api'
+import { UnauthorizedError } from '@/utils/http'
 
 interface ServiceItem {
   key: string
@@ -282,49 +276,34 @@ const services: ServiceItem[] = [
 ]
 
 const profile = ref<MemberProfile | null>(null)
-const orders = ref<MallOrder[]>([])
-const coupons = ref<MemberCoupon[]>([])
-const couponsCount = computed(() => coupons.value.filter(coupon => coupon.status === 'claimed').length)
+const orderBadge = ref<MallMemberOrderBadge>({
+  pendingPayment: 0,
+  paid: 0,
+  shipped: 0,
+  completed: 0,
+  returning: 0
+})
+const couponsCount = ref(0)
 
 onShow(async () => {
-  if (!isLoggedIn()) {
-    profile.value = null
-    orders.value = []
-    coupons.value = []
-    return
-  }
   try {
-    const [member, orderResponse, memberCoupons] = await Promise.all([
+    const [member, memberOrderBadge, memberCouponCount] = await Promise.all([
       getMemberProfile(),
-      getMyOrders(),
-      getMyCoupons()
+      getMemberOrderBadge(),
+      getMyCouponCount()
     ])
     profile.value = member
-    orders.value = orderResponse.list ?? orderResponse.items ?? []
-    coupons.value = memberCoupons
+    orderBadge.value = memberOrderBadge
+    couponsCount.value = memberCouponCount
   } catch (error) {
     console.error('加载会员资料失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '会员信息加载失败', icon: 'none' })
   }
 })
 
-function orderCount(status: string): number {
-  return orders.value.filter(order => order.status === status).length
-}
-
-function orderStatusText(status: string): string {
-  const labels: Record<string, string> = {
-    PendingPayment: '待付款',
-    Paid: '待发货',
-    Shipped: '待收货',
-    Completed: '已完成',
-    Cancelled: '已取消'
-  }
-  return labels[status] || status
-}
-
 function openAccount() {
-  if (!isLoggedIn()) uni.navigateTo({ url: '/pages/account/index' })
+  if (!profile.value) uni.navigateTo({ url: '/pages/account/index' })
 }
 
 function goOrder(status: string) {
@@ -686,75 +665,6 @@ $outline: #6B6B6B;
 .order-label {
   font-size: 21rpx;
   color: $on-surface-variant;
-}
-
-.logistics-strip {
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
-  padding: 16rpx 14rpx;
-  background: #F7F6F3;
-  border-radius: 14rpx;
-}
-.logistics-icon {
-  width: 62rpx;
-  height: 62rpx;
-  flex-shrink: 0;
-  border-radius: 12rpx;
-  background: #E5F0E3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.logistics-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
-.logistics-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-.logistics-chip {
-  padding: 2rpx 8rpx;
-  background: #DFEDDB;
-  border-radius: 4rpx;
-  font-size: 17rpx;
-  color: $theme-primary;
-  font-weight: 700;
-}
-.logistics-title {
-  flex: 1;
-  font-size: 21rpx;
-  font-weight: 700;
-  color: $on-surface;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.logistics-desc {
-  font-size: 18rpx;
-  color: $outline;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.logistics-btn {
-  display: flex;
-  align-items: center;
-  gap: 2rpx;
-  flex-shrink: 0;
-  padding: 10rpx 12rpx;
-  background: #ffffff;
-  border-radius: 8rpx;
-}
-.logistics-btn-text {
-  font-size: 20rpx;
-  font-weight: 700;
-  color: $theme-primary;
 }
 
 // ===== 节气滋补 =====

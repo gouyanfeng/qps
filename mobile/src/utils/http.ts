@@ -1,5 +1,16 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const TOKEN_KEY = 'qps_member_token'
+const LOGIN_PATH = '/pages/account/index'
+const LOGIN_REDIRECT_PATH_KEY = 'qps_login_redirect_path'
+
+let unauthorizedPromptVisible = false
+
+export class UnauthorizedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'UnauthorizedError'
+  }
+}
 
 export interface ApiResp<T> {
   data: T
@@ -29,6 +40,72 @@ export function clearToken(): void {
 
 export function isLoggedIn(): boolean {
   return !!getToken()
+}
+
+function isLoginPath(path: string): boolean {
+  const route = path.split('?')[0]
+  return route === LOGIN_PATH || route === '/pages/login/index'
+}
+
+export function consumeLoginRedirectPath(): string | null {
+  const path = uni.getStorageSync(LOGIN_REDIRECT_PATH_KEY)
+  uni.removeStorageSync(LOGIN_REDIRECT_PATH_KEY)
+
+  if (typeof path !== 'string' || !path.startsWith('/pages/') || path.startsWith('//')) return null
+  if (isLoginPath(path)) return null
+  return path
+}
+
+function saveLoginRedirectPath(): void {
+  const currentPages = getCurrentPages()
+  const page = currentPages[currentPages.length - 1] as
+    | (typeof currentPages[number] & { $page?: { fullPath?: string } })
+    | undefined
+  const path = page?.$page?.fullPath || (page?.route ? `/${page.route}` : '')
+
+  if (path.startsWith('/pages/') && !isLoginPath(path)) {
+    uni.setStorageSync(LOGIN_REDIRECT_PATH_KEY, path)
+  }
+}
+
+function handleUnauthorized(path: string): UnauthorizedError {
+  const error = new UnauthorizedError('登录状态已失效')
+  if (path.startsWith('/api/mall/auth/')) return error
+
+  clearToken()
+  saveLoginRedirectPath()
+  if (unauthorizedPromptVisible) return error
+
+  unauthorizedPromptVisible = true
+  uni.showModal({
+    title: '请先登录',
+    content: '登录后将自动返回刚才的页面。',
+    confirmText: '去登录',
+    showCancel: false,
+    success(result) {
+      if (!result.confirm) return
+
+      const currentPages = getCurrentPages()
+      if (currentPages[currentPages.length - 1]?.route === LOGIN_PATH.slice(1)) return
+
+      uni.navigateTo({
+        url: LOGIN_PATH,
+        fail(navigationError) {
+          console.error('跳转会员登录页失败', navigationError)
+          uni.showToast({ title: '打开登录页失败，请重试', icon: 'none' })
+        }
+      })
+    },
+    fail(modalError) {
+      console.error('显示登录提示失败', modalError)
+      uni.showToast({ title: '请先登录后继续操作', icon: 'none' })
+    },
+    complete() {
+      unauthorizedPromptVisible = false
+    }
+  })
+
+  return error
 }
 
 /**
@@ -64,8 +141,9 @@ export function request<T>(
         if (res.statusCode === 200 && body && body.code === 200) {
           resolve(body.data)
         } else if (res.statusCode === 401 || body?.code === 401) {
-          clearToken()
-          reject(new Error(body?.msg || '未登录或令牌已过期'))
+          const error = handleUnauthorized(path)
+          error.message = body?.msg || error.message
+          reject(error)
         } else {
           reject(new Error(body?.msg || `请求失败(${res.statusCode})`))
         }
@@ -93,7 +171,11 @@ export function requestRaw<T>(
       data,
       header,
       success(res) {
-        resolve(res.data as ApiResp<T>)
+        const body = res.data as ApiResp<T>
+        if (res.statusCode === 401 || body?.code === 401) {
+          handleUnauthorized(path)
+        }
+        resolve(body)
       },
       fail(err) {
         reject(new Error(err.errMsg || '网络请求失败'))

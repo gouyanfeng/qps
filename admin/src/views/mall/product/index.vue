@@ -250,7 +250,7 @@
     </el-dialog>
 
     <!-- 商品规格（SKU）维护 -->
-    <el-dialog v-model="skuDialogVisible" :title="skuDialogTitle" width="1000px" top="6vh">
+    <el-dialog v-model="skuDialogVisible" :title="skuDialogTitle" width="1000px" top="6vh" @closed="refreshProductList">
       <div class="sku-main" v-loading="skuLoading">
         <!-- 规格维度：组合生成 SKU -->
         <div class="spec-section">
@@ -642,6 +642,10 @@ const skuForm = reactive({
 })
 
 // ---------- 打开规格对话框，加载商品详情 ----------
+const refreshProductList = () => {
+  queryPageRef.value?.getTableList?.()
+}
+
 const openSkuDialog = async (row: any) => {
   skuDialogTitle.value = `规格维护 - ${row.name}`
   currentSkuProductId.value = row.id

@@ -52,18 +52,6 @@
             </view>
           </view>
         </scroll-view>
-        <scroll-view v-if="availableTags.length" scroll-x enhanced show-scrollbar="false" class="tag-filter-scroll">
-          <view class="filter-row">
-            <view
-              v-for="tag in availableTags"
-              :key="tag.code"
-              :class="['tag-filter', { active: activeTagCode === tag.code }]"
-              @click="activeTagCode = activeTagCode === tag.code ? '' : tag.code"
-            >
-              {{ tag.name }}
-            </view>
-          </view>
-        </scroll-view>
 
         <!-- 道地直采 Banner -->
         <view class="banner">
@@ -126,8 +114,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { getCategories, getProducts, addToCart } from '@/api'
 import type { Category, Product } from '@/api/types'
+import { UnauthorizedError } from '@/utils/http'
 
 interface SideNavItem {
   key: string
@@ -158,10 +148,28 @@ onMounted(async () => {
       }))
     ]
     products.value = loadedProducts
+    applyPendingCategory()
   } catch (error) {
     console.error('加载商城分类数据失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '分类数据加载失败', icon: 'none' })
   }
+})
+
+function applyPendingCategory() {
+  const catId = uni.getStorageSync('pendingCategoryId') as string | undefined
+  if (!catId) return
+  uni.removeStorageSync('pendingCategoryId')
+  const parent = sideNav.value.find(nav => nav.categoryIds?.includes(catId))
+  if (parent) {
+    activeKey.value = parent.key
+    activeFilter.value = catId
+    activeTagCode.value = ''
+  }
+}
+
+onShow(() => {
+  applyPendingCategory()
 })
 
 const baseProducts = computed(() => {
@@ -228,6 +236,7 @@ async function quickAdd(p: Product) {
     uni.showToast({ title: '已加入购物车', icon: 'none' })
   } catch (error) {
     console.error('加入购物车失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '加入购物车失败', icon: 'none' })
   }
 }

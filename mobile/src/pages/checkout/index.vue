@@ -188,9 +188,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, clearCart, getAddresses, getStoreId, createOrder, isLoggedIn } from '@/api'
+import { getCartItems, clearCart, getAddresses, getStoreId, createOrder } from '@/api'
 import type { MallAddress } from '@/api'
 import type { CartItem } from '@/api/types'
+import { UnauthorizedError } from '@/utils/http'
 
 const items = ref<CartItem[]>([])
 const address = ref<MallAddress | null>(null)
@@ -208,10 +209,6 @@ const finalPrice = computed(() => {
 onShow(async () => {
   try {
     items.value = (await getCartItems()).filter(item => item.selected)
-    if (!isLoggedIn()) {
-      address.value = null
-      return
-    }
     const addresses = await getAddresses()
     const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
     address.value = addresses.find(item => item.id === selectedAddressId)
@@ -220,6 +217,7 @@ onShow(async () => {
       ?? null
   } catch (error) {
     console.error('加载结算数据失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '结算数据加载失败', icon: 'none' })
   }
 })
@@ -233,11 +231,6 @@ function addRemark() {
   })
 }
 function submitOrder() {
-  if (!isLoggedIn()) {
-    uni.showToast({ title: '请先登录后再提交订单', icon: 'none' })
-    uni.navigateTo({ url: '/pages/account/index' })
-    return
-  }
   if (!address.value) {
     uni.showToast({ title: '请先添加收货地址', icon: 'none' })
     editAddress()
@@ -282,6 +275,7 @@ function submitOrder() {
         })
       } catch (error) {
         console.error('创建订单失败', error)
+        if (error instanceof UnauthorizedError) return
         uni.showToast({ title: '下单失败，请检查库存和收货信息', icon: 'none' })
       }
     }

@@ -61,6 +61,10 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
     public DbSet<MallPromotion> MallPromotions { get; set; }
     public DbSet<MallPromotionScope> MallPromotionScopes { get; set; }
     public DbSet<MallPromotionUsage> MallPromotionUsages { get; set; }
+
+    public DbSet<MallActivity> MallActivities { get; set; }
+
+    public DbSet<MallActivityPromotion> MallActivityPromotions { get; set; }
     public DbSet<MallCart> MallCarts { get; set; }
     public DbSet<MallCartItem> MallCartItems { get; set; }
     public DbSet<MallBanner> MallBanners { get; set; }

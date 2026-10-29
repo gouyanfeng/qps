@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallMembers;
 using QPS.Mall.Contracts.DTOs.MallMembers;
@@ -7,6 +8,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall/auth")]
+[AllowAnonymous]
 public class MallAuthController : ControllerBase
 {
     private readonly IMediator _mediator;

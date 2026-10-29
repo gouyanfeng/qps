@@ -11,6 +11,11 @@ public class GetMallMemberCouponsQuery : IRequest<List<MallMemberCouponDto>>
     public MallMemberCouponQueryRequest Request { get; set; } = null!;
 }
 
+public class GetMallMemberCouponCountQuery : IRequest<int>
+{
+    public Guid MemberId { get; set; }
+}
+
 public class GetAvailableMallCouponsQuery : IRequest<List<MallCouponDto>>
 {
     public Guid MemberId { get; set; }
@@ -25,6 +30,7 @@ public class UseMallMemberCouponCommand : IRequest<bool>
 
 public class MallMemberCouponHandlers :
     IRequestHandler<GetMallMemberCouponsQuery, List<MallMemberCouponDto>>,
+    IRequestHandler<GetMallMemberCouponCountQuery, int>,
     IRequestHandler<GetAvailableMallCouponsQuery, List<MallCouponDto>>,
     IRequestHandler<UseMallMemberCouponCommand, bool>
 {
@@ -49,6 +55,12 @@ public class MallMemberCouponHandlers :
 
         if (!string.IsNullOrWhiteSpace(r.Status)) q = q.Where(x => x.Status == r.Status);
         return await q.OrderByDescending(x => x.ClaimedAt).ToListAsync(ct);
+    }
+
+    public Task<int> Handle(GetMallMemberCouponCountQuery req, CancellationToken ct)
+    {
+        return _db.MallMemberCoupons
+            .CountAsync(coupon => coupon.MemberId == req.MemberId && coupon.Status == "claimed", ct);
     }
 
     public async Task<List<MallCouponDto>> Handle(GetAvailableMallCouponsQuery req, CancellationToken ct)

@@ -116,6 +116,7 @@ public static class ServiceRegistrationExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -132,6 +133,9 @@ public static class ServiceRegistrationExtensions
 
         services.AddAuthorization(options =>
         {
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
             options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
             options.AddPolicy("MallMember", policy => policy.RequireRole("member"));
             options.AddPolicy("AnyUser", policy => policy.RequireAuthenticatedUser());

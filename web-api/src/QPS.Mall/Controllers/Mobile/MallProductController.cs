@@ -9,6 +9,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
+[Authorize(Policy = "MallMember")]
 public class MallProductController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -16,7 +17,6 @@ public class MallProductController : ControllerBase
     public MallProductController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("products")]
-    [AllowAnonymous]
     public async Task<ActionResult<PaginationResponse<MallProductDto>>> GetList(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -40,7 +40,6 @@ public class MallProductController : ControllerBase
     }
 
     [HttpGet("products/{id:guid}")]
-    [AllowAnonymous]
     public async Task<ActionResult<MallProductDto>> GetDetail(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await _mediator.Send(new GetMallProductQuery { Id = id }, cancellationToken));

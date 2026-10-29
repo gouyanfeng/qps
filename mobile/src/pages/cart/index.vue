@@ -203,8 +203,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, getProducts, addToCart, updateCartItemQuantity, removeCartItem, toggleCartItemSelection, saveCartItems } from '@/api'
+import {
+  getCartItems,
+  getProducts,
+  addToCart,
+  updateCartItemQuantity,
+  removeCartItem,
+  toggleCartItemSelection,
+  setCartItemsSelection
+} from '@/api'
 import type { CartItem, Product } from '@/api/types'
+import { UnauthorizedError } from '@/utils/http'
 
 const cartItems = ref<CartItem[]>([])
 const editMode = ref(false)
@@ -237,16 +246,17 @@ onShow(async () => {
       .map(mapBonusProduct)
   } catch (error) {
     console.error('加载购物车失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '购物车加载失败', icon: 'none' })
   }
 })
 
 function toggleEditMode() { editMode.value = !editMode.value }
-function toggleSelection(skuId: string) { cartItems.value = toggleCartItemSelection(skuId) }
+function toggleSelection(skuId: string) {
+  cartItems.value = toggleCartItemSelection(cartItems.value, skuId)
+}
 function toggleSelectAll() {
-  const v = !isAllSelected.value
-  cartItems.value = cartItems.value.map(i => ({ ...i, selected: v }))
-  saveCartItems(cartItems.value)
+  cartItems.value = setCartItemsSelection(cartItems.value, !isAllSelected.value)
 }
 async function increaseQuantity(skuId: string) {
   const it = cartItems.value.find(i => i.skuId === skuId)
@@ -261,6 +271,7 @@ async function updateQuantity(skuId: string, quantity: number) {
     cartItems.value = await updateCartItemQuantity(skuId, quantity)
   } catch (error) {
     console.error('更新购物车数量失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '更新数量失败', icon: 'none' })
   }
 }
@@ -274,6 +285,7 @@ function deleteItem(skuId: string) {
         cartItems.value = await removeCartItem(skuId)
       } catch (error) {
         console.error('删除购物车商品失败', error)
+        if (error instanceof UnauthorizedError) return
         uni.showToast({ title: '删除失败', icon: 'none' })
       }
     }
@@ -304,6 +316,7 @@ async function addBonus(b: (typeof bonusItems.value)[number]) {
     uni.showToast({ title: '已加入购物车', icon: 'none' })
   } catch (error) {
     console.error('加入购物车失败', error)
+    if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '加入购物车失败', icon: 'none' })
   }
 }
