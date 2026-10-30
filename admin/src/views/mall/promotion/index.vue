@@ -84,7 +84,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="适用范围">
+            <el-form-item :label="form.promotionType === 2 ? '买赠范围' : '适用范围'">
               <el-select v-model="form.scopeType" style="width: 100%" @change="handleScopeTypeChange">
                 <el-option label="全场商品" value="Global" />
                 <el-option label="指定分类" value="Category" />
@@ -94,11 +94,14 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item v-if="form.scopeType !== 'Global'" label="适用对象" required>
+        <el-form-item v-if="form.scopeType !== 'Global'" :label="form.promotionType === 2 ? '购买对象' : '适用对象'" required>
           <el-select v-model="form.scopeTargetIds" multiple filterable clearable style="width: 100%" placeholder="请选择适用对象">
             <el-option v-for="item in scopeTargetOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
+        <div v-if="form.promotionType === 2" class="promotion-scope-hint">
+          买赠数量按所选范围内的商品累计计算；全场范围表示任意商品均可计入。
+        </div>
         </section>
 
         <section class="form-section">
@@ -126,13 +129,6 @@
         </template>
         <template v-if="form.promotionType === 2">
           <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="购买商品" required>
-                <el-select v-model="form.buyProductId" filterable style="width: 100%">
-                  <el-option v-for="product in productOptions" :key="product.id" :label="product.name" :value="product.id" />
-                </el-select>
-              </el-form-item>
-            </el-col>
             <el-col :span="12">
               <el-form-item label="购买数量" required>
                 <el-input-number v-model="form.buyQuantity" :min="1" :max="99" style="width: 100%" />
@@ -250,7 +246,6 @@ const form = reactive({
   discountPercent: 0.8,
   buyQuantity: 2,
   giftQuantity: 1,
-  buyProductId: '',
   giftSkuId: '',
   startDate: '',
   endDate: '',
@@ -334,7 +329,7 @@ const resetForm = () => {
   form.scopeTargetIds = []
   form.thresholdAmount = 100; form.discountAmount = 20
   form.discountPercent = 0.8; form.buyQuantity = 2; form.giftQuantity = 1
-  form.buyProductId = ''; form.giftSkuId = ''
+  form.giftSkuId = ''
   form.startDate = ''; form.endDate = ''; form.priority = 0
   form.combinable = false; form.maxUsagePerUser = 0; form.maxUsagePerOrder = 0; form.isActive = true
 }
@@ -373,7 +368,6 @@ const openDialog = (type: string, row?: any) => {
       discountPercent: action.rate || 0.8,
       buyQuantity: trigger.minQuantity || 1,
       giftQuantity: action.quantity || 1,
-      buyProductId: trigger.productIds?.[0] || '',
       giftSkuId: action.skuId || '',
       startDate: row.startDate, endDate: row.endDate,
       priority: row.priority || 0,
@@ -397,8 +391,8 @@ const submitForm = async () => {
     ElMessage.warning('减免金额不能大于满额门槛')
     return
   }
-  if (form.promotionType === 2 && (!form.buyProductId || !form.giftSkuId)) {
-    ElMessage.warning('请选择购买商品和赠送规格')
+  if (form.promotionType === 2 && !form.giftSkuId) {
+    ElMessage.warning('请选择赠送规格')
     return
   }
 
@@ -407,7 +401,7 @@ const submitForm = async () => {
     const promotionConfig = {
       triggerType: form.promotionType === 2 ? 'BuyProduct' : 'FullAmount',
       triggerConfigJson: JSON.stringify(form.promotionType === 2
-        ? { productIds: [form.buyProductId], minQuantity: form.buyQuantity }
+        ? { minQuantity: form.buyQuantity }
         : { minAmount: form.promotionType === 0 ? form.thresholdAmount : 0.01 }),
       actionType: form.promotionType === 0 ? 'DiscountAmount' : form.promotionType === 1 ? 'DiscountRate' : 'Gift',
       actionConfigJson: JSON.stringify(form.promotionType === 0
@@ -468,6 +462,12 @@ const remove = async (row: any) => {
 
 <style scoped lang="scss">
 .promotion-form {
+  .promotion-scope-hint {
+    margin: -12px 0 16px 110px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
   .form-section {
     padding: 18px 20px 4px;
     border: 1px solid var(--el-border-color-lighter);
@@ -492,6 +492,10 @@ const remove = async (row: any) => {
 
 @media (max-width: 900px) {
   .promotion-form {
+    .promotion-scope-hint {
+      margin-left: 0;
+    }
+
     .form-section {
       padding-right: 12px;
       padding-left: 12px;

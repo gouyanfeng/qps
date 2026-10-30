@@ -19,12 +19,17 @@ public class BuyProductTrigger : ITriggerStrategy
 
     public bool IsMatch(OrderContext ctx, JsonElement config)
     {
-        if (!config.TryGetProperty("productIds", out var ids)) return false;
-        var idList = ids.EnumerateArray().Select(x => Guid.Parse(x.GetString()!)).ToList();
         var minQuantity = config.TryGetProperty("minQuantity", out var quantity)
             ? quantity.GetInt32()
             : 1;
         if (minQuantity < 1) return false;
+
+        if (!config.TryGetProperty("productIds", out var ids))
+        {
+            return ctx.Items.Sum(item => item.Quantity) >= minQuantity;
+        }
+
+        var idList = ids.EnumerateArray().Select(x => Guid.Parse(x.GetString()!)).ToList();
         return idList.Any(productId =>
             ctx.Items.Where(item => item.ProductId == productId).Sum(item => item.Quantity) >= minQuantity);
     }

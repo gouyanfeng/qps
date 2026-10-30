@@ -38,7 +38,7 @@
       </scroll-view>
 
       <!-- ============ 右侧内容 ============ -->
-      <scroll-view scroll-y class="main" enhanced show-scrollbar="false">
+      <scroll-view scroll-y class="main" enhanced show-scrollbar="false" :lower-threshold="100" @scrolltolower="loadMore">
         <!-- 筛选胶囊 -->
         <scroll-view scroll-x enhanced show-scrollbar="false" class="filter-scroll">
           <view class="filter-row">
@@ -101,9 +101,16 @@
         </view>
 
         <!-- 空态 -->
-        <view v-if="visibleProducts.length === 0" class="empty">
+        <view v-if="visibleProducts.length === 0 && !loading" class="empty">
           <q-icon name="cart" size="56" color="#C9C4BA" />
           <text class="empty-text">该分类好物正在上新，敬请期待</text>
+        </view>
+
+        <!-- 加载状态 -->
+        <view v-if="visibleProducts.length > 0" class="load-footer">
+          <text v-if="loading" class="load-text">加载中…</text>
+          <text v-else-if="!hasMore" class="load-text">—— 没有更多了 ——</text>
+          <text v-else class="load-text">上拉加载更多</text>
         </view>
 
         <view class="main-pad"></view>
@@ -136,9 +143,50 @@ const activeKey = ref('all')
 const activeFilter = ref('all')
 const activeTagCode = ref('')
 
+const page = ref(1)
+const pageSize = 20
+const hasMore = ref(true)
+const loading = ref(false)
+
+function currentCategoryId(): string | undefined {
+  if (activeFilter.value !== 'all') return activeFilter.value
+  const nav = sideNav.value.find(n => n.key === activeKey.value)
+  if (nav?.categoryIds?.length === 1) return nav.categoryIds[0]
+  return undefined
+}
+
+async function loadProducts(reset = false) {
+  if (loading.value) return
+  if (reset) {
+    page.value = 1
+    hasMore.value = true
+    products.value = []
+  }
+  if (!hasMore.value) return
+  loading.value = true
+  try {
+    const catId = currentCategoryId()
+    const res = await getProducts(catId, undefined, page.value, pageSize)
+    products.value = reset ? res.items : [...products.value, ...res.items]
+    hasMore.value = res.hasMore
+    page.value++
+  } catch (error) {
+    console.error('加载商品失败', error)
+    if (error instanceof UnauthorizedError) return
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadMore() {
+  if (!hasMore.value || loading.value) return
+  await loadProducts(false)
+}
+
 onMounted(async () => {
   try {
-    const [categories, loadedProducts] = await Promise.all([getCategories(), getProducts()])
+    const categories = await getCategories()
     sideNav.value = [
       { key: 'all', label: '全部商品', categoryIds: null },
       ...categories.map((category: Category) => ({
@@ -147,8 +195,8 @@ onMounted(async () => {
         categoryIds: category.children.map(child => child.id)
       }))
     ]
-    products.value = loadedProducts
     applyPendingCategory()
+    await loadProducts(true)
   } catch (error) {
     console.error('加载商城分类数据失败', error)
     if (error instanceof UnauthorizedError) return
@@ -189,14 +237,6 @@ const categoryFilteredProducts = computed(() => baseProducts.value.filter(produc
   activeFilter.value === 'all' || product.categoryId === activeFilter.value
 ))
 
-const availableTags = computed(() => {
-  const tags = new Map<string, Product['tags'][number]>()
-  for (const product of categoryFilteredProducts.value) {
-    for (const tag of product.tags) tags.set(tag.code, tag)
-  }
-  return [...tags.values()].sort((a, b) => a.sortOrder - b.sortOrder)
-})
-
 const visibleProducts = computed(() => {
   return categoryFilteredProducts.value.filter(product =>
     !activeTagCode.value || product.tags.some(tag => tag.code === activeTagCode.value)
@@ -204,14 +244,18 @@ const visibleProducts = computed(() => {
 })
 
 function selectSide(key: string) {
+  if (activeKey.value === key) return
   activeKey.value = key
   activeFilter.value = 'all'
   activeTagCode.value = ''
+  loadProducts(true)
 }
 
 function selectFilter(id: string) {
+  if (activeFilter.value === id) return
   activeFilter.value = id
   activeTagCode.value = ''
+  loadProducts(true)
 }
 
 function formatPrice(price: number): string {
@@ -635,5 +679,14 @@ $price: #8B5000;
 }
 .main-pad {
   height: 40rpx;
+}
+.load-footer {
+  display: flex;
+  justify-content: center;
+  padding: 24rpx 0 8rpx;
+}
+.load-text {
+  font-size: 22rpx;
+  color: #A9A498;
 }
 </style>

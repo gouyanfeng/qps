@@ -5,7 +5,7 @@ import {
   isLoggedIn,
   resolveFileUrl
 } from '@/utils/http'
-import type { Category, Product, ProductTag, Banner, CartItem } from './types'
+import type { Category, Product, ProductTag, Banner, CartItem, MallActivity, BannerLinkType } from './types'
 
 const LEGACY_CART_STORAGE_KEY = 'qps_cart_items'
 const STORE_ID_STORAGE_KEY = 'qps_mall_store_id'
@@ -45,6 +45,10 @@ interface MallStore {
 interface ApiPage<T> {
   items?: T[]
   list?: T[]
+  total?: number
+  page?: number
+  pageSize?: number
+  hasMore?: boolean
 }
 
 interface MallBanner {
@@ -52,6 +56,7 @@ interface MallBanner {
   imageUrl: string
   title: string
   linkValue: string
+  linkType: BannerLinkType
 }
 
 export async function getStoreId(): Promise<string> {
@@ -67,9 +72,10 @@ export async function getStoreId(): Promise<string> {
 function mapBanner(b: MallBanner): Banner {
   return {
     id: b.id,
-    image: b.imageUrl,
+    image: resolveFileUrl(b.imageUrl),
     title: b.title,
-    link: b.linkValue || ''
+    link: b.linkValue || '',
+    linkType: b.linkType
   }
 }
 
@@ -88,14 +94,20 @@ export async function getCategories(): Promise<Category[]> {
   }))
 }
 
-export async function getProducts(categoryId?: string, tagCode?: string): Promise<Product[]> {
-  const params: string[] = []
+export async function getProducts(
+  categoryId?: string,
+  tagCode?: string,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<{ items: Product[]; hasMore: boolean }> {
+  const params: string[] = [`page=${page}`, `pageSize=${pageSize}`]
   if (categoryId) params.push(`categoryId=${encodeURIComponent(categoryId)}`)
   if (tagCode) params.push(`tagCode=${encodeURIComponent(tagCode)}`)
-  params.push('pageSize=100')
   const data = await request<ApiPage<ApiProduct>>(`/api/mall/products?${params.join('&')}`)
-  const items = data.items || data.list || []
-  return items.map(mapProduct)
+  const items = (data.items || data.list || []).map(mapProduct)
+  const total = data.total ?? 0
+  const hasMore = data.hasMore ?? (total > page * pageSize && items.length === pageSize)
+  return { items, hasMore }
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
@@ -116,6 +128,9 @@ export async function searchProducts(keyword: string): Promise<Product[]> {
 }
 
 function mapProduct(p: ApiProduct): Product {
+  const rawImages: string[] = p.images && p.images.length
+    ? p.images
+    : [p.mainImageUrl, ...(p.albumImages || [])].filter(Boolean)
   return {
     id: p.id,
     code: p.code,
@@ -123,7 +138,7 @@ function mapProduct(p: ApiProduct): Product {
     categoryId: p.categoryId,
     categoryName: p.categoryName,
     description: p.description,
-    images: p.images || [p.mainImageUrl, ...(p.albumImages || [])].filter(Boolean),
+    images: rawImages.map(resolveFileUrl),
     skus: (p.skus || []).map(s => ({
       id: s.id,
       specName: s.specName,
@@ -142,6 +157,10 @@ export async function getBanners(): Promise<Banner[]> {
   const storeId = await getStoreId()
   const list = await request<MallBanner[]>(`/api/mall/banners?storeId=${storeId}&position=home`)
   return list.map(mapBanner)
+}
+
+export function getMallActivity(id: string): Promise<MallActivity> {
+  return request<MallActivity>(`/api/mall/activities/${encodeURIComponent(id)}`)
 }
 
 export async function getCartItems(): Promise<CartItem[]> {
@@ -177,7 +196,7 @@ async function getRemoteCart(): Promise<CartItem[]> {
   return (cart.items || []).map(item => ({
     productId: item.productId,
     productName: item.productName,
-    productImage: item.productImage,
+    productImage: resolveFileUrl(item.productImage),
     skuId: item.skuId,
     specName: item.specName,
     price: item.price,

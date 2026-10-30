@@ -129,6 +129,12 @@ const getTableList = async () => {
         }
         let result = await api.get<any>(props.api, params)
 
+        if (Array.isArray(result.data)) {
+            state.tableData = result.data
+            state.pageable.total = result.data.length
+            return
+        }
+
         state.tableData = result.data?.list || []
         // 解构后台返回的分页数据
         state.pageable.total = result.data?.totalCount || 0
@@ -285,5 +291,4 @@ onMounted(() => {
     }
 }
 </style>
-
 

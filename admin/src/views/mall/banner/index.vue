@@ -1,6 +1,6 @@
 <template>
   <div class="list-page">
-    <QueryPage api="/admin/mall/banners" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
+    <QueryPage v-if="searchForm.storeId" api="/admin/mall/banners" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
       <template #searchConditions>
         <el-form :model="searchForm" :inline="true">
           <el-form-item label="门店">
@@ -30,7 +30,7 @@
         <el-table :data="tableData" :fit="true" style="width: 100%" border>
           <el-table-column label="图片" width="100" align="center">
             <template #default="{ row }">
-              <el-image :src="row.imageUrl" :preview-src-list="[row.imageUrl]" style="width: 60px; height: 36px; object-fit: cover" fit="cover" preview-teleported />
+              <el-image :src="resolveFileUrl(row.imageUrl)" :preview-src-list="[resolveFileUrl(row.imageUrl)]" style="width: 60px; height: 36px; object-fit: cover" fit="cover" preview-teleported />
             </template>
           </el-table-column>
           <el-table-column prop="position" label="位置" width="120" />
@@ -81,22 +81,40 @@
         <el-form-item label="展示位置" required>
           <el-input v-model="form.position" placeholder="如 HomeTop / HomeMiddle / Category_xxx" maxlength="50" />
         </el-form-item>
-        <el-form-item label="图片URL" required>
-          <el-input v-model="form.imageUrl" placeholder="请输入图片URL" maxlength="500" />
+        <el-form-item label="Banner图片" required>
+          <UploadImg v-model:imageUrl="imageUrlModel" scene="banner" :width="'240px'" :height="'100px'">
+            <template #tip>建议上传 16:9 图片，大小不超过 5MB</template>
+          </UploadImg>
         </el-form-item>
         <el-form-item label="Banner标题">
           <el-input v-model="form.title" placeholder="可选，图片alt" maxlength="100" />
         </el-form-item>
         <el-form-item label="跳转类型">
-          <el-select v-model="form.linkType" style="width: 100%">
+          <el-select v-model="form.linkType" style="width: 100%" @change="form.linkValue = ''">
             <el-option label="商品详情" :value="0" />
             <el-option label="分类页" :value="1" />
             <el-option label="静态页" :value="2" />
             <el-option label="外链" :value="3" />
+            <el-option label="活动详情" :value="4" />
           </el-select>
         </el-form-item>
         <el-form-item label="跳转值" required>
-          <el-input v-model="form.linkValue" placeholder="商品ID / 分类ID / 页面编码 / 外链URL" maxlength="500" />
+          <el-select
+            v-if="form.linkType === 4"
+            v-model="form.linkValue"
+            filterable
+            clearable
+            style="width: 100%"
+            placeholder="请选择活动"
+          >
+            <el-option v-for="activity in activityOptions" :key="activity.id" :label="activity.name" :value="activity.id" />
+          </el-select>
+          <el-input
+            v-else
+            v-model="form.linkValue"
+            :placeholder="form.linkType === 3 ? '请输入完整外链URL' : '商品ID / 分类ID / 页面编码'"
+            maxlength="500"
+          />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="form.sortOrder" :min="0" :max="9999" style="width: 100%" />
@@ -117,7 +135,7 @@
       <el-alert v-if="!sortList.length" title="当前门店没有 Banner" type="info" show-icon :closable="false" class="mb16" />
       <div v-else>
         <div v-for="item in sortList" :key="item.id" class="sort-item">
-          <el-image :src="item.imageUrl" style="width: 40px; height: 24px; object-fit: cover; margin-right: 8px" fit="cover" />
+          <el-image :src="resolveFileUrl(item.imageUrl)" style="width: 40px; height: 24px; object-fit: cover; margin-right: 8px" fit="cover" />
           <span class="sort-title">{{ item.title || item.position }}</span>
           <el-input-number v-model="item.sortOrder" :min="0" :max="9999" size="small" />
         </div>
@@ -131,15 +149,17 @@
 </template>
 
 <script setup lang="ts" name="mallBanner">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete, Sort } from '@element-plus/icons-vue'
 import { mallBannerApi } from '@/api/modules/mallBanner'
 import { mallStoreApi } from '@/api/modules/mallStore'
+import { mallActivityApi } from '@/api/modules/mallActivity'
 import QueryPage from '@/components/QueryPage/index.vue'
-import { formatDate } from '@/utils'
+import UploadImg from '@/components/Upload/Img.vue'
+import { formatDate, resolveFileUrl } from '@/utils'
 
-const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链' }
+const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 4: '活动' }
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
@@ -148,6 +168,7 @@ const dialogTitle = ref('')
 const dialogType = ref('')
 const currentId = ref('')
 const storeOptions = ref<any[]>([])
+const activityOptions = ref<any[]>([])
 
 const sortDialogVisible = ref(false)
 const sortSubmitting = ref(false)
@@ -170,12 +191,29 @@ const form = reactive({
   isActive: true
 })
 
+const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
+const imageUrlModel = computed({
+  get: () => resolveFileUrl(form.imageUrl),
+  set: (value: string) => {
+    form.imageUrl = value.startsWith(apiOrigin) ? value.slice(apiOrigin.length) : value
+  }
+})
+
 onMounted(async () => {
-  const res = await mallStoreApi.getStoreList({ pageNum: 1, pageSize: 200 })
-  storeOptions.value = res?.data?.records || res?.data || []
-  if (storeOptions.value.length) {
-    searchForm.storeId = storeOptions.value[0].id
-    form.storeId = storeOptions.value[0].id
+  try {
+    const [storesResponse, activitiesResponse] = await Promise.all([
+      mallStoreApi.getStoreList({ page: 1, pageSize: 200, isActive: true }),
+      mallActivityApi.getActivityList({})
+    ])
+    storeOptions.value = storesResponse?.data?.list || storesResponse?.data?.records || []
+    activityOptions.value = activitiesResponse?.data || []
+    if (storeOptions.value.length) {
+      searchForm.storeId = storeOptions.value[0].id
+      form.storeId = storeOptions.value[0].id
+    }
+  } catch (error) {
+    console.error('加载 Banner 配置选项失败', error)
+    ElMessage.error('加载门店或活动列表失败')
   }
 })
 
@@ -222,7 +260,8 @@ const openDialog = (type: string, row?: any) => {
 const submitForm = async () => {
   if (!form.storeId) { ElMessage.warning('请选择门店'); return }
   if (!form.position.trim()) { ElMessage.warning('请输入展示位置'); return }
-  if (!form.imageUrl.trim()) { ElMessage.warning('请输入图片URL'); return }
+  if (!form.imageUrl.trim()) { ElMessage.warning('请上传 Banner 图片'); return }
+  if (form.linkType === 4 && !form.linkValue.trim()) { ElMessage.warning('请选择活动'); return }
 
   submitting.value = true
   try {

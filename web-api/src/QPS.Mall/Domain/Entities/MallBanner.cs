@@ -5,10 +5,11 @@ namespace QPS.Mall.Domain.Entities;
 
 public enum MallBannerLinkType
 {
-    InternalProduct,
-    InternalCategory,
-    InternalPage,
-    ExternalUrl
+    InternalProduct = 0,
+    InternalCategory = 1,
+    InternalPage = 2,
+    ExternalUrl = 3,
+    InternalActivity = 4
 }
 
 public class MallBanner : BaseEntity
@@ -74,7 +75,7 @@ public class MallBanner : BaseEntity
         bool isActive)
     {
         if (string.IsNullOrWhiteSpace(position)) throw new BusinessException(400, "展示位置不能为空");
-        if (string.IsNullOrWhiteSpace(imageUrl)) throw new BusinessException(400, "图片URL不能为空");
+        if (string.IsNullOrWhiteSpace(imageUrl)) throw new BusinessException(400, "Banner图片不能为空");
 
         return new MallBanner(storeId, position, imageUrl, linkType, linkValue, title, sortOrder, startDate, endDate, isActive);
     }

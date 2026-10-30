@@ -147,12 +147,13 @@
           />
         </el-form-item>
         <el-form-item label="商品主图">
-          <UploadImg v-model:imageUrl="mainImageUrlModel" :width="'120px'" :height="'120px'">
+          <UploadImg v-model:imageUrl="mainImageUrlModel" scene="product" :width="'120px'" :height="'120px'">
             <template #tip>建议上传 1:1 图片，大小不超过 5MB</template>
           </UploadImg>
         </el-form-item>
         <el-form-item label="商品相册">
           <UploadImgs
+            scene="product"
             :file-list="albumFileList"
             :limit="9"
             :width="'100px'"
@@ -499,7 +500,7 @@ const uploadProductDetailImage = async (file: File): Promise<string> => {
 
   const formData = new FormData()
   formData.append('file', file)
-  const { data } = await uploadImg(formData)
+  const { data } = await uploadImg(formData, 'product')
   if (!data.fileUrl) {
     ElMessage.error('图片上传成功，但未返回图片地址')
     throw new Error('商品详情图片上传未返回地址')

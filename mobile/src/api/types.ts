@@ -48,6 +48,39 @@ export interface Banner {
   image: string
   title: string
   link: string
+  linkType: BannerLinkType
+}
+
+export enum BannerLinkType {
+  InternalProduct = 0,
+  InternalCategory = 1,
+  InternalPage = 2,
+  ExternalUrl = 3,
+  InternalActivity = 4
+}
+
+export interface MallActivityPromotion {
+  id: string
+  promotionId: string
+  name: string
+  description: string
+  triggerType: string
+  actionType: string
+  startDate: string | null
+  endDate: string | null
+  isActive: boolean
+}
+
+export interface MallActivity {
+  id: string
+  name: string
+  subtitle: string
+  coverImage: string
+  description: string
+  detailHtml: string
+  startDate: string | null
+  endDate: string | null
+  promotions: MallActivityPromotion[]
 }
 
 export interface CartItem {

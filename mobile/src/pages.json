@@ -36,6 +36,13 @@
 			}
 		},
 		{
+			"path": "pages/activity-detail/index",
+			"style": {
+				"navigationBarTitleText": "活动详情",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/checkout/index",
 			"style": {
 				"navigationBarTitleText": "确认订单",

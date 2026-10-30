@@ -103,12 +103,12 @@ internal static class MallPromotionRules
 
             if (triggerType == "BuyProduct")
             {
-                if (!triggerConfig.TryGetProperty("productIds", out var productIds) ||
-                    productIds.ValueKind != JsonValueKind.Array ||
-                    productIds.GetArrayLength() == 0 ||
-                    productIds.EnumerateArray().Any(item =>
-                        !Guid.TryParse(item.GetString(), out var productId) || productId == Guid.Empty))
-                    throw new BusinessException(400, "买赠促销必须指定购买商品");
+                if (triggerConfig.TryGetProperty("productIds", out var productIds) &&
+                    (productIds.ValueKind != JsonValueKind.Array ||
+                     productIds.GetArrayLength() == 0 ||
+                     productIds.EnumerateArray().Any(item =>
+                         !Guid.TryParse(item.GetString(), out var productId) || productId == Guid.Empty)))
+                    throw new BusinessException(400, "买赠促销购买商品配置无效");
                 if (triggerConfig.TryGetProperty("minQuantity", out var quantity) && quantity.GetInt32() < 1)
                     throw new BusinessException(400, "购买数量必须大于 0");
             }

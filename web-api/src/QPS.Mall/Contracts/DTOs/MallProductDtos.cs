@@ -39,6 +39,8 @@ public class MallProductDto
 
     public DateTime UpdatedAt { get; set; }
 
+    public List<MallProductPromotionDto> Promotions { get; set; } = new();
+
     public List<string> Images
     {
         get
@@ -83,6 +85,37 @@ public class MallSkuDto
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    public List<MallProductPromotionDto> Promotions { get; set; } = new();
+}
+
+public class MallProductPromotionDto
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public string Description { get; set; } = string.Empty;
+
+    public string TriggerType { get; set; } = string.Empty;
+
+    public string TriggerConfigJson { get; set; } = "{}";
+
+    public string ActionType { get; set; } = string.Empty;
+
+    public string ActionConfigJson { get; set; } = "{}";
+
+    public string ScopeType { get; set; } = string.Empty;
+
+    public string RuleText { get; set; } = string.Empty;
+
+    public int Priority { get; set; }
+
+    public bool Combinable { get; set; }
+
+    public DateTime? StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
 }
 
 /// <summary>

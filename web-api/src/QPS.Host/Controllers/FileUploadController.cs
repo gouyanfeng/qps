@@ -28,12 +28,19 @@ public class FileUploadController : ControllerBase
         _environment = environment;
     }
 
+    private static readonly HashSet<string> AllowedScenes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "product", "category", "banner", "activity", "avatar", "common"
+    };
+
     /// <summary>
-    /// 上传商品图片，返回可直接访问的相对地址。
+    /// 上传图片，返回可直接访问的相对地址。
     /// </summary>
+    /// <param name="file">图片文件</param>
+    /// <param name="scene">场景：product / category / banner / activity / avatar / common</param>
     [HttpPost("upload/img")]
     [RequestSizeLimit(MaxFileSize + 1024 * 1024)]
-    public async Task<ActionResult<object>> UploadImage(IFormFile? file)
+    public async Task<ActionResult<object>> UploadImage(IFormFile? file, string scene = "common")
     {
         if (file is null || file.Length == 0)
         {
@@ -58,8 +65,13 @@ public class FileUploadController : ControllerBase
             throw new BusinessException(400, "图片内容类型不合法");
         }
 
+        if (!AllowedScenes.Contains(scene))
+        {
+            scene = "common";
+        }
+
         var webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
-        var relativeFolder = Path.Combine("uploads", DateTime.Now.ToString("yyyyMM"));
+        var relativeFolder = Path.Combine("uploads", scene, DateTime.Now.ToString("yyyyMM"));
         var targetFolder = Path.Combine(webRootPath, relativeFolder);
 
         Directory.CreateDirectory(targetFolder);

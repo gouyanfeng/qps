@@ -238,10 +238,10 @@ const isAllSelected = computed(() => cartItems.value.length > 0 && selectedCount
 
 onShow(async () => {
   try {
-    const [items, products] = await Promise.all([getCartItems(), getProducts()])
+    const [items, pRes] = await Promise.all([getCartItems(), getProducts()])
     cartItems.value = items
-    bonusItems.value = products
-      .filter(product => product.skus.length > 0 && !items.some(item => item.productId === product.id))
+    bonusItems.value = pRes.items
+      .filter((product: Product) => product.skus.length > 0 && !items.some(item => item.productId === product.id))
       .slice(0, 1)
       .map(mapBonusProduct)
   } catch (error) {

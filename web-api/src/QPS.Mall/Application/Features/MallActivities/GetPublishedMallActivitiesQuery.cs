@@ -41,7 +41,7 @@ public class GetPublishedMallActivitiesHandler
             .ThenByDescending(activity => activity.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var promotions = await LoadActivePromotionsAsync(activities, cancellationToken);
+        var promotions = await LoadActivePromotionsAsync(activities, now, cancellationToken);
 
         return activities
             .Select(activity => MallActivityMapper.ToListItem(activity, promotions, includeInactivePromotions: false))
@@ -50,6 +50,7 @@ public class GetPublishedMallActivitiesHandler
 
     private async Task<Dictionary<Guid, MallPromotion>> LoadActivePromotionsAsync(
         IReadOnlyCollection<MallActivity> activities,
+        DateTime now,
         CancellationToken cancellationToken)
     {
         var promotionIds = activities
@@ -65,7 +66,11 @@ public class GetPublishedMallActivitiesHandler
 
         return await _dbContext.MallPromotions
             .AsNoTracking()
-            .Where(promotion => promotionIds.Contains(promotion.Id) && promotion.IsActive)
+            .Where(promotion =>
+                promotionIds.Contains(promotion.Id) &&
+                promotion.IsActive &&
+                (promotion.StartDate == null || promotion.StartDate <= now) &&
+                (promotion.EndDate == null || promotion.EndDate >= now))
             .ToDictionaryAsync(promotion => promotion.Id, cancellationToken);
     }
 }
@@ -113,7 +118,11 @@ public class GetPublishedMallActivityDetailHandler
             ? new Dictionary<Guid, MallPromotion>()
             : await _dbContext.MallPromotions
                 .AsNoTracking()
-                .Where(promotion => promotionIds.Contains(promotion.Id) && promotion.IsActive)
+                .Where(promotion =>
+                    promotionIds.Contains(promotion.Id) &&
+                    promotion.IsActive &&
+                    (promotion.StartDate == null || promotion.StartDate <= now) &&
+                    (promotion.EndDate == null || promotion.EndDate >= now))
                 .ToDictionaryAsync(promotion => promotion.Id, cancellationToken);
 
         return MallActivityMapper.ToDetail(activity, promotions, includeInactivePromotions: false);

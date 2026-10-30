@@ -185,7 +185,7 @@
           </el-col>
         </el-row>
         <el-form-item label="活动封面">
-          <UploadImg v-model:imageUrl="coverImageModel" :width="'120px'" :height="'120px'">
+          <UploadImg v-model:imageUrl="coverImageModel" scene="activity" :width="'120px'" :height="'120px'">
             <template #tip>建议上传 16:9 图片，大小不超过 5MB</template>
           </UploadImg>
         </el-form-item>

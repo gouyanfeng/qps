@@ -47,10 +47,12 @@ public class MallPromotionEngine
                 Items = scopeRows,
                 PromotionUsageMap = ctx.PromotionUsageMap
             };
-            var triggerContext = p.TriggerType == "BuyProduct" ? ctx : scopedTriggerContext;
-
             using var triggerDoc = JsonDocument.Parse(p.TriggerConfigJson);
             var triggerConfig = triggerDoc.RootElement;
+            var triggerContext = p.TriggerType == "BuyProduct" &&
+                triggerConfig.TryGetProperty("productIds", out _)
+                    ? ctx
+                    : scopedTriggerContext;
 
             var strategy = _triggers.Get(p.TriggerType);
             if (!strategy.IsMatch(triggerContext, triggerConfig)) continue;

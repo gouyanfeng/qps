@@ -109,6 +109,7 @@
         <el-form-item label="分类图标">
           <UploadImg
             v-model:imageUrl="iconUrlModel"
+            scene="category"
             :width="'80px'"
             :height="'80px'"
             :border-radius="'8px'"

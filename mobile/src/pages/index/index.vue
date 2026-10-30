@@ -34,7 +34,7 @@
     <!-- ============ main 主内容区 ============ -->
     <scroll-view scroll-y class="page-body" enhanced>
       <swiper v-if="banners.length" class="catalog-banner" autoplay circular indicator-dots>
-        <swiper-item v-for="banner in banners" :key="banner.id">
+        <swiper-item v-for="banner in banners" :key="banner.id" @click="handleBannerClick(banner)">
           <image :src="banner.image" mode="aspectFill" class="catalog-banner-image" />
           <view class="catalog-banner-title">{{ banner.title }}</view>
         </swiper-item>
@@ -153,6 +153,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getCategories, getHotProducts, getBanners, addToCart } from '@/api'
+import { BannerLinkType } from '@/api/types'
 import type { Category, Banner, Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 
@@ -242,12 +243,24 @@ async function quickAdd(item: FeaturedItem) {
 }
 
 function goToSearch() { uni.navigateTo({ url: '/pages/search/index' }) }
-function goToCategory(catId?: string) {
-  if (catId) uni.setStorageSync('pendingCategoryId', catId)
+function goToCategory(catId?: string | MouseEvent) {
+  const id = typeof catId === 'string' ? catId : undefined
+  if (id) uni.setStorageSync('pendingCategoryId', id)
   else uni.removeStorageSync('pendingCategoryId')
   uni.switchTab({ url: '/pages/category/index' })
 }
 function goToProductDetail(id: string) { uni.navigateTo({ url: `/pages/product-detail/index?id=${id}` }) }
+function handleBannerClick(banner: Banner) {
+  if (!banner.link) return
+
+  if (banner.linkType === BannerLinkType.InternalProduct) {
+    goToProductDetail(banner.link)
+  } else if (banner.linkType === BannerLinkType.InternalCategory) {
+    goToCategory(banner.link)
+  } else if (banner.linkType === BannerLinkType.InternalActivity) {
+    uni.navigateTo({ url: `/pages/activity-detail/index?id=${encodeURIComponent(banner.link)}` })
+  }
+}
 function handleVerify() { uni.showToast({ title: '扫码验真功能演示', icon: 'none' }) }
 </script>
 

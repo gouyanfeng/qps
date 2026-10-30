@@ -193,6 +193,20 @@
           }
         },
         {
+          "path": "/mall/banner",
+          "name": "mallBanner",
+          "component": "/mall/banner/index",
+          "meta": {
+            "icon": "Picture",
+            "title": "Banner管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
           "path": "/mall/category",
           "name": "mallCategory",
           "component": "/mall/category/index",
@@ -375,4 +389,3 @@
   ],
   "msg": "成功"
 }
-

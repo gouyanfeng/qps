@@ -121,6 +121,7 @@ public class MallBannerHandlers :
     public async Task<MallBannerDto> Handle(CreateMallBannerCommand command, CancellationToken ct)
     {
         var r = command.Request;
+        await ValidateLinkAsync(r.LinkType, r.LinkValue, ct);
         var banner = MallBanner.Create(r.StoreId, r.Position, r.ImageUrl, r.LinkType, r.LinkValue,
             r.Title, r.SortOrder, r.StartDate, r.EndDate, r.IsActive);
         _dbContext.MallBanners.Add(banner);
@@ -141,6 +142,7 @@ public class MallBannerHandlers :
         if (banner is null) throw new BusinessException(404, "Banner不存在");
 
         var r = command.Request;
+        await ValidateLinkAsync(r.LinkType, r.LinkValue, ct);
         banner.Update(r.Position, r.ImageUrl, r.LinkType, r.LinkValue, r.Title, r.StartDate, r.EndDate);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -186,5 +188,20 @@ public class MallBannerHandlers :
 
         await _dbContext.SaveChangesAsync(ct);
         return true;
+    }
+
+    private async Task ValidateLinkAsync(MallBannerLinkType linkType, string linkValue, CancellationToken ct)
+    {
+        if (!Enum.IsDefined(linkType))
+        {
+            throw new BusinessException(400, "Banner跳转类型无效");
+        }
+
+        if (linkType == MallBannerLinkType.InternalActivity &&
+            (!Guid.TryParse(linkValue, out var activityId) ||
+             !await _dbContext.MallActivities.AnyAsync(activity => activity.Id == activityId && !activity.IsDeleted, ct)))
+        {
+            throw new BusinessException(400, "请填写有效的活动ID");
+        }
     }
 }

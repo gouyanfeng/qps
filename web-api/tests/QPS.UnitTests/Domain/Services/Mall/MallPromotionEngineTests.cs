@@ -238,4 +238,49 @@ public class MallPromotionEngineTests
         context.Items[1].ProductId = Guid.NewGuid();
         Assert.False(trigger.IsMatch(context, config.RootElement));
     }
+
+    [Fact]
+    public void BuyGiftPromotion_UsesApplicableScopeAsPurchaseCondition()
+    {
+        var targetProductId = Guid.NewGuid();
+        var otherProductId = Guid.NewGuid();
+        var giftSkuId = Guid.NewGuid();
+        var promotion = MallPromotion.Create(
+            "指定商品买二赠一",
+            string.Empty,
+            "BuyProduct",
+            """{"minQuantity":2}""",
+            "Gift",
+            $$"""{"skuId":"{{giftSkuId}}","quantity":1}""",
+            "Product",
+            1,
+            false,
+            0,
+            0,
+            null,
+            null,
+            true);
+        promotion.AddScope(MallPromotionScope.Create(promotion.Id, "Product", targetProductId));
+
+        var engine = new MallPromotionEngine(
+            new TriggerStrategyRegistry(new ITriggerStrategy[] { new BuyProductTrigger() }),
+            new ActionStrategyRegistry(new IActionStrategy[] { new GiftAction() }));
+        var context = new OrderContext
+        {
+            Items =
+            [
+                new SkuOrderRow { ProductId = targetProductId, Quantity = 1 },
+                new SkuOrderRow { ProductId = otherProductId, Quantity = 10 }
+            ]
+        };
+
+        Assert.Empty(engine.Match([promotion], context));
+
+        context.Items[0].Quantity = 2;
+        var matched = engine.Match([promotion], context);
+        var result = engine.Apply(context.Items, matched);
+
+        Assert.Single(matched);
+        Assert.Equal(giftSkuId, Assert.Single(result.GiftSkus).SkuId);
+    }
 }
