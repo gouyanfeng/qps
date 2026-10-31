@@ -48,11 +48,8 @@ public class UpdateMallAddressHandler : IRequestHandler<UpdateMallAddressCommand
         address.Update(
             req.ReceiverName.Trim(),
             req.ReceiverPhone.Trim(),
-            req.ProvinceCode.Trim(),
             req.ProvinceName.Trim(),
-            req.CityCode.Trim(),
             req.CityName.Trim(),
-            req.DistrictCode.Trim(),
             req.DistrictName.Trim(),
             req.DetailAddress.Trim());
 

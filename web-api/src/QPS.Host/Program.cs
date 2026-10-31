@@ -63,7 +63,11 @@ using (var scope = app.Services.CreateScope())
 
     if (app.Environment.IsDevelopment())
     {
-        await dbContext.Database.MigrateAsync();
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await dbContext.Database.EnsureCreatedAsync();
+        });
 
         var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
         while (workspaceDirectory is not null &&

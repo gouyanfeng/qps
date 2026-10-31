@@ -52,7 +52,6 @@ public class ChangeMallCategoryStatusHandler : IRequestHandler<ChangeMallCategor
         {
             var parentIsActive = await _dbContext.MallCategories.AnyAsync(
                 item => item.Id == category.ParentId.Value &&
-                        item.StoreId == category.StoreId &&
                         item.IsActive &&
                         !item.IsDeleted,
                 cancellationToken);

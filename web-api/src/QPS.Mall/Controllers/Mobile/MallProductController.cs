@@ -9,7 +9,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallProductController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,6 +21,7 @@ public class MallProductController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? keyword = null,
+        [FromQuery] Guid? storeId = null,
         [FromQuery] Guid? categoryId = null,
         [FromQuery] bool? isHot = null,
         [FromQuery] string? tagCode = null,
@@ -31,6 +32,7 @@ public class MallProductController : ControllerBase
             Page = page,
             PageSize = pageSize,
             Keyword = keyword,
+            StoreId = storeId,
             CategoryId = categoryId,
             IsHot = isHot,
             TagCode = tagCode,

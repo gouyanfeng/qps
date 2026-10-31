@@ -4,7 +4,6 @@ namespace QPS.Mall.Domain.Entities;
 
 public class MallMemberLevel : BaseEntity
 {
-    public Guid StoreId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public int LevelCode { get; private set; }
     public decimal? DiscountRate { get; private set; }
@@ -20,11 +19,10 @@ public class MallMemberLevel : BaseEntity
     }
 
     private MallMemberLevel(
-        Guid storeId, string name, int levelCode,
+        string name, int levelCode,
         decimal? discountRate, int minSpent, int maxSpent,
         int upgradePoints, int sortOrder, bool isDefault)
     {
-        StoreId = storeId;
         Name = name;
         LevelCode = levelCode;
         DiscountRate = discountRate;
@@ -37,11 +35,11 @@ public class MallMemberLevel : BaseEntity
     }
 
     public static MallMemberLevel Create(
-        Guid storeId, string name, int levelCode,
+        string name, int levelCode,
         decimal? discountRate, int minSpent, int maxSpent,
         int upgradePoints, int sortOrder, bool isDefault)
     {
-        return new MallMemberLevel(storeId, name, levelCode,
+        return new MallMemberLevel(name, levelCode,
             discountRate, minSpent, maxSpent, upgradePoints, sortOrder, isDefault);
     }
 

@@ -3,13 +3,11 @@ using QPS.Mall.Domain.Entities;
 
 namespace QPS.Mall.Application.Features.MallActivities;
 
-/// <summary>
-/// 活动实体到 DTO 的映射。
-/// </summary>
 internal static class MallActivityMapper
 {
     public static MallActivityListItemDto ToListItem(
         MallActivity activity,
+        IReadOnlyList<MallActivityPromotion> links,
         IReadOnlyDictionary<Guid, MallPromotion> promotions,
         bool includeInactivePromotions = true)
     {
@@ -24,12 +22,13 @@ internal static class MallActivityMapper
             SortOrder = activity.SortOrder,
             IsActive = activity.IsActive,
             CreatedAt = activity.CreatedAt,
-            Promotions = BuildPromotions(activity.Promotions, promotions, includeInactivePromotions)
+            Promotions = BuildPromotions(links, promotions, includeInactivePromotions)
         };
     }
 
     public static MallActivityDto ToDetail(
         MallActivity activity,
+        IReadOnlyList<MallActivityPromotion> links,
         IReadOnlyDictionary<Guid, MallPromotion> promotions,
         bool includeInactivePromotions = true)
     {
@@ -47,12 +46,12 @@ internal static class MallActivityMapper
             IsActive = activity.IsActive,
             CreatedAt = activity.CreatedAt,
             UpdatedAt = activity.UpdatedAt,
-            Promotions = BuildPromotions(activity.Promotions, promotions, includeInactivePromotions)
+            Promotions = BuildPromotions(links, promotions, includeInactivePromotions)
         };
     }
 
     private static List<MallActivityPromotionDto> BuildPromotions(
-        IEnumerable<MallActivityPromotion> links,
+        IReadOnlyList<MallActivityPromotion> links,
         IReadOnlyDictionary<Guid, MallPromotion> promotions,
         bool includeInactivePromotions)
     {

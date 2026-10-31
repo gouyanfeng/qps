@@ -60,7 +60,7 @@ public class MallMemberLevelHandlers :
     public async Task<List<MallMemberLevelDto>> Handle(GetMallMemberLevelsQuery req, CancellationToken ct)
     {
         var r = req.Request;
-        var q = _db.MallMemberLevels.AsNoTracking().Where(x => x.StoreId == r.StoreId);
+        var q = _db.MallMemberLevels.AsNoTracking();
         if (r.IsActive.HasValue) q = q.Where(x => x.IsActive == r.IsActive);
         return await q.OrderBy(x => x.SortOrder).ThenBy(x => x.LevelCode)
             .Select(x => ToDto(x)).ToListAsync(ct);
@@ -77,17 +77,17 @@ public class MallMemberLevelHandlers :
     {
         var r = req.Request;
         var exists = await _db.MallMemberLevels
-            .AnyAsync(x => x.StoreId == r.StoreId && x.LevelCode == r.LevelCode, ct);
-        if (exists) throw new BusinessException(409, "该门店已存在同级别的等级编码");
+            .AnyAsync(x => x.LevelCode == r.LevelCode, ct);
+        if (exists) throw new BusinessException(409, "已存在同级别的等级编码");
 
         if (r.IsDefault)
         {
             var currentDefault = await _db.MallMemberLevels
-                .FirstOrDefaultAsync(x => x.StoreId == r.StoreId && x.IsDefault, ct);
+                .FirstOrDefaultAsync(x => x.IsDefault, ct);
             currentDefault?.SetDefault(false);
         }
 
-        var level = MallMemberLevel.Create(r.StoreId, r.Name, r.LevelCode,
+        var level = MallMemberLevel.Create(r.Name, r.LevelCode,
             r.DiscountRate, r.MinSpent, r.MaxSpent, r.UpgradePoints, r.SortOrder, r.IsDefault);
         _db.MallMemberLevels.Add(level);
         await _db.SaveChangesAsync(ct);
@@ -128,7 +128,7 @@ public class MallMemberLevelHandlers :
         var l = await _db.MallMemberLevels.FirstOrDefaultAsync(x => x.Id == req.Id, ct);
         if (l == null) throw new BusinessException(404, "等级不存在");
         var current = await _db.MallMemberLevels
-            .FirstOrDefaultAsync(x => x.StoreId == l.StoreId && x.IsDefault, ct);
+            .FirstOrDefaultAsync(x => x.IsDefault, ct);
         current?.SetDefault(false);
         l.SetDefault(true);
         await _db.SaveChangesAsync(ct);
@@ -137,7 +137,7 @@ public class MallMemberLevelHandlers :
 
     private static MallMemberLevelDto ToDto(MallMemberLevel l) => new()
     {
-        Id = l.Id, StoreId = l.StoreId, Name = l.Name, LevelCode = l.LevelCode,
+        Id = l.Id, Name = l.Name, LevelCode = l.LevelCode,
         DiscountRate = l.DiscountRate, MinSpent = l.MinSpent, MaxSpent = l.MaxSpent,
         UpgradePoints = l.UpgradePoints, SortOrder = l.SortOrder,
         IsDefault = l.IsDefault, IsActive = l.IsActive

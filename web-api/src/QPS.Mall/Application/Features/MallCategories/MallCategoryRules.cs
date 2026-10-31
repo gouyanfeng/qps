@@ -80,19 +80,10 @@ internal static class MallCategoryRules
 
     public static async Task EnsureParentValidAsync(
         IMallDbContext dbContext,
-        Guid storeId,
         Guid? parentId,
         Guid? excludeId,
         CancellationToken cancellationToken)
     {
-        var storeExists = await dbContext.MallStores.AnyAsync(
-            store => store.Id == storeId && store.IsActive,
-            cancellationToken);
-        if (!storeExists)
-        {
-            throw new BusinessException(400, "请选择有效门店");
-        }
-
         if (!parentId.HasValue)
         {
             if (excludeId.HasValue)
@@ -117,11 +108,11 @@ internal static class MallCategoryRules
         var parent = await dbContext.MallCategories
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                category => category.Id == parentId.Value && category.StoreId == storeId,
+                category => category.Id == parentId.Value,
                 cancellationToken);
         if (parent is null || !parent.IsActive || parent.IsDeleted)
         {
-            throw new BusinessException(400, "请选择同一门店下已启用的父级分类");
+            throw new BusinessException(400, "请选择已启用的父级分类");
         }
 
         if (parent.ParentId.HasValue)

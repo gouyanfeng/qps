@@ -18,10 +18,6 @@ public class MallPromotion : BaseEntity
 
     public string ScopeType { get; private set; } = "Global";
 
-    public int Priority { get; private set; }
-
-    public bool Combinable { get; private set; }
-
     public int MaxUsagePerUser { get; private set; }
 
     public int MaxUsagePerOrder { get; private set; }
@@ -31,9 +27,6 @@ public class MallPromotion : BaseEntity
     public DateTime? EndDate { get; private set; }
 
     public bool IsActive { get; private set; }
-
-    private readonly List<MallPromotionScope> _scopes = new();
-    public IReadOnlyCollection<MallPromotionScope> Scopes => _scopes;
 
     private MallPromotion()
     {
@@ -47,8 +40,6 @@ public class MallPromotion : BaseEntity
         string actionType,
         string actionConfigJson,
         string scopeType,
-        int priority,
-        bool combinable,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -62,8 +53,6 @@ public class MallPromotion : BaseEntity
         ActionType = actionType;
         ActionConfigJson = actionConfigJson;
         ScopeType = scopeType;
-        Priority = priority;
-        Combinable = combinable;
         MaxUsagePerUser = maxUsagePerUser;
         MaxUsagePerOrder = maxUsagePerOrder;
         StartDate = startDate;
@@ -79,8 +68,6 @@ public class MallPromotion : BaseEntity
         string actionType,
         string actionConfigJson,
         string scopeType,
-        int priority,
-        bool combinable,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -95,26 +82,12 @@ public class MallPromotion : BaseEntity
             actionType,
             actionConfigJson,
             scopeType,
-            priority,
-            combinable,
             maxUsagePerUser,
             maxUsagePerOrder,
             startDate,
             endDate,
             isActive);
     }
-
-    public void AddScope(MallPromotionScope scope)
-    {
-        if (!_scopes.Any(s =>
-                s.ScopeTargetType == scope.ScopeTargetType &&
-                s.ScopeTargetId == scope.ScopeTargetId))
-        {
-            _scopes.Add(scope);
-        }
-    }
-
-    public void ClearScopes() => _scopes.Clear();
 
     public void Update(
         string name,
@@ -124,8 +97,6 @@ public class MallPromotion : BaseEntity
         string actionType,
         string actionConfigJson,
         string scopeType,
-        int priority,
-        bool combinable,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -138,8 +109,6 @@ public class MallPromotion : BaseEntity
         ActionType = actionType;
         ActionConfigJson = actionConfigJson;
         ScopeType = scopeType;
-        Priority = priority;
-        Combinable = combinable;
         MaxUsagePerUser = maxUsagePerUser;
         MaxUsagePerOrder = maxUsagePerOrder;
         StartDate = startDate;

@@ -9,11 +9,7 @@ public class MallOrderDto
 
     public string OrderNo { get; set; } = string.Empty;
 
-    public Guid StoreId { get; set; }
-
     public Guid? MemberId { get; set; }
-
-    public string StoreName { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
 
@@ -72,31 +68,20 @@ public class MallOrderDetailDto : MallOrderDto
 public class MallOrderItemDto
 {
     public Guid Id { get; set; }
-
     public Guid SkuId { get; set; }
-
     public Guid ProductId { get; set; }
-
     public string ProductName { get; set; } = string.Empty;
-
+    public string ProductImage { get; set; } = string.Empty;
+    public string Badge { get; set; } = string.Empty;
     public string SkuCode { get; set; } = string.Empty;
-
     public string SpecName { get; set; } = string.Empty;
-
     public decimal UnitPrice { get; set; }
-
     public int Quantity { get; set; }
-
     public int WeightGram { get; set; }
-
     public decimal ItemAmount { get; set; }
-
     public bool IsGift { get; set; }
-
     public Guid? PromotionId { get; set; }
-
     public string PromotionName { get; set; } = string.Empty;
-
     public decimal? OriginalUnitPrice { get; set; }
 }
 
@@ -152,19 +137,13 @@ public class MallRefundDto
 public class MallShipmentDto
 {
     public Guid Id { get; set; }
-
     public string ShipmentNo { get; set; } = string.Empty;
-
     public string ExpressCompany { get; set; } = string.Empty;
-
+    public string ExpressPhone { get; set; } = string.Empty;
     public string TrackingNo { get; set; } = string.Empty;
-
     public string Status { get; set; } = string.Empty;
-
     public string Remark { get; set; } = string.Empty;
-
     public DateTime? ShippedAt { get; set; }
-
     public DateTime? DeliveredAt { get; set; }
 }
 
@@ -173,8 +152,6 @@ public class MallShipmentDto
 /// </summary>
 public class CreateMallOrderRequest
 {
-    public Guid StoreId { get; set; }
-
     /// <summary>
     /// 下单会员ID，移动端JWT解析后自动注入，后台代下单可空。
     /// </summary>
@@ -189,15 +166,9 @@ public class CreateMallOrderRequest
 
     public string ReceiverPhone { get; set; } = string.Empty;
 
-    public string ProvinceCode { get; set; } = string.Empty;
-
     public string ProvinceName { get; set; } = string.Empty;
 
-    public string CityCode { get; set; } = string.Empty;
-
     public string CityName { get; set; } = string.Empty;
-
-    public string DistrictCode { get; set; } = string.Empty;
 
     public string DistrictName { get; set; } = string.Empty;
 

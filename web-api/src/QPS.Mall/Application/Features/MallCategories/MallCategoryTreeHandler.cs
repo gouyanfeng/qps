@@ -8,7 +8,6 @@ namespace QPS.Mall.Application.Features.MallCategories;
 
 public class GetMallCategoryTreeQuery : IRequest<List<MallCategoryTreeNodeDto>>
 {
-    public Guid StoreId { get; set; }
 }
 
 public class MallCategoryTreeNodeDto
@@ -30,7 +29,7 @@ public class GetMallCategoryTreeHandler : IRequestHandler<GetMallCategoryTreeQue
     {
         var list = await _db.MallCategories
             .AsNoTracking()
-            .Where(x => x.StoreId == req.StoreId && x.IsActive && !x.IsDeleted)
+            .Where(x => x.IsActive && !x.IsDeleted)
             .OrderBy(x => x.ParentId)
             .ThenBy(x => x.SortOrder)
             .Select(x => new

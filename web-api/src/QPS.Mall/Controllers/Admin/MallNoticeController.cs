@@ -16,9 +16,9 @@ public class MallNoticeController : ControllerBase
     }
 
     [HttpGet("api/admin/mall/notices")]
-    public async Task<ActionResult<List<MallNoticeDto>>> GetList([FromQuery] Guid storeId, bool? isActive)
+    public async Task<ActionResult<List<MallNoticeDto>>> GetList(bool? isActive)
     {
-        return Ok(await _mediator.Send(new GetMallNoticesQuery { StoreId = storeId, IsActive = isActive }));
+        return Ok(await _mediator.Send(new GetMallNoticesQuery { IsActive = isActive }));
     }
 
     [HttpGet("api/admin/mall/notices/{id:guid}")]
@@ -58,8 +58,8 @@ public class MallNoticeController : ControllerBase
     }
 
     [HttpGet("api/mall/notices")]
-    public async Task<ActionResult<List<MallNoticeDto>>> GetActive([FromQuery] Guid storeId)
+    public async Task<ActionResult<List<MallNoticeDto>>> GetActive()
     {
-        return Ok(await _mediator.Send(new GetActiveMallNoticesQuery { StoreId = storeId }));
+        return Ok(await _mediator.Send(new GetActiveMallNoticesQuery()));
     }
 }

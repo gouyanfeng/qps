@@ -9,7 +9,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallArticleController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,9 +21,9 @@ public class MallArticleController : ControllerBase
 
     [HttpGet("articles")]
     public async Task<ActionResult<List<MallArticleListItemDto>>> GetPublished(
-        [FromQuery] Guid storeId, MallArticleType? articleType)
+        MallArticleType? articleType)
     {
-        return Ok(await _mediator.Send(new GetPublishedMallArticlesQuery { StoreId = storeId, ArticleType = articleType }));
+        return Ok(await _mediator.Send(new GetPublishedMallArticlesQuery { ArticleType = articleType }));
     }
 
     [HttpGet("articles/{id:guid}")]

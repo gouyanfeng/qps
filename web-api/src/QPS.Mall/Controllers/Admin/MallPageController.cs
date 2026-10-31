@@ -16,9 +16,9 @@ public class MallPageController : ControllerBase
     }
 
     [HttpGet("api/admin/mall/pages")]
-    public async Task<ActionResult<List<MallPageDto>>> GetList([FromQuery] Guid storeId)
+    public async Task<ActionResult<List<MallPageDto>>> GetList()
     {
-        return Ok(await _mediator.Send(new GetMallPagesQuery { StoreId = storeId }));
+        return Ok(await _mediator.Send(new GetMallPagesQuery()));
     }
 
     [HttpGet("api/admin/mall/pages/{id:guid}")]
@@ -52,8 +52,8 @@ public class MallPageController : ControllerBase
     }
 
     [HttpGet("api/mall/pages/{pageCode}")]
-    public async Task<ActionResult<MallPageDto>> GetByCode([FromQuery] Guid storeId, string pageCode)
+    public async Task<ActionResult<MallPageDto>> GetByCode(string pageCode)
     {
-        return Ok(await _mediator.Send(new GetMallPageByCodeQuery { StoreId = storeId, PageCode = pageCode }));
+        return Ok(await _mediator.Send(new GetMallPageByCodeQuery { PageCode = pageCode }));
     }
 }

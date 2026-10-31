@@ -12,8 +12,6 @@ public enum MallArticleType
 
 public class MallArticle : BaseEntity
 {
-    public Guid StoreId { get; private set; }
-
     public string Title { get; private set; } = string.Empty;
 
     public string Summary { get; private set; } = string.Empty;
@@ -45,7 +43,6 @@ public class MallArticle : BaseEntity
     }
 
     private MallArticle(
-        Guid storeId,
         string title,
         string summary,
         string contentHtml,
@@ -58,7 +55,6 @@ public class MallArticle : BaseEntity
         int sortOrder,
         bool isActive)
     {
-        StoreId = storeId;
         Title = title;
         Summary = summary;
         ContentHtml = contentHtml;
@@ -74,7 +70,6 @@ public class MallArticle : BaseEntity
     }
 
     public static MallArticle Create(
-        Guid storeId,
         string title,
         string summary,
         string contentHtml,
@@ -87,7 +82,7 @@ public class MallArticle : BaseEntity
         int sortOrder,
         bool isActive)
     {
-        return new MallArticle(storeId, title, summary, contentHtml, articleType, author, seoTitle, seoKeywords, seoDescription, isTop, sortOrder, isActive);
+        return new MallArticle(title, summary, contentHtml, articleType, author, seoTitle, seoKeywords, seoDescription, isTop, sortOrder, isActive);
     }
 
     public void Update(

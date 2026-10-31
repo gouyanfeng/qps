@@ -8,7 +8,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallCategoryController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -17,19 +17,17 @@ public class MallCategoryController : ControllerBase
 
     [HttpGet("categories/tree")]
     public async Task<ActionResult<List<MallCategoryTreeNodeDto>>> GetTree(
-        [FromQuery] Guid storeId,
         CancellationToken cancellationToken)
     {
-        return Ok(await _mediator.Send(new GetMallCategoryTreeQuery { StoreId = storeId }, cancellationToken));
+        return Ok(await _mediator.Send(new GetMallCategoryTreeQuery(), cancellationToken));
     }
 
     [HttpGet("categories")]
     public async Task<ActionResult<List<MallCategoryDto>>> GetList(
-        [FromQuery] Guid storeId,
         CancellationToken cancellationToken)
     {
         return Ok(await _mediator.Send(
-            new GetMallCategoriesQuery { StoreId = storeId, IsActive = true },
+            new GetMallCategoriesQuery { IsActive = true },
             cancellationToken));
     }
 }

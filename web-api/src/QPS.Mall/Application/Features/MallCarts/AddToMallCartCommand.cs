@@ -4,6 +4,7 @@ using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
+using System.Text;
 
 namespace QPS.Mall.Application.Features.MallCarts;
 
@@ -29,10 +30,6 @@ public class AddToMallCartHandler : IRequestHandler<AddToMallCartCommand, MallCa
 
         if (req.Quantity <= 0) throw new BusinessException(400, "数量必须大于 0");
 
-        var store = await _dbContext.MallStores
-            .FirstOrDefaultAsync(s => s.Id == req.StoreId && !s.IsDeleted && s.IsActive, cancellationToken);
-        if (store is null) throw new BusinessException(404, "门店不存在或已停用");
-
         var skuRow = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
@@ -47,25 +44,35 @@ public class AddToMallCartHandler : IRequestHandler<AddToMallCartCommand, MallCa
             throw new BusinessException(400, $"库存不足，仅剩 {skuRow.Sku.Stock}");
 
         var cart = await _dbContext.MallCarts
-            .Include(c => c.Items)
             .FirstOrDefaultAsync(
-                c => c.UserId == req.UserId && c.StoreId == req.StoreId && !c.IsDeleted,
+                c => c.UserId == req.UserId && !c.IsDeleted,
                 cancellationToken);
 
         if (cart is null)
         {
-            cart = MallCart.Create(req.UserId, req.StoreId);
+            cart = MallCart.Create(req.UserId);
             _dbContext.MallCarts.Add(cart);
         }
 
-        cart.AddItem(req.SkuId, skuRow.Product.Id, req.Quantity);
+        var existingItem = await _dbContext.MallCartItems
+            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == req.SkuId, cancellationToken);
+        if (existingItem is not null)
+        {
+            existingItem.AddQuantity(req.Quantity);
+        }
+        else
+        {
+            var newItem = MallCartItem.Create(cart.Id, req.SkuId, skuRow.Product.Id, req.Quantity);
+            _dbContext.MallCartItems.Add(newItem);
+        }
+
+        cart.Touch();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await _getCartHandler.Handle(new GetMallCartQuery
         {
-            UserId = req.UserId,
-            StoreId = req.StoreId
+            UserId = req.UserId
         }, cancellationToken);
     }
 }

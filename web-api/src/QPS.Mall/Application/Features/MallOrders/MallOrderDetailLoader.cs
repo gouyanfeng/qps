@@ -15,16 +15,12 @@ internal static class MallOrderDetailLoader
         Guid orderId,
         CancellationToken cancellationToken)
     {
-        var dto = await (
-                from order in dbContext.MallOrders
-                join store in dbContext.MallStores on order.StoreId equals store.Id
-                where order.Id == orderId && !order.IsDeleted
-                select new MallOrderDetailDto
-                {
+        var dto = await dbContext.MallOrders
+            .Where(order => order.Id == orderId && !order.IsDeleted)
+            .Select(order => new MallOrderDetailDto
+            {
                     Id = order.Id,
                     OrderNo = order.OrderNo,
-                    StoreId = order.StoreId,
-                    StoreName = store.Name,
                     Status = order.Status,
                     ReceiverName = order.ReceiverName,
                     ReceiverPhone = order.ReceiverPhone,

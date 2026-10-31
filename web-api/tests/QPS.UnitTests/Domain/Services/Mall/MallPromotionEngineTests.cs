@@ -23,14 +23,15 @@ public class MallPromotionEngineTests
             "DiscountAmount",
             """{"amount":10}""",
             "Category",
-            1,
-            false,
             0,
             0,
             null,
             null,
             true);
-        promotion.AddScope(MallPromotionScope.Create(promotion.Id, "Category", targetCategoryId));
+        var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
+        {
+            [promotion.Id] = [MallPromotionScope.Create(promotion.Id, "Category", targetCategoryId)]
+        };
 
         var engine = new MallPromotionEngine(
             new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
@@ -61,7 +62,7 @@ public class MallPromotionEngineTests
             ]
         };
 
-        var matched = engine.Match([promotion], context);
+        var matched = engine.Match([promotion], scopeMap, context);
         var result = engine.Apply(context.Items, matched);
 
         Assert.Equal(10, result.Items.Single(item => item.SkuId == targetSkuId).CurrentPrice);
@@ -83,14 +84,15 @@ public class MallPromotionEngineTests
             "DiscountAmount",
             """{"amount":10}""",
             "Category",
-            1,
-            false,
             0,
             0,
             null,
             null,
             true);
-        promotion.AddScope(MallPromotionScope.Create(promotion.Id, "Category", targetCategoryId));
+        var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
+        {
+            [promotion.Id] = [MallPromotionScope.Create(promotion.Id, "Category", targetCategoryId)]
+        };
 
         var engine = new MallPromotionEngine(
             new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
@@ -119,7 +121,7 @@ public class MallPromotionEngineTests
             ]
         };
 
-        Assert.Empty(engine.Match([promotion], context));
+        Assert.Empty(engine.Match([promotion], scopeMap, context));
     }
 
     [Fact]
@@ -135,14 +137,15 @@ public class MallPromotionEngineTests
             "DiscountRate",
             """{"rate":0.5}""",
             "Category",
-            1,
-            false,
             0,
             0,
             null,
             null,
             true);
-        promotion.AddScope(MallPromotionScope.Create(promotion.Id, "Category", parentCategoryId));
+        var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
+        {
+            [promotion.Id] = [MallPromotionScope.Create(promotion.Id, "Category", parentCategoryId)]
+        };
 
         var engine = new MallPromotionEngine(
             new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
@@ -164,7 +167,7 @@ public class MallPromotionEngineTests
             ]
         };
 
-        var matched = engine.Match([promotion], context);
+        var matched = engine.Match([promotion], scopeMap, context);
 
         Assert.Single(matched);
         Assert.Single(matched[0].AffectedItems);
@@ -185,14 +188,15 @@ public class MallPromotionEngineTests
             "Gift",
             $$"""{"skuId":"{{giftSkuId}}","quantity":1}""",
             "Product",
-            1,
-            false,
             0,
             0,
             null,
             null,
             true);
-        promotion.AddScope(MallPromotionScope.Create(promotion.Id, "Product", scopeProductId));
+        var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
+        {
+            [promotion.Id] = [MallPromotionScope.Create(promotion.Id, "Product", scopeProductId)]
+        };
 
         var engine = new MallPromotionEngine(
             new TriggerStrategyRegistry(new ITriggerStrategy[] { new BuyProductTrigger() }),
@@ -207,7 +211,7 @@ public class MallPromotionEngineTests
             ]
         };
 
-        var matched = engine.Match([promotion], context);
+        var matched = engine.Match([promotion], scopeMap, context);
         var result = engine.Apply(context.Items, matched);
 
         Assert.Single(matched);
@@ -215,7 +219,7 @@ public class MallPromotionEngineTests
         Assert.Equal(giftSkuId, Assert.Single(result.GiftSkus).SkuId);
 
         context.Items.RemoveAll(item => item.ProductId == scopeProductId);
-        Assert.Empty(engine.Match([promotion], context));
+        Assert.Empty(engine.Match([promotion], scopeMap, context));
     }
 
     [Fact]
@@ -253,14 +257,15 @@ public class MallPromotionEngineTests
             "Gift",
             $$"""{"skuId":"{{giftSkuId}}","quantity":1}""",
             "Product",
-            1,
-            false,
             0,
             0,
             null,
             null,
             true);
-        promotion.AddScope(MallPromotionScope.Create(promotion.Id, "Product", targetProductId));
+        var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
+        {
+            [promotion.Id] = [MallPromotionScope.Create(promotion.Id, "Product", targetProductId)]
+        };
 
         var engine = new MallPromotionEngine(
             new TriggerStrategyRegistry(new ITriggerStrategy[] { new BuyProductTrigger() }),
@@ -274,10 +279,10 @@ public class MallPromotionEngineTests
             ]
         };
 
-        Assert.Empty(engine.Match([promotion], context));
+        Assert.Empty(engine.Match([promotion], scopeMap, context));
 
         context.Items[0].Quantity = 2;
-        var matched = engine.Match([promotion], context);
+        var matched = engine.Match([promotion], scopeMap, context);
         var result = engine.Apply(context.Items, matched);
 
         Assert.Single(matched);

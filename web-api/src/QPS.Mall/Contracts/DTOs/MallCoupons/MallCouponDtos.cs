@@ -3,7 +3,6 @@ namespace QPS.Mall.Contracts.DTOs.MallCoupons;
 public class MallCouponDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string CouponType { get; set; } = string.Empty;
@@ -23,7 +22,6 @@ public class MallCouponDto
 
 public class MallCouponCreateRequest
 {
-    public Guid StoreId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string CouponType { get; set; } = string.Empty;
@@ -55,7 +53,6 @@ public class MallCouponUpdateRequest
 
 public class MallCouponQueryRequest
 {
-    public Guid? StoreId { get; set; }
     public string? CouponType { get; set; }
     public bool? IsActive { get; set; }
     public string? Keyword { get; set; }

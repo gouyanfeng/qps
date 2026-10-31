@@ -24,12 +24,8 @@ public class GetMallFreightTemplateHandler : IRequestHandler<GetMallFreightTempl
         GetMallFreightTemplateQuery request,
         CancellationToken cancellationToken)
     {
-        var template = await (
-                from t in _dbContext.MallFreightTemplates
-                join s in _dbContext.MallStores on t.StoreId equals s.Id
-                where t.Id == request.TemplateId && !t.IsDeleted && !s.IsDeleted
-                select new { Template = t, Store = s })
-            .FirstOrDefaultAsync(cancellationToken);
+        var template = await _dbContext.MallFreightTemplates
+            .FirstOrDefaultAsync(t => t.Id == request.TemplateId && !t.IsDeleted, cancellationToken);
 
         if (template is null)
         {
@@ -44,8 +40,8 @@ public class GetMallFreightTemplateHandler : IRequestHandler<GetMallFreightTempl
             {
                 Id = r.Id,
                 RegionName = r.RegionName,
-                ProvinceCodes = r.ProvinceCodes,
-                CityCodes = r.CityCodes,
+                ProvinceNames = r.ProvinceNames,
+                CityNames = r.CityNames,
                 FirstValue = r.FirstValue,
                 FirstFee = r.FirstFee,
                 StepValue = r.StepValue,
@@ -58,16 +54,14 @@ public class GetMallFreightTemplateHandler : IRequestHandler<GetMallFreightTempl
 
         return new MallFreightTemplateDetailDto
         {
-            Id = template.Template.Id,
-            StoreId = template.Template.StoreId,
-            StoreName = template.Store.Name,
-            Name = template.Template.Name,
-            BillingType = template.Template.BillingType,
-            BillingTypeName = MallFreightTemplateRules.GetBillingTypeName(template.Template.BillingType),
-            IsDefault = template.Template.IsDefault,
-            IsActive = template.Template.IsActive,
-            CreatedAt = template.Template.CreatedAt,
-            UpdatedAt = template.Template.UpdatedAt,
+            Id = template.Id,
+            Name = template.Name,
+            BillingType = template.BillingType,
+            BillingTypeName = MallFreightTemplateRules.GetBillingTypeName(template.BillingType),
+            IsDefault = template.IsDefault,
+            IsActive = template.IsActive,
+            CreatedAt = template.CreatedAt,
+            UpdatedAt = template.UpdatedAt,
             Regions = regions
         };
     }

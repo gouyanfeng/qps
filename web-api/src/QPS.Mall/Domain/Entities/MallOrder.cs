@@ -14,11 +14,6 @@ public class MallOrder : BaseEntity
     public string OrderNo { get; private set; } = string.Empty;
 
     /// <summary>
-    /// 所属门店。
-    /// </summary>
-    public Guid StoreId { get; private set; }
-
-    /// <summary>
     /// 下单会员ID，关联 MallMember。后台代下单可为空。
     /// </summary>
     public Guid? MemberId { get; private set; }
@@ -114,7 +109,6 @@ public class MallOrder : BaseEntity
 
     private MallOrder(
         string orderNo,
-        Guid storeId,
         Guid? memberId,
         string receiverName,
         string receiverPhone,
@@ -126,7 +120,6 @@ public class MallOrder : BaseEntity
         Guid? addressId)
     {
         OrderNo = orderNo;
-        StoreId = storeId;
         MemberId = memberId;
         ReceiverName = receiverName;
         ReceiverPhone = receiverPhone;
@@ -142,7 +135,6 @@ public class MallOrder : BaseEntity
 
     public static MallOrder Create(
         string orderNo,
-        Guid storeId,
         Guid? memberId,
         string receiverName,
         string receiverPhone,
@@ -155,7 +147,6 @@ public class MallOrder : BaseEntity
     {
         return new MallOrder(
             orderNo,
-            storeId,
             memberId,
             receiverName,
             receiverPhone,

@@ -28,14 +28,21 @@ public class MallProductPromotionEnricher
         var now = DateTime.UtcNow;
         var promotions = await _dbContext.MallPromotions
             .AsNoTracking()
-            .Include(promotion => promotion.Scopes.Where(scope => !scope.IsDeleted))
             .Where(promotion =>
                 promotion.IsActive &&
                 !promotion.IsDeleted &&
                 (promotion.StartDate == null || promotion.StartDate <= now) &&
                 (promotion.EndDate == null || promotion.EndDate >= now))
-            .OrderByDescending(promotion => promotion.Priority)
+            .OrderByDescending(promotion => promotion.CreatedAt)
             .ToListAsync(cancellationToken);
+
+        var promotionIds = promotions.Select(p => p.Id).ToList();
+        var promotionScopeMap = promotionIds.Count == 0
+            ? new Dictionary<Guid, List<MallPromotionScope>>()
+            : await _dbContext.MallPromotionScopes
+                .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
+                .GroupBy(s => s.PromotionId)
+                .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
 
         foreach (var product in products)
         {
@@ -44,6 +51,7 @@ public class MallProductPromotionEnricher
                 sku.Promotions = promotions
                     .Where(promotion => AppliesToSku(
                         promotion,
+                        promotionScopeMap.TryGetValue(promotion.Id, out var scopes) ? scopes : new List<MallPromotionScope>(),
                         product.Id,
                         sku.Id,
                         product.CategoryId,
@@ -55,7 +63,6 @@ public class MallProductPromotionEnricher
             product.Promotions = product.Skus
                 .SelectMany(sku => sku.Promotions)
                 .DistinctBy(promotion => promotion.Id)
-                .OrderByDescending(promotion => promotion.Priority)
                 .ToList();
         }
     }
@@ -109,6 +116,7 @@ public class MallProductPromotionEnricher
 
     private static bool AppliesToSku(
         MallPromotion promotion,
+        List<MallPromotionScope> scopes,
         Guid productId,
         Guid skuId,
         Guid? categoryId,
@@ -117,11 +125,11 @@ public class MallProductPromotionEnricher
         var inScope = promotion.ScopeType switch
         {
             "Global" => true,
-            "Product" => promotion.Scopes.Any(scope =>
+            "Product" => scopes.Any(scope =>
                 scope.ScopeTargetType == "Product" && scope.ScopeTargetId == productId),
-            "Sku" => promotion.Scopes.Any(scope =>
+            "Sku" => scopes.Any(scope =>
                 scope.ScopeTargetType == "Sku" && scope.ScopeTargetId == skuId),
-            "Category" => promotion.Scopes.Any(scope =>
+            "Category" => scopes.Any(scope =>
                 scope.ScopeTargetType == "Category" &&
                 (scope.ScopeTargetId == categoryId || categoryAncestors.Contains(scope.ScopeTargetId))),
             _ => false
@@ -159,8 +167,6 @@ public class MallProductPromotionEnricher
             ActionConfigJson = promotion.ActionConfigJson,
             ScopeType = promotion.ScopeType,
             RuleText = BuildRuleText(promotion),
-            Priority = promotion.Priority,
-            Combinable = promotion.Combinable,
             StartDate = promotion.StartDate,
             EndDate = promotion.EndDate
         };
@@ -179,10 +185,6 @@ public class MallProductPromotionEnricher
             "BuyProduct" when trigger.TryGetProperty("minQuantity", out var quantity)
                 => $"买满 {quantity.GetInt32()} 件",
             "BuyProduct" => "购买指定商品",
-            "FirstOrder" => "首单",
-            "OrderCount" when trigger.TryGetProperty("orderCount", out var orderCount)
-                => $"累计下单不超过 {orderCount.GetInt32()} 次",
-            "FlashSale" => "限时",
             _ => string.Empty
         };
 
@@ -196,9 +198,6 @@ public class MallProductPromotionEnricher
                 => $"赠 {giftQuantity.GetInt32()} 件",
             "Gift" => "赠送商品",
             "FreightFree" => "免运费",
-            "SecondHalfPrice" => "第二件半价",
-            "FlashSalePrice" when action.TryGetProperty("price", out var flashPrice)
-                => $"特价 ¥{flashPrice.GetDecimal():0.##}",
             _ => promotion.Description
         };
 

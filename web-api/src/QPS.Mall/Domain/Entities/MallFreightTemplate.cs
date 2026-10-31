@@ -11,8 +11,6 @@ public enum FreightBillingType
 
 public class MallFreightTemplate : BaseEntity
 {
-    public Guid StoreId { get; private set; }
-
     public string Name { get; private set; } = string.Empty;
 
     public FreightBillingType BillingType { get; private set; }
@@ -26,13 +24,11 @@ public class MallFreightTemplate : BaseEntity
     }
 
     private MallFreightTemplate(
-        Guid storeId,
         string name,
         FreightBillingType billingType,
         bool isDefault,
         bool isActive)
     {
-        StoreId = storeId;
         Name = name;
         BillingType = billingType;
         IsDefault = isDefault;
@@ -40,13 +36,12 @@ public class MallFreightTemplate : BaseEntity
     }
 
     public static MallFreightTemplate Create(
-        Guid storeId,
         string name,
         FreightBillingType billingType,
         bool isDefault,
         bool isActive)
     {
-        return new MallFreightTemplate(storeId, name, billingType, isDefault, isActive);
+        return new MallFreightTemplate(name, billingType, isDefault, isActive);
     }
 
     public void Update(string name, FreightBillingType billingType, bool isDefault, bool isActive)

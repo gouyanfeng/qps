@@ -42,15 +42,10 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
     {
         var request = command.Request;
 
-        if (request.StoreId == Guid.Empty)
-        {
-            throw new BusinessException(400, "请选择下单门店");
-        }
-
         var receiverName = NormalizeRequired(request.ReceiverName, ReceiverNameMaxLength, "收货人姓名");
         var receiverPhone = NormalizeRequired(request.ReceiverPhone, ReceiverPhoneMaxLength, "收货人电话");
 
-        if (string.IsNullOrWhiteSpace(request.ProvinceCode) || string.IsNullOrWhiteSpace(request.CityCode))
+        if (string.IsNullOrWhiteSpace(request.ProvinceName) || string.IsNullOrWhiteSpace(request.CityName))
         {
             throw new BusinessException(400, "请选择完整的收货省市区");
         }
@@ -78,19 +73,9 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             throw new BusinessException(400, "同一规格不能重复提交");
         }
 
-        var store = await _dbContext.MallStores
+        var defaultTemplate = await _dbContext.MallFreightTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == request.StoreId && !item.IsDeleted, cancellationToken);
-
-        if (store is null)
-        {
-            throw new BusinessException(404, "门店不存在");
-        }
-
-        if (!store.IsActive)
-        {
-            throw new BusinessException(400, "门店已停用，无法下单");
-        }
+            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive && !t.IsDeleted, cancellationToken);
 
         var skuIds = request.Items.Select(item => item.SkuId).ToList();
 
@@ -140,9 +125,16 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var activePromotions = await _dbContext.MallPromotions
             .AsNoTracking()
-            .Include(p => p.Scopes)
             .Where(p => !p.IsDeleted && p.IsActive)
             .ToListAsync(cancellationToken);
+
+        var promotionIds = activePromotions.Select(p => p.Id).ToList();
+        var promotionScopeMap = promotionIds.Count == 0
+            ? new Dictionary<Guid, List<MallPromotionScope>>()
+            : await _dbContext.MallPromotionScopes
+                .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
+                .GroupBy(s => s.PromotionId)
+                .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
 
         var productCategoryIds = skuMap.Values
             .Where(row => row.Product.CategoryId.HasValue)
@@ -191,23 +183,23 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         if (orderCtx.UserId.HasValue && activePromotions.Count > 0)
         {
-            var promotionIds = activePromotions.Select(p => p.Id).ToList();
+            var usagePromotionIds = activePromotions.Select(p => p.Id).ToList();
             var usages = await _dbContext.MallPromotionUsages
                 .AsNoTracking()
-                .Where(u => promotionIds.Contains(u.PromotionId) && u.UserId == orderCtx.UserId.Value && !u.IsDeleted)
+                .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == orderCtx.UserId.Value && !u.IsDeleted)
                 .ToListAsync(cancellationToken);
             orderCtx.PromotionUsageMap = usages.ToDictionary(u => u.PromotionId, u => u.UsageCount);
         }
 
-        var matchedPromotions = _promotionEngine.Match(activePromotions, orderCtx);
+        var matchedPromotions = _promotionEngine.Match(activePromotions, promotionScopeMap, orderCtx);
         var applyResult = _promotionEngine.Apply(orderCtx.Items, matchedPromotions);
 
         var goodsAmount = applyResult.Items.Sum(i => i.CurrentPrice * i.Quantity);
 
         var templateIds = new HashSet<Guid>();
-        if (store.DefaultFreightTemplateId.HasValue)
+        if (defaultTemplate is not null)
         {
-            templateIds.Add(store.DefaultFreightTemplateId.Value);
+            templateIds.Add(defaultTemplate.Id);
         }
         foreach (var row in skuMap.Values)
         {
@@ -215,9 +207,9 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             {
                 templateIds.Add(row.Product.FreightTemplateId.Value);
             }
-            else if (store.DefaultFreightTemplateId.HasValue)
+            else if (defaultTemplate is not null)
             {
-                templateIds.Add(store.DefaultFreightTemplateId.Value);
+                templateIds.Add(defaultTemplate.Id);
             }
         }
 
@@ -259,17 +251,17 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         }
 
         decimal freightAmount;
-        if (store.DefaultFreightTemplateId.HasValue || skuMap.Values.Any(r => r.Product.FreightTemplateId.HasValue))
+        if (defaultTemplate is not null || skuMap.Values.Any(r => r.Product.FreightTemplateId.HasValue))
         {
             var addressInfo = new FreightAddressInfo
             {
-                ProvinceCode = request.ProvinceCode,
-                CityCode = request.CityCode
+                ProvinceName = request.ProvinceName,
+                CityName = request.CityName
             };
 
             var calcResult = MallFreightCalculator.Calculate(
                 freightItems,
-                store.DefaultFreightTemplateId ?? Guid.Empty,
+                defaultTemplate?.Id ?? Guid.Empty,
                 templateMap,
                 regionMap,
                 addressInfo);
@@ -278,7 +270,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         }
         else
         {
-            throw new BusinessException(400, "门店未配置运费模板，无法下单");
+            throw new BusinessException(400, "未配置默认运费模板，无法下单");
         }
 
         if (applyResult.IsFreightFree)
@@ -302,7 +294,6 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var order = MallOrder.Create(
             orderNo,
-            store.Id,
             request.MemberId,
             receiverName,
             receiverPhone,

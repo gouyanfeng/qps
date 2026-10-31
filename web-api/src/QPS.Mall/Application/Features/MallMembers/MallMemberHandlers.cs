@@ -87,7 +87,6 @@ public class MallMemberHandlers :
         var r = req.Request;
         var q = _db.MallMembers.AsNoTracking();
 
-        if (r.StoreId.HasValue) q = q.Where(x => x.StoreId == r.StoreId);
         if (r.LevelId.HasValue) q = q.Where(x => x.LevelId == r.LevelId);
         if (r.IsActive.HasValue) q = q.Where(x => x.IsActive == r.IsActive);
         if (!string.IsNullOrWhiteSpace(r.Keyword))
@@ -132,7 +131,7 @@ public class MallMemberHandlers :
         var exists = await _db.MallMembers.AnyAsync(x => x.Phone == r.Phone, ct);
         if (exists) throw new BusinessException(400, "该手机号已注册");
 
-        var member = MallMember.Register(r.Phone, r.Password, r.StoreId,
+        var member = MallMember.Register(r.Phone, r.Password,
             string.IsNullOrWhiteSpace(r.Nickname) ? null : r.Nickname);
         _db.MallMembers.Add(member);
         await _db.SaveChangesAsync(ct);
@@ -201,7 +200,7 @@ public class MallMemberHandlers :
         var exists = await _db.MallMembers.AnyAsync(x => x.Phone == r.Phone, ct);
         if (exists) throw new BusinessException(400, "该手机号已注册");
 
-        var member = MallMember.Register(r.Phone, r.Password, r.StoreId, r.Nickname);
+        var member = MallMember.Register(r.Phone, r.Password, r.Nickname);
         _db.MallMembers.Add(member);
         await _db.SaveChangesAsync(ct);
 
@@ -252,7 +251,7 @@ public class MallMemberHandlers :
 
     private static MallMemberDto ToDto(MallMember m) => new()
     {
-        Id = m.Id, Phone = m.Phone, StoreId = m.StoreId,
+        Id = m.Id, Phone = m.Phone,
         LevelId = m.LevelId, Nickname = m.Nickname, Avatar = m.Avatar,
         Birthday = m.Birthday, Gender = m.Gender,
         TotalPoints = m.TotalPoints, AvailablePoints = m.AvailablePoints,

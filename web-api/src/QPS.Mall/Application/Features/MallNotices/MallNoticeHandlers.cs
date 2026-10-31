@@ -9,7 +9,6 @@ namespace QPS.Mall.Application.Features.MallNotices;
 
 public class GetMallNoticesQuery : IRequest<List<MallNoticeDto>>
 {
-    public Guid StoreId { get; set; }
     public bool? IsActive { get; set; }
 }
 
@@ -20,7 +19,6 @@ public class GetMallNoticeQuery : IRequest<MallNoticeDto>
 
 public class GetActiveMallNoticesQuery : IRequest<List<MallNoticeDto>>
 {
-    public Guid StoreId { get; set; }
 }
 
 public class CreateMallNoticeCommand : IRequest<MallNoticeDto>
@@ -70,13 +68,13 @@ public class MallNoticeHandlers :
 
     public async Task<List<MallNoticeDto>> Handle(GetMallNoticesQuery query, CancellationToken ct)
     {
-        var q = _dbContext.MallNotices.AsNoTracking().Where(n => n.StoreId == query.StoreId && !n.IsDeleted);
+        var q = _dbContext.MallNotices.AsNoTracking().Where(n => !n.IsDeleted);
         if (query.IsActive.HasValue) q = q.Where(n => n.IsActive == query.IsActive.Value);
 
         return await q.OrderByDescending(n => n.IsTop).ThenBy(n => n.SortOrder).ThenByDescending(n => n.CreatedAt)
             .Select(n => new MallNoticeDto
             {
-                Id = n.Id, StoreId = n.StoreId, Title = n.Title, Content = n.Content,
+                Id = n.Id, Title = n.Title, Content = n.Content,
                 NoticeType = n.NoticeType, IsTop = n.IsTop, SortOrder = n.SortOrder,
                 StartDate = n.StartDate, EndDate = n.EndDate, IsActive = n.IsActive, CreatedAt = n.CreatedAt
             }).ToListAsync(ct);
@@ -89,7 +87,7 @@ public class MallNoticeHandlers :
 
         return new MallNoticeDto
         {
-            Id = n.Id, StoreId = n.StoreId, Title = n.Title, Content = n.Content,
+            Id = n.Id, Title = n.Title, Content = n.Content,
             NoticeType = n.NoticeType, IsTop = n.IsTop, SortOrder = n.SortOrder,
             StartDate = n.StartDate, EndDate = n.EndDate, IsActive = n.IsActive, CreatedAt = n.CreatedAt
         };
@@ -99,13 +97,13 @@ public class MallNoticeHandlers :
     {
         var now = DateTime.UtcNow;
         return await _dbContext.MallNotices.AsNoTracking()
-            .Where(n => n.StoreId == query.StoreId && !n.IsDeleted && n.IsActive
+            .Where(n => !n.IsDeleted && n.IsActive
                 && (n.StartDate == null || n.StartDate <= now)
                 && (n.EndDate == null || n.EndDate >= now))
             .OrderByDescending(n => n.IsTop).ThenBy(n => n.SortOrder)
             .Select(n => new MallNoticeDto
             {
-                Id = n.Id, StoreId = n.StoreId, Title = n.Title, Content = n.Content,
+                Id = n.Id, Title = n.Title, Content = n.Content,
                 NoticeType = n.NoticeType, IsTop = n.IsTop, SortOrder = n.SortOrder,
                 StartDate = n.StartDate, EndDate = n.EndDate, IsActive = n.IsActive, CreatedAt = n.CreatedAt
             }).ToListAsync(ct);
@@ -114,14 +112,14 @@ public class MallNoticeHandlers :
     public async Task<MallNoticeDto> Handle(CreateMallNoticeCommand command, CancellationToken ct)
     {
         var r = command.Request;
-        var notice = MallNotice.Create(r.StoreId, r.Title, r.Content, r.NoticeType,
+        var notice = MallNotice.Create(r.Title, r.Content, r.NoticeType,
             r.IsTop, r.SortOrder, r.StartDate, r.EndDate, r.IsActive);
         _dbContext.MallNotices.Add(notice);
         await _dbContext.SaveChangesAsync(ct);
 
         return new MallNoticeDto
         {
-            Id = notice.Id, StoreId = notice.StoreId, Title = notice.Title, Content = notice.Content,
+            Id = notice.Id, Title = notice.Title, Content = notice.Content,
             NoticeType = notice.NoticeType, IsTop = notice.IsTop, SortOrder = notice.SortOrder,
             StartDate = notice.StartDate, EndDate = notice.EndDate, IsActive = notice.IsActive, CreatedAt = notice.CreatedAt
         };
@@ -138,7 +136,7 @@ public class MallNoticeHandlers :
 
         return new MallNoticeDto
         {
-            Id = notice.Id, StoreId = notice.StoreId, Title = notice.Title, Content = notice.Content,
+            Id = notice.Id, Title = notice.Title, Content = notice.Content,
             NoticeType = notice.NoticeType, IsTop = notice.IsTop, SortOrder = notice.SortOrder,
             StartDate = notice.StartDate, EndDate = notice.EndDate, IsActive = notice.IsActive, CreatedAt = notice.CreatedAt
         };

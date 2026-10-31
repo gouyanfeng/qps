@@ -188,7 +188,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, clearCart, getAddresses, getStoreId, createOrder } from '@/api'
+import { getCartItems, clearCart, getAddresses, createOrder } from '@/api'
 import type { MallAddress } from '@/api'
 import type { CartItem } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
@@ -208,7 +208,23 @@ const finalPrice = computed(() => {
 
 onShow(async () => {
   try {
-    items.value = (await getCartItems()).filter(item => item.selected)
+    const buyNow = uni.getStorageSync('qps_buy_now_item')
+    if (buyNow && typeof buyNow === 'object' && buyNow.skuId) {
+      items.value = [{
+        skuId: buyNow.skuId,
+        productId: buyNow.productId,
+        productName: buyNow.productName,
+        productImage: buyNow.productImage,
+        specName: buyNow.specName,
+        price: buyNow.price,
+        quantity: buyNow.quantity,
+        weightGram: buyNow.weightGram ?? 0,
+        selected: true
+      }]
+      uni.removeStorageSync('qps_buy_now_item')
+    } else {
+      items.value = (await getCartItems()).filter(item => item.selected)
+    }
     const addresses = await getAddresses()
     const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
     address.value = addresses.find(item => item.id === selectedAddressId)
@@ -248,14 +264,10 @@ function submitOrder() {
       if (!r.confirm || !address.value) return
       try {
         const order = await createOrder({
-          storeId: await getStoreId(),
           receiverName: address.value.receiverName,
           receiverPhone: address.value.receiverPhone,
-          provinceCode: address.value.provinceCode,
           provinceName: address.value.provinceName,
-          cityCode: address.value.cityCode,
           cityName: address.value.cityName,
-          districtCode: address.value.districtCode,
           districtName: address.value.districtName,
           receiverAddress: address.value.detailAddress,
           remark: remark.value,

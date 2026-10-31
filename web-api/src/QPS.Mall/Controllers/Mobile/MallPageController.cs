@@ -8,7 +8,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallPageController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,8 +19,8 @@ public class MallPageController : ControllerBase
     }
 
     [HttpGet("pages/{pageCode}")]
-    public async Task<ActionResult<MallPageDto>> GetByCode([FromQuery] Guid storeId, string pageCode)
+    public async Task<ActionResult<MallPageDto>> GetByCode(string pageCode)
     {
-        return Ok(await _mediator.Send(new GetMallPageByCodeQuery { StoreId = storeId, PageCode = pageCode }));
+        return Ok(await _mediator.Send(new GetMallPageByCodeQuery { PageCode = pageCode }));
     }
 }

@@ -53,8 +53,8 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
             {
                 existing.Update(
                     regionReq.RegionName,
-                    regionReq.ProvinceCodes,
-                    regionReq.CityCodes,
+                    regionReq.ProvinceNames,
+                    regionReq.CityNames,
                     regionReq.FirstValue,
                     regionReq.FirstFee,
                     regionReq.StepValue,
@@ -70,8 +70,8 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
                 _dbContext.MallFreightRegions.Add(MallFreightRegion.Create(
                     template.Id,
                     regionReq.RegionName,
-                    regionReq.ProvinceCodes,
-                    regionReq.CityCodes,
+                    regionReq.ProvinceNames,
+                    regionReq.CityNames,
                     regionReq.FirstValue,
                     regionReq.FirstFee,
                     regionReq.StepValue,
@@ -90,7 +90,7 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
         if (request.IsDefault)
         {
             var existingDefaults = await _dbContext.MallFreightTemplates
-                .Where(t => t.StoreId == template.StoreId && t.IsDefault && !t.IsDeleted)
+                .Where(t => t.IsDefault && !t.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             foreach (var existing in existingDefaults)
@@ -99,13 +99,6 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
                 {
                     existing.Update(existing.Name, existing.BillingType, false, existing.IsActive);
                 }
-            }
-
-            var store = await _dbContext.MallStores
-                .FirstOrDefaultAsync(s => s.Id == template.StoreId && !s.IsDeleted, cancellationToken);
-            if (store is not null)
-            {
-                store.Update(store.Code, store.Name, store.Address, template.Id);
             }
         }
 

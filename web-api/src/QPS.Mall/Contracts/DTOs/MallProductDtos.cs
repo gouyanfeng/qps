@@ -7,6 +7,10 @@ public class MallProductDto
 {
     public Guid Id { get; set; }
 
+    public Guid StoreId { get; set; }
+
+    public string StoreName { get; set; } = string.Empty;
+
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
@@ -109,10 +113,6 @@ public class MallProductPromotionDto
 
     public string RuleText { get; set; } = string.Empty;
 
-    public int Priority { get; set; }
-
-    public bool Combinable { get; set; }
-
     public DateTime? StartDate { get; set; }
 
     public DateTime? EndDate { get; set; }
@@ -123,6 +123,8 @@ public class MallProductPromotionDto
 /// </summary>
 public class MallProductCreateRequest
 {
+    public Guid StoreId { get; set; }
+
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
@@ -150,6 +152,8 @@ public class MallProductCreateRequest
 
 public class MallProductUpdateRequest
 {
+    public Guid StoreId { get; set; }
+
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;

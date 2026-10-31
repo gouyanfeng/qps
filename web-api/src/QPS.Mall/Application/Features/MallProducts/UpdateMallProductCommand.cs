@@ -2,13 +2,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallProducts;
 
-/// <summary>
-/// 编辑商场商品。
-/// </summary>
 public class UpdateMallProductCommand : IRequest<bool>
 {
     public Guid Id { get; set; }
@@ -28,7 +26,6 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
     public async Task<bool> Handle(UpdateMallProductCommand request, CancellationToken cancellationToken)
     {
         var product = await _dbContext.MallProducts
-            .Include(item => item.Tags)
             .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
 
         if (product is null)
@@ -45,6 +42,7 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
         MallProductRules.ValidateSortOrder(request.Request.SortOrder);
 
         await MallProductRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, request.Id, cancellationToken);
+        await MallProductRules.EnsureStoreValidAsync(_dbContext, request.Request.StoreId, cancellationToken);
         await MallProductRules.EnsureCategoryValidAsync(_dbContext, request.Request.CategoryId, cancellationToken);
         var tags = await MallProductRules.GetActiveTagsAsync(
             _dbContext,
@@ -52,6 +50,7 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
             cancellationToken);
 
         product.Update(
+            request.Request.StoreId,
             code,
             name,
             description,
@@ -62,10 +61,18 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
             request.Request.SortOrder,
             request.Request.IsHot,
             request.Request.FreightTemplateId);
-        product.Tags.Clear();
+
+        var existingLinks = await _dbContext.MallProductTags
+            .Where(link => link.ProductId == product.Id && !link.IsDeleted)
+            .ToListAsync(cancellationToken);
+        foreach (var link in existingLinks)
+        {
+            link.IsDeleted = true;
+        }
+
         foreach (var tag in tags)
         {
-            product.Tags.Add(tag);
+            _dbContext.MallProductTags.Add(MallProductTag.Create(product.Id, tag.Id));
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

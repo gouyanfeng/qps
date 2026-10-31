@@ -34,7 +34,6 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             cancellationToken);
 
         var promotion = await _dbContext.MallPromotions
-            .Include(p => p.Scopes)
             .FirstOrDefaultAsync(p => p.Id == command.PromotionId && !p.IsDeleted, cancellationToken);
 
         if (promotion is null)
@@ -50,8 +49,6 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             req.ActionType,
             req.ActionConfigJson,
             req.ScopeType,
-            req.Priority,
-            req.Combinable,
             req.MaxUsagePerUser,
             req.MaxUsagePerOrder,
             req.StartDate,

@@ -39,8 +39,6 @@ public class CreateMallPromotionHandler : IRequestHandler<CreateMallPromotionCom
             req.ActionType,
             req.ActionConfigJson,
             req.ScopeType,
-            req.Priority,
-            req.Combinable,
             req.MaxUsagePerUser,
             req.MaxUsagePerOrder,
             req.StartDate,
@@ -51,7 +49,7 @@ public class CreateMallPromotionHandler : IRequestHandler<CreateMallPromotionCom
 
         foreach (var scopeReq in req.Scopes.Where(_ => req.ScopeType != "Global"))
         {
-            promotion.AddScope(MallPromotionScope.Create(
+            _dbContext.MallPromotionScopes.Add(MallPromotionScope.Create(
                 promotion.Id, scopeReq.ScopeTargetType, scopeReq.ScopeTargetId));
         }
 

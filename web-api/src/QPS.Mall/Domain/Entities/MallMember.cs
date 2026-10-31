@@ -7,7 +7,6 @@ public class MallMember : BaseEntity
 {
     public string Phone { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
-    public Guid? StoreId { get; private set; }
     public Guid? LevelId { get; private set; }
     public string Nickname { get; private set; } = string.Empty;
     public string Avatar { get; private set; } = string.Empty;
@@ -26,11 +25,10 @@ public class MallMember : BaseEntity
     {
     }
 
-    private MallMember(string phone, string passwordHash, Guid? storeId, string nickname)
+    private MallMember(string phone, string passwordHash, string nickname)
     {
         Phone = phone;
         PasswordHash = passwordHash;
-        StoreId = storeId;
         Nickname = nickname;
         TotalPoints = 0;
         AvailablePoints = 0;
@@ -40,10 +38,10 @@ public class MallMember : BaseEntity
         JoinAt = DateTime.Now;
     }
 
-    public static MallMember Register(string phone, string passwordHash, Guid? storeId, string? nickname = null)
+    public static MallMember Register(string phone, string passwordHash, string? nickname = null)
     {
         var name = nickname ?? $"用户{phone.Substring(phone.Length - 4)}";
-        return new MallMember(phone, passwordHash, storeId, name);
+        return new MallMember(phone, passwordHash, name);
     }
 
     public bool VerifyPassword(string passwordHash)

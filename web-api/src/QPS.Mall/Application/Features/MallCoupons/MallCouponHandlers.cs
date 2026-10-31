@@ -69,7 +69,6 @@ public class MallCouponHandlers :
     {
         var r = req.Request;
         var q = _db.MallCoupons.AsNoTracking();
-        if (r.StoreId.HasValue) q = q.Where(x => x.StoreId == r.StoreId);
         if (!string.IsNullOrWhiteSpace(r.CouponType)) q = q.Where(x => x.CouponType == r.CouponType);
         if (r.IsActive.HasValue) q = q.Where(x => x.IsActive == r.IsActive);
         if (!string.IsNullOrWhiteSpace(r.Keyword))
@@ -95,10 +94,10 @@ public class MallCouponHandlers :
     {
         var r = req.Request;
         var exists = await _db.MallCoupons
-            .AnyAsync(x => x.StoreId == r.StoreId && x.Code == r.Code, ct);
-        if (exists) throw new BusinessException(400, "该门店已存在同编码的券");
+            .AnyAsync(x => x.Code == r.Code, ct);
+        if (exists) throw new BusinessException(400, "已存在同编码的券");
 
-        var coupon = MallCoupon.Create(r.StoreId, r.Code, r.Name, r.CouponType,
+        var coupon = MallCoupon.Create(r.Code, r.Name, r.CouponType,
             r.ThresholdAmount, r.DiscountAmount, r.MaxDiscount,
             r.TotalCount, r.PerLimit, r.ValidDays,
             r.StartAt, r.EndAt, r.ScopeType, r.ScopeValue);
@@ -180,7 +179,7 @@ public class MallCouponHandlers :
 
     private static MallCouponDto ToDto(MallCoupon c) => new()
     {
-        Id = c.Id, StoreId = c.StoreId, Code = c.Code, Name = c.Name,
+        Id = c.Id, Code = c.Code, Name = c.Name,
         CouponType = c.CouponType, ThresholdAmount = c.ThresholdAmount,
         DiscountAmount = c.DiscountAmount, MaxDiscount = c.MaxDiscount,
         TotalCount = c.TotalCount, RemainCount = c.RemainCount,

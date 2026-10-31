@@ -12,15 +12,9 @@ public class MallAddressDto
 
     public string ReceiverPhone { get; set; } = string.Empty;
 
-    public string ProvinceCode { get; set; } = string.Empty;
-
     public string ProvinceName { get; set; } = string.Empty;
 
-    public string CityCode { get; set; } = string.Empty;
-
     public string CityName { get; set; } = string.Empty;
-
-    public string DistrictCode { get; set; } = string.Empty;
 
     public string DistrictName { get; set; } = string.Empty;
 
@@ -43,15 +37,9 @@ public class MallAddressCreateRequest
 
     public string ReceiverPhone { get; set; } = string.Empty;
 
-    public string ProvinceCode { get; set; } = string.Empty;
-
     public string ProvinceName { get; set; } = string.Empty;
 
-    public string CityCode { get; set; } = string.Empty;
-
     public string CityName { get; set; } = string.Empty;
-
-    public string DistrictCode { get; set; } = string.Empty;
 
     public string DistrictName { get; set; } = string.Empty;
 
@@ -66,15 +54,9 @@ public class MallAddressUpdateRequest
 
     public string ReceiverPhone { get; set; } = string.Empty;
 
-    public string ProvinceCode { get; set; } = string.Empty;
-
     public string ProvinceName { get; set; } = string.Empty;
 
-    public string CityCode { get; set; } = string.Empty;
-
     public string CityName { get; set; } = string.Empty;
-
-    public string DistrictCode { get; set; } = string.Empty;
 
     public string DistrictName { get; set; } = string.Empty;
 
@@ -85,13 +67,11 @@ public class MallAddressUpdateRequest
 
 public class MallFreightPreviewRequest
 {
-    public Guid StoreId { get; set; }
-
     public List<MallFreightPreviewItemRequest> Items { get; set; } = new();
 
-    public string ProvinceCode { get; set; } = string.Empty;
+    public string ProvinceName { get; set; } = string.Empty;
 
-    public string CityCode { get; set; } = string.Empty;
+    public string CityName { get; set; } = string.Empty;
 }
 
 public class MallFreightPreviewItemRequest
@@ -141,10 +121,6 @@ public class MallPromotionDto
 
     public string ScopeType { get; set; } = string.Empty;
 
-    public int Priority { get; set; }
-
-    public bool Combinable { get; set; }
-
     public int MaxUsagePerUser { get; set; }
 
     public int MaxUsagePerOrder { get; set; }
@@ -189,10 +165,6 @@ public class MallPromotionCreateRequest
 
     public string ScopeType { get; set; } = "Global";
 
-    public int Priority { get; set; }
-
-    public bool Combinable { get; set; }
-
     public int MaxUsagePerUser { get; set; }
 
     public int MaxUsagePerOrder { get; set; }
@@ -221,10 +193,6 @@ public class MallPromotionUpdateRequest
     public string ActionConfigJson { get; set; } = "{}";
 
     public string ScopeType { get; set; } = "Global";
-
-    public int Priority { get; set; }
-
-    public bool Combinable { get; set; }
 
     public int MaxUsagePerUser { get; set; }
 

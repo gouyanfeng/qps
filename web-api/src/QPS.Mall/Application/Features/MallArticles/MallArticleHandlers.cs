@@ -9,7 +9,6 @@ namespace QPS.Mall.Application.Features.MallArticles;
 
 public class GetMallArticlesQuery : IRequest<List<MallArticleListItemDto>>
 {
-    public Guid StoreId { get; set; }
     public MallArticleType? ArticleType { get; set; }
     public string? Keyword { get; set; }
     public bool? IsActive { get; set; }
@@ -22,7 +21,6 @@ public class GetMallArticleQuery : IRequest<MallArticleDto>
 
 public class GetPublishedMallArticlesQuery : IRequest<List<MallArticleListItemDto>>
 {
-    public Guid StoreId { get; set; }
     public MallArticleType? ArticleType { get; set; }
 }
 
@@ -84,7 +82,7 @@ public class MallArticleHandlers :
 
     public async Task<List<MallArticleListItemDto>> Handle(GetMallArticlesQuery query, CancellationToken ct)
     {
-        var q = _dbContext.MallArticles.AsNoTracking().Where(a => a.StoreId == query.StoreId && !a.IsDeleted);
+        var q = _dbContext.MallArticles.AsNoTracking().Where(a => !a.IsDeleted);
         if (query.ArticleType.HasValue) q = q.Where(a => a.ArticleType == query.ArticleType.Value);
         if (!string.IsNullOrEmpty(query.Keyword)) q = q.Where(a => a.Title.Contains(query.Keyword!) || a.Summary.Contains(query.Keyword!));
         if (query.IsActive.HasValue) q = q.Where(a => a.IsActive == query.IsActive.Value);
@@ -109,7 +107,7 @@ public class MallArticleHandlers :
     public async Task<List<MallArticleListItemDto>> Handle(GetPublishedMallArticlesQuery query, CancellationToken ct)
     {
         var q = _dbContext.MallArticles.AsNoTracking()
-            .Where(a => a.StoreId == query.StoreId && !a.IsDeleted && a.IsActive && a.PublishedAt != null);
+            .Where(a => !a.IsDeleted && a.IsActive && a.PublishedAt != null);
         if (query.ArticleType.HasValue) q = q.Where(a => a.ArticleType == query.ArticleType.Value);
 
         return await q.OrderByDescending(a => a.IsTop).ThenBy(a => a.SortOrder).ThenByDescending(a => a.PublishedAt)
@@ -135,7 +133,7 @@ public class MallArticleHandlers :
     public async Task<MallArticleDto> Handle(CreateMallArticleCommand command, CancellationToken ct)
     {
         var r = command.Request;
-        var article = MallArticle.Create(r.StoreId, r.Title, r.Summary, r.ContentHtml, r.ArticleType,
+        var article = MallArticle.Create(r.Title, r.Summary, r.ContentHtml, r.ArticleType,
             r.Author, r.SeoTitle, r.SeoKeywords, r.SeoDescription, r.IsTop, r.SortOrder, r.IsActive);
         _dbContext.MallArticles.Add(article);
         await _dbContext.SaveChangesAsync(ct);
@@ -198,7 +196,7 @@ public class MallArticleHandlers :
 
     private static MallArticleDto Map(MallArticle a) => new()
     {
-        Id = a.Id, StoreId = a.StoreId, Title = a.Title, Summary = a.Summary,
+        Id = a.Id, Title = a.Title, Summary = a.Summary,
         ContentHtml = a.ContentHtml, ArticleType = a.ArticleType, Author = a.Author,
         ViewCount = a.ViewCount, SeoTitle = a.SeoTitle, SeoKeywords = a.SeoKeywords,
         SeoDescription = a.SeoDescription, IsTop = a.IsTop, SortOrder = a.SortOrder,

@@ -9,7 +9,6 @@ namespace QPS.Mall.Application.Features.MallPages;
 
 public class GetMallPagesQuery : IRequest<List<MallPageDto>>
 {
-    public Guid StoreId { get; set; }
 }
 
 public class GetMallPageQuery : IRequest<MallPageDto>
@@ -19,7 +18,6 @@ public class GetMallPageQuery : IRequest<MallPageDto>
 
 public class GetMallPageByCodeQuery : IRequest<MallPageDto>
 {
-    public Guid StoreId { get; set; }
     public string PageCode { get; set; } = string.Empty;
 }
 
@@ -64,7 +62,7 @@ public class MallPageHandlers :
     public async Task<List<MallPageDto>> Handle(GetMallPagesQuery query, CancellationToken ct)
     {
         return await _dbContext.MallPages.AsNoTracking()
-            .Where(p => p.StoreId == query.StoreId && !p.IsDeleted)
+            .Where(p => !p.IsDeleted)
             .OrderBy(p => p.PageCode)
             .Select(p => Map(p)).ToListAsync(ct);
     }
@@ -80,7 +78,7 @@ public class MallPageHandlers :
     public async Task<MallPageDto> Handle(GetMallPageByCodeQuery query, CancellationToken ct)
     {
         var p = await _dbContext.MallPages.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.StoreId == query.StoreId && x.PageCode == query.PageCode && !x.IsDeleted && x.IsActive, ct);
+            .FirstOrDefaultAsync(x => x.PageCode == query.PageCode && !x.IsDeleted && x.IsActive, ct);
         if (p is null) throw new BusinessException(404, "页面不存在");
 
         return Map(p);
@@ -89,7 +87,7 @@ public class MallPageHandlers :
     public async Task<MallPageDto> Handle(CreateMallPageCommand command, CancellationToken ct)
     {
         var r = command.Request;
-        var page = MallPage.Create(r.StoreId, r.PageCode, r.PageName, r.Title, r.ContentHtml,
+        var page = MallPage.Create(r.PageCode, r.PageName, r.Title, r.ContentHtml,
             r.SeoTitle, r.SeoKeywords, r.SeoDescription, r.IsActive);
         _dbContext.MallPages.Add(page);
         await _dbContext.SaveChangesAsync(ct);
@@ -131,7 +129,7 @@ public class MallPageHandlers :
 
     private static MallPageDto Map(MallPage p) => new()
     {
-        Id = p.Id, StoreId = p.StoreId, PageCode = p.PageCode, PageName = p.PageName,
+        Id = p.Id, PageCode = p.PageCode, PageName = p.PageName,
         Title = p.Title, ContentHtml = p.ContentHtml, SeoTitle = p.SeoTitle,
         SeoKeywords = p.SeoKeywords, SeoDescription = p.SeoDescription,
         IsActive = p.IsActive, CreatedAt = p.CreatedAt

@@ -4,8 +4,6 @@ namespace QPS.Mall.Domain.Entities;
 
 public class MallCategory : BaseEntity
 {
-    public Guid StoreId { get; private set; }
-
     public string Code { get; private set; } = string.Empty;
 
     public string Name { get; private set; } = string.Empty;
@@ -23,7 +21,6 @@ public class MallCategory : BaseEntity
     }
 
     private MallCategory(
-        Guid storeId,
         string code,
         string name,
         Guid? parentId,
@@ -31,7 +28,6 @@ public class MallCategory : BaseEntity
         int sortOrder,
         bool isActive)
     {
-        StoreId = storeId;
         Code = code;
         Name = name;
         ParentId = parentId;
@@ -41,7 +37,6 @@ public class MallCategory : BaseEntity
     }
 
     public static MallCategory Create(
-        Guid storeId,
         string code,
         string name,
         Guid? parentId,
@@ -49,7 +44,7 @@ public class MallCategory : BaseEntity
         int sortOrder,
         bool isActive)
     {
-        return new MallCategory(storeId, code, name, parentId, icon, sortOrder, isActive);
+        return new MallCategory(code, name, parentId, icon, sortOrder, isActive);
     }
 
     public void Update(string code, string name, Guid? parentId, string? icon, int sortOrder)

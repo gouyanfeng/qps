@@ -2,7 +2,7 @@
   <view class="page">
     <q-page-header-back title="我的订单" subtitle="MY ORDERS" />
     <scroll-view scroll-y class="page-body">
-      <view v-for="order in orders" :key="order.orderNo" class="order-card">
+      <view v-for="order in orders" :key="order.orderNo" class="order-card" @tap="goDetail(order.orderNo)">
         <view class="order-heading">
           <text class="order-no">订单号 {{ order.orderNo }}</text>
           <text class="order-status">{{ orderStatusText(order.status) }}</text>
@@ -64,6 +64,10 @@ function orderStatusText(value: string) {
     Refunded: '已退款'
   }
   return labels[value] || value
+}
+
+function goDetail(orderNo: string) {
+  uni.navigateTo({ url: `/pages/order-detail/index?orderNo=${orderNo}` })
 }
 </script>
 

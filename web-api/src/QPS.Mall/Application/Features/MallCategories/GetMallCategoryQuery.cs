@@ -31,7 +31,6 @@ public class GetMallCategoryHandler : IRequestHandler<GetMallCategoryQuery, Mall
             .Select(category => new MallCategoryDto
             {
                 Id = category.Id,
-                StoreId = category.StoreId,
                 Code = category.Code,
                 Name = category.Name,
                 ParentId = category.ParentId,

@@ -5,6 +5,9 @@ namespace QPS.Mall.Domain.Services;
 
 public class MallPromotionEngine
 {
+    private static readonly HashSet<string> DiscountActions = new() { "DiscountRate" };
+    private static readonly HashSet<string> StackableActions = new() { "DiscountAmount", "FreightFree", "Gift" };
+
     private readonly ITriggerStrategyRegistry _triggers;
     private readonly IActionStrategyRegistry _actions;
 
@@ -18,10 +21,11 @@ public class MallPromotionEngine
 
     public List<MatchedPromotion> Match(
         List<MallPromotion> promotions,
+        Dictionary<Guid, List<MallPromotionScope>> scopeMap,
         OrderContext ctx)
     {
         var now = ctx.Now;
-        var result = new List<MatchedPromotion>();
+        var allMatched = new List<MatchedPromotion>();
 
         foreach (var p in promotions)
         {
@@ -34,7 +38,8 @@ public class MallPromotionEngine
                 && used >= p.MaxUsagePerUser)
                 continue;
 
-            var scopeRows = FilterByScope(p, ctx.Items);
+            var scopes = scopeMap.TryGetValue(p.Id, out var s) ? s : new List<MallPromotionScope>();
+            var scopeRows = FilterByScope(p, scopes, ctx.Items);
             if (scopeRows.Count == 0) continue;
 
             var scopedTriggerContext = new OrderContext
@@ -57,36 +62,25 @@ public class MallPromotionEngine
             var strategy = _triggers.Get(p.TriggerType);
             if (!strategy.IsMatch(triggerContext, triggerConfig)) continue;
 
-            result.Add(new MatchedPromotion
+            allMatched.Add(new MatchedPromotion
             {
                 Promotion = p,
                 AffectedItems = scopeRows
             });
         }
 
-        result = result
-            .OrderByDescending(m => m.Promotion.Priority)
+        var final = new List<MatchedPromotion>();
+
+        var discountGroup = allMatched
+            .Where(m => DiscountActions.Contains(m.Promotion.ActionType))
             .ToList();
 
-        var final = new List<MatchedPromotion>();
-        var combinableCount = 0;
+        var stackableGroup = allMatched
+            .Where(m => StackableActions.Contains(m.Promotion.ActionType))
+            .ToList();
 
-        foreach (var m in result)
-        {
-            if (!m.Promotion.Combinable && final.Count > 0) continue;
-
-            var unprotected = m.AffectedItems.Where(i => !i.IsDiscounted).ToList();
-            if (unprotected.Count == 0 && m.Promotion.ActionType != "FreightFree" && m.Promotion.ActionType != "Gift")
-                continue;
-
-            final.Add(new MatchedPromotion
-            {
-                Promotion = m.Promotion,
-                AffectedItems = unprotected.Count > 0 ? unprotected : m.AffectedItems
-            });
-
-            combinableCount++;
-        }
+        final.AddRange(SelectBestDiscounts(discountGroup));
+        final.AddRange(stackableGroup);
 
         return final;
     }
@@ -118,7 +112,7 @@ public class MallPromotionEngine
             var affectedSkuIds = m.AffectedItems.Select(item => item.SkuId).ToHashSet();
             var scopedItems = applyCtx.Items
                 .Where(item => affectedSkuIds.Contains(item.SkuId))
-                .Where(item => !item.IsDiscounted || m.Promotion.ActionType is "Gift" or "FreightFree")
+                .Where(item => !item.IsDiscounted || !DiscountActions.Contains(m.Promotion.ActionType))
                 .ToList();
             var scopedContext = new ApplyContext
             {
@@ -138,19 +132,57 @@ public class MallPromotionEngine
         };
     }
 
-    private static List<SkuOrderRow> FilterByScope(MallPromotion p, List<SkuOrderRow> items)
+    private static List<MatchedPromotion> SelectBestDiscounts(List<MatchedPromotion> discountGroup)
+    {
+        if (discountGroup.Count == 0) return new List<MatchedPromotion>();
+        if (discountGroup.Count == 1) return discountGroup;
+
+        var bestBySku = new Dictionary<Guid, MatchedPromotion>();
+
+        foreach (var m in discountGroup)
+        {
+            var eval = EvaluateDiscountSavings(m);
+            foreach (var item in m.AffectedItems)
+            {
+                var skuId = item.SkuId;
+                if (!bestBySku.TryGetValue(skuId, out var existing))
+                {
+                    bestBySku[skuId] = m;
+                    continue;
+                }
+                var existingEval = EvaluateDiscountSavings(existing);
+                if (eval > existingEval)
+                    bestBySku[skuId] = m;
+            }
+        }
+
+        return bestBySku.Values.DistinctBy(x => x.Promotion.Id).ToList();
+    }
+
+    private static decimal EvaluateDiscountSavings(MatchedPromotion m)
+    {
+        using var actionDoc = JsonDocument.Parse(m.Promotion.ActionConfigJson);
+        var actionConfig = actionDoc.RootElement;
+
+        if (!actionConfig.TryGetProperty("rate", out var rateElem)) return 0;
+        var rate = rateElem.GetDecimal();
+        if (rate >= 1) return 0;
+
+        var originalAmount = m.AffectedItems.Sum(i => i.OriginalPrice * i.Quantity);
+        return originalAmount * (1 - rate);
+    }
+
+    private static List<SkuOrderRow> FilterByScope(MallPromotion p, List<MallPromotionScope> scopes, List<SkuOrderRow> items)
     {
         if (p.ScopeType == "Global") return items.ToList();
 
-        var scope = p.Scopes.ToList();
-
         return p.ScopeType switch
         {
-            "Product" => items.Where(i => scope.Any(s => s.ScopeTargetType == "Product" && s.ScopeTargetId == i.ProductId)).ToList(),
-            "Category" => items.Where(i => scope.Any(s =>
+            "Product" => items.Where(i => scopes.Any(s => s.ScopeTargetType == "Product" && s.ScopeTargetId == i.ProductId)).ToList(),
+            "Category" => items.Where(i => scopes.Any(s =>
                 s.ScopeTargetType == "Category" &&
                 (i.CategoryIds.Contains(s.ScopeTargetId) || i.CategoryId == s.ScopeTargetId))).ToList(),
-            "Sku" => items.Where(i => scope.Any(s => s.ScopeTargetType == "Sku" && s.ScopeTargetId == i.SkuId)).ToList(),
+            "Sku" => items.Where(i => scopes.Any(s => s.ScopeTargetType == "Sku" && s.ScopeTargetId == i.SkuId)).ToList(),
             _ => new List<SkuOrderRow>()
         };
     }

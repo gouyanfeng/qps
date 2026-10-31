@@ -5,7 +5,6 @@ namespace QPS.Mall.Domain.Entities;
 
 public class MallCoupon : BaseEntity
 {
-    public Guid StoreId { get; private set; }
     public string Code { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string CouponType { get; private set; } = string.Empty;
@@ -27,13 +26,12 @@ public class MallCoupon : BaseEntity
     }
 
     private MallCoupon(
-        Guid storeId, string code, string name, string couponType,
+        string code, string name, string couponType,
         decimal thresholdAmount, decimal discountAmount, decimal? maxDiscount,
         int totalCount, int perLimit, int validDays,
         DateTime? startAt, DateTime? endAt,
         string scopeType, string? scopeValue)
     {
-        StoreId = storeId;
         Code = code;
         Name = name;
         CouponType = couponType;
@@ -52,13 +50,13 @@ public class MallCoupon : BaseEntity
     }
 
     public static MallCoupon Create(
-        Guid storeId, string code, string name, string couponType,
+        string code, string name, string couponType,
         decimal thresholdAmount, decimal discountAmount, decimal? maxDiscount,
         int totalCount, int perLimit, int validDays,
         DateTime? startAt, DateTime? endAt,
         string scopeType, string? scopeValue)
     {
-        return new MallCoupon(storeId, code, name, couponType,
+        return new MallCoupon(code, name, couponType,
             thresholdAmount, discountAmount, maxDiscount,
             totalCount, perLimit, validDays,
             startAt, endAt, scopeType, scopeValue);

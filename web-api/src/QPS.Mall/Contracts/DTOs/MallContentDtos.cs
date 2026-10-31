@@ -7,7 +7,6 @@ namespace QPS.Mall.Contracts.DTOs;
 public class MallBannerDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
     public string Position { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
     public MallBannerLinkType LinkType { get; set; }
@@ -22,7 +21,6 @@ public class MallBannerDto
 
 public class MallBannerCreateRequest
 {
-    public Guid StoreId { get; set; }
     public string Position { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
     public MallBannerLinkType LinkType { get; set; }
@@ -61,7 +59,6 @@ public class MallBannerSortItem
 public class MallNoticeDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public MallNoticeType NoticeType { get; set; }
@@ -75,7 +72,6 @@ public class MallNoticeDto
 
 public class MallNoticeCreateRequest
 {
-    public Guid StoreId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public MallNoticeType NoticeType { get; set; }
@@ -101,7 +97,6 @@ public class MallNoticeUpdateRequest
 public class MallArticleDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
     public string ContentHtml { get; set; } = string.Empty;
@@ -134,7 +129,6 @@ public class MallArticleListItemDto
 
 public class MallArticleCreateRequest
 {
-    public Guid StoreId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
     public string ContentHtml { get; set; } = string.Empty;
@@ -166,7 +160,6 @@ public class MallArticleUpdateRequest
 public class MallPageDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
     public string PageCode { get; set; } = string.Empty;
     public string PageName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -180,7 +173,6 @@ public class MallPageDto
 
 public class MallPageCreateRequest
 {
-    public Guid StoreId { get; set; }
     public string PageCode { get; set; } = string.Empty;
     public string PageName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

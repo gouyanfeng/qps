@@ -8,8 +8,6 @@ namespace QPS.Mall.Application.Features.MallCarts;
 public class ClearMallCartCommand : IRequest<bool>
 {
     public Guid UserId { get; set; }
-
-    public Guid StoreId { get; set; }
 }
 
 public class ClearMallCartHandler : IRequestHandler<ClearMallCartCommand, bool>
@@ -25,7 +23,7 @@ public class ClearMallCartHandler : IRequestHandler<ClearMallCartCommand, bool>
     {
         var cart = await _dbContext.MallCarts
             .FirstOrDefaultAsync(
-                c => c.UserId == command.UserId && c.StoreId == command.StoreId && !c.IsDeleted,
+                c => c.UserId == command.UserId && !c.IsDeleted,
                 cancellationToken);
 
         if (cart is null) return true;

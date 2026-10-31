@@ -30,6 +30,7 @@ public class MallProductController : ControllerBase
         [FromQuery] string sortField = "CreatedAt",
         [FromQuery] string sortDirection = "Descending",
         [FromQuery] string? keyword = null,
+        [FromQuery] Guid? storeId = null,
         [FromQuery] bool? isActive = null,
         [FromQuery] Guid? categoryId = null,
         [FromQuery] string? tagCode = null)
@@ -41,6 +42,7 @@ public class MallProductController : ControllerBase
             SortField = sortField,
             SortDirection = sortDirection,
             Keyword = keyword,
+            StoreId = storeId,
             IsActive = isActive,
             CategoryId = categoryId,
             TagCode = tagCode

@@ -6,8 +6,6 @@ public class MallCartDto
 
     public Guid UserId { get; set; }
 
-    public Guid StoreId { get; set; }
-
     public int TotalQuantity { get; set; }
 
     public decimal TotalAmount { get; set; }
@@ -56,8 +54,6 @@ public class MallCartAddRequest
 {
     public Guid UserId { get; set; }
 
-    public Guid StoreId { get; set; }
-
     public Guid SkuId { get; set; }
 
     public int Quantity { get; set; }
@@ -66,8 +62,6 @@ public class MallCartAddRequest
 public class MallCartUpdateItemRequest
 {
     public Guid UserId { get; set; }
-
-    public Guid StoreId { get; set; }
 
     public Guid SkuId { get; set; }
 

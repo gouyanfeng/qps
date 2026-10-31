@@ -25,20 +25,11 @@ public class CreateMallFreightTemplateHandler : IRequestHandler<CreateMallFreigh
     {
         var request = command.Request;
 
-        var store = await _dbContext.MallStores
-            .FirstOrDefaultAsync(s => s.Id == request.StoreId && !s.IsDeleted, cancellationToken);
-
-        if (store is null)
-        {
-            throw new BusinessException(404, "门店不存在");
-        }
-
         MallFreightTemplateRules.ValidateTemplateName(request.Name);
         MallFreightTemplateRules.ValidateBillingType(request.BillingType);
         MallFreightTemplateRules.ValidateRegions(request.Regions);
 
         var template = MallFreightTemplate.Create(
-            request.StoreId,
             request.Name,
             request.BillingType,
             request.IsDefault,
@@ -51,8 +42,8 @@ public class CreateMallFreightTemplateHandler : IRequestHandler<CreateMallFreigh
             var region = MallFreightRegion.Create(
                 template.Id,
                 regionReq.RegionName,
-                regionReq.ProvinceCodes,
-                regionReq.CityCodes,
+                regionReq.ProvinceNames,
+                regionReq.CityNames,
                 regionReq.FirstValue,
                 regionReq.FirstFee,
                 regionReq.StepValue,
@@ -67,7 +58,7 @@ public class CreateMallFreightTemplateHandler : IRequestHandler<CreateMallFreigh
         if (request.IsDefault)
         {
             var existingDefaults = await _dbContext.MallFreightTemplates
-                .Where(t => t.StoreId == request.StoreId && t.IsDefault && !t.IsDeleted)
+                .Where(t => t.IsDefault && !t.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             foreach (var existing in existingDefaults)
@@ -77,8 +68,6 @@ public class CreateMallFreightTemplateHandler : IRequestHandler<CreateMallFreigh
                     existing.Update(existing.Name, existing.BillingType, false, existing.IsActive);
                 }
             }
-
-            store.Update(store.Code, store.Name, store.Address, template.Id);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

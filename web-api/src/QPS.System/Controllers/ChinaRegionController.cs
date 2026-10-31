@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.System.Contracts.DTOs.ChinaRegions;
 using QPS.System.Application.Features.ChinaRegions;
@@ -7,6 +8,7 @@ namespace QPS.System.Controllers;
 
 [ApiController]
 [Route("api/admin/china-regions")]
+[AllowAnonymous]
 public class ChinaRegionController : ControllerBase
 {
     private readonly IMediator _mediator;

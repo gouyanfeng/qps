@@ -8,7 +8,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallNoticeController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,8 +19,8 @@ public class MallNoticeController : ControllerBase
     }
 
     [HttpGet("notices")]
-    public async Task<ActionResult<List<MallNoticeDto>>> GetActive([FromQuery] Guid storeId)
+    public async Task<ActionResult<List<MallNoticeDto>>> GetActive()
     {
-        return Ok(await _mediator.Send(new GetActiveMallNoticesQuery { StoreId = storeId }));
+        return Ok(await _mediator.Send(new GetActiveMallNoticesQuery()));
     }
 }

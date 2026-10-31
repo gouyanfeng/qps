@@ -18,11 +18,11 @@ public class MallArticleController : ControllerBase
 
     [HttpGet("api/admin/mall/articles")]
     public async Task<ActionResult<List<MallArticleListItemDto>>> GetList(
-        [FromQuery] Guid storeId, MallArticleType? articleType, string? keyword, bool? isActive)
+        MallArticleType? articleType, string? keyword, bool? isActive)
     {
         return Ok(await _mediator.Send(new GetMallArticlesQuery
         {
-            StoreId = storeId, ArticleType = articleType, Keyword = keyword, IsActive = isActive
+            ArticleType = articleType, Keyword = keyword, IsActive = isActive
         }));
     }
 
@@ -70,9 +70,9 @@ public class MallArticleController : ControllerBase
 
     [HttpGet("api/mall/articles")]
     public async Task<ActionResult<List<MallArticleListItemDto>>> GetPublished(
-        [FromQuery] Guid storeId, MallArticleType? articleType)
+        MallArticleType? articleType)
     {
-        return Ok(await _mediator.Send(new GetPublishedMallArticlesQuery { StoreId = storeId, ArticleType = articleType }));
+        return Ok(await _mediator.Send(new GetPublishedMallArticlesQuery { ArticleType = articleType }));
     }
 
     [HttpGet("api/mall/articles/{id:guid}")]

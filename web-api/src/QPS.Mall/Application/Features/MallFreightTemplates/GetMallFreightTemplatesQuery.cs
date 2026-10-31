@@ -7,8 +7,6 @@ namespace QPS.Mall.Application.Features.MallFreightTemplates;
 
 public class GetMallFreightTemplatesQuery : IRequest<List<MallFreightTemplateListDto>>
 {
-    public Guid? StoreId { get; set; }
-
     public string? Keyword { get; set; }
 }
 
@@ -25,28 +23,18 @@ public class GetMallFreightTemplatesHandler : IRequestHandler<GetMallFreightTemp
         GetMallFreightTemplatesQuery request,
         CancellationToken cancellationToken)
     {
-        var templates = await (
-                from t in _dbContext.MallFreightTemplates
-                join s in _dbContext.MallStores on t.StoreId equals s.Id
-                where !t.IsDeleted && !s.IsDeleted
-                select new { Template = t, Store = s })
+        var templates = await _dbContext.MallFreightTemplates
+            .Where(t => !t.IsDeleted)
             .ToListAsync(cancellationToken);
-
-        if (request.StoreId.HasValue)
-        {
-            templates = templates.Where(x => x.Template.StoreId == request.StoreId.Value).ToList();
-        }
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = request.Keyword.Trim();
             templates = templates.Where(x =>
-                x.Template.Name.Contains(keyword) ||
-                x.Store.Name.Contains(keyword) ||
-                x.Store.Code.Contains(keyword)).ToList();
+                x.Name.Contains(keyword)).ToList();
         }
 
-        var templateIds = templates.Select(x => x.Template.Id).ToList();
+        var templateIds = templates.Select(x => x.Id).ToList();
 
         var regionCounts = await _dbContext.MallFreightRegions
             .Where(r => templateIds.Contains(r.TemplateId) && !r.IsDeleted)
@@ -55,22 +43,19 @@ public class GetMallFreightTemplatesHandler : IRequestHandler<GetMallFreightTemp
             .ToDictionaryAsync(x => x.TemplateId, x => x.Count, cancellationToken);
 
         return templates
-            .OrderBy(x => x.Store.Code)
-            .ThenBy(x => x.Template.IsDefault ? 0 : 1)
-            .ThenBy(x => x.Template.Name)
+            .OrderBy(x => x.IsDefault ? 0 : 1)
+            .ThenBy(x => x.Name)
             .Select(x => new MallFreightTemplateListDto
             {
-                Id = x.Template.Id,
-                StoreId = x.Template.StoreId,
-                StoreName = x.Store.Name,
-                Name = x.Template.Name,
-                BillingType = x.Template.BillingType,
-                BillingTypeName = MallFreightTemplateRules.GetBillingTypeName(x.Template.BillingType),
-                IsDefault = x.Template.IsDefault,
-                IsActive = x.Template.IsActive,
-                RegionCount = regionCounts.TryGetValue(x.Template.Id, out var count) ? count : 0,
-                CreatedAt = x.Template.CreatedAt,
-                UpdatedAt = x.Template.UpdatedAt
+                Id = x.Id,
+                Name = x.Name,
+                BillingType = x.BillingType,
+                BillingTypeName = MallFreightTemplateRules.GetBillingTypeName(x.BillingType),
+                IsDefault = x.IsDefault,
+                IsActive = x.IsActive,
+                RegionCount = regionCounts.TryGetValue(x.Id, out var count) ? count : 0,
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt
             })
             .ToList();
     }

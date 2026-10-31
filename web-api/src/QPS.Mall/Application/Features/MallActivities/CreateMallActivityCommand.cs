@@ -47,7 +47,7 @@ public class CreateMallActivityHandler : IRequestHandler<CreateMallActivityComma
 
         foreach (var promotionId in req.PromotionIds.Distinct())
         {
-            activity.AddPromotion(promotionId);
+            _dbContext.MallActivityPromotions.Add(MallActivityPromotion.Create(activity.Id, promotionId));
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

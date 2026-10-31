@@ -10,8 +10,6 @@ namespace QPS.Mall.Application.Features.MallCarts;
 public class GetMallCartQuery : IRequest<MallCartDto>
 {
     public Guid UserId { get; set; }
-
-    public Guid StoreId { get; set; }
 }
 
 public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
@@ -28,9 +26,8 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         CancellationToken cancellationToken)
     {
         var cart = await _dbContext.MallCarts
-            .Include(c => c.Items)
             .FirstOrDefaultAsync(
-                c => c.UserId == request.UserId && c.StoreId == request.StoreId && !c.IsDeleted,
+                c => c.UserId == request.UserId && !c.IsDeleted,
                 cancellationToken);
 
         if (cart is null)
@@ -38,14 +35,31 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             return new MallCartDto
             {
                 UserId = request.UserId,
-                StoreId = request.StoreId,
                 TotalQuantity = 0,
                 TotalAmount = 0,
                 Items = new List<MallCartItemDto>()
             };
         }
 
-        var skuIds = cart.Items.Select(i => i.SkuId).Distinct().ToList();
+        var cartItems = await _dbContext.MallCartItems
+            .Where(i => i.CartId == cart.Id && !i.IsDeleted)
+            .OrderBy(i => i.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        if (cartItems.Count == 0)
+        {
+            return new MallCartDto
+            {
+                Id = cart.Id,
+                UserId = cart.UserId,
+                TotalQuantity = 0,
+                TotalAmount = 0,
+                LastActiveAt = cart.LastActiveAt,
+                Items = new List<MallCartItemDto>()
+            };
+        }
+
+        var skuIds = cartItems.Select(i => i.SkuId).Distinct().ToList();
         var skuRows = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
@@ -58,7 +72,7 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         var totalAmount = 0m;
         var totalQuantity = 0;
 
-        foreach (var cartItem in cart.Items.OrderBy(i => i.CreatedAt))
+        foreach (var cartItem in cartItems)
         {
             if (skuMap.TryGetValue(cartItem.SkuId, out var row))
             {
@@ -111,7 +125,6 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         {
             Id = cart.Id,
             UserId = cart.UserId,
-            StoreId = cart.StoreId,
             TotalQuantity = totalQuantity,
             TotalAmount = totalAmount,
             LastActiveAt = cart.LastActiveAt,

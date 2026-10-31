@@ -22,13 +22,12 @@ public class MallCartController : ControllerBase
         _currentUser = currentUser;
     }
 
-    [HttpGet("carts/{userId:guid}/store/{storeId:guid}")]
-    public async Task<ActionResult<MallCartDto>> GetCart(Guid userId, Guid storeId)
+    [HttpGet("carts/{userId:guid}")]
+    public async Task<ActionResult<MallCartDto>> GetCart(Guid userId)
     {
         return Ok(await _mediator.Send(new GetMallCartQuery
         {
-            UserId = _currentUser.GetUserId(),
-            StoreId = storeId
+            UserId = _currentUser.GetUserId()
         }));
     }
 
@@ -46,24 +45,22 @@ public class MallCartController : ControllerBase
         return Ok(await _mediator.Send(new UpdateMallCartItemCommand { Request = request }));
     }
 
-    [HttpDelete("carts/{userId:guid}/store/{storeId:guid}/items/{skuId:guid}")]
-    public async Task<ActionResult<MallCartDto>> RemoveFromCart(Guid userId, Guid storeId, Guid skuId)
+    [HttpDelete("carts/{userId:guid}/items/{skuId:guid}")]
+    public async Task<ActionResult<MallCartDto>> RemoveFromCart(Guid userId, Guid skuId)
     {
         return Ok(await _mediator.Send(new RemoveFromMallCartCommand
         {
             UserId = _currentUser.GetUserId(),
-            StoreId = storeId,
             SkuId = skuId
         }));
     }
 
-    [HttpDelete("carts/{userId:guid}/store/{storeId:guid}")]
-    public async Task<ActionResult<bool>> ClearCart(Guid userId, Guid storeId)
+    [HttpDelete("carts/{userId:guid}")]
+    public async Task<ActionResult<bool>> ClearCart(Guid userId)
     {
         return Ok(await _mediator.Send(new ClearMallCartCommand
         {
-            UserId = _currentUser.GetUserId(),
-            StoreId = storeId
+            UserId = _currentUser.GetUserId()
         }));
     }
 }

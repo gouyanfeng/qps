@@ -4,7 +4,6 @@ public class MallMemberDto
 {
     public Guid Id { get; set; }
     public string Phone { get; set; } = string.Empty;
-    public Guid? StoreId { get; set; }
     public Guid? LevelId { get; set; }
     public string LevelName { get; set; } = string.Empty;
     public string Nickname { get; set; } = string.Empty;
@@ -25,7 +24,6 @@ public class MallMemberCreateRequest
 {
     public string Phone { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    public Guid? StoreId { get; set; }
     public string Nickname { get; set; } = string.Empty;
 }
 
@@ -40,7 +38,6 @@ public class MallMemberUpdateRequest
 
 public class MallMemberQueryRequest
 {
-    public Guid? StoreId { get; set; }
     public Guid? LevelId { get; set; }
     public bool? IsActive { get; set; }
     public string? Keyword { get; set; }
@@ -60,7 +57,6 @@ public class MallMemberRegisterRequest
     public string Phone { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string? Nickname { get; set; }
-    public Guid? StoreId { get; set; }
 }
 
 public class MallMemberLoginRequest

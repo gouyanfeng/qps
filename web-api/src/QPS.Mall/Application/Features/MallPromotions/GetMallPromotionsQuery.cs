@@ -26,7 +26,6 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
     {
         var query = _dbContext.MallPromotions
             .AsNoTracking()
-            .Include(p => p.Scopes)
             .Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -44,10 +43,19 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return promotions.Select(Map).ToList();
+        var promotionIds = promotions.Select(p => p.Id).ToList();
+        var allScopes = promotionIds.Count == 0
+            ? new List<Domain.Entities.MallPromotionScope>()
+            : await _dbContext.MallPromotionScopes
+                .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+        var scopeMap = allScopes.GroupBy(s => s.PromotionId).ToDictionary(g => g.Key, g => g.ToList());
+
+        return promotions.Select(p => Map(p, scopeMap.TryGetValue(p.Id, out var scopes) ? scopes : new List<Domain.Entities.MallPromotionScope>())).ToList();
     }
 
-    private static MallPromotionDto Map(Domain.Entities.MallPromotion p) => new()
+    private static MallPromotionDto Map(Domain.Entities.MallPromotion p, List<Domain.Entities.MallPromotionScope> scopes) => new()
     {
         Id = p.Id,
         Name = p.Name,
@@ -57,8 +65,6 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
         ActionType = p.ActionType,
         ActionConfigJson = p.ActionConfigJson,
         ScopeType = p.ScopeType,
-        Priority = p.Priority,
-        Combinable = p.Combinable,
         MaxUsagePerUser = p.MaxUsagePerUser,
         MaxUsagePerOrder = p.MaxUsagePerOrder,
         StartDate = p.StartDate,
@@ -66,7 +72,7 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
         IsActive = p.IsActive,
         CreatedAt = p.CreatedAt,
         UpdatedAt = p.UpdatedAt,
-        Scopes = p.Scopes.Select(s => new MallPromotionScopeDto
+        Scopes = scopes.Select(s => new MallPromotionScopeDto
         {
             Id = s.Id,
             ScopeTargetType = s.ScopeTargetType,

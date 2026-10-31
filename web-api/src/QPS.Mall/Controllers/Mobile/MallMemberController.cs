@@ -59,10 +59,10 @@ public class MallMemberController : ControllerBase
     }
 
     [HttpGet("member/me/order-badge")]
-    public async Task<ActionResult<MallMemberOrderBadgeDto>> GetOrderBadge([FromQuery] Guid storeId)
+    public async Task<ActionResult<MallMemberOrderBadgeDto>> GetOrderBadge()
     {
         var memberId = _currentUser.GetUserId();
-        return Ok(await _mediator.Send(new GetMallMemberOrderBadgeQuery { MemberId = memberId, StoreId = storeId }));
+        return Ok(await _mediator.Send(new GetMallMemberOrderBadgeQuery { MemberId = memberId }));
     }
 
     [HttpGet("member/me/coupons")]

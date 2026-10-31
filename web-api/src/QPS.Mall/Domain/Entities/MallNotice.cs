@@ -11,8 +11,6 @@ public enum MallNoticeType
 
 public class MallNotice : BaseEntity
 {
-    public Guid StoreId { get; private set; }
-
     public string Title { get; private set; } = string.Empty;
 
     public string Content { get; private set; } = string.Empty;
@@ -34,7 +32,6 @@ public class MallNotice : BaseEntity
     }
 
     private MallNotice(
-        Guid storeId,
         string title,
         string content,
         MallNoticeType noticeType,
@@ -44,7 +41,6 @@ public class MallNotice : BaseEntity
         DateTime? endDate,
         bool isActive)
     {
-        StoreId = storeId;
         Title = title;
         Content = content;
         NoticeType = noticeType;
@@ -56,7 +52,6 @@ public class MallNotice : BaseEntity
     }
 
     public static MallNotice Create(
-        Guid storeId,
         string title,
         string content,
         MallNoticeType noticeType,
@@ -66,7 +61,7 @@ public class MallNotice : BaseEntity
         DateTime? endDate,
         bool isActive)
     {
-        return new MallNotice(storeId, title, content, noticeType, isTop, sortOrder, startDate, endDate, isActive);
+        return new MallNotice(title, content, noticeType, isTop, sortOrder, startDate, endDate, isActive);
     }
 
     public void Update(

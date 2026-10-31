@@ -14,8 +14,6 @@ public enum MallBannerLinkType
 
 public class MallBanner : BaseEntity
 {
-    public Guid StoreId { get; private set; }
-
     public string Position { get; private set; } = string.Empty;
 
     public string ImageUrl { get; private set; } = string.Empty;
@@ -39,7 +37,6 @@ public class MallBanner : BaseEntity
     }
 
     private MallBanner(
-        Guid storeId,
         string position,
         string imageUrl,
         MallBannerLinkType linkType,
@@ -50,7 +47,6 @@ public class MallBanner : BaseEntity
         DateTime? endDate,
         bool isActive)
     {
-        StoreId = storeId;
         Position = position;
         ImageUrl = imageUrl;
         LinkType = linkType;
@@ -63,7 +59,6 @@ public class MallBanner : BaseEntity
     }
 
     public static MallBanner Create(
-        Guid storeId,
         string position,
         string imageUrl,
         MallBannerLinkType linkType,
@@ -77,7 +72,7 @@ public class MallBanner : BaseEntity
         if (string.IsNullOrWhiteSpace(position)) throw new BusinessException(400, "展示位置不能为空");
         if (string.IsNullOrWhiteSpace(imageUrl)) throw new BusinessException(400, "Banner图片不能为空");
 
-        return new MallBanner(storeId, position, imageUrl, linkType, linkValue, title, sortOrder, startDate, endDate, isActive);
+        return new MallBanner(position, imageUrl, linkType, linkValue, title, sortOrder, startDate, endDate, isActive);
     }
 
     public void Update(

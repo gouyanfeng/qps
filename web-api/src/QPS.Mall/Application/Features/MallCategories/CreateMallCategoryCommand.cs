@@ -31,14 +31,12 @@ public class CreateMallCategoryHandler : IRequestHandler<CreateMallCategoryComma
         await MallCategoryRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, null, cancellationToken);
         await MallCategoryRules.EnsureParentValidAsync(
             _dbContext,
-            request.Request.StoreId,
             request.Request.ParentId,
             null,
             cancellationToken);
 
         _dbContext.MallCategories.Add(
             MallCategory.Create(
-                request.Request.StoreId,
                 code,
                 name,
                 request.Request.ParentId,

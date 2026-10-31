@@ -266,7 +266,6 @@ internal static class MallProductRules
         {
             var parentIsActive = await dbContext.MallCategories.AnyAsync(
                 item => item.Id == category.ParentId.Value &&
-                        item.StoreId == category.StoreId &&
                         item.IsActive &&
                         !item.IsDeleted,
                 cancellationToken);
@@ -281,6 +280,34 @@ internal static class MallProductRules
         if (hasChildren)
         {
             throw new BusinessException(400, "商品必须归属末级分类");
+        }
+    }
+
+    /// <summary>
+    /// 确认门店存在且启用。
+    /// </summary>
+    public static async Task EnsureStoreValidAsync(
+        IMallDbContext dbContext,
+        Guid storeId,
+        CancellationToken cancellationToken)
+    {
+        if (storeId == Guid.Empty)
+        {
+            throw new BusinessException(400, "请选择商品所属门店");
+        }
+
+        var store = await dbContext.MallStores
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == storeId && !item.IsDeleted, cancellationToken);
+
+        if (store is null)
+        {
+            throw new BusinessException(404, "门店不存在");
+        }
+
+        if (!store.IsActive)
+        {
+            throw new BusinessException(400, "门店已停用");
         }
     }
 

@@ -17,10 +17,12 @@ public class GetMallProductQuery : IRequest<MallProductDto>
 public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallProductDto>
 {
     private readonly IMallDbContext _dbContext;
+    private readonly MallProductPromotionEnricher _enricher;
 
-    public GetMallProductHandler(IMallDbContext dbContext)
+    public GetMallProductHandler(IMallDbContext dbContext, MallProductPromotionEnricher enricher)
     {
         _dbContext = dbContext;
+        _enricher = enricher;
     }
 
     public async Task<MallProductDto> Handle(GetMallProductQuery request, CancellationToken cancellationToken)
@@ -31,6 +33,10 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
             .Select(product => new
             {
                 Product = product,
+                StoreName = _dbContext.MallStores
+                    .Where(store => store.Id == product.StoreId)
+                    .Select(store => store.Name)
+                    .FirstOrDefault(),
                 CategoryName = _dbContext.MallCategories
                     .Where(category => category.Id == product.CategoryId)
                     .Select(category => category.Name)
@@ -43,7 +49,7 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
             throw new BusinessException(404, "商品不存在");
         }
 
-        var dto = GetMallProductsHandler.Map(row.Product, row.CategoryName ?? string.Empty);
+        var dto = GetMallProductsHandler.Map(row.Product, row.StoreName ?? string.Empty, row.CategoryName ?? string.Empty);
 
         dto.Skus = await _dbContext.MallSkus
             .AsNoTracking()
@@ -66,19 +72,22 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
             })
             .ToListAsync(cancellationToken);
 
-        dto.Tags = await _dbContext.MallTags
-            .Where(tag => tag.Products.Any(product => product.Id == request.Id) && tag.IsActive && !tag.IsDeleted)
-            .OrderBy(tag => tag.SortOrder)
-            .Select(tag => new MallTagDto
-            {
-                Id = tag.Id,
-                Code = tag.Code,
-                Name = tag.Name,
-                Color = tag.Color,
-                SortOrder = tag.SortOrder,
-                IsActive = tag.IsActive
-            })
+        dto.Tags = await (from link in _dbContext.MallProductTags
+                          join tag in _dbContext.MallTags on link.TagId equals tag.Id
+                          where link.ProductId == request.Id && !link.IsDeleted && tag.IsActive && !tag.IsDeleted
+                          orderby tag.SortOrder
+                          select new MallTagDto
+                          {
+                              Id = tag.Id,
+                              Code = tag.Code,
+                              Name = tag.Name,
+                              Color = tag.Color,
+                              SortOrder = tag.SortOrder,
+                              IsActive = tag.IsActive
+                          })
             .ToListAsync(cancellationToken);
+
+        await _enricher.EnrichAsync(new[] { dto }, cancellationToken);
 
         return dto;
     }

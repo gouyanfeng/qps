@@ -8,6 +8,11 @@ namespace QPS.Mall.Domain.Entities;
 public class MallProduct : BaseEntity
 {
     /// <summary>
+    /// 所属门店。
+    /// </summary>
+    public Guid StoreId { get; private set; }
+
+    /// <summary>
     /// 商品编码，唯一。
     /// </summary>
     public string Code { get; private set; } = string.Empty;
@@ -67,13 +72,12 @@ public class MallProduct : BaseEntity
     /// </summary>
     public Guid? FreightTemplateId { get; private set; }
 
-    public ICollection<MallTag> Tags { get; private set; } = new List<MallTag>();
-
     private MallProduct()
     {
     }
 
     private MallProduct(
+        Guid storeId,
         string code,
         string name,
         string description,
@@ -86,6 +90,7 @@ public class MallProduct : BaseEntity
         bool isHot,
         Guid? freightTemplateId)
     {
+        StoreId = storeId;
         Code = code;
         Name = name;
         Description = description;
@@ -100,6 +105,7 @@ public class MallProduct : BaseEntity
     }
 
     public static MallProduct Create(
+        Guid storeId,
         string code,
         string name,
         string description,
@@ -113,6 +119,7 @@ public class MallProduct : BaseEntity
         Guid? freightTemplateId = null)
     {
         return new MallProduct(
+            storeId,
             code,
             name,
             description,
@@ -127,6 +134,7 @@ public class MallProduct : BaseEntity
     }
 
     public void Update(
+        Guid storeId,
         string code,
         string name,
         string description,
@@ -138,6 +146,7 @@ public class MallProduct : BaseEntity
         bool isHot,
         Guid? freightTemplateId)
     {
+        StoreId = storeId;
         Code = code;
         Name = name;
         Description = description;

@@ -9,7 +9,6 @@ namespace QPS.Mall.Application.Features.MallBanners;
 
 public class GetMallBannersQuery : IRequest<List<MallBannerDto>>
 {
-    public Guid StoreId { get; set; }
     public string? Position { get; set; }
     public bool? IsActive { get; set; }
 }
@@ -21,7 +20,6 @@ public class GetMallBannerQuery : IRequest<MallBannerDto>
 
 public class GetActiveMallBannersQuery : IRequest<List<MallBannerDto>>
 {
-    public Guid StoreId { get; set; }
     public string? Position { get; set; }
 }
 
@@ -71,14 +69,14 @@ public class MallBannerHandlers :
 
     public async Task<List<MallBannerDto>> Handle(GetMallBannersQuery query, CancellationToken ct)
     {
-        var q = _dbContext.MallBanners.AsNoTracking().Where(b => b.StoreId == query.StoreId && !b.IsDeleted);
+        var q = _dbContext.MallBanners.AsNoTracking().Where(b => !b.IsDeleted);
         if (!string.IsNullOrEmpty(query.Position)) q = q.Where(b => b.Position == query.Position);
         if (query.IsActive.HasValue) q = q.Where(b => b.IsActive == query.IsActive.Value);
 
         return await q.OrderBy(b => b.SortOrder).ThenByDescending(b => b.CreatedAt)
             .Select(b => new MallBannerDto
             {
-                Id = b.Id, StoreId = b.StoreId, Position = b.Position, ImageUrl = b.ImageUrl,
+                Id = b.Id, Position = b.Position, ImageUrl = b.ImageUrl,
                 LinkType = b.LinkType, LinkValue = b.LinkValue, Title = b.Title,
                 SortOrder = b.SortOrder, StartDate = b.StartDate, EndDate = b.EndDate,
                 IsActive = b.IsActive, CreatedAt = b.CreatedAt
@@ -92,7 +90,7 @@ public class MallBannerHandlers :
 
         return new MallBannerDto
         {
-            Id = b.Id, StoreId = b.StoreId, Position = b.Position, ImageUrl = b.ImageUrl,
+            Id = b.Id, Position = b.Position, ImageUrl = b.ImageUrl,
             LinkType = b.LinkType, LinkValue = b.LinkValue, Title = b.Title,
             SortOrder = b.SortOrder, StartDate = b.StartDate, EndDate = b.EndDate,
             IsActive = b.IsActive, CreatedAt = b.CreatedAt
@@ -103,7 +101,7 @@ public class MallBannerHandlers :
     {
         var now = DateTime.UtcNow;
         var q = _dbContext.MallBanners.AsNoTracking()
-            .Where(b => b.StoreId == query.StoreId && !b.IsDeleted && b.IsActive
+            .Where(b => !b.IsDeleted && b.IsActive
                 && (b.StartDate == null || b.StartDate <= now)
                 && (b.EndDate == null || b.EndDate >= now));
         if (!string.IsNullOrEmpty(query.Position)) q = q.Where(b => b.Position == query.Position);
@@ -111,7 +109,7 @@ public class MallBannerHandlers :
         return await q.OrderBy(b => b.SortOrder)
             .Select(b => new MallBannerDto
             {
-                Id = b.Id, StoreId = b.StoreId, Position = b.Position, ImageUrl = b.ImageUrl,
+                Id = b.Id, Position = b.Position, ImageUrl = b.ImageUrl,
                 LinkType = b.LinkType, LinkValue = b.LinkValue, Title = b.Title,
                 SortOrder = b.SortOrder, StartDate = b.StartDate, EndDate = b.EndDate,
                 IsActive = b.IsActive, CreatedAt = b.CreatedAt
@@ -122,14 +120,14 @@ public class MallBannerHandlers :
     {
         var r = command.Request;
         await ValidateLinkAsync(r.LinkType, r.LinkValue, ct);
-        var banner = MallBanner.Create(r.StoreId, r.Position, r.ImageUrl, r.LinkType, r.LinkValue,
+        var banner = MallBanner.Create(r.Position, r.ImageUrl, r.LinkType, r.LinkValue,
             r.Title, r.SortOrder, r.StartDate, r.EndDate, r.IsActive);
         _dbContext.MallBanners.Add(banner);
         await _dbContext.SaveChangesAsync(ct);
 
         return new MallBannerDto
         {
-            Id = banner.Id, StoreId = banner.StoreId, Position = banner.Position, ImageUrl = banner.ImageUrl,
+            Id = banner.Id, Position = banner.Position, ImageUrl = banner.ImageUrl,
             LinkType = banner.LinkType, LinkValue = banner.LinkValue, Title = banner.Title,
             SortOrder = banner.SortOrder, StartDate = banner.StartDate, EndDate = banner.EndDate,
             IsActive = banner.IsActive, CreatedAt = banner.CreatedAt
@@ -148,7 +146,7 @@ public class MallBannerHandlers :
 
         return new MallBannerDto
         {
-            Id = banner.Id, StoreId = banner.StoreId, Position = banner.Position, ImageUrl = banner.ImageUrl,
+            Id = banner.Id, Position = banner.Position, ImageUrl = banner.ImageUrl,
             LinkType = banner.LinkType, LinkValue = banner.LinkValue, Title = banner.Title,
             SortOrder = banner.SortOrder, StartDate = banner.StartDate, EndDate = banner.EndDate,
             IsActive = banner.IsActive, CreatedAt = banner.CreatedAt

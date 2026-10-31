@@ -42,7 +42,6 @@ public class UpdateMallCategoryHandler : IRequestHandler<UpdateMallCategoryComma
         await MallCategoryRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, request.Id, cancellationToken);
         await MallCategoryRules.EnsureParentValidAsync(
             _dbContext,
-            category.StoreId,
             request.Request.ParentId,
             request.Id,
             cancellationToken);

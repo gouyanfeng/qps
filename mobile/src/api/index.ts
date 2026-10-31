@@ -5,10 +5,9 @@ import {
   isLoggedIn,
   resolveFileUrl
 } from '@/utils/http'
-import type { Category, Product, ProductTag, Banner, CartItem, MallActivity, BannerLinkType } from './types'
+import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem, MallActivity, BannerLinkType } from './types'
 
 const LEGACY_CART_STORAGE_KEY = 'qps_cart_items'
-const STORE_ID_STORAGE_KEY = 'qps_mall_store_id'
 const MEMBER_ID_STORAGE_KEY = 'qps_member_id'
 const deselectedCartSkuIds = new Set<string>()
 export { isLoggedIn }
@@ -29,6 +28,7 @@ interface ApiProduct {
   categoryId: string | null
   categoryName: string
   description: string
+  detailHtml?: string
   mainImageUrl: string
   albumImages: string[]
   images: string[]
@@ -36,10 +36,7 @@ interface ApiProduct {
   sales: number
   isHot: boolean
   tags?: ProductTag[]
-}
-
-interface MallStore {
-  id: string
+  promotions?: ProductPromotion[]
 }
 
 interface ApiPage<T> {
@@ -59,16 +56,6 @@ interface MallBanner {
   linkType: BannerLinkType
 }
 
-export async function getStoreId(): Promise<string> {
-  const cachedId = uni.getStorageSync(STORE_ID_STORAGE_KEY)
-  if (cachedId) return cachedId
-
-  const store = await request<MallStore>('/api/mall/store/default')
-  if (!store?.id) throw new Error('商城尚未配置可用门店')
-  uni.setStorageSync(STORE_ID_STORAGE_KEY, store.id)
-  return store.id
-}
-
 function mapBanner(b: MallBanner): Banner {
   return {
     id: b.id,
@@ -80,8 +67,7 @@ function mapBanner(b: MallBanner): Banner {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const storeId = await getStoreId()
-  const tree = await request<Category[]>(`/api/mall/categories/tree?storeId=${storeId}`)
+  const tree = await request<Category[]>('/api/mall/categories/tree')
   return tree.map(c => ({
     id: c.id,
     name: c.name,
@@ -138,6 +124,7 @@ function mapProduct(p: ApiProduct): Product {
     categoryId: p.categoryId,
     categoryName: p.categoryName,
     description: p.description,
+    detailHtml: p.detailHtml,
     images: rawImages.map(resolveFileUrl),
     skus: (p.skus || []).map(s => ({
       id: s.id,
@@ -149,13 +136,13 @@ function mapProduct(p: ApiProduct): Product {
     })),
     sales: p.sales || 0,
     isHot: p.isHot || false,
-    tags: (p.tags || []).filter(tag => tag.isActive)
+    tags: (p.tags || []).filter(tag => tag.isActive),
+    promotions: (p.promotions || [])
   }
 }
 
 export async function getBanners(): Promise<Banner[]> {
-  const storeId = await getStoreId()
-  const list = await request<MallBanner[]>(`/api/mall/banners?storeId=${storeId}&position=home`)
+  const list = await request<MallBanner[]>('/api/mall/banners?position=home')
   return list.map(mapBanner)
 }
 
@@ -191,8 +178,7 @@ function isGuid(value: string): boolean {
 
 async function getRemoteCart(): Promise<CartItem[]> {
   const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
-  const storeId = await getStoreId()
-  const cart = await request<MallCartResponse>(`/api/mall/carts/${memberId}/store/${storeId}`)
+  const cart = await request<MallCartResponse>(`/api/mall/carts/${memberId}`)
   return (cart.items || []).map(item => ({
     productId: item.productId,
     productName: item.productName,
@@ -212,10 +198,8 @@ async function getRemoteCart(): Promise<CartItem[]> {
 
 export async function addToCart(item: CartItem): Promise<CartItem[]> {
   if (!isGuid(item.skuId)) throw new Error('商品规格信息无效，请刷新后重试')
-  const storeId = await getStoreId()
   await request<MallCartResponse>('/api/mall/carts/add', 'POST', {
     userId: getMemberId() || '00000000-0000-0000-0000-000000000000',
-    storeId,
     skuId: item.skuId,
     quantity: item.quantity
   })
@@ -225,10 +209,8 @@ export async function addToCart(item: CartItem): Promise<CartItem[]> {
 export async function updateCartItemQuantity(skuId: string, quantity: number): Promise<CartItem[]> {
   if (!isGuid(skuId)) throw new Error('商品规格信息无效，请刷新后重试')
   if (quantity <= 0) return removeCartItem(skuId)
-  const storeId = await getStoreId()
   await request<MallCartResponse>('/api/mall/carts/update-item', 'PUT', {
     userId: getMemberId() || '00000000-0000-0000-0000-000000000000',
-    storeId,
     skuId,
     quantity
   })
@@ -238,8 +220,7 @@ export async function updateCartItemQuantity(skuId: string, quantity: number): P
 export async function removeCartItem(skuId: string): Promise<CartItem[]> {
   if (!isGuid(skuId)) throw new Error('商品规格信息无效，请刷新后重试')
   const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
-  const storeId = await getStoreId()
-  await request(`/api/mall/carts/${memberId}/store/${storeId}/items/${skuId}`, 'DELETE')
+  await request(`/api/mall/carts/${memberId}/items/${skuId}`, 'DELETE')
   deselectedCartSkuIds.delete(skuId)
   return getRemoteCart()
 }
@@ -264,8 +245,7 @@ export function setCartItemsSelection(items: CartItem[], selected: boolean): Car
 
 export async function clearCart(): Promise<void> {
   const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
-  const storeId = await getStoreId()
-  await request(`/api/mall/carts/${memberId}/store/${storeId}`, 'DELETE')
+  await request(`/api/mall/carts/${memberId}`, 'DELETE')
   deselectedCartSkuIds.clear()
 }
 
@@ -333,9 +313,8 @@ export interface MallMemberOrderBadge {
   returning: number
 }
 
-export async function getMemberOrderBadge(): Promise<MallMemberOrderBadge> {
-  const storeId = await getStoreId()
-  return request<MallMemberOrderBadge>(`/api/mall/member/me/order-badge?storeId=${storeId}`)
+export function getMemberOrderBadge(): Promise<MallMemberOrderBadge> {
+  return request<MallMemberOrderBadge>('/api/mall/member/me/order-badge')
 }
 
 export function getMyCouponCount(): Promise<number> {
@@ -377,11 +356,8 @@ export function getAddresses(): Promise<MallAddress[]> {
 export function saveAddress(address: Partial<MallAddress> & {
   receiverName: string
   receiverPhone: string
-  provinceCode: string
   provinceName: string
-  cityCode: string
   cityName: string
-  districtCode: string
   districtName: string
   detailAddress: string
   isDefault: boolean
@@ -404,11 +380,8 @@ export interface MallAddress {
   id: string
   receiverName: string
   receiverPhone: string
-  provinceCode: string
   provinceName: string
-  cityCode: string
   cityName: string
-  districtCode: string
   districtName: string
   detailAddress: string
   fullAddress: string
@@ -420,14 +393,10 @@ export function createOrder(data: CreateOrderRequest): Promise<MallOrderDetail> 
 }
 
 export interface CreateOrderRequest {
-  storeId: string
   receiverName: string
   receiverPhone: string
-  provinceCode: string
   provinceName: string
-  cityCode: string
   cityName: string
-  districtCode: string
   districtName: string
   receiverAddress: string
   remark: string
@@ -435,15 +404,82 @@ export interface CreateOrderRequest {
 }
 
 export interface MallOrderDetail extends MallOrder {
+  receiverPhone: string
+  receiverAddress: string
+  remark: string
+  freightAmount: number
+  paidAmount: number
+  refundedAmount: number
+  paidAt: string | null
+  shippedAt: string | null
+  completedAt: string | null
+  cancelledAt: string | null
+  refundedAt: string | null
   items: Array<{
+    id: string
     productName: string
+    productImage: string
     specName: string
     quantity: number
     unitPrice: number
+    itemAmount: number
     isGift: boolean
     promotionName: string
+    badge: string
     originalUnitPrice: number | null
   }>
+  payments: Array<{
+    id: string
+    paymentNo: string
+    amount: number
+    method: string
+    status: string
+    transactionNo: string
+    failureReason: string
+    paidAt: string | null
+    createdAt: string
+  }>
+  refunds: Array<{
+    id: string
+    refundNo: string
+    amount: number
+    reason: string
+    status: string
+    refundedAt: string | null
+    createdAt: string
+  }>
+  shipment: {
+    id: string
+    shipmentNo: string
+    expressCompany: string
+    expressPhone: string
+    trackingNo: string
+    status: string
+    remark: string
+    shippedAt: string | null
+    deliveredAt: string | null
+  } | null
+}
+
+export function getOrderDetail(orderNo: string): Promise<MallOrderDetail> {
+  return request<MallOrderDetail>(`/api/mall/orders/${orderNo}`)
+}
+
+export interface ChinaRegionNode {
+  code: string
+  name: string
+  level: number
+  parentCode: string
+}
+
+let _chinaRegions: ChinaRegionNode[] | null = null
+export async function getChinaRegions(): Promise<ChinaRegionNode[]> {
+  if (_chinaRegions) return _chinaRegions
+  const data = await request<Array<{ code: string; name: string; level: number; parentCode: string }>>(
+    '/api/admin/china-regions?activeOnly=true'
+  )
+  _chinaRegions = (data || []).map(r => ({ code: r.code, name: r.name, level: r.level, parentCode: r.parentCode }))
+  return _chinaRegions
 }
 
 export function logout(): void {

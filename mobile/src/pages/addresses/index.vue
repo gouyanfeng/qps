@@ -19,11 +19,44 @@
         <text class="form-title">新增收货地址</text>
         <input v-model.trim="form.receiverName" class="form-input" placeholder="收货人" />
         <input v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" />
-        <view class="region-row">
-          <input v-model.trim="form.provinceName" class="form-input" placeholder="省份" />
-          <input v-model.trim="form.cityName" class="form-input" placeholder="城市" />
-          <input v-model.trim="form.districtName" class="form-input" placeholder="区县" />
-        </view>
+
+        <picker mode="selector" :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
+          <view class="form-picker">
+            <text :class="{ placeholder: !form.provinceName }">
+              {{ form.provinceName || '请选择省份' }}
+            </text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+        <picker
+          mode="selector"
+          :range="cityNames"
+          :value="cityIndex"
+          :disabled="!selectedProvinceCode"
+          @change="onCityChange"
+        >
+          <view class="form-picker" :class="{ disabled: !selectedProvinceCode }">
+            <text :class="{ placeholder: !form.cityName }">
+              {{ form.cityName || (selectedProvinceCode ? '请选择城市' : '请先选省份') }}
+            </text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+        <picker
+          mode="selector"
+          :range="districtNames"
+          :value="districtIndex"
+          :disabled="!selectedCityCode"
+          @change="onDistrictChange"
+        >
+          <view class="form-picker" :class="{ disabled: !selectedCityCode }">
+            <text :class="{ placeholder: !form.districtName }">
+              {{ form.districtName || (selectedCityCode ? '请选择区县' : '请先选城市') }}
+            </text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+
         <input v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" />
         <view class="default-option" @click="form.isDefault = !form.isDefault">
           <checkbox :checked="form.isDefault" color="#2E7D32" />
@@ -36,14 +69,16 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { deleteAddress, getAddresses, saveAddress } from '@/api'
-import type { MallAddress } from '@/api'
+import { deleteAddress, getAddresses, getChinaRegions, saveAddress } from '@/api'
+import type { ChinaRegionNode, MallAddress } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
 const addresses = ref<MallAddress[]>([])
 const saving = ref(false)
+const regionAll = ref<ChinaRegionNode[]>([])
+
 const form = reactive({
   receiverName: '',
   receiverPhone: '',
@@ -54,9 +89,41 @@ const form = reactive({
   isDefault: false
 })
 
+const provinces = computed(() => regionAll.value.filter(r => r.level === 1))
+const provinceNames = computed(() => provinces.value.map(r => r.name))
+const provinceIndex = ref(0)
+const selectedProvinceCode = computed(() => provinces.value[provinceIndex.value]?.code ?? '')
+
+const cities = computed(() => regionAll.value.filter(r => r.level === 2 && r.parentCode === selectedProvinceCode.value))
+const cityNames = computed(() => cities.value.map(r => r.name))
+const cityIndex = ref(0)
+const selectedCityCode = computed(() => cities.value[cityIndex.value]?.code ?? '')
+
+const districts = computed(() => regionAll.value.filter(r => r.level === 3 && r.parentCode === selectedCityCode.value))
+const districtNames = computed(() => districts.value.map(r => r.name))
+const districtIndex = ref(0)
+
 onShow(async () => {
-  await loadAddresses()
+  await Promise.all([loadAddresses(), loadRegions()])
+  syncFormFromIndex()
 })
+
+async function loadRegions() {
+  try {
+    regionAll.value = await getChinaRegions()
+  } catch (error) {
+    console.error('加载地区数据失败', error)
+  }
+}
+
+function syncFormFromIndex() {
+  const p = provinces.value[provinceIndex.value]
+  form.provinceName = p?.name ?? ''
+  const c = cities.value[cityIndex.value]
+  form.cityName = c?.name ?? ''
+  const d = districts.value[districtIndex.value]
+  form.districtName = d?.name ?? ''
+}
 
 async function loadAddresses() {
   try {
@@ -84,20 +151,40 @@ async function removeAddress(addressId: string) {
   }
 }
 
+function onProvinceChange(e: { detail: { value: number } }) {
+  provinceIndex.value = e.detail.value
+  const picked = provinces.value[provinceIndex.value]
+  form.provinceName = picked?.name ?? ''
+  form.cityName = cities.value[0]?.name ?? ''
+  form.districtName = districts.value[0]?.name ?? ''
+  cityIndex.value = 0
+  districtIndex.value = 0
+}
+
+function onCityChange(e: { detail: { value: number } }) {
+  cityIndex.value = e.detail.value
+  const picked = cities.value[cityIndex.value]
+  form.cityName = picked?.name ?? ''
+  form.districtName = districts.value[0]?.name ?? ''
+  districtIndex.value = 0
+}
+
+function onDistrictChange(e: { detail: { value: number } }) {
+  districtIndex.value = e.detail.value
+  const picked = districts.value[districtIndex.value]
+  form.districtName = picked?.name ?? ''
+}
+
 async function submit() {
-  if (!form.receiverName || !/^1\d{10}$/.test(form.receiverPhone) ||
-      !form.provinceName || !form.cityName || !form.districtName || !form.detailAddress) {
-    uni.showToast({ title: '请完整填写收货信息', icon: 'none' })
-    return
-  }
+  if (!form.receiverName) { uni.showToast({ title: '请填写收货人', icon: 'none' }); return }
+  if (!/^1\d{10}$/.test(form.receiverPhone)) { uni.showToast({ title: '手机号格式不对', icon: 'none' }); return }
+  if (!form.provinceName) { uni.showToast({ title: '请选择省份', icon: 'none' }); return }
+  if (!form.cityName) { uni.showToast({ title: '请选择城市', icon: 'none' }); return }
+  if (!form.districtName) { uni.showToast({ title: '请选择区县', icon: 'none' }); return }
+  if (!form.detailAddress) { uni.showToast({ title: '请填写详细地址', icon: 'none' }); return }
   saving.value = true
   try {
-    await saveAddress({
-      ...form,
-      provinceCode: form.provinceName,
-      cityCode: form.cityName,
-      districtCode: form.districtName
-    })
+    await saveAddress({ ...form })
     Object.assign(form, {
       receiverName: '',
       receiverPhone: '',
@@ -107,6 +194,9 @@ async function submit() {
       detailAddress: '',
       isDefault: false
     })
+    provinceIndex.value = 0
+    cityIndex.value = 0
+    districtIndex.value = 0
     await loadAddresses()
     uni.showToast({ title: '地址已保存', icon: 'success' })
   } catch (error) {
@@ -196,14 +286,30 @@ async function submit() {
   font-size: 23rpx;
 }
 
-.region-row {
+.form-picker {
   display: flex;
-  gap: 10rpx;
+  align-items: center;
+  justify-content: space-between;
+  height: 78rpx;
+  margin-bottom: 14rpx;
+  padding: 0 16rpx;
+  background: #F7F6F2;
+  border-radius: 10rpx;
+  font-size: 23rpx;
+  color: #1B1C1C;
+
+  &.placeholder {
+    color: #999;
+  }
+
+  &.disabled {
+    color: #bbb;
+  }
 }
 
-.region-row .form-input {
-  width: 0;
-  flex: 1;
+.picker-arrow {
+  color: #bbb;
+  font-size: 32rpx;
 }
 
 .default-option {

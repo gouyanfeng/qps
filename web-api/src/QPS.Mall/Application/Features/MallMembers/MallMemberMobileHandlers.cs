@@ -81,7 +81,6 @@ public class ChangeMallMemberPasswordHandler : IRequestHandler<ChangeMallMemberP
 public class GetMallMemberOrderBadgeQuery : IRequest<MallMemberOrderBadgeDto>
 {
     public Guid MemberId { get; set; }
-    public Guid StoreId { get; set; }
 }
 
 public class MallMemberOrderBadgeDto
@@ -102,7 +101,7 @@ public class GetMallMemberOrderBadgeHandler : IRequestHandler<GetMallMemberOrder
     {
         var counts = await _db.MallOrders
             .AsNoTracking()
-            .Where(x => x.MemberId == req.MemberId && x.StoreId == req.StoreId && !x.IsDeleted)
+            .Where(x => x.MemberId == req.MemberId && !x.IsDeleted)
             .Select(x => x.Status)
             .GroupBy(status => status)
             .Select(group => new { Status = group.Key, Count = group.Count() })

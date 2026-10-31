@@ -6,109 +6,119 @@ namespace QPS.Mall.Application.Features.MallFreightTemplates;
 
 internal static class MallFreightTemplateRules
 {
+    public const int TemplateNameMax = 50;
+    public const int TemplateDescMax = 500;
+    public const int RegionNameMax = 50;
+    public const int ProvinceNamesMax = 2000;
+    public const int CityNamesMax = 2000;
+
     public static void ValidateTemplateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-        {
             throw new BusinessException(400, "模板名称不能为空");
-        }
-
-        if (name.Length > 50)
-        {
-            throw new BusinessException(400, "模板名称不能超过 50 个字符");
-        }
+        if (name.Length > TemplateNameMax)
+            throw new BusinessException(400, $"模板名称不能超过 {TemplateNameMax} 个字符");
     }
 
     public static void ValidateBillingType(FreightBillingType billingType)
     {
         if (!Enum.IsDefined(billingType))
-        {
             throw new BusinessException(400, "无效的计费方式");
-        }
     }
 
     public static void ValidateRegions(List<MallFreightRegionRequest> regions)
     {
         if (regions == null || regions.Count == 0)
-        {
-            throw new BusinessException(400, "至少需要配置一个区域规则");
-        }
+            throw new BusinessException(400, "至少需要 1 条区域规则");
 
-        var hasDefault = false;
-        var regionNameSet = new HashSet<string>();
+        for (int i = 0; i < regions.Count; i++)
+            ValidateRegion(regions[i], i);
 
-        foreach (var region in regions)
-        {
-            if (string.IsNullOrWhiteSpace(region.RegionName))
-            {
-                throw new BusinessException(400, "区域名称不能为空");
-            }
-
-            if (!regionNameSet.Add(region.RegionName))
-            {
-                throw new BusinessException(400, $"区域名称「{region.RegionName}」重复");
-            }
-
-            if (region.FirstValue <= 0)
-            {
-                throw new BusinessException(400, $"区域「{region.RegionName}」首值必须大于 0");
-            }
-
-            if (region.FirstFee < 0)
-            {
-                throw new BusinessException(400, $"区域「{region.RegionName}」首费不能小于 0");
-            }
-
-            if (region.StepValue <= 0)
-            {
-                throw new BusinessException(400, $"区域「{region.RegionName}」续步长必须大于 0");
-            }
-
-            if (region.StepFee < 0)
-            {
-                throw new BusinessException(400, $"区域「{region.RegionName}」续费不能小于 0");
-            }
-
-            if (region.FreeShippingAmount.HasValue && region.FreeShippingAmount.Value <= 0)
-            {
-                throw new BusinessException(400, $"区域「{region.RegionName}」满额包邮金额必须大于 0");
-            }
-
-            if (region.FreeShippingQuantity.HasValue && region.FreeShippingQuantity.Value <= 0)
-            {
-                throw new BusinessException(400, $"区域「{region.RegionName}」满件包邮数量必须大于 0");
-            }
-
-            if (region.IsDefaultRegion)
-            {
-                if (hasDefault)
-                {
-                    throw new BusinessException(400, "只能有一个默认兜底区域");
-                }
-
-                hasDefault = true;
-            }
-
-            if (!region.IsDefaultRegion)
-            {
-                if (string.IsNullOrWhiteSpace(region.ProvinceCodes))
-                {
-                    throw new BusinessException(400, $"区域「{region.RegionName}」必须配置省份编码");
-                }
-            }
-        }
-
-        if (!hasDefault)
-        {
-            throw new BusinessException(400, "必须配置一个默认兜底区域");
-        }
+        ValidateRegionsNoDuplicates(regions);
     }
 
     public static string GetBillingTypeName(FreightBillingType type) => type switch
     {
-        FreightBillingType.Weight => "按重量",
         FreightBillingType.Quantity => "按件数",
+        FreightBillingType.Weight => "按重量",
         FreightBillingType.Volume => "按体积",
         _ => "未知"
     };
+
+    public static void ValidateTemplateBasic(MallFreightTemplateCreateRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Name))
+            throw new BusinessException(400, "运费模板名称不能为空");
+        if (req.Name.Length > TemplateNameMax)
+            throw new BusinessException(400, $"运费模板名称不能超过 {TemplateNameMax} 个字符");
+        if (!string.IsNullOrEmpty(req.Description) && req.Description.Length > TemplateDescMax)
+            throw new BusinessException(400, $"运费模板描述不能超过 {TemplateDescMax} 个字符");
+    }
+
+    public static void ValidateRegion(MallFreightRegionRequest region, int index)
+    {
+        if (string.IsNullOrWhiteSpace(region.RegionName))
+            throw new BusinessException(400, $"第 {index + 1} 条区域规则的区域名称不能为空");
+        if (region.RegionName.Length > RegionNameMax)
+            throw new BusinessException(400, $"第 {index + 1} 条区域规则的区域名称过长");
+
+        if (region.IsDefaultRegion)
+        {
+            if (!string.IsNullOrWhiteSpace(region.ProvinceNames) || !string.IsNullOrWhiteSpace(region.CityNames))
+            {
+                throw new BusinessException(400, "默认区域规则不能配置省/市名称");
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(region.ProvinceNames))
+                throw new BusinessException(400, $"第 {index + 1} 条区域规则的省份名称不能为空");
+            if (region.ProvinceNames.Length > ProvinceNamesMax)
+                throw new BusinessException(400, $"第 {index + 1} 条区域规则的省份名称过长");
+            if (!string.IsNullOrEmpty(region.CityNames) && region.CityNames.Length > CityNamesMax)
+                throw new BusinessException(400, $"第 {index + 1} 条区域规则的市名称过长");
+        }
+
+        if (region.FirstValue <= 0)
+            throw new BusinessException(400, $"第 {index + 1} 条区域规则的首件/首重/首体积必须大于 0");
+        if (region.FirstFee < 0)
+            throw new BusinessException(400, $"第 {index + 1} 条区域规则的首费不能为负数");
+        if (region.StepValue <= 0)
+            throw new BusinessException(400, $"第 {index + 1} 条区域规则的续件/续重/续体积必须大于 0");
+        if (region.StepFee < 0)
+            throw new BusinessException(400, $"第 {index + 1} 条区域规则的续费不能为负数");
+
+        if (region.FreeShippingAmount.HasValue && region.FreeShippingAmount < 0)
+            throw new BusinessException(400, "满额包邮金额不能为负数");
+        if (region.FreeShippingQuantity.HasValue && region.FreeShippingQuantity <= 0)
+            throw new BusinessException(400, "满件包邮件数必须大于 0");
+    }
+
+    public static void ValidateRegionsNoDuplicates(List<MallFreightRegionRequest> regions)
+    {
+        var defaults = regions.Count(r => r.IsDefaultRegion);
+        if (defaults > 1)
+            throw new BusinessException(400, "运费模板只能有一个默认区域规则");
+
+        var allProvinceNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var r in regions.Where(x => !x.IsDefaultRegion))
+        {
+            foreach (var code in SplitNames(r.ProvinceNames))
+            {
+                if (!allProvinceNames.Add(code))
+                {
+                    throw new BusinessException(400, $"省份名称 {code} 被多个区域规则重复配置");
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> SplitNames(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) yield break;
+        foreach (var part in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!string.IsNullOrEmpty(part)) yield return part;
+        }
+    }
 }

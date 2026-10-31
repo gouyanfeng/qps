@@ -7,8 +7,6 @@ namespace QPS.Mall.Domain.Entities;
 /// </summary>
 public class MallActivity : BaseEntity
 {
-    private readonly List<MallActivityPromotion> _promotions = new();
-
     public string Name { get; private set; } = string.Empty;
 
     public string Subtitle { get; private set; } = string.Empty;
@@ -26,8 +24,6 @@ public class MallActivity : BaseEntity
     public int SortOrder { get; private set; }
 
     public bool IsActive { get; private set; }
-
-    public IReadOnlyCollection<MallActivityPromotion> Promotions => _promotions;
 
     private MallActivity()
     {
@@ -100,19 +96,6 @@ public class MallActivity : BaseEntity
 
     public void ChangeStatus(bool isActive) => IsActive = isActive;
 
-    public void AddPromotion(Guid promotionId)
-    {
-        if (_promotions.All(item => item.PromotionId != promotionId))
-        {
-            _promotions.Add(MallActivityPromotion.Create(Id, promotionId));
-        }
-    }
-
-    public void ClearPromotions() => _promotions.Clear();
-
-    /// <summary>
-    /// 活动是否在有效时间窗口内，开始/结束时间为空表示不限。
-    /// </summary>
     public bool IsWithinTimeWindow(DateTime now)
     {
         if (StartDate.HasValue && StartDate.Value > now)

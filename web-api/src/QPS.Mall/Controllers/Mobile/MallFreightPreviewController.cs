@@ -8,7 +8,7 @@ namespace QPS.Mall.Controllers;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallFreightPreviewController : ControllerBase
 {
     private readonly IMediator _mediator;

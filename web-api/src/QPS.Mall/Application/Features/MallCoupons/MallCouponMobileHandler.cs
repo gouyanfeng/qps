@@ -7,7 +7,6 @@ namespace QPS.Mall.Application.Features.MallCoupons;
 
 public class GetAvailableMallCouponsQuery : IRequest<List<MallCouponDto>>
 {
-    public Guid StoreId { get; set; }
     public Guid? MemberId { get; set; }
 }
 
@@ -22,7 +21,7 @@ public class GetAvailableMallCouponsHandler : IRequestHandler<GetAvailableMallCo
 
         var query = _db.MallCoupons
             .AsNoTracking()
-            .Where(c => c.StoreId == req.StoreId && c.IsActive && !c.IsDeleted
+            .Where(c => c.IsActive && !c.IsDeleted
                 && (c.StartAt == null || c.StartAt <= now)
                 && (c.EndAt == null || c.EndAt >= now)
                 && c.RemainCount > 0);
@@ -44,7 +43,6 @@ public class GetAvailableMallCouponsHandler : IRequestHandler<GetAvailableMallCo
             .Select(c => new MallCouponDto
             {
                 Id = c.Id,
-                StoreId = c.StoreId,
                 Code = c.Code,
                 Name = c.Name,
                 CouponType = c.CouponType,

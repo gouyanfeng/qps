@@ -14,8 +14,6 @@ public class MallTag : BaseEntity
 
     public bool IsActive { get; private set; }
 
-    public ICollection<MallProduct> Products { get; private set; } = new List<MallProduct>();
-
     private MallTag()
     {
     }

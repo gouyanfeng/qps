@@ -6,9 +6,9 @@ public static class CurrentUserExtensions
 {
     public static Guid GetUserId(this ICurrentUserService currentUser)
     {
-        if (Guid.TryParse(currentUser.UserId, out var id) && id != Guid.Empty)
-            return id;
-        throw new QPS.Shared.Exceptions.BusinessException(401, "登录状态无效");
+        if (!Guid.TryParse(currentUser.UserId, out var id) || id == Guid.Empty)
+            throw new UnauthorizedAccessException("用户未登录");
+        return id;
     }
 
     public static bool IsAuthenticated(this ICurrentUserService currentUser)

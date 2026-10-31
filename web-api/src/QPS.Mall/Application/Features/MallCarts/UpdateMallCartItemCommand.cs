@@ -30,12 +30,15 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
         var req = command.Request;
 
         var cart = await _dbContext.MallCarts
-            .Include(c => c.Items)
             .FirstOrDefaultAsync(
-                c => c.UserId == req.UserId && c.StoreId == req.StoreId && !c.IsDeleted,
+                c => c.UserId == req.UserId && !c.IsDeleted,
                 cancellationToken);
 
         if (cart is null) throw new BusinessException(404, "购物车不存在");
+
+        var item = await _dbContext.MallCartItems
+            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == req.SkuId && !i.IsDeleted, cancellationToken);
+        if (item is null) throw new BusinessException(400, "购物车中没有该商品");
 
         if (req.Quantity > 0)
         {
@@ -44,23 +47,31 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
             if (sku is null) throw new BusinessException(404, "商品规格不存在");
             if (sku.Stock < req.Quantity)
                 throw new BusinessException(400, $"库存不足，仅剩 {sku.Stock}");
+
+            item.SetQuantity(req.Quantity);
+        }
+        else
+        {
+            _dbContext.MallCartItems.Remove(item);
         }
 
-        cart.UpdateQuantity(req.SkuId, req.Quantity);
+        cart.Touch();
 
-        if (cart.Items.Count == 0)
+        var remainingCount = await _dbContext.MallCartItems
+            .CountAsync(i => i.CartId == cart.Id && !i.IsDeleted, cancellationToken);
+
+        if (remainingCount == 0)
         {
             _dbContext.MallCarts.Remove(cart);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        if (cart.Items.Count == 0)
+        if (remainingCount == 0)
         {
             return new MallCartDto
             {
                 UserId = req.UserId,
-                StoreId = req.StoreId,
                 TotalQuantity = 0,
                 TotalAmount = 0,
                 Items = new List<MallCartItemDto>()
@@ -69,8 +80,7 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
 
         return await _getCartHandler.Handle(new GetMallCartQuery
         {
-            UserId = req.UserId,
-            StoreId = req.StoreId
+            UserId = req.UserId
         }, cancellationToken);
     }
 }

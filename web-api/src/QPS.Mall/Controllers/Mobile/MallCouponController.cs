@@ -23,13 +23,13 @@ public class MallCouponController : ControllerBase
     }
 
     [HttpGet("coupons/available")]
-    public async Task<ActionResult<List<MallCouponDto>>> GetAvailable([FromQuery] Guid storeId)
+    public async Task<ActionResult<List<MallCouponDto>>> GetAvailable()
     {
         Guid? memberId = null;
         if (_currentUser?.IsAuthenticated() == true)
         {
             memberId = _currentUser.GetUserId();
         }
-        return Ok(await _mediator.Send(new GetAvailableMallCouponsQuery { StoreId = storeId, MemberId = memberId }));
+        return Ok(await _mediator.Send(new GetAvailableMallCouponsQuery { MemberId = memberId }));
     }
 }

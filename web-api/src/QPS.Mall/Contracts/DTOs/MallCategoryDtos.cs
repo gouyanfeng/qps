@@ -4,8 +4,6 @@ public class MallCategoryDto
 {
     public Guid Id { get; set; }
 
-    public Guid StoreId { get; set; }
-
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
@@ -27,8 +25,6 @@ public class MallCategoryDto
 
 public class MallCategoryCreateRequest
 {
-    public Guid StoreId { get; set; }
-
     public string Code { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;

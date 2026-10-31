@@ -7,29 +7,16 @@ using QPS.Shared.Common;
 
 namespace QPS.Mall.Application.Features.MallProducts;
 
-/// <summary>
-/// 分页查询商场商品。
-/// </summary>
 public class GetMallProductsQuery : PaginationRequest, IRequest<PaginationResponse<MallProductDto>>
 {
-    /// <summary>
-    /// 关键字，匹配商品编码或名称。
-    /// </summary>
     public string? Keyword { get; set; }
 
-    /// <summary>
-    /// 按上下架状态过滤。
-    /// </summary>
+    public Guid? StoreId { get; set; }
+
     public bool? IsActive { get; set; }
 
-    /// <summary>
-    /// 按分类过滤。
-    /// </summary>
     public Guid? CategoryId { get; set; }
 
-    /// <summary>
-    /// 按热销状态过滤。
-    /// </summary>
     public bool? IsHot { get; set; }
 
     public string? TagCode { get; set; }
@@ -38,10 +25,12 @@ public class GetMallProductsQuery : PaginationRequest, IRequest<PaginationRespon
 public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, PaginationResponse<MallProductDto>>
 {
     private readonly IMallDbContext _dbContext;
+    private readonly MallProductPromotionEnricher _enricher;
 
-    public GetMallProductsHandler(IMallDbContext dbContext)
+    public GetMallProductsHandler(IMallDbContext dbContext, MallProductPromotionEnricher enricher)
     {
         _dbContext = dbContext;
+        _enricher = enricher;
     }
 
     public async Task<PaginationResponse<MallProductDto>> Handle(
@@ -58,10 +47,19 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
             query = query.Where(product =>
                 product.Code.Contains(keyword) ||
                 product.Name.Contains(keyword) ||
-                product.Tags.Any(tag =>
-                    tag.Name.Contains(keyword) &&
-                    tag.IsActive &&
-                    !tag.IsDeleted));
+                _dbContext.MallProductTags.Any(pt =>
+                    pt.ProductId == product.Id &&
+                    !pt.IsDeleted &&
+                    _dbContext.MallTags.Any(tag =>
+                        tag.Id == pt.TagId &&
+                        tag.Name.Contains(keyword) &&
+                        tag.IsActive &&
+                        !tag.IsDeleted)));
+        }
+
+        if (request.StoreId.HasValue && request.StoreId.Value != Guid.Empty)
+        {
+            query = query.Where(product => product.StoreId == request.StoreId.Value);
         }
 
         if (request.IsActive.HasValue)
@@ -81,8 +79,16 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
 
         if (!string.IsNullOrWhiteSpace(request.TagCode))
         {
-            query = query.Where(product => product.Tags.Any(tag =>
-                tag.Code == request.TagCode && tag.IsActive && !tag.IsDeleted));
+            var tagCode = request.TagCode;
+            query = query.Where(product =>
+                _dbContext.MallProductTags.Any(pt =>
+                    pt.ProductId == product.Id &&
+                    !pt.IsDeleted &&
+                    _dbContext.MallTags.Any(tag =>
+                        tag.Id == pt.TagId &&
+                        tag.Code == tagCode &&
+                        tag.IsActive &&
+                        !tag.IsDeleted)));
         }
 
         var page = request.Page < 1 ? 1 : request.Page;
@@ -98,6 +104,10 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
             .Select(product => new
             {
                 Product = product,
+                StoreName = _dbContext.MallStores
+                    .Where(store => store.Id == product.StoreId)
+                    .Select(store => store.Name)
+                    .FirstOrDefault(),
                 CategoryName = _dbContext.MallCategories
                     .Where(category => category.Id == product.CategoryId)
                     .Select(category => category.Name)
@@ -106,7 +116,7 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
             .ToListAsync(cancellationToken);
 
         var list = rows
-            .Select(row => Map(row.Product, row.CategoryName ?? string.Empty))
+            .Select(row => Map(row.Product, row.StoreName ?? string.Empty, row.CategoryName ?? string.Empty))
             .ToList();
 
         var productIds = list.Select(product => product.Id).ToArray();
@@ -140,23 +150,22 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
                 product.Skus = skuLookup[product.Id].ToList();
             }
 
-            var tagsByProduct = await _dbContext.MallProducts
-                .Where(product => productIds.Contains(product.Id))
-                .SelectMany(product => product.Tags
-                    .Where(tag => tag.IsActive && !tag.IsDeleted)
-                    .Select(tag => new
-                    {
-                        ProductId = product.Id,
-                        Tag = new MallTagDto
-                        {
-                            Id = tag.Id,
-                            Code = tag.Code,
-                            Name = tag.Name,
-                            Color = tag.Color,
-                            SortOrder = tag.SortOrder,
-                            IsActive = tag.IsActive
-                        }
-                    }))
+            var tagsByProduct = await (from pt in _dbContext.MallProductTags
+                                       join tag in _dbContext.MallTags on pt.TagId equals tag.Id
+                                       where productIds.Contains(pt.ProductId) && !pt.IsDeleted && tag.IsActive && !tag.IsDeleted
+                                       select new
+                                       {
+                                           ProductId = pt.ProductId,
+                                           Tag = new MallTagDto
+                                           {
+                                               Id = tag.Id,
+                                               Code = tag.Code,
+                                               Name = tag.Name,
+                                               Color = tag.Color,
+                                               SortOrder = tag.SortOrder,
+                                               IsActive = tag.IsActive
+                                           }
+                                       })
                 .ToListAsync(cancellationToken);
             var tagLookup = tagsByProduct.ToLookup(item => item.ProductId, item => item.Tag);
             foreach (var product in list)
@@ -165,14 +174,18 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
             }
         }
 
+        await _enricher.EnrichAsync(list, cancellationToken);
+
         return new PaginationResponse<MallProductDto>(list, totalCount, page, pageSize);
     }
 
-    internal static MallProductDto Map(MallProduct product, string categoryName)
+    internal static MallProductDto Map(MallProduct product, string storeName, string categoryName)
     {
         return new MallProductDto
         {
             Id = product.Id,
+            StoreId = product.StoreId,
+            StoreName = storeName,
             Code = product.Code,
             Name = product.Name,
             Description = product.Description,

@@ -8,9 +8,9 @@ public class MallFreightRegion : BaseEntity
 
     public string RegionName { get; private set; } = string.Empty;
 
-    public string ProvinceCodes { get; private set; } = string.Empty;
+    public string ProvinceNames { get; private set; } = string.Empty;
 
-    public string? CityCodes { get; private set; }
+    public string? CityNames { get; private set; }
 
     public int FirstValue { get; private set; }
 
@@ -33,8 +33,8 @@ public class MallFreightRegion : BaseEntity
     private MallFreightRegion(
         Guid templateId,
         string regionName,
-        string provinceCodes,
-        string? cityCodes,
+        string provinceNames,
+        string? cityNames,
         int firstValue,
         decimal firstFee,
         int stepValue,
@@ -45,8 +45,8 @@ public class MallFreightRegion : BaseEntity
     {
         TemplateId = templateId;
         RegionName = regionName;
-        ProvinceCodes = provinceCodes;
-        CityCodes = cityCodes;
+        ProvinceNames = provinceNames;
+        CityNames = cityNames;
         FirstValue = firstValue;
         FirstFee = firstFee;
         StepValue = stepValue;
@@ -59,8 +59,8 @@ public class MallFreightRegion : BaseEntity
     public static MallFreightRegion Create(
         Guid templateId,
         string regionName,
-        string provinceCodes,
-        string? cityCodes,
+        string provinceNames,
+        string? cityNames,
         int firstValue,
         decimal firstFee,
         int stepValue,
@@ -70,15 +70,15 @@ public class MallFreightRegion : BaseEntity
         bool isDefaultRegion)
     {
         return new MallFreightRegion(
-            templateId, regionName, provinceCodes, cityCodes,
+            templateId, regionName, provinceNames, cityNames,
             firstValue, firstFee, stepValue, stepFee,
             freeShippingAmount, freeShippingQuantity, isDefaultRegion);
     }
 
     public void Update(
         string regionName,
-        string provinceCodes,
-        string? cityCodes,
+        string provinceNames,
+        string? cityNames,
         int firstValue,
         decimal firstFee,
         int stepValue,
@@ -88,8 +88,8 @@ public class MallFreightRegion : BaseEntity
         bool isDefaultRegion)
     {
         RegionName = regionName;
-        ProvinceCodes = provinceCodes;
-        CityCodes = cityCodes;
+        ProvinceNames = provinceNames;
+        CityNames = cityNames;
         FirstValue = firstValue;
         FirstFee = firstFee;
         StepValue = stepValue;
@@ -99,18 +99,18 @@ public class MallFreightRegion : BaseEntity
         IsDefaultRegion = isDefaultRegion;
     }
 
-    public bool MatchesAddress(string? provinceCode, string? cityCode)
+    public bool MatchesAddress(string? provinceName, string? cityName)
     {
         if (IsDefaultRegion) return true;
 
-        var provinces = ParseCodes(ProvinceCodes);
-        if (!string.IsNullOrEmpty(cityCode) && !string.IsNullOrEmpty(CityCodes))
+        var provinces = ParseCodes(ProvinceNames);
+        if (!string.IsNullOrEmpty(cityName) && !string.IsNullOrEmpty(CityNames))
         {
-            var cities = ParseCodes(CityCodes);
-            if (cities.Contains(cityCode)) return true;
+            var cities = ParseCodes(CityNames);
+            if (cities.Contains(cityName)) return true;
         }
 
-        if (!string.IsNullOrEmpty(provinceCode) && provinces.Contains(provinceCode))
+        if (!string.IsNullOrEmpty(provinceName) && provinces.Contains(provinceName))
         {
             return true;
         }

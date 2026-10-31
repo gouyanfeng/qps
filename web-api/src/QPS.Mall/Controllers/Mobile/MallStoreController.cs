@@ -9,7 +9,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public sealed class MallStoreController(IMediator mediator) : ControllerBase
 {
     [HttpGet("store/default")]

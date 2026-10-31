@@ -13,7 +13,6 @@ public static class MallMockDataSeeder
     {
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var storeId = await EnsureStoreAsync(db, ct);
-        logger.LogInformation("🌱 MallMockDataSeeder using StoreId = {StoreId}", storeId);
 
         var categoriesPath = Path.Combine(mockRootPath, "categories.json");
         var bannersPath = Path.Combine(mockRootPath, "banners.json");
@@ -30,10 +29,10 @@ public static class MallMockDataSeeder
 
         var existingCategories = await db.MallCategories
             .IgnoreQueryFilters()
-            .Where(category => category.StoreId == storeId && category.Code.StartsWith("MOCK-CAT-"))
+            .Where(category => category.Code.StartsWith("MOCK-CAT-"))
             .ToDictionaryAsync(category => category.Code, ct);
         var newCategories = new List<MallCategory>();
-        var categories = ParseCategories(categoriesPath, storeId, existingCategories, newCategories);
+        var categories = ParseCategories(categoriesPath, existingCategories, newCategories);
         db.MallCategories.AddRange(newCategories);
         var sourceCategoryCodes = categories.Select(category => category.Code).ToHashSet(StringComparer.Ordinal);
         foreach (var category in existingCategories.Values.Where(category => !sourceCategoryCodes.Contains(category.Code)))
@@ -43,7 +42,6 @@ public static class MallMockDataSeeder
 
         var existingProducts = await db.MallProducts
             .IgnoreQueryFilters()
-            .Include(product => product.Tags)
             .Where(product => product.Code.StartsWith("MOCK-PROD-"))
             .ToListAsync(ct);
         var existingProductsByCode = existingProducts.ToDictionary(product => product.Code);
@@ -63,6 +61,7 @@ public static class MallMockDataSeeder
             StringComparer.Ordinal);
         var (products, skus, skuIdsByMockId) = ParseProducts(
             productsPath,
+            storeId,
             categoryIdsByMockId,
             existingProductsByCode,
             existingSkusByCode,
@@ -100,13 +99,12 @@ public static class MallMockDataSeeder
         var activityIdsByMockId = await SyncActivitiesAsync(db, activitiesPath, promotionIdsByMockId, ct);
         var banners = ParseBanners(
             bannersPath,
-            storeId,
             activityIdsByMockId,
             productIdsByMockId,
             categoryIdsByMockId);
         var existingBanners = await db.MallBanners
             .IgnoreQueryFilters()
-            .Where(banner => banner.StoreId == storeId && banner.Position == "home")
+            .Where(banner => banner.Position == "home")
             .ToListAsync(ct);
         var newBanners = new List<MallBanner>();
         var nextBannerSortOrder = existingBanners.Count == 0
@@ -171,7 +169,6 @@ public static class MallMockDataSeeder
 
     private static List<MallCategory> ParseCategories(
         string path,
-        Guid storeId,
         Dictionary<string, MallCategory> existingByCode,
         List<MallCategory> additions)
     {
@@ -189,7 +186,7 @@ public static class MallMockDataSeeder
 
             var parentCode = $"MOCK-CAT-{parent.GetProperty("id").GetString()}";
             var parentCategory = GetOrCreateCategory(
-                storeId, parentCode, parentName, null, parentIcon, sort, existingByCode, additions);
+                parentCode, parentName, null, parentIcon, sort, existingByCode, additions);
             result.Add(parentCategory);
             sort++;
 
@@ -200,7 +197,6 @@ public static class MallMockDataSeeder
                 {
                     var childCode = $"MOCK-CAT-{child.GetProperty("id").GetString()}";
                     var childCategory = GetOrCreateCategory(
-                        storeId,
                         childCode,
                         child.GetProperty("name").GetString()!,
                         parentCategory.Id,
@@ -219,7 +215,6 @@ public static class MallMockDataSeeder
     }
 
     private static MallCategory GetOrCreateCategory(
-        Guid storeId,
         string code,
         string name,
         Guid? parentId,
@@ -237,7 +232,7 @@ public static class MallMockDataSeeder
             return existing;
         }
 
-        var category = MallCategory.Create(storeId, code, name, parentId, icon, sortOrder, true);
+        var category = MallCategory.Create(code, name, parentId, icon, sortOrder, true);
         existingByCode.Add(code, category);
         additions.Add(category);
         return category;
@@ -283,11 +278,6 @@ public static class MallMockDataSeeder
             var scopeType = item.TryGetProperty("scopeType", out var scopeElement)
                 ? scopeElement.GetString() ?? "Global"
                 : "Global";
-            var priority = item.TryGetProperty("priority", out var priorityElement)
-                ? priorityElement.GetInt32()
-                : 0;
-            var combinable = item.TryGetProperty("combinable", out var combinableElement) &&
-                combinableElement.GetBoolean();
             var maxUsagePerUser = item.TryGetProperty("maxUsagePerUser", out var perUserElement)
                 ? perUserElement.GetInt32()
                 : 0;
@@ -308,8 +298,6 @@ public static class MallMockDataSeeder
                     actionType,
                     actionConfigJson,
                     scopeType,
-                    priority,
-                    combinable,
                     maxUsagePerUser,
                     maxUsagePerOrder,
                     startDate,
@@ -328,8 +316,6 @@ public static class MallMockDataSeeder
                     actionType,
                     actionConfigJson,
                     scopeType,
-                    priority,
-                    combinable,
                     maxUsagePerUser,
                     maxUsagePerOrder,
                     startDate,
@@ -593,7 +579,6 @@ public static class MallMockDataSeeder
 
     private static List<MallBanner> ParseBanners(
         string path,
-        Guid storeId,
         IReadOnlyDictionary<string, Guid> activityIdsByMockId,
         IReadOnlyDictionary<string, Guid> productIdsByMockId,
         IReadOnlyDictionary<string, Guid> categoryIdsByMockId)
@@ -661,7 +646,6 @@ public static class MallMockDataSeeder
             }
 
             result.Add(MallBanner.Create(
-                storeId: storeId,
                 position: "home",
                 imageUrl: image,
                 linkType,
@@ -682,6 +666,7 @@ public static class MallMockDataSeeder
         List<MallSku> skus,
         Dictionary<string, Guid> skuIdsByMockId) ParseProducts(
         string path,
+        Guid storeId,
         Dictionary<string, Guid> categoryIdsByMockId,
         Dictionary<string, MallProduct> existingProductsByCode,
         Dictionary<string, MallSku> existingSkusByCode,
@@ -736,6 +721,7 @@ public static class MallMockDataSeeder
                 product = existingProduct;
                 // 首页精选属于后台运营配置，已存在商品不按 mock 种子覆盖
                 product.Update(
+                    existingProduct.StoreId == Guid.Empty ? storeId : existingProduct.StoreId,
                     code,
                     name,
                     description,
@@ -752,6 +738,7 @@ public static class MallMockDataSeeder
             else
             {
                 product = MallProduct.Create(
+                    storeId: storeId,
                     code: code,
                     name: name,
                     description: description,
@@ -870,13 +857,25 @@ public static class MallMockDataSeeder
         var mockProducts = existingProducts
             .Concat(products.Where(product => !existingProducts.Contains(product)))
             .ToList();
-        foreach (var product in mockProducts)
+        var mockProductIds = mockProducts.Select(p => p.Id).ToArray();
+
+        var existingProductTags = mockProductIds.Length == 0
+            ? new List<MallProductTag>()
+            : await db.MallProductTags
+                .IgnoreQueryFilters()
+                .Where(link => mockProductIds.Contains(link.ProductId))
+                .ToListAsync(ct);
+
+        var tagCodeById = existingTags.Values.ToDictionary(t => t.Id, t => t.Code);
+        foreach (var link in existingProductTags)
         {
-            foreach (var tag in product.Tags.Where(tag => tag.Code.StartsWith("MOCK-TAG-", StringComparison.Ordinal)).ToList())
+            if (!link.IsDeleted && tagCodeById.TryGetValue(link.TagId, out var code) && code.StartsWith("MOCK-TAG-", StringComparison.Ordinal))
             {
-                product.Tags.Remove(tag);
+                link.IsDeleted = true;
             }
         }
+
+        await db.SaveChangesAsync(ct);
 
         var relationCount = 0;
         foreach (var (mockProductId, tagCodes) in tagCodesByProductId)
@@ -894,7 +893,7 @@ public static class MallMockDataSeeder
                     throw new InvalidDataException($"商品 {mockProductId} 引用了不存在的标签: {tagCode}");
                 }
 
-                product.Tags.Add(tag);
+                db.MallProductTags.Add(MallProductTag.Create(product.Id, tag.Id));
                 relationCount++;
             }
         }

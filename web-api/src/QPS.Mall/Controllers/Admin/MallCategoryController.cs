@@ -30,7 +30,6 @@ public class MallCategoryController : ControllerBase
         [FromQuery] string sortField = "SortOrder",
         [FromQuery] string sortDirection = "Ascending",
         [FromQuery] string? keyword = null,
-        [FromQuery] Guid? storeId = null,
         [FromQuery] bool? isActive = null)
     {
         var query = new GetMallCategoriesQuery
@@ -40,7 +39,6 @@ public class MallCategoryController : ControllerBase
             SortField = sortField,
             SortDirection = sortDirection,
             Keyword = keyword,
-            StoreId = storeId,
             IsActive = isActive
         };
 

@@ -21,9 +21,9 @@ public class FreightItemRow
 
 public class FreightAddressInfo
 {
-    public string? ProvinceCode { get; set; }
+    public string? ProvinceName { get; set; }
 
-    public string? CityCode { get; set; }
+    public string? CityName { get; set; }
 }
 
 public class FreightTemplateGroup
@@ -83,7 +83,7 @@ internal static class MallFreightCalculator
             if (!groups.TryGetValue(templateId.Value, out var group))
             {
                 var regions = regionMap.TryGetValue(templateId.Value, out var r) ? r : new List<MallFreightRegion>();
-                var matched = MatchRegion(regions, address.ProvinceCode, address.CityCode);
+                var matched = MatchRegion(regions, address.ProvinceName, address.CityName);
 
                 group = new FreightTemplateGroup
                 {
@@ -111,29 +111,29 @@ internal static class MallFreightCalculator
 
     private static MallFreightRegion MatchRegion(
         List<MallFreightRegion> regions,
-        string? provinceCode,
-        string? cityCode)
+        string? provinceName,
+        string? cityName)
     {
         if (regions.Count == 0)
         {
             throw new InvalidOperationException("运费模板未配置任何区域规则");
         }
 
-        if (!string.IsNullOrEmpty(cityCode))
+        if (!string.IsNullOrEmpty(cityName))
         {
             var cityMatch = regions.FirstOrDefault(r =>
                 !r.IsDefaultRegion &&
-                !string.IsNullOrEmpty(r.CityCodes) &&
-                ParseCodes(r.CityCodes).Contains(cityCode));
+                !string.IsNullOrEmpty(r.CityNames) &&
+                ParseCodes(r.CityNames).Contains(cityName));
             if (cityMatch != null) return cityMatch;
         }
 
-        if (!string.IsNullOrEmpty(provinceCode))
+        if (!string.IsNullOrEmpty(provinceName))
         {
             var provinceMatch = regions.FirstOrDefault(r =>
                 !r.IsDefaultRegion &&
-                !string.IsNullOrEmpty(r.ProvinceCodes) &&
-                ParseCodes(r.ProvinceCodes).Contains(provinceCode));
+                !string.IsNullOrEmpty(r.ProvinceNames) &&
+                ParseCodes(r.ProvinceNames).Contains(provinceName));
             if (provinceMatch != null) return provinceMatch;
         }
 

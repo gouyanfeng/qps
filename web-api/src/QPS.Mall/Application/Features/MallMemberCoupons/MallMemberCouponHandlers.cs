@@ -19,7 +19,6 @@ public class GetMallMemberCouponCountQuery : IRequest<int>
 public class GetAvailableMallCouponsQuery : IRequest<List<MallCouponDto>>
 {
     public Guid MemberId { get; set; }
-    public Guid StoreId { get; set; }
 }
 
 public class UseMallMemberCouponCommand : IRequest<bool>
@@ -66,12 +65,12 @@ public class MallMemberCouponHandlers :
     public async Task<List<MallCouponDto>> Handle(GetAvailableMallCouponsQuery req, CancellationToken ct)
     {
         return await _db.MallCoupons.AsNoTracking()
-            .Where(c => c.StoreId == req.StoreId && c.IsActive)
+            .Where(c => c.IsActive)
             .Where(c => c.StartAt == null || DateTime.Now >= c.StartAt)
             .Where(c => c.EndAt == null || DateTime.Now <= c.EndAt)
             .Select(c => new MallCouponDto
             {
-                Id = c.Id, StoreId = c.StoreId, Code = c.Code, Name = c.Name,
+                Id = c.Id, Code = c.Code, Name = c.Name,
                 CouponType = c.CouponType, ThresholdAmount = c.ThresholdAmount,
                 DiscountAmount = c.DiscountAmount, MaxDiscount = c.MaxDiscount,
                 TotalCount = c.TotalCount, RemainCount = c.RemainCount,

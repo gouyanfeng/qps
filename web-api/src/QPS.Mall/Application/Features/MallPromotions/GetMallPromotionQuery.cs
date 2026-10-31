@@ -26,13 +26,16 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
     {
         var p = await _dbContext.MallPromotions
             .AsNoTracking()
-            .Include(x => x.Scopes)
             .FirstOrDefaultAsync(x => x.Id == request.PromotionId && !x.IsDeleted, cancellationToken);
 
         if (p is null)
         {
             throw new BusinessException(404, "促销活动不存在");
         }
+
+        var scopes = await _dbContext.MallPromotionScopes
+            .Where(s => s.PromotionId == p.Id && !s.IsDeleted)
+            .ToListAsync(cancellationToken);
 
         return new MallPromotionDto
         {
@@ -44,8 +47,6 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
             ActionType = p.ActionType,
             ActionConfigJson = p.ActionConfigJson,
             ScopeType = p.ScopeType,
-            Priority = p.Priority,
-            Combinable = p.Combinable,
             MaxUsagePerUser = p.MaxUsagePerUser,
             MaxUsagePerOrder = p.MaxUsagePerOrder,
             StartDate = p.StartDate,
@@ -53,7 +54,7 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
             IsActive = p.IsActive,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt,
-            Scopes = p.Scopes.Select(s => new MallPromotionScopeDto
+            Scopes = scopes.Select(s => new MallPromotionScopeDto
             {
                 Id = s.Id,
                 ScopeTargetType = s.ScopeTargetType,

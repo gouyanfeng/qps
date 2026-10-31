@@ -3,7 +3,6 @@ namespace QPS.Mall.Contracts.DTOs.MallMembers;
 public class MallMemberLevelDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
     public string Name { get; set; } = string.Empty;
     public int LevelCode { get; set; }
     public decimal? DiscountRate { get; set; }
@@ -17,7 +16,6 @@ public class MallMemberLevelDto
 
 public class MallMemberLevelCreateRequest
 {
-    public Guid StoreId { get; set; }
     public string Name { get; set; } = string.Empty;
     public int LevelCode { get; set; }
     public decimal? DiscountRate { get; set; }
@@ -40,6 +38,5 @@ public class MallMemberLevelUpdateRequest
 
 public class MallMemberLevelQueryRequest
 {
-    public Guid StoreId { get; set; }
     public bool? IsActive { get; set; }
 }

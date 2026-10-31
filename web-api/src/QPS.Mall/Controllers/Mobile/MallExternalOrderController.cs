@@ -36,8 +36,7 @@ public class MallExternalOrderController : ControllerBase
     public async Task<ActionResult<PaginationResponse<MallOrderDto>>> GetMyOrders(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? status = null,
-        [FromQuery] Guid? storeId = null)
+        [FromQuery] string? status = null)
     {
         var memberId = _currentUser.GetUserId();
         var query = new GetMallOrdersQuery
@@ -45,7 +44,6 @@ public class MallExternalOrderController : ControllerBase
             Page = page,
             PageSize = pageSize,
             MemberId = memberId,
-            StoreId = storeId,
             Status = status
         };
         return Ok(await _mediator.Send(query));

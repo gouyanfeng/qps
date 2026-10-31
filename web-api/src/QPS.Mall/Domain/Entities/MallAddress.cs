@@ -11,15 +11,9 @@ public class MallAddress : BaseEntity
 
     public string ReceiverPhone { get; private set; } = string.Empty;
 
-    public string ProvinceCode { get; private set; } = string.Empty;
-
     public string ProvinceName { get; private set; } = string.Empty;
 
-    public string CityCode { get; private set; } = string.Empty;
-
     public string CityName { get; private set; } = string.Empty;
-
-    public string DistrictCode { get; private set; } = string.Empty;
 
     public string DistrictName { get; private set; } = string.Empty;
 
@@ -35,11 +29,8 @@ public class MallAddress : BaseEntity
         Guid? userId,
         string receiverName,
         string receiverPhone,
-        string provinceCode,
         string provinceName,
-        string cityCode,
         string cityName,
-        string districtCode,
         string districtName,
         string detailAddress,
         bool isDefault)
@@ -47,11 +38,8 @@ public class MallAddress : BaseEntity
         UserId = userId;
         ReceiverName = receiverName;
         ReceiverPhone = receiverPhone;
-        ProvinceCode = provinceCode;
         ProvinceName = provinceName;
-        CityCode = cityCode;
         CityName = cityName;
-        DistrictCode = districtCode;
         DistrictName = districtName;
         DetailAddress = detailAddress;
         IsDefault = isDefault;
@@ -61,41 +49,30 @@ public class MallAddress : BaseEntity
         Guid? userId,
         string receiverName,
         string receiverPhone,
-        string provinceCode,
         string provinceName,
-        string cityCode,
         string cityName,
-        string districtCode,
         string districtName,
         string detailAddress,
         bool isDefault)
     {
         return new MallAddress(
             userId, receiverName, receiverPhone,
-            provinceCode, provinceName,
-            cityCode, cityName,
-            districtCode, districtName,
+            provinceName, cityName, districtName,
             detailAddress, isDefault);
     }
 
     public void Update(
         string receiverName,
         string receiverPhone,
-        string provinceCode,
         string provinceName,
-        string cityCode,
         string cityName,
-        string districtCode,
         string districtName,
         string detailAddress)
     {
         ReceiverName = receiverName;
         ReceiverPhone = receiverPhone;
-        ProvinceCode = provinceCode;
         ProvinceName = provinceName;
-        CityCode = cityCode;
         CityName = cityName;
-        DistrictCode = districtCode;
         DistrictName = districtName;
         DetailAddress = detailAddress;
     }
@@ -108,10 +85,5 @@ public class MallAddress : BaseEntity
     public string BuildFullAddress()
     {
         return $"{ProvinceName}{CityName}{DistrictName}{DetailAddress}";
-    }
-
-    public string BuildFullAddressWithCodes()
-    {
-        return $"{ProvinceCode}|{CityCode}|{DistrictCode}|{ProvinceName}{CityName}{DistrictName}{DetailAddress}";
     }
 }

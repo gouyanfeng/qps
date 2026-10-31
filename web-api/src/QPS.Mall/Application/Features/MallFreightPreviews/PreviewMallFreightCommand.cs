@@ -28,21 +28,16 @@ public class PreviewMallFreightHandler : IRequestHandler<PreviewMallFreightComma
     {
         var req = command.Request;
 
-        if (req.StoreId == Guid.Empty)
-            throw new BusinessException(400, "请选择门店");
         if (req.Items.Count == 0)
             throw new BusinessException(400, "请选择商品");
         if (req.Items.Any(i => i.Quantity <= 0))
             throw new BusinessException(400, "商品数量必须大于 0");
-        if (string.IsNullOrWhiteSpace(req.ProvinceCode) || string.IsNullOrWhiteSpace(req.CityCode))
+        if (string.IsNullOrWhiteSpace(req.ProvinceName) || string.IsNullOrWhiteSpace(req.CityName))
             throw new BusinessException(400, "请选择完整的收货地址");
 
-        var store = await _dbContext.MallStores
+        var defaultTemplate = await _dbContext.MallFreightTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == req.StoreId && !s.IsDeleted && s.IsActive, cancellationToken);
-
-        if (store is null)
-            throw new BusinessException(404, "门店不存在或已停用");
+            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive && !t.IsDeleted, cancellationToken);
 
         var skuIds = req.Items.Select(i => i.SkuId).Distinct().ToList();
         var skuRows = await (
@@ -58,8 +53,8 @@ public class PreviewMallFreightHandler : IRequestHandler<PreviewMallFreightComma
         var skuMap = skuRows.ToDictionary(r => r.Sku.Id);
 
         var templateIds = new HashSet<Guid>();
-        if (store.DefaultFreightTemplateId.HasValue)
-            templateIds.Add(store.DefaultFreightTemplateId.Value);
+        if (defaultTemplate is not null)
+            templateIds.Add(defaultTemplate.Id);
         foreach (var row in skuRows)
         {
             if (row.Product.FreightTemplateId.HasValue)
@@ -105,10 +100,10 @@ public class PreviewMallFreightHandler : IRequestHandler<PreviewMallFreightComma
 
         var calcResult = MallFreightCalculator.Calculate(
             items,
-            store.DefaultFreightTemplateId ?? Guid.Empty,
+            defaultTemplate?.Id ?? Guid.Empty,
             templateMap,
             regionMap,
-            new FreightAddressInfo { ProvinceCode = req.ProvinceCode, CityCode = req.CityCode });
+            new FreightAddressInfo { ProvinceName = req.ProvinceName, CityName = req.CityName });
 
         return new MallFreightPreviewDto
         {

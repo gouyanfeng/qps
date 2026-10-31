@@ -30,7 +30,6 @@ public class GetMallActivitiesHandler : IRequestHandler<GetMallActivitiesQuery, 
 
         var activitiesQuery = _dbContext.MallActivities
             .AsNoTracking()
-            .Include(activity => activity.Promotions)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(keyword))
@@ -49,19 +48,32 @@ public class GetMallActivitiesHandler : IRequestHandler<GetMallActivitiesQuery, 
             .ThenByDescending(activity => activity.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var promotions = await LoadPromotionsAsync(activities, cancellationToken);
+        var activityIds = activities.Select(a => a.Id).ToList();
+        var linksByActivity = activityIds.Count == 0
+            ? new Dictionary<Guid, List<MallActivityPromotion>>()
+            : (await _dbContext.MallActivityPromotions
+                .AsNoTracking()
+                .Where(link => activityIds.Contains(link.ActivityId) && !link.IsDeleted)
+                .ToListAsync(cancellationToken))
+            .GroupBy(link => link.ActivityId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var promotions = await LoadPromotionsAsync(linksByActivity, cancellationToken);
 
         return activities
-            .Select(activity => MallActivityMapper.ToListItem(activity, promotions))
+            .Select(activity => MallActivityMapper.ToListItem(
+                activity,
+                linksByActivity.TryGetValue(activity.Id, out var links) ? links : new List<MallActivityPromotion>(),
+                promotions))
             .ToList();
     }
 
     private async Task<Dictionary<Guid, MallPromotion>> LoadPromotionsAsync(
-        IReadOnlyCollection<MallActivity> activities,
+        Dictionary<Guid, List<MallActivityPromotion>> linksByActivity,
         CancellationToken cancellationToken)
     {
-        var promotionIds = activities
-            .SelectMany(activity => activity.Promotions)
+        var promotionIds = linksByActivity.Values
+            .SelectMany(links => links)
             .Select(link => link.PromotionId)
             .Distinct()
             .ToList();

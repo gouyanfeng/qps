@@ -16,12 +16,12 @@ internal static class MallPromotionRules
 
     private static readonly HashSet<string> ValidTriggerTypes = new()
     {
-        "FullAmount", "BuyProduct", "FirstOrder", "OrderCount", "FlashSale"
+        "FullAmount", "BuyProduct"
     };
 
     private static readonly HashSet<string> ValidActionTypes = new()
     {
-        "Gift", "DiscountAmount", "DiscountRate", "FreightFree", "SecondHalfPrice", "FlashSalePrice"
+        "Gift", "DiscountAmount", "DiscountRate", "FreightFree"
     };
 
     private static readonly HashSet<string> ValidScopeTypes = new()
@@ -32,14 +32,14 @@ internal static class MallPromotionRules
     public static void ValidateCreate(MallPromotionCreateRequest req)
     {
         Validate(req.Name, req.Description, req.TriggerType, req.TriggerConfigJson, req.ActionType,
-            req.ActionConfigJson, req.ScopeType, req.Scopes, req.Priority, req.MaxUsagePerUser,
+            req.ActionConfigJson, req.ScopeType, req.Scopes, req.MaxUsagePerUser,
             req.MaxUsagePerOrder, req.StartDate, req.EndDate);
     }
 
     public static void ValidateUpdate(MallPromotionUpdateRequest req)
     {
         Validate(req.Name, req.Description, req.TriggerType, req.TriggerConfigJson, req.ActionType,
-            req.ActionConfigJson, req.ScopeType, req.Scopes, req.Priority, req.MaxUsagePerUser,
+            req.ActionConfigJson, req.ScopeType, req.Scopes, req.MaxUsagePerUser,
             req.MaxUsagePerOrder, req.StartDate, req.EndDate);
     }
 
@@ -52,7 +52,6 @@ internal static class MallPromotionRules
         string actionConfigJson,
         string scopeType,
         IReadOnlyCollection<MallPromotionScopeRequest> scopes,
-        int priority,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -73,7 +72,6 @@ internal static class MallPromotionRules
         if (string.IsNullOrWhiteSpace(scopeType)) throw new BusinessException(400, "适用范围不能为空");
         if (!ValidScopeTypes.Contains(scopeType)) throw new BusinessException(400, $"无效的适用范围：{scopeType}");
 
-        if (priority < 0 || priority > 999) throw new BusinessException(400, "优先级需在 0-999 之间");
         if (maxUsagePerUser < 0) throw new BusinessException(400, "每人可用次数不能为负");
         if (maxUsagePerOrder < 0) throw new BusinessException(400, "每单可用次数不能为负");
 

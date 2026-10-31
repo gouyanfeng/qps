@@ -18,12 +18,10 @@ public class MallFreightTemplateController : ControllerBase
 
     [HttpGet("freight-templates")]
     public async Task<ActionResult<List<MallFreightTemplateListDto>>> GetTemplates(
-        [FromQuery] Guid? storeId = null,
         [FromQuery] string? keyword = null)
     {
         return Ok(await _mediator.Send(new GetMallFreightTemplatesQuery
         {
-            StoreId = storeId,
             Keyword = keyword
         }));
     }

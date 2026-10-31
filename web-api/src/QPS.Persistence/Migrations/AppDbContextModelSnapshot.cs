@@ -22,21 +22,6 @@ namespace QPS.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("MallProductTags", b =>
-                {
-                    b.Property<Guid>("ProductsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("TagsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("ProductsId", "TagsId");
-
-                    b.HasIndex("TagsId");
-
-                    b.ToTable("MallProductTags");
-                });
-
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmBusinessActivity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1197,11 +1182,6 @@ namespace QPS.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CityCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.Property<string>("CityName")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -1219,11 +1199,6 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("DistrictCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.Property<string>("DistrictName")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -1234,11 +1209,6 @@ namespace QPS.Persistence.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<string>("ProvinceCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("ProvinceName")
                         .IsRequired()
@@ -1329,9 +1299,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Summary")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1354,7 +1321,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreId", "ArticleType", "IsActive", "SortOrder");
+                    b.HasIndex("ArticleType", "IsActive", "SortOrder");
 
                     b.ToTable("MallArticles", (string)null);
                 });
@@ -1405,9 +1372,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -1422,7 +1386,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreId", "Position", "SortOrder")
+                    b.HasIndex("Position", "SortOrder")
                         .IsUnique();
 
                     b.ToTable("MallBanners", (string)null);
@@ -1447,9 +1411,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<DateTime>("LastActiveAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1462,7 +1423,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "StoreId")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("MallCarts", (string)null);
@@ -1549,9 +1510,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1629,9 +1587,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<DateTime?>("StartAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal>("ThresholdAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -1650,10 +1605,10 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreId", "Code")
+                    b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("StoreId", "IsActive");
+                    b.HasIndex("IsActive");
 
                     b.ToTable("MallCoupons", (string)null);
                 });
@@ -1664,7 +1619,7 @@ namespace QPS.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CityCodes")
+                    b.Property<string>("CityNames")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
@@ -1695,7 +1650,7 @@ namespace QPS.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("ProvinceCodes")
+                    b.Property<string>("ProvinceNames")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -1761,9 +1716,6 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1772,8 +1724,6 @@ namespace QPS.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
 
                     b.ToTable("MallFreightTemplates", (string)null);
                 });
@@ -1840,9 +1790,6 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("TotalOrders")
                         .HasColumnType("int");
 
@@ -1865,8 +1812,6 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("Phone")
                         .IsUnique();
-
-                    b.HasIndex("StoreId");
 
                     b.ToTable("MallMembers", (string)null);
                 });
@@ -1979,9 +1924,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1994,9 +1936,9 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreId", "IsActive");
+                    b.HasIndex("IsActive");
 
-                    b.HasIndex("StoreId", "LevelCode")
+                    b.HasIndex("LevelCode")
                         .IsUnique();
 
                     b.ToTable("MallMemberLevels", (string)null);
@@ -2096,9 +2038,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2113,7 +2052,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreId", "IsTop", "SortOrder");
+                    b.HasIndex("IsTop", "SortOrder");
 
                     b.ToTable("MallNotices", (string)null);
                 });
@@ -2205,9 +2144,6 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("TotalWeightGram")
                         .HasColumnType("int");
 
@@ -2228,7 +2164,7 @@ namespace QPS.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
 
-                    b.HasIndex("StoreId", "Status");
+                    b.HasIndex("Status");
 
                     b.ToTable("MallOrders", (string)null);
                 });
@@ -2364,9 +2300,6 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2381,7 +2314,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreId", "PageCode")
+                    b.HasIndex("PageCode")
                         .IsUnique();
 
                     b.ToTable("MallPages", (string)null);
@@ -2520,6 +2453,9 @@ namespace QPS.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -2537,7 +2473,49 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("FreightTemplateId");
 
+                    b.HasIndex("StoreId");
+
                     b.ToTable("MallProducts", (string)null);
+                });
+
+            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallProductTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ProductsId");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TagsId");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "TagId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("MallProductTags", (string)null);
                 });
 
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallPromotion", b =>
@@ -2554,9 +2532,6 @@ namespace QPS.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
-
-                    b.Property<bool>("Combinable")
-                        .HasColumnType("bit");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2589,9 +2564,6 @@ namespace QPS.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("int");
 
                     b.Property<string>("ScopeType")
                         .IsRequired()
@@ -2640,9 +2612,6 @@ namespace QPS.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("MallPromotionId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("PromotionId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2662,8 +2631,6 @@ namespace QPS.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MallPromotionId");
 
                     b.HasIndex("PromotionId");
 
@@ -3637,21 +3604,6 @@ namespace QPS.Persistence.Migrations
                     b.ToTable("SystemUserRoles");
                 });
 
-            modelBuilder.Entity("MallProductTags", b =>
-                {
-                    b.HasOne("QPS.Mall.Domain.Entities.MallProduct", null)
-                        .WithMany()
-                        .HasForeignKey("ProductsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("QPS.Mall.Domain.Entities.MallTag", null)
-                        .WithMany()
-                        .HasForeignKey("TagsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmFollowRecord", b =>
                 {
                     b.HasOne("QPS.Crm.Domain.Entities.CrmContact", "Contact")
@@ -3735,39 +3687,12 @@ namespace QPS.Persistence.Migrations
                     b.Navigation("VendorDemand");
                 });
 
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivityPromotion", b =>
-                {
-                    b.HasOne("QPS.Mall.Domain.Entities.MallActivity", null)
-                        .WithMany("Promotions")
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallCartItem", b =>
-                {
-                    b.HasOne("QPS.Mall.Domain.Entities.MallCart", null)
-                        .WithMany("Items")
-                        .HasForeignKey("CartId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallFreightRegion", b =>
                 {
                     b.HasOne("QPS.Mall.Domain.Entities.MallFreightTemplate", null)
                         .WithMany()
                         .HasForeignKey("TemplateId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallFreightTemplate", b =>
-                {
-                    b.HasOne("QPS.Mall.Domain.Entities.MallStore", null)
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -3782,12 +3707,6 @@ namespace QPS.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("QPS.Mall.Domain.Entities.MallStore", null)
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallOrderItem", b =>
@@ -3819,13 +3738,12 @@ namespace QPS.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("FreightTemplateId")
                         .OnDelete(DeleteBehavior.Restrict);
-                });
 
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallPromotionScope", b =>
-                {
-                    b.HasOne("QPS.Mall.Domain.Entities.MallPromotion", null)
-                        .WithMany("Scopes")
-                        .HasForeignKey("MallPromotionId");
+                    b.HasOne("QPS.Mall.Domain.Entities.MallStore", null)
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallRefund", b =>
@@ -3916,21 +3834,6 @@ namespace QPS.Persistence.Migrations
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmVendorDemand", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivity", b =>
-                {
-                    b.Navigation("Promotions");
-                });
-
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallCart", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallPromotion", b =>
-                {
-                    b.Navigation("Scopes");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemDataDictionary", b =>

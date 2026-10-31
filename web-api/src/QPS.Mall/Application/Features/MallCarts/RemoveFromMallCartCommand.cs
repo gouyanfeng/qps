@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallCarts;
@@ -9,8 +10,6 @@ namespace QPS.Mall.Application.Features.MallCarts;
 public class RemoveFromMallCartCommand : IRequest<MallCartDto>
 {
     public Guid UserId { get; set; }
-
-    public Guid StoreId { get; set; }
 
     public Guid SkuId { get; set; }
 }
@@ -31,28 +30,37 @@ public class RemoveFromMallCartHandler : IRequestHandler<RemoveFromMallCartComma
         CancellationToken cancellationToken)
     {
         var cart = await _dbContext.MallCarts
-            .Include(c => c.Items)
             .FirstOrDefaultAsync(
-                c => c.UserId == command.UserId && c.StoreId == command.StoreId && !c.IsDeleted,
+                c => c.UserId == command.UserId && !c.IsDeleted,
                 cancellationToken);
 
         if (cart is null) throw new BusinessException(404, "购物车不存在");
 
-        cart.RemoveItem(command.SkuId);
+        var item = await _dbContext.MallCartItems
+            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == command.SkuId && !i.IsDeleted, cancellationToken);
 
-        if (cart.Items.Count == 0)
+        if (item is not null)
+        {
+            _dbContext.MallCartItems.Remove(item);
+        }
+
+        cart.Touch();
+
+        var remainingCount = await _dbContext.MallCartItems
+            .CountAsync(i => i.CartId == cart.Id && !i.IsDeleted, cancellationToken);
+
+        if (remainingCount == 0)
         {
             _dbContext.MallCarts.Remove(cart);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        if (cart.Items.Count == 0)
+        if (remainingCount == 0)
         {
             return new MallCartDto
             {
                 UserId = command.UserId,
-                StoreId = command.StoreId,
                 TotalQuantity = 0,
                 TotalAmount = 0,
                 Items = new List<MallCartItemDto>()
@@ -61,8 +69,7 @@ public class RemoveFromMallCartHandler : IRequestHandler<RemoveFromMallCartComma
 
         return await _getCartHandler.Handle(new GetMallCartQuery
         {
-            UserId = command.UserId,
-            StoreId = command.StoreId
+            UserId = command.UserId
         }, cancellationToken);
     }
 }

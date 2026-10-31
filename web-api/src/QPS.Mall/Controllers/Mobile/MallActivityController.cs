@@ -8,7 +8,7 @@ namespace QPS.Mall.Controllers.Mobile;
 
 [ApiController]
 [Route("api/mall")]
-[Authorize(Policy = "MallMember")]
+[AllowAnonymous]
 public class MallActivityPublicController : ControllerBase
 {
     private readonly IMediator _mediator;

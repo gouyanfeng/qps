@@ -39,17 +39,6 @@ public class DeleteMallFreightTemplateHandler : IRequestHandler<DeleteMallFreigh
             throw new BusinessException(400, $"有 {productCount} 个商品使用此模板，无法删除");
         }
 
-        if (template.IsDefault)
-        {
-            var store = await _dbContext.MallStores
-                .FirstOrDefaultAsync(s => s.Id == template.StoreId && !s.IsDeleted, cancellationToken);
-
-            if (store is not null && store.DefaultFreightTemplateId == template.Id)
-            {
-                store.Update(store.Code, store.Name, store.Address, null);
-            }
-        }
-
         template.Update(template.Name, template.BillingType, false, false);
 
         await _dbContext.SaveChangesAsync(cancellationToken);

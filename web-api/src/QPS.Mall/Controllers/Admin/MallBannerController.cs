@@ -16,9 +16,9 @@ public class MallBannerController : ControllerBase
     }
 
     [HttpGet("api/admin/mall/banners")]
-    public async Task<ActionResult<List<MallBannerDto>>> GetList([FromQuery] Guid storeId, string? position, bool? isActive)
+    public async Task<ActionResult<List<MallBannerDto>>> GetList(string? position, bool? isActive)
     {
-        return Ok(await _mediator.Send(new GetMallBannersQuery { StoreId = storeId, Position = position, IsActive = isActive }));
+        return Ok(await _mediator.Send(new GetMallBannersQuery { Position = position, IsActive = isActive }));
     }
 
     [HttpGet("api/admin/mall/banners/{id:guid}")]

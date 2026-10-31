@@ -7,9 +7,6 @@ using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallActivities;
 
-/// <summary>
-/// 移动端：查询进行中/未开始的活动列表（仅启用且在时间窗口内）。
-/// </summary>
 public class GetPublishedMallActivitiesQuery : IRequest<List<MallActivityListItemDto>>
 {
 }
@@ -32,7 +29,6 @@ public class GetPublishedMallActivitiesHandler
 
         var activities = await _dbContext.MallActivities
             .AsNoTracking()
-            .Include(activity => activity.Promotions)
             .Where(activity =>
                 activity.IsActive &&
                 (activity.StartDate == null || activity.StartDate <= now) &&
@@ -41,20 +37,34 @@ public class GetPublishedMallActivitiesHandler
             .ThenByDescending(activity => activity.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var promotions = await LoadActivePromotionsAsync(activities, now, cancellationToken);
+        var activityIds = activities.Select(a => a.Id).ToList();
+        var linksByActivity = activityIds.Count == 0
+            ? new Dictionary<Guid, List<MallActivityPromotion>>()
+            : (await _dbContext.MallActivityPromotions
+                .AsNoTracking()
+                .Where(link => activityIds.Contains(link.ActivityId) && !link.IsDeleted)
+                .ToListAsync(cancellationToken))
+            .GroupBy(link => link.ActivityId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var promotions = await LoadActivePromotionsAsync(linksByActivity, now, cancellationToken);
 
         return activities
-            .Select(activity => MallActivityMapper.ToListItem(activity, promotions, includeInactivePromotions: false))
+            .Select(activity => MallActivityMapper.ToListItem(
+                activity,
+                linksByActivity.TryGetValue(activity.Id, out var links) ? links : new List<MallActivityPromotion>(),
+                promotions,
+                includeInactivePromotions: false))
             .ToList();
     }
 
     private async Task<Dictionary<Guid, MallPromotion>> LoadActivePromotionsAsync(
-        IReadOnlyCollection<MallActivity> activities,
+        Dictionary<Guid, List<MallActivityPromotion>> linksByActivity,
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var promotionIds = activities
-            .SelectMany(activity => activity.Promotions)
+        var promotionIds = linksByActivity.Values
+            .SelectMany(links => links)
             .Select(link => link.PromotionId)
             .Distinct()
             .ToList();
@@ -75,9 +85,6 @@ public class GetPublishedMallActivitiesHandler
     }
 }
 
-/// <summary>
-/// 移动端：查询单个活动详情。
-/// </summary>
 public class GetPublishedMallActivityDetailQuery : IRequest<MallActivityDto>
 {
     public Guid Id { get; set; }
@@ -101,7 +108,6 @@ public class GetPublishedMallActivityDetailHandler
 
         var activity = await _dbContext.MallActivities
             .AsNoTracking()
-            .Include(item => item.Promotions)
             .FirstOrDefaultAsync(item =>
                 item.Id == query.Id &&
                 item.IsActive &&
@@ -113,7 +119,12 @@ public class GetPublishedMallActivityDetailHandler
             throw new BusinessException(404, "活动不存在或已结束");
         }
 
-        var promotionIds = activity.Promotions.Select(link => link.PromotionId).Distinct().ToList();
+        var links = await _dbContext.MallActivityPromotions
+            .AsNoTracking()
+            .Where(link => link.ActivityId == activity.Id && !link.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        var promotionIds = links.Select(link => link.PromotionId).Distinct().ToList();
         var promotions = promotionIds.Count == 0
             ? new Dictionary<Guid, MallPromotion>()
             : await _dbContext.MallPromotions
@@ -125,6 +136,6 @@ public class GetPublishedMallActivityDetailHandler
                     (promotion.EndDate == null || promotion.EndDate >= now))
                 .ToDictionaryAsync(promotion => promotion.Id, cancellationToken);
 
-        return MallActivityMapper.ToDetail(activity, promotions, includeInactivePromotions: false);
+        return MallActivityMapper.ToDetail(activity, links, promotions, includeInactivePromotions: false);
     }
 }

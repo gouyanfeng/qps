@@ -4,8 +4,6 @@ namespace QPS.Mall.Domain.Entities;
 
 public class MallPage : BaseEntity
 {
-    public Guid StoreId { get; private set; }
-
     public string PageCode { get; private set; } = string.Empty;
 
     public string PageName { get; private set; } = string.Empty;
@@ -27,7 +25,6 @@ public class MallPage : BaseEntity
     }
 
     private MallPage(
-        Guid storeId,
         string pageCode,
         string pageName,
         string title,
@@ -37,7 +34,6 @@ public class MallPage : BaseEntity
         string seoDescription,
         bool isActive)
     {
-        StoreId = storeId;
         PageCode = pageCode;
         PageName = pageName;
         Title = title;
@@ -49,7 +45,6 @@ public class MallPage : BaseEntity
     }
 
     public static MallPage Create(
-        Guid storeId,
         string pageCode,
         string pageName,
         string title,
@@ -59,7 +54,7 @@ public class MallPage : BaseEntity
         string seoDescription,
         bool isActive)
     {
-        return new MallPage(storeId, pageCode, pageName, title, contentHtml, seoTitle, seoKeywords, seoDescription, isActive);
+        return new MallPage(pageCode, pageName, title, contentHtml, seoTitle, seoKeywords, seoDescription, isActive);
     }
 
     public void Update(

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallActivities;
@@ -27,7 +28,6 @@ public class UpdateMallActivityHandler : IRequestHandler<UpdateMallActivityComma
         var req = command.Request;
 
         var activity = await _dbContext.MallActivities
-            .Include(item => item.Promotions)
             .FirstOrDefaultAsync(item => item.Id == command.Id, cancellationToken);
 
         if (activity is null)
@@ -54,10 +54,17 @@ public class UpdateMallActivityHandler : IRequestHandler<UpdateMallActivityComma
             req.EndDate,
             sortOrder);
 
-        activity.ClearPromotions();
+        var existingLinks = await _dbContext.MallActivityPromotions
+            .Where(link => link.ActivityId == activity.Id && !link.IsDeleted)
+            .ToListAsync(cancellationToken);
+        foreach (var link in existingLinks)
+        {
+            link.IsDeleted = true;
+        }
+
         foreach (var promotionId in req.PromotionIds.Distinct())
         {
-            activity.AddPromotion(promotionId);
+            _dbContext.MallActivityPromotions.Add(MallActivityPromotion.Create(activity.Id, promotionId));
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

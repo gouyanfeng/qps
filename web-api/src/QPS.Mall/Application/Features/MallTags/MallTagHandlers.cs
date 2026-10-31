@@ -110,14 +110,18 @@ public class MallTagHandlers :
 
     public async Task<bool> Handle(DeleteMallTagCommand command, CancellationToken cancellationToken)
     {
-        var tag = await _dbContext.MallTags
-            .Include(item => item.Products)
-            .FirstOrDefaultAsync(item => item.Id == command.Id && !item.IsDeleted, cancellationToken);
+        var tag = await _dbContext.MallTags.FirstOrDefaultAsync(
+            item => item.Id == command.Id && !item.IsDeleted, cancellationToken);
         if (tag is null) throw new BusinessException(404, "商品标签不存在");
-        if (tag.Products.Any(product => !product.IsDeleted))
+
+        var hasLinkedProducts = await _dbContext.MallProductTags.AnyAsync(
+            link => link.TagId == tag.Id && !link.IsDeleted,
+            cancellationToken);
+        if (hasLinkedProducts)
         {
             throw new BusinessException(400, "该标签仍关联商品，无法删除，请先移除商品上的标签");
         }
+
         tag.IsDeleted = true;
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

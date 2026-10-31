@@ -3,11 +3,6 @@
     <QueryPage api="/admin/mall/freight-templates" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
       <template #searchConditions>
         <el-form :model="searchForm" :inline="true">
-          <el-form-item label="门店">
-            <el-select v-model="searchForm.storeId" placeholder="请选择门店" clearable>
-              <el-option v-for="s in storeOptions" :key="s.id" :label="s.name" :value="s.id" />
-            </el-select>
-          </el-form-item>
           <el-form-item label="计费方式">
             <el-select v-model="searchForm.billingType" placeholder="全部" clearable>
               <el-option label="按重量" :value="0" />
@@ -55,20 +50,9 @@
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="900px" top="3vh">
       <el-form :model="form" label-width="100px">
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="门店" required>
-              <el-select v-model="form.storeId" style="width: 100%" :disabled="dialogType === '编辑'">
-                <el-option v-for="s in storeOptions" :key="s.id" :label="s.name" :value="s.id" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="模板名称" required>
-              <el-input v-model="form.name" maxlength="100" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="模板名称" required>
+          <el-input v-model="form.name" maxlength="100" />
+        </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="计费方式">
@@ -167,7 +151,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete, Plus } from '@element-plus/icons-vue'
 import { mallFreightTemplateApi } from '@/api/modules/mallFreightTemplate'
-import { mallStoreApi } from '@/api/modules/mallStore'
 import { regionApi } from '@/api/modules/region'
 import QueryPage from '@/components/QueryPage/index.vue'
 
@@ -179,9 +162,8 @@ const submitting = ref(false)
 const dialogTitle = ref('')
 const dialogType = ref('')
 const currentId = ref('')
-const storeOptions = ref<any[]>([])
 
-const searchForm = reactive({ storeId: '', billingType: '' as number | '', keyword: '' })
+const searchForm = reactive({ billingType: '' as number | '', keyword: '' })
 const regionTree = ref<any[]>([])
 const regionTreeProps = { children: 'children', value: 'code', label: 'name' }
 const regionMap = ref<Map<string, any>>(new Map())
@@ -189,6 +171,16 @@ const regionMap = ref<Map<string, any>>(new Map())
 const normalizeCodes = (codes: string | null | undefined) => {
   if (!codes) return []
   return Array.from(new Set((codes || '').split(',').map(item => item.trim()).filter(Boolean)))
+}
+
+const namesToCodes = (names: string | null | undefined): string[] => {
+  if (!names) return []
+  const nameList = names.split(',').map(n => n.trim()).filter(Boolean)
+  const codes: string[] = []
+  for (const [code, node] of regionMap.value.entries()) {
+    if (nameList.includes(node?.name)) codes.push(code)
+  }
+  return codes
 }
 
 const buildRegionTree = (regions: any[]) => {
@@ -249,14 +241,21 @@ const syncRegionSelection = (region: any) => {
     })
     .filter((code): code is string => Boolean(code))
 
-  region.provinceCodes = provinceCodes.join(',')
-  region.cityCodes = Array.from(new Set(cityCodes)).join(',')
+  const provinceNames = provinceCodes.map(code => regionMap.value.get(code)?.name).filter(Boolean)
+  const cityNameSet = new Set<string>()
+  cityCodes.forEach(code => {
+    const name = regionMap.value.get(code)?.name
+    if (name) cityNameSet.add(name)
+  })
+
+  region.provinceNames = provinceNames.join(',')
+  region.cityNames = Array.from(cityNameSet).join(',')
 }
 
 const createRegion = () => ({
   id: '',
-  provinceCodes: '',
-  cityCodes: '',
+  provinceNames: '',
+  cityNames: '',
   selectedRegionCodes: [] as string[],
   isDefaultRegion: false,
   firstValue: 1000,
@@ -267,7 +266,6 @@ const createRegion = () => ({
 })
 
 const form = reactive({
-  storeId: '',
   name: '',
   billingType: 0,
   isDefault: false,
@@ -276,17 +274,7 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  const [storeRes, regionRes] = await Promise.all([
-    mallStoreApi.getStoreList({ pageNum: 1, pageSize: 200 }),
-    regionApi.getChinaRegionList({ activeOnly: true })
-  ])
-
-  storeOptions.value = storeRes?.data?.records || storeRes?.data || []
-  if (storeOptions.value.length) {
-    searchForm.storeId = storeOptions.value[0].id
-    form.storeId = storeOptions.value[0].id
-  }
-
+  const regionRes = await regionApi.getChinaRegionList({ activeOnly: true })
   buildRegionTree(regionRes?.data || [])
 })
 
@@ -305,25 +293,23 @@ const openDialog = async (type: string, row?: any) => {
 
   if (type === '新增') {
     resetForm(); currentId.value = ''
-    if (storeOptions.value.length) form.storeId = storeOptions.value[0].id
   } else if (row) {
     const detail = await mallFreightTemplateApi.get(row.id)
     const data = detail?.data || detail
     Object.assign(form, {
-      storeId: data.storeId,
       name: data.name,
       billingType: data.billingType,
       isDefault: data.isDefault,
       isActive: data.isActive,
       regions: (data.regions || []).map((r: any) => {
         const selected = [
-          ...normalizeCodes(r.provinceCodes),
-          ...normalizeCodes(r.cityCodes)
+          ...namesToCodes(r.provinceNames),
+          ...namesToCodes(r.cityNames)
         ]
         return {
           id: r.id || '',
-          provinceCodes: r.provinceCodes || '',
-          cityCodes: r.cityCodes || '',
+          provinceNames: r.provinceNames || '',
+          cityNames: r.cityNames || '',
           selectedRegionCodes: selected,
           isDefaultRegion: r.isDefaultRegion,
           firstValue: r.firstValue,
@@ -359,14 +345,12 @@ const validateRegions = () => {
 }
 
 const submitForm = async () => {
-  if (!form.storeId) { ElMessage.warning('请选择门店'); return }
   if (!form.name.trim()) { ElMessage.warning('请输入模板名称'); return }
   if (!validateRegions()) return
 
   submitting.value = true
   try {
     const payload = {
-      storeId: form.storeId,
       name: form.name.trim(),
       billingType: form.billingType,
       isDefault: form.isDefault,
@@ -375,8 +359,8 @@ const submitForm = async () => {
         syncRegionSelection(r)
         return {
           id: r.id || undefined,
-          provinceCodes: r.provinceCodes,
-          cityCodes: r.cityCodes,
+          provinceNames: r.provinceNames,
+          cityNames: r.cityNames,
           isDefaultRegion: r.isDefaultRegion,
           firstValue: r.firstValue,
           firstFee: r.firstFee,
