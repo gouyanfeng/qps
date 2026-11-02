@@ -1,10 +1,11 @@
 <template>
   <view class="q-page-header" :style="{ background }">
-    <view class="header-side">
+    <view v-if="showBack" class="header-side">
       <view class="header-back" @tap="goBack">
         <q-icon name="arrow-left" size="30" :color="backColor" />
       </view>
     </view>
+    <view v-else class="header-side"></view>
 
     <view class="header-title">
       <slot name="title">
@@ -27,13 +28,15 @@ const props = withDefaults(defineProps<{
   backColor?: string
   titleColor?: string
   background?: string
+  showBack?: boolean
 }>(), {
   title: '',
   subtitle: '',
   fallback: '/pages/index/index',
   backColor: '#1B5E20',
   titleColor: '#1B5E20',
-  background: 'var(--page-bg)'
+  background: 'var(--page-bg)',
+  showBack: true
 })
 
 function goBack() {
@@ -55,6 +58,16 @@ function goBack() {
   padding: var(--safe-top) var(--topbar-padding-x) var(--topbar-padding-bottom);
   position: relative;
   z-index: 40;
+}
+
+.q-page-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1rpx;
+  background: rgba(27, 28, 28, 0.08);
 }
 
 .header-side {

@@ -14,12 +14,12 @@ namespace QPS.Mall.Controllers.Mobile;
 [ApiController]
 [Route("api/mall")]
 [Authorize(Policy = "MallMember")]
-public class MallExternalOrderController : ControllerBase
+public class MallOrderController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
 
-    public MallExternalOrderController(IMediator mediator, ICurrentUserService currentUser)
+    public MallOrderController(IMediator mediator, ICurrentUserService currentUser)
     {
         _mediator = mediator;
         _currentUser = currentUser;

@@ -1,61 +1,134 @@
 {
-  "categories": [
-    {
-      "id": "cat-001",
-      "name": "根茎类",
-      "icon": "medicine-box",
-      "children": [
-        { "id": "cat-001-01", "name": "人参", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=Korean%20ginseng%20root%20slice%2C%20cross%20section%20view%2C%20circular%20slice%20with%20light%20yellowish%20brown%20ring%20pattern%2C%20close%20up%20macro%20photo%2C%20white%20background%2C%20clean%20studio%20lighting&image_size=square_hd" },
-        { "id": "cat-001-02", "name": "黄芪", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=astragalus%20root%20slices%2C%20yellowish%20brown%20circular%20pieces%2C%20visible%20fibrous%20texture%2C%20traditional%20Chinese%20herb%2C%20top%20view%2C%20natural%20daylight%2C%20product%20photography&image_size=square_hd" },
-        { "id": "cat-001-03", "name": "当归", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=Chinese%20angelica%20root%20slices%2C%20dang%20gui%2C%20dark%20brown%20circular%20slices%20with%20visible%20texture%2C%20arranged%20on%20wooden%20surface%2C%20professional%20product%20photography&image_size=square_hd" },
-        { "id": "cat-001-04", "name": "白术", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=white%20atractylodes%20root%20slices%2C%20baizhu%2C%20pale%20yellowish%20white%20circular%20slices%2C%20porous%20texture%2C%20traditional%20Chinese%20medicine%20herb%2C%20close%20up&image_size=square_hd" },
-        { "id": "cat-001-05", "name": "甘草", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=licorice%20root%20slices%2C%20gan%20cao%2C%20reddish%20brown%20circular%20slices%20with%20sweet%20inner%20core%2C%20stacked%20arrangement%2C%20natural%20lighting%2C%20herbal%20medicine&image_size=square_hd" }
-      ]
-    },
-    {
-      "id": "cat-002",
-      "name": "花叶类",
-      "icon": "shop",
-      "children": [
-        { "id": "cat-002-01", "name": "菊花", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20chrysanthemum%20flowers%2C%20yellow%20and%20white%20petals%2C%20full%20bloom%20dried%20flower%20heads%2C%20scattered%20arrangement%2C%20soft%20natural%20light%2C%20herbal%20tea%20ingredient&image_size=square_hd" },
-        { "id": "cat-002-02", "name": "金银花" },
-        { "id": "cat-002-03", "name": "薄荷" },
-        { "id": "cat-002-04", "name": "桑叶" },
-        { "id": "cat-002-05", "name": "玫瑰花茶" }
-      ]
-    },
-    {
-      "id": "cat-003",
-      "name": "果实类",
-      "icon": "gift",
-      "children": [
-        { "id": "cat-003-01", "name": "枸杞", "icon": "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20red%20goji%20berries%20pile%2C%20bright%20crimson%20color%2C%20wrinkled%20textured%20surface%2C%20in%20small%20ceramic%20bowl%2C%20close%20up%20macro%20photo%2C%20natural%20daylight&image_size=square_hd" },
-        { "id": "cat-003-02", "name": "山楂" },
-        { "id": "cat-003-03", "name": "陈皮" },
-        { "id": "cat-003-04", "name": "五味子" }
-      ]
-    },
-    {
-      "id": "cat-004",
-      "name": "动物类",
-      "icon": "box",
-      "children": [
-        { "id": "cat-004-01", "name": "鹿茸" },
-        { "id": "cat-004-02", "name": "阿胶" },
-        { "id": "cat-004-03", "name": "全蝎" },
-        { "id": "cat-004-04", "name": "蜈蚣" }
-      ]
-    },
-    {
-      "id": "cat-005",
-      "name": "矿物类",
-      "icon": "diamond",
-      "children": [
-        { "id": "cat-005-01", "name": "石膏" },
-        { "id": "cat-005-02", "name": "朱砂" },
-        { "id": "cat-005-03", "name": "龙骨" },
-        { "id": "cat-005-04", "name": "磁石" }
-      ]
-    }
-  ]
+    "categories":  [
+                       {
+                           "id":  "cat-001",
+                           "name":  "根茎类",
+                           "icon":  "medicine-box",
+                           "children":  [
+                                            {
+                                                "id":  "cat-001-01",
+                                                "name":  "人参",
+                                                "icon":  "/uploads/category/202610/2e3ad841e48bbb205a5aaa4cf4efcc4f.png"
+                                            },
+                                            {
+                                                "id":  "cat-001-02",
+                                                "name":  "黄芪",
+                                                "icon":  "/uploads/category/202610/74d3185adecc274e6ffc07b874bc36fc.png"
+                                            },
+                                            {
+                                                "id":  "cat-001-03",
+                                                "name":  "当归",
+                                                "icon":  "/uploads/category/202610/a8b171bddec7181da75960a8d742a0bc.png"
+                                            },
+                                            {
+                                                "id":  "cat-001-04",
+                                                "name":  "白术",
+                                                "icon":  "/uploads/category/202610/243a3974afbf8e52541bb2bd2d1e51c2.png"
+                                            },
+                                            {
+                                                "id":  "cat-001-05",
+                                                "name":  "甘草",
+                                                "icon":  "/uploads/category/202610/659b730446edbf6d3c12517d3c498933.png"
+                                            }
+                                        ]
+                       },
+                       {
+                           "id":  "cat-002",
+                           "name":  "花叶类",
+                           "icon":  "shop",
+                           "children":  [
+                                            {
+                                                "id":  "cat-002-01",
+                                                "name":  "菊花",
+                                                "icon":  "/uploads/category/202610/2a81cb0b35476d0c8bda8e6802a058eb.png"
+                                            },
+                                            {
+                                                "id":  "cat-002-02",
+                                                "name":  "金银花"
+                                            },
+                                            {
+                                                "id":  "cat-002-03",
+                                                "name":  "薄荷"
+                                            },
+                                            {
+                                                "id":  "cat-002-04",
+                                                "name":  "桑叶"
+                                            },
+                                            {
+                                                "id":  "cat-002-05",
+                                                "name":  "玫瑰花茶"
+                                            }
+                                        ]
+                       },
+                       {
+                           "id":  "cat-003",
+                           "name":  "果实类",
+                           "icon":  "gift",
+                           "children":  [
+                                            {
+                                                "id":  "cat-003-01",
+                                                "name":  "枸杞",
+                                                "icon":  "/uploads/category/202610/a95e7bc0a2526712b8844c7ccd9f266d.png"
+                                            },
+                                            {
+                                                "id":  "cat-003-02",
+                                                "name":  "山楂"
+                                            },
+                                            {
+                                                "id":  "cat-003-03",
+                                                "name":  "陈皮"
+                                            },
+                                            {
+                                                "id":  "cat-003-04",
+                                                "name":  "五味子"
+                                            }
+                                        ]
+                       },
+                       {
+                           "id":  "cat-004",
+                           "name":  "动物类",
+                           "icon":  "box",
+                           "children":  [
+                                            {
+                                                "id":  "cat-004-01",
+                                                "name":  "鹿茸"
+                                            },
+                                            {
+                                                "id":  "cat-004-02",
+                                                "name":  "阿胶"
+                                            },
+                                            {
+                                                "id":  "cat-004-03",
+                                                "name":  "全蝎"
+                                            },
+                                            {
+                                                "id":  "cat-004-04",
+                                                "name":  "蜈蚣"
+                                            }
+                                        ]
+                       },
+                       {
+                           "id":  "cat-005",
+                           "name":  "矿物类",
+                           "icon":  "diamond",
+                           "children":  [
+                                            {
+                                                "id":  "cat-005-01",
+                                                "name":  "石膏"
+                                            },
+                                            {
+                                                "id":  "cat-005-02",
+                                                "name":  "朱砂"
+                                            },
+                                            {
+                                                "id":  "cat-005-03",
+                                                "name":  "龙骨"
+                                            },
+                                            {
+                                                "id":  "cat-005-04",
+                                                "name":  "磁石"
+                                            }
+                                        ]
+                       }
+                   ]
 }

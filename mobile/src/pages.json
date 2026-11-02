@@ -90,6 +90,13 @@
 				"navigationBarTitleText": "登录",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/coupons/index",
+			"style": {
+				"navigationBarTitleText": "优惠券中心",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {

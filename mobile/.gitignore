@@ -12,6 +12,8 @@ node_modules
 dist
 *.local
 
+# Stitch 设计稿（参考用，随代码入库）
+
 # Editor directories and files
 .idea
 *.suo

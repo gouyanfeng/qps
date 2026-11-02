@@ -1,6 +1,8 @@
 <template>
   <view class="page">
-    <view class="page-topbar">
+    <q-page-header-back title="搜索" />
+
+    <view class="search-bar-wrap">
       <view class="search-input-wrapper qps-search-bar">
         <q-icon name="search" size="20px" color="#999" />
         <input
@@ -15,7 +17,6 @@
           <q-icon name="close" size="16px" color="#999" />
         </view>
       </view>
-      <text class="search-cancel" @click="goBack">取消</text>
     </view>
 
     <scroll-view scroll-y class="page-body" enhanced>
@@ -189,12 +190,8 @@ function goBack() {
   padding-bottom: 100rpx;
 }
 
-.page-topbar {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: var(--safe-top) 30rpx 20rpx;
-  background: var(--page-bg);
+.search-bar-wrap {
+  padding: 0 24rpx 20rpx;
 }
 
 .search-input-wrapper {

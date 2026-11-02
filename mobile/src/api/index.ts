@@ -43,7 +43,9 @@ interface ApiPage<T> {
   items?: T[]
   list?: T[]
   total?: number
+  totalCount?: number
   page?: number
+  currentPage?: number
   pageSize?: number
   hasMore?: boolean
 }
@@ -91,7 +93,7 @@ export async function getProducts(
   if (tagCode) params.push(`tagCode=${encodeURIComponent(tagCode)}`)
   const data = await request<ApiPage<ApiProduct>>(`/api/mall/products?${params.join('&')}`)
   const items = (data.items || data.list || []).map(mapProduct)
-  const total = data.total ?? 0
+  const total = data.totalCount ?? data.total ?? 0
   const hasMore = data.hasMore ?? (total > page * pageSize && items.length === pageSize)
   return { items, hasMore }
 }
@@ -124,7 +126,7 @@ function mapProduct(p: ApiProduct): Product {
     categoryId: p.categoryId,
     categoryName: p.categoryName,
     description: p.description,
-    detailHtml: p.detailHtml,
+    detailHtml: p.detailHtml || '',
     images: rawImages.map(resolveFileUrl),
     skus: (p.skus || []).map(s => ({
       id: s.id,
@@ -323,14 +325,49 @@ export function getMyCouponCount(): Promise<number> {
 
 export interface MemberCoupon {
   id: string
+  couponId: string
+  couponCode: string
   couponName: string
+  couponType: string
   thresholdAmount: number
   discountAmount: number
   status: string
+  expireAt: string
+  claimedAt: string | null
+  usedAt: string | null
+  usedOrderNo: string | null
 }
 
-export function getMyCoupons(): Promise<MemberCoupon[]> {
-  return request<MemberCoupon[]>('/api/mall/member/me/coupons')
+export function getMyCoupons(status?: string): Promise<MemberCoupon[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : ''
+  return request<MemberCoupon[]>(`/api/mall/member/me/coupons${query}`)
+}
+
+export interface AvailableCoupon {
+  id: string
+  code: string
+  name: string
+  couponType: string
+  thresholdAmount: number
+  discountAmount: number
+  maxDiscount: number | null
+  totalCount: number
+  remainCount: number
+  perLimit: number
+  validDays: number
+  startAt: string | null
+  endAt: string | null
+  scopeType: string
+  scopeValue: string | null
+  isActive: boolean
+}
+
+export function getAvailableCoupons(): Promise<AvailableCoupon[]> {
+  return request<AvailableCoupon[]>('/api/mall/coupons/available')
+}
+
+export function claimCoupon(couponId: string): Promise<MemberCoupon> {
+  return request<MemberCoupon>(`/api/mall/member/me/coupons/${couponId}/claim`, 'POST')
 }
 
 export function getMyOrders(status?: string): Promise<ApiPage<MallOrder>> {
@@ -338,14 +375,32 @@ export function getMyOrders(status?: string): Promise<ApiPage<MallOrder>> {
   return request<ApiPage<MallOrder>>(`/api/mall/orders?page=1&pageSize=50${statusQuery}`)
 }
 
+export interface MallOrderItem {
+  id: string
+  productName: string
+  productImage: string
+  specName: string
+  quantity: number
+  unitPrice: number
+  itemAmount: number
+  isGift: boolean
+  promotionName: string
+  badge: string
+  originalUnitPrice: number | null
+}
+
 export interface MallOrder {
+  id: string
   orderNo: string
   status: string
   receiverName: string
   goodsAmount: number
   promotionDiscountAmount: number
   payableAmount: number
+  paidAmount: number
+  freightAmount: number
   createdAt: string
+  items: MallOrderItem[]
 }
 
 export function getAddresses(): Promise<MallAddress[]> {
@@ -407,27 +462,13 @@ export interface MallOrderDetail extends MallOrder {
   receiverPhone: string
   receiverAddress: string
   remark: string
-  freightAmount: number
-  paidAmount: number
   refundedAmount: number
   paidAt: string | null
   shippedAt: string | null
   completedAt: string | null
   cancelledAt: string | null
   refundedAt: string | null
-  items: Array<{
-    id: string
-    productName: string
-    productImage: string
-    specName: string
-    quantity: number
-    unitPrice: number
-    itemAmount: number
-    isGift: boolean
-    promotionName: string
-    badge: string
-    originalUnitPrice: number | null
-  }>
+  items: MallOrderItem[]
   payments: Array<{
     id: string
     paymentNo: string
@@ -463,6 +504,30 @@ export interface MallOrderDetail extends MallOrder {
 
 export function getOrderDetail(orderNo: string): Promise<MallOrderDetail> {
   return request<MallOrderDetail>(`/api/mall/orders/${orderNo}`)
+}
+
+export async function cancelOrder(orderNo: string): Promise<boolean> {
+  return request<boolean>(`/api/mall/orders/${orderNo}/cancel`, 'POST')
+}
+
+export interface MallPaymentResult {
+  id: string
+  paymentNo: string
+  amount: number
+  method: string
+  status: string
+}
+
+export async function createPayment(orderNo: string, method: string = 'Mock'): Promise<MallPaymentResult> {
+  return request<MallPaymentResult>(`/api/mall/orders/${orderNo}/payments`, 'POST', { method })
+}
+
+export async function simulatePayment(paymentNo: string, success: boolean = true): Promise<boolean> {
+  return request<boolean>(`/api/mall/payments/${paymentNo}/simulate`, 'POST', { success })
+}
+
+export async function confirmReceipt(orderNo: string): Promise<boolean> {
+  return request<boolean>(`/api/mall/orders/${orderNo}/confirm-receipt`, 'POST')
 }
 
 export interface ChinaRegionNode {

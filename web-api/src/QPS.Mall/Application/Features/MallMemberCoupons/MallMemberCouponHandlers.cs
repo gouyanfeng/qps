@@ -16,11 +16,6 @@ public class GetMallMemberCouponCountQuery : IRequest<int>
     public Guid MemberId { get; set; }
 }
 
-public class GetAvailableMallCouponsQuery : IRequest<List<MallCouponDto>>
-{
-    public Guid MemberId { get; set; }
-}
-
 public class UseMallMemberCouponCommand : IRequest<bool>
 {
     public Guid Id { get; set; }
@@ -30,7 +25,6 @@ public class UseMallMemberCouponCommand : IRequest<bool>
 public class MallMemberCouponHandlers :
     IRequestHandler<GetMallMemberCouponsQuery, List<MallMemberCouponDto>>,
     IRequestHandler<GetMallMemberCouponCountQuery, int>,
-    IRequestHandler<GetAvailableMallCouponsQuery, List<MallCouponDto>>,
     IRequestHandler<UseMallMemberCouponCommand, bool>
 {
     private readonly IMallDbContext _db;
@@ -60,25 +54,6 @@ public class MallMemberCouponHandlers :
     {
         return _db.MallMemberCoupons
             .CountAsync(coupon => coupon.MemberId == req.MemberId && coupon.Status == "claimed", ct);
-    }
-
-    public async Task<List<MallCouponDto>> Handle(GetAvailableMallCouponsQuery req, CancellationToken ct)
-    {
-        return await _db.MallCoupons.AsNoTracking()
-            .Where(c => c.IsActive)
-            .Where(c => c.StartAt == null || DateTime.Now >= c.StartAt)
-            .Where(c => c.EndAt == null || DateTime.Now <= c.EndAt)
-            .Select(c => new MallCouponDto
-            {
-                Id = c.Id, Code = c.Code, Name = c.Name,
-                CouponType = c.CouponType, ThresholdAmount = c.ThresholdAmount,
-                DiscountAmount = c.DiscountAmount, MaxDiscount = c.MaxDiscount,
-                TotalCount = c.TotalCount, RemainCount = c.RemainCount,
-                PerLimit = c.PerLimit, ValidDays = c.ValidDays,
-                StartAt = c.StartAt, EndAt = c.EndAt,
-                ScopeType = c.ScopeType, ScopeValue = c.ScopeValue, IsActive = c.IsActive
-            })
-            .ToListAsync(ct);
     }
 
     public async Task<bool> Handle(UseMallMemberCouponCommand req, CancellationToken ct)

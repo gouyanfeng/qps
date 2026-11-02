@@ -1,18 +1,7 @@
 <template>
   <view class="page">
-    <!-- ============ 顶栏：定位 + 馆名 + 消息 ============ -->
-    <q-page-header background="#ffffff">
-      <view class="location-chip">
-        <q-icon name="location" size="26" color="#2E7D32" />
-        <text class="location-text">杭州·国医直发仓</text>
-        <q-icon name="chevron-down" size="20" color="#707A6C" />
-      </view>
-      <text class="brand-name">本草国医馆</text>
-      <view class="action-btn">
-        <q-icon name="notification" size="30" color="#1B1C1C" />
-        <view class="badge-dot"></view>
-      </view>
-    </q-page-header>
+    <!-- ============ 顶栏：统一标题 ============ -->
+    <q-page-header-back :show-back="false" title="本草国医馆" />
     <view class="page-subbar">
       <view class="search-bar" @click="goToSearch">
         <q-icon name="search" size="24" color="#707A6C" />

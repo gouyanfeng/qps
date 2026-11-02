@@ -67,17 +67,4 @@ public class MallArticleController : ControllerBase
     {
         return Ok(await _mediator.Send(new SetMallArticleTopCommand { Id = id, IsTop = isTop }));
     }
-
-    [HttpGet("api/mall/articles")]
-    public async Task<ActionResult<List<MallArticleListItemDto>>> GetPublished(
-        MallArticleType? articleType)
-    {
-        return Ok(await _mediator.Send(new GetPublishedMallArticlesQuery { ArticleType = articleType }));
-    }
-
-    [HttpGet("api/mall/articles/{id:guid}")]
-    public async Task<ActionResult<MallArticleDto>> GetPublishedDetail(Guid id)
-    {
-        return Ok(await _mediator.Send(new GetPublishedMallArticleDetailQuery { Id = id }));
-    }
 }

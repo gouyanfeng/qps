@@ -1,24 +1,7 @@
-﻿﻿﻿<template>
+﻿﻿﻿﻿﻿<template>
   <view class="page">
     <!-- ============ 顶栏 ============ -->
-    <q-page-header background="#ffffff">
-      <view class="nav-brand">
-        <q-icon name="location" size="26" color="#2E7D32" />
-        <text class="nav-title">本草国医馆</text>
-        <view class="nav-branch">
-          <text class="nav-branch-text">北京总馆</text>
-          <q-icon name="chevron-down" size="16" color="#6B6B6B" />
-        </view>
-      </view>
-      <view class="nav-icons">
-        <view class="nav-icon">
-          <q-icon name="notification" size="26" color="#1B1C1C" />
-          <view class="nav-dot"></view>
-        </view>
-        <q-icon name="qrcode" size="26" color="#1B1C1C" />
-        <q-icon name="setting" size="26" color="#1B1C1C" />
-      </view>
-    </q-page-header>
+    <q-page-header-back :show-back="false" title="个人中心" />
 
     <scroll-view scroll-y class="page-body" enhanced>
       <!-- ============ Hero 会员卡片 ============ -->
@@ -67,7 +50,7 @@
 
         <!-- 4 列资产 -->
         <view class="asset-grid">
-          <view class="asset-item">
+          <view class="asset-item" @tap="goCoupons">
             <view class="asset-value-row">
               <text class="asset-val">{{ couponsCount }}</text>
               <text class="asset-unit">张</text>
@@ -308,6 +291,10 @@ function openAccount() {
 
 function goOrder(status: string) {
   uni.navigateTo({ url: `/pages/orders/index?status=${encodeURIComponent(status)}` })
+}
+
+function goCoupons() {
+  uni.navigateTo({ url: '/pages/coupons/index' })
 }
 
 function goService(key: string) {

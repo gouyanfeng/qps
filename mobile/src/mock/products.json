@@ -1,392 +1,382 @@
 {
-  "products": [
-    {
-      "id": "prod-001",
-      "name": "长白山人参",
-      "categoryId": "cat-001-01",
-      "categoryName": "人参",
-      "description": "精选长白山优质人参，年份充足，皂苷含量高，滋补佳品",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=whole%20dried%20Korean%20ginseng%20root%2C%20Changbai%20mountain%20ginseng%2C%20oval%20shape%2C%20light%20yellowish%20brown%20color%2C%20smooth%20skin%2C%20placed%20on%20wooden%20board%2C%20professional%20product%20photo%2C%20white%20background%2C%20studio%20lighting&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=assortment%20of%20traditional%20Chinese%20herbs%20including%20ginseng%2C%20dried%20roots%2C%20flowers%2C%20berries%20in%20rustic%20wooden%20bowls%20and%20spoons%2C%20top%20view%2C%20warm%20natural%20light%2C%20authentic%20herbal%20medicine%20photography&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=slice%20ginseng%20root%20with%20lily%20bulb%2C%20dried%20herbal%20tea%20ingredients%2C%20close%20up%20macro%20shot%2C%20soft%20bokeh%20background%2C%20warm%20earthy%20tones%2C%20professional%20food%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-001-01",
-          "specName": "10g装",
-          "price": 68.00,
-          "stock": 100,
-          "weightGram": 10
-        },
-        {
-          "id": "sku-001-02",
-          "specName": "20g装",
-          "price": 128.00,
-          "stock": 80,
-          "weightGram": 20
-        },
-        {
-          "id": "sku-001-03",
-          "specName": "50g装",
-          "price": 298.00,
-          "stock": 50,
-          "weightGram": 50
-        }
-      ],
-      "sales": 1250,
-      "isHot": true
-    },
-    {
-      "id": "prod-002",
-      "name": "甘肃黄芪",
-      "categoryId": "cat-001-02",
-      "categoryName": "黄芪",
-      "description": "甘肃岷县优质黄芪，切片均匀，补气固表，增强免疫力",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=Chinese%20angelica%20root%20slices%2C%20dang%20gui%2C%20dark%20brown%20circular%20slices%20with%20visible%20texture%2C%20arranged%20on%20wooden%20surface%2C%20professional%20product%20photography%2C%20soft%20natural%20light&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20red%20goji%20berries%20pile%2C%20bright%20crimson%20color%2C%20wrinkled%20textured%20surface%2C%20in%20small%20ceramic%20bowl%2C%20close%20up%20macro%20photo%2C%20natural%20daylight%2C%20healthy%20superfood&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-002-01",
-          "specName": "100g装",
-          "price": 35.00,
-          "stock": 200,
-          "weightGram": 100
-        },
-        {
-          "id": "sku-002-02",
-          "specName": "250g装",
-          "price": 78.00,
-          "stock": 150,
-          "weightGram": 250
-        },
-        {
-          "id": "sku-002-03",
-          "specName": "500g装",
-          "price": 145.00,
-          "stock": 100,
-          "weightGram": 500
-        }
-      ],
-      "sales": 890,
-      "isHot": true
-    },
-    {
-      "id": "prod-003",
-      "name": "岷县当归",
-      "categoryId": "cat-001-03",
-      "categoryName": "当归",
-      "description": "甘肃岷县正宗当归，补血活血，调经止痛，女性养生必备",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=Chinese%20angelica%20root%20slices%2C%20dang%20gui%2C%20dark%20brown%20circular%20slices%20with%20visible%20texture%2C%20arranged%20on%20wooden%20surface%2C%20professional%20product%20photography%2C%20soft%20natural%20light&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20tangerine%20peel%2C%20chen%20pi%2C%20curled%20orange%20peel%20pieces%2C%20rough%20wrinkled%20texture%2C%20earthy%20orange%20brown%20color%2C%20in%20bamboo%20basket%2C%20top%20view%2C%20professional%20herb%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-003-01",
-          "specName": "100g装",
-          "price": 42.00,
-          "stock": 180,
-          "weightGram": 100
-        },
-        {
-          "id": "sku-003-02",
-          "specName": "250g装",
-          "price": 95.00,
-          "stock": 120,
-          "weightGram": 250
-        }
-      ],
-      "sales": 670,
-      "isHot": false
-    },
-    {
-      "id": "prod-004",
-      "name": "桐乡菊花",
-      "categoryId": "cat-002-01",
-      "categoryName": "菊花",
-      "description": "浙江桐乡杭白菊，清热明目，泡茶养生，朵大饱满",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20rose%20petals%2C%20pink%20and%20red%20rose%20buds%20for%20herbal%20tea%2C%20fragrant%20flowers%20scattered%20on%20linen%20cloth%2C%20close%20up%20photo%2C%20delicate%20textures%2C%20soft%20natural%20lighting&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20red%20goji%20berries%20pile%2C%20bright%20crimson%20color%2C%20wrinkled%20textured%20surface%2C%20in%20small%20ceramic%20bowl%2C%20close%20up%20macro%20photo%2C%20natural%20daylight%2C%20healthy%20superfood&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-004-01",
-          "specName": "50g装",
-          "price": 18.00,
-          "stock": 300,
-          "weightGram": 50
-        },
-        {
-          "id": "sku-004-02",
-          "specName": "100g装",
-          "price": 32.00,
-          "stock": 250,
-          "weightGram": 100
-        },
-        {
-          "id": "sku-004-03",
-          "specName": "200g装",
-          "price": 58.00,
-          "stock": 180,
-          "weightGram": 200
-        }
-      ],
-      "sales": 1580,
-      "isHot": true
-    },
-    {
-      "id": "prod-005",
-      "name": "平邑金银花",
-      "categoryId": "cat-002-02",
-      "categoryName": "金银花",
-      "description": "山东平邑金银花，清热解毒，抗菌消炎，夏季防暑佳品",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20rose%20petals%2C%20pink%20and%20red%20rose%20buds%20for%20herbal%20tea%2C%20fragrant%20flowers%20scattered%20on%20linen%20cloth%2C%20close%20up%20photo%2C%20delicate%20textures%2C%20soft%20natural%20lighting&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=assortment%20of%20traditional%20Chinese%20herbs%20including%20ginseng%2C%20dried%20roots%2C%20flowers%2C%20berries%20in%20rustic%20wooden%20bowls%20and%20spoons%2C%20top%20view%2C%20warm%20natural%20light%2C%20authentic%20herbal%20medicine%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-005-01",
-          "specName": "50g装",
-          "price": 25.00,
-          "stock": 220,
-          "weightGram": 50
-        },
-        {
-          "id": "sku-005-02",
-          "specName": "100g装",
-          "price": 45.00,
-          "stock": 160,
-          "weightGram": 100
-        }
-      ],
-      "sales": 920,
-      "isHot": false
-    },
-    {
-      "id": "prod-006",
-      "name": "宁夏枸杞",
-      "categoryId": "cat-003-01",
-      "categoryName": "枸杞",
-      "description": "宁夏中宁枸杞，颗粒饱满，色泽红润，滋补肝肾明目",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20red%20goji%20berries%20pile%2C%20bright%20crimson%20color%2C%20wrinkled%20textured%20surface%2C%20in%20small%20ceramic%20bowl%2C%20close%20up%20macro%20photo%2C%20natural%20daylight%2C%20healthy%20superfood&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20tangerine%20peel%2C%20chen%20pi%2C%20curled%20orange%20peel%20pieces%2C%20rough%20wrinkled%20texture%2C%20earthy%20orange%20brown%20color%2C%20in%20bamboo%20basket%2C%20top%20view%2C%20professional%20herb%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-006-01",
-          "specName": "100g装",
-          "price": 28.00,
-          "stock": 350,
-          "weightGram": 100
-        },
-        {
-          "id": "sku-006-02",
-          "specName": "250g装",
-          "price": 62.00,
-          "stock": 280,
-          "weightGram": 250
-        },
-        {
-          "id": "sku-006-03",
-          "specName": "500g装",
-          "price": 115.00,
-          "stock": 200,
-          "weightGram": 500
-        }
-      ],
-      "sales": 2100,
-      "isHot": true
-    },
-    {
-      "id": "prod-007",
-      "name": "东北鹿茸",
-      "categoryId": "cat-004-01",
-      "categoryName": "鹿茸",
-      "description": "东北梅花鹿鹿茸，补肾壮阳，强筋健骨，名贵滋补品",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=traditional%20Chinese%20ejiao%2C%20donkey%20hide%20gelatin%20cubes%2C%20dark%20brown%20rectangular%20pieces%2C%20glossy%20surface%2C%20nutritious%20supplement%2C%20arranged%20on%20wooden%20tray%2C%20professional%20product%20photography&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=whole%20dried%20Korean%20ginseng%20root%2C%20Changbai%20mountain%20ginseng%2C%20oval%20shape%2C%20light%20yellowish%20brown%20color%2C%20smooth%20skin%2C%20placed%20on%20wooden%20board%2C%20professional%20product%20photo%2C%20white%20background%2C%20studio%20lighting&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-007-01",
-          "specName": "10g装",
-          "price": 380.00,
-          "stock": 30,
-          "weightGram": 10
-        },
-        {
-          "id": "sku-007-02",
-          "specName": "20g装",
-          "price": 720.00,
-          "stock": 20,
-          "weightGram": 20
-        }
-      ],
-      "sales": 150,
-      "isHot": false
-    },
-    {
-      "id": "prod-008",
-      "name": "天然石膏",
-      "categoryId": "cat-005-01",
-      "categoryName": "石膏",
-      "description": "优质天然石膏，清热泻火，除烦止渴，中药常用矿物药",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=natural%20gypsum%20mineral%20crystals%2C%20white%20translucent%20rock%20formation%2C%20crystalline%20structure%2C%20rough%20surface%2C%20geological%20specimen%2C%20close%20up%20photography%2C%20macro%20detail&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=crushed%20white%20mineral%20powder%20and%20rocks%2C%20gypsum%20herbal%20medicine%20ingredient%2C%20arranged%20in%20bamboo%20bowl%2C%20light%20gray%20white%20tones%2C%20studio%20product%20photography%2C%20natural%20light&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-008-01",
-          "specName": "100g装",
-          "price": 12.00,
-          "stock": 500,
-          "weightGram": 100
-        },
-        {
-          "id": "sku-008-02",
-          "specName": "500g装",
-          "price": 48.00,
-          "stock": 300,
-          "weightGram": 500
-        }
-      ],
-      "sales": 320,
-      "isHot": false
-    },
-    {
-      "id": "prod-101",
-      "name": "长白山特级生晒人参礼盒",
-      "categoryId": "cat-001-01",
-      "categoryName": "人参",
-      "description": "长白山特级生晒人参，木盒精装，支支防伪，GAP道地认证",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=premium%20ginseng%20gift%20box%2C%20whole%20dried%20ginseng%20roots%20neatly%20arranged%20in%20elegant%20dark%20wooden%20box%20with%20golden%20trim%2C%20luxury%20herbal%20supplement%20packaging%2C%20professional%20product%20photography%2C%20studio%20lighting&image_size=square_hd",
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=assortment%20of%20traditional%20Chinese%20herbs%20including%20ginseng%2C%20dried%20roots%2C%20flowers%2C%20berries%20in%20rustic%20wooden%20bowls%20and%20spoons%2C%20top%20view%2C%20warm%20natural%20light%2C%20authentic%20herbal%20medicine%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-101-01",
-          "specName": "50g（8支精装）",
-          "price": 268.00,
-          "stock": 60,
-          "weightGram": 50
-        }
-      ],
-      "sales": 2400,
-      "isHot": true
-    },
-    {
-      "id": "prod-102",
-      "name": "新会老树陈皮十年大红皮 250g",
-      "categoryId": "cat-003-03",
-      "categoryName": "陈皮",
-      "description": "新会核心产区十年老树陈皮，干仓储存，茶香浓郁",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20tangerine%20peel%2C%20chen%20pi%2C%20curled%20orange%20peel%20pieces%2C%20rough%20wrinkled%20texture%2C%20earthy%20orange%20brown%20color%2C%20in%20bamboo%20basket%2C%20top%20view%2C%20professional%20herb%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-102-01",
-          "specName": "250g密封金罐",
-          "price": 198.00,
-          "stock": 80,
-          "weightGram": 250
-        }
-      ],
-      "sales": 5100,
-      "isHot": true
-    },
-    {
-      "id": "prod-103",
-      "name": "宁夏中宁特级头茬红枸杞 500g",
-      "categoryId": "cat-003-01",
-      "categoryName": "枸杞",
-      "description": "宁夏中宁头茬红枸杞，贡果级，头茬免洗，泡水上浮",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20red%20goji%20berries%20pile%2C%20bright%20crimson%20color%2C%20wrinkled%20textured%20surface%2C%20in%20small%20ceramic%20bowl%2C%20close%20up%20macro%20photo%2C%20natural%20daylight%2C%20healthy%20superfood&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-103-01",
-          "specName": "500g充氮双罐",
-          "price": 49.90,
-          "stock": 200,
-          "weightGram": 500
-        }
-      ],
-      "sales": 12000,
-      "isHot": true
-    },
-    {
-      "id": "prod-104",
-      "name": "岷县特级野生当归切片 300g",
-      "categoryId": "cat-001-03",
-      "categoryName": "当归",
-      "description": "岷县特级野生当归切片，无硫熏蒸，气血双补，油润微辛",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=Chinese%20angelica%20root%20slices%2C%20dang%20gui%2C%20dark%20brown%20circular%20slices%20with%20visible%20texture%2C%20arranged%20on%20wooden%20surface%2C%20professional%20product%20photography%2C%20soft%20natural%20light&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-104-01",
-          "specName": "300g锁鲜装",
-          "price": 58.00,
-          "stock": 120,
-          "weightGram": 300
-        }
-      ],
-      "sales": 8700,
-      "isHot": true
-    },
-    {
-      "id": "prod-105",
-      "name": "平阴重瓣红玫瑰养颜茶 120g",
-      "categoryId": "cat-002-05",
-      "categoryName": "花茶",
-      "description": "平阴重瓣红玫瑰，低温冻干，天然花青素，舒肝解郁",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=dried%20rose%20petals%2C%20pink%20and%20red%20rose%20buds%20for%20herbal%20tea%2C%20fragrant%20flowers%20scattered%20on%20linen%20cloth%2C%20close%20up%20photo%2C%20delicate%20textures%2C%20soft%20natural%20lighting&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-105-01",
-          "specName": "120g精制茶罐",
-          "price": 39.90,
-          "stock": 150,
-          "weightGram": 120
-        }
-      ],
-      "sales": 6400,
-      "isHot": true
-    },
-    {
-      "id": "prod-106",
-      "name": "东阿纯正古法手工阿胶糕 400g",
-      "categoryId": "cat-004-02",
-      "categoryName": "阿胶",
-      "description": "东阿纯正古法手工阿胶糕，非遗古法，真驴皮熬制，浓厚滋补",
-      "images": [
-        "https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=traditional%20Chinese%20ejiao%2C%20donkey%20hide%20gelatin%20cubes%2C%20dark%20brown%20rectangular%20pieces%2C%20glossy%20surface%2C%20nutritious%20supplement%2C%20arranged%20on%20wooden%20tray%2C%20professional%20product%20photography&image_size=square_hd"
-      ],
-      "skus": [
-        {
-          "id": "sku-106-01",
-          "specName": "400g独立片装礼盒",
-          "price": 158.00,
-          "stock": 90,
-          "weightGram": 400
-        }
-      ],
-      "sales": 3200,
-      "isHot": true
-    }
-  ]
+    "products":  [
+                     {
+                         "id":  "prod-001",
+                         "name":  "长白山人参",
+                         "categoryId":  "cat-001-01",
+                         "categoryName":  "人参",
+                         "description":  "精选长白山优质人参，年份充足，皂苷含量高，滋补佳品",
+                         "images":  [
+                                        "/uploads/product/202610/22d2f90749e0673477a2ba1c67c787d3.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-001-01",
+                                          "specName":  "10g装",
+                                          "price":  68.00,
+                                          "stock":  100,
+                                          "weightGram":  10
+                                      },
+                                      {
+                                          "id":  "sku-001-02",
+                                          "specName":  "20g装",
+                                          "price":  128.00,
+                                          "stock":  80,
+                                          "weightGram":  20
+                                      },
+                                      {
+                                          "id":  "sku-001-03",
+                                          "specName":  "50g装",
+                                          "price":  298.00,
+                                          "stock":  50,
+                                          "weightGram":  50
+                                      }
+                                  ],
+                         "sales":  1250,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-002",
+                         "name":  "甘肃黄芪",
+                         "categoryId":  "cat-001-02",
+                         "categoryName":  "黄芪",
+                         "description":  "甘肃岷县优质黄芪，切片均匀，补气固表，增强免疫力",
+                         "images":  [
+                                        "/uploads/product/202610/c261b88723cf0740367e96ee18628b98.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-002-01",
+                                          "specName":  "100g装",
+                                          "price":  35.00,
+                                          "stock":  200,
+                                          "weightGram":  100
+                                      },
+                                      {
+                                          "id":  "sku-002-02",
+                                          "specName":  "250g装",
+                                          "price":  78.00,
+                                          "stock":  150,
+                                          "weightGram":  250
+                                      },
+                                      {
+                                          "id":  "sku-002-03",
+                                          "specName":  "500g装",
+                                          "price":  145.00,
+                                          "stock":  100,
+                                          "weightGram":  500
+                                      }
+                                  ],
+                         "sales":  890,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-003",
+                         "name":  "岷县当归",
+                         "categoryId":  "cat-001-03",
+                         "categoryName":  "当归",
+                         "description":  "甘肃岷县正宗当归，补血活血，调经止痛，女性养生必备",
+                         "images":  [
+                                        "/uploads/product/202610/7c1d7fe74a3ed5dac425f1bd5bc0f323.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-003-01",
+                                          "specName":  "100g装",
+                                          "price":  42.00,
+                                          "stock":  180,
+                                          "weightGram":  100
+                                      },
+                                      {
+                                          "id":  "sku-003-02",
+                                          "specName":  "250g装",
+                                          "price":  95.00,
+                                          "stock":  120,
+                                          "weightGram":  250
+                                      }
+                                  ],
+                         "sales":  670,
+                         "isHot":  false
+                     },
+                     {
+                         "id":  "prod-004",
+                         "name":  "桐乡菊花",
+                         "categoryId":  "cat-002-01",
+                         "categoryName":  "菊花",
+                         "description":  "浙江桐乡杭白菊，清热明目，泡茶养生，朵大饱满",
+                         "images":  [
+                                        "/uploads/product/202610/7ee1ed5d4d45cc5968f08d32d8bd478d.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-004-01",
+                                          "specName":  "50g装",
+                                          "price":  18.00,
+                                          "stock":  300,
+                                          "weightGram":  50
+                                      },
+                                      {
+                                          "id":  "sku-004-02",
+                                          "specName":  "100g装",
+                                          "price":  32.00,
+                                          "stock":  250,
+                                          "weightGram":  100
+                                      },
+                                      {
+                                          "id":  "sku-004-03",
+                                          "specName":  "200g装",
+                                          "price":  58.00,
+                                          "stock":  180,
+                                          "weightGram":  200
+                                      }
+                                  ],
+                         "sales":  1580,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-005",
+                         "name":  "平邑金银花",
+                         "categoryId":  "cat-002-02",
+                         "categoryName":  "金银花",
+                         "description":  "山东平邑金银花，清热解毒，抗菌消炎，夏季防暑佳品",
+                         "images":  [
+                                        "/uploads/product/202610/2efe4c0ad45a2bdaeb2a8af5d86b0184.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-005-01",
+                                          "specName":  "50g装",
+                                          "price":  25.00,
+                                          "stock":  220,
+                                          "weightGram":  50
+                                      },
+                                      {
+                                          "id":  "sku-005-02",
+                                          "specName":  "100g装",
+                                          "price":  45.00,
+                                          "stock":  160,
+                                          "weightGram":  100
+                                      }
+                                  ],
+                         "sales":  920,
+                         "isHot":  false
+                     },
+                     {
+                         "id":  "prod-006",
+                         "name":  "宁夏枸杞",
+                         "categoryId":  "cat-003-01",
+                         "categoryName":  "枸杞",
+                         "description":  "宁夏中宁枸杞，颗粒饱满，色泽红润，滋补肝肾明目",
+                         "images":  [
+                                        "/uploads/product/202610/eb00b27d2994a4d2fb452047264ec6ca.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-006-01",
+                                          "specName":  "100g装",
+                                          "price":  28.00,
+                                          "stock":  350,
+                                          "weightGram":  100
+                                      },
+                                      {
+                                          "id":  "sku-006-02",
+                                          "specName":  "250g装",
+                                          "price":  62.00,
+                                          "stock":  280,
+                                          "weightGram":  250
+                                      },
+                                      {
+                                          "id":  "sku-006-03",
+                                          "specName":  "500g装",
+                                          "price":  115.00,
+                                          "stock":  200,
+                                          "weightGram":  500
+                                      }
+                                  ],
+                         "sales":  2100,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-007",
+                         "name":  "东北鹿茸",
+                         "categoryId":  "cat-004-01",
+                         "categoryName":  "鹿茸",
+                         "description":  "东北梅花鹿鹿茸，补肾壮阳，强筋健骨，名贵滋补品",
+                         "images":  [
+                                        "/uploads/product/202610/9d21d4faeaade8a1982d41eaa9c828c2.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-007-01",
+                                          "specName":  "10g装",
+                                          "price":  380.00,
+                                          "stock":  30,
+                                          "weightGram":  10
+                                      },
+                                      {
+                                          "id":  "sku-007-02",
+                                          "specName":  "20g装",
+                                          "price":  720.00,
+                                          "stock":  20,
+                                          "weightGram":  20
+                                      }
+                                  ],
+                         "sales":  150,
+                         "isHot":  false
+                     },
+                     {
+                         "id":  "prod-008",
+                         "name":  "天然石膏",
+                         "categoryId":  "cat-005-01",
+                         "categoryName":  "石膏",
+                         "description":  "优质天然石膏，清热泻火，除烦止渴，中药常用矿物药",
+                         "images":  [
+                                        "/uploads/product/202610/dff4ceb284f598aeabbff7d3566114bd.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-008-01",
+                                          "specName":  "100g装",
+                                          "price":  12.00,
+                                          "stock":  500,
+                                          "weightGram":  100
+                                      },
+                                      {
+                                          "id":  "sku-008-02",
+                                          "specName":  "500g装",
+                                          "price":  48.00,
+                                          "stock":  300,
+                                          "weightGram":  500
+                                      }
+                                  ],
+                         "sales":  320,
+                         "isHot":  false
+                     },
+                     {
+                         "id":  "prod-101",
+                         "name":  "长白山特级生晒人参礼盒",
+                         "categoryId":  "cat-001-01",
+                         "categoryName":  "人参",
+                         "description":  "长白山特级生晒人参，木盒精装，支支防伪，GAP道地认证",
+                         "images":  [
+                                        "/uploads/product/202610/ab6debbedda62bd79ac7ebaf64a5cfc6.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-101-01",
+                                          "specName":  "50g（8支精装）",
+                                          "price":  268.00,
+                                          "stock":  60,
+                                          "weightGram":  50
+                                      }
+                                  ],
+                         "sales":  2400,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-102",
+                         "name":  "新会老树陈皮十年大红皮 250g",
+                         "categoryId":  "cat-003-03",
+                         "categoryName":  "陈皮",
+                         "description":  "新会核心产区十年老树陈皮，干仓储存，茶香浓郁",
+                         "images":  [
+                                        "/uploads/product/202610/38a17cc5fddd5b84c6608775ce97731e.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-102-01",
+                                          "specName":  "250g密封金罐",
+                                          "price":  198.00,
+                                          "stock":  80,
+                                          "weightGram":  250
+                                      }
+                                  ],
+                         "sales":  5100,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-103",
+                         "name":  "宁夏中宁特级头茬红枸杞 500g",
+                         "categoryId":  "cat-003-01",
+                         "categoryName":  "枸杞",
+                         "description":  "宁夏中宁头茬红枸杞，贡果级，头茬免洗，泡水上浮",
+                         "images":  [
+                                        "/uploads/product/202610/19d2a7e5337003b67965698d21a484f2.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-103-01",
+                                          "specName":  "500g充氮双罐",
+                                          "price":  49.90,
+                                          "stock":  200,
+                                          "weightGram":  500
+                                      }
+                                  ],
+                         "sales":  12000,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-104",
+                         "name":  "岷县特级野生当归切片 300g",
+                         "categoryId":  "cat-001-03",
+                         "categoryName":  "当归",
+                         "description":  "岷县特级野生当归切片，无硫熏蒸，气血双补，油润微辛",
+                         "images":  [
+                                        "/uploads/product/202610/6c70a13c1036375fa074bfb5bab98700.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-104-01",
+                                          "specName":  "300g锁鲜装",
+                                          "price":  58.00,
+                                          "stock":  120,
+                                          "weightGram":  300
+                                      }
+                                  ],
+                         "sales":  8700,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-105",
+                         "name":  "平阴重瓣红玫瑰养颜茶 120g",
+                         "categoryId":  "cat-002-05",
+                         "categoryName":  "花茶",
+                         "description":  "平阴重瓣红玫瑰，低温冻干，天然花青素，舒肝解郁",
+                         "images":  [
+                                        "/uploads/product/202610/dd4227d0ef1a8310329f123c702a86b5.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-105-01",
+                                          "specName":  "120g精制茶罐",
+                                          "price":  39.90,
+                                          "stock":  150,
+                                          "weightGram":  120
+                                      }
+                                  ],
+                         "sales":  6400,
+                         "isHot":  true
+                     },
+                     {
+                         "id":  "prod-106",
+                         "name":  "东阿纯正古法手工阿胶糕 400g",
+                         "categoryId":  "cat-004-02",
+                         "categoryName":  "阿胶",
+                         "description":  "东阿纯正古法手工阿胶糕，非遗古法，真驴皮熬制，浓厚滋补",
+                         "images":  [
+                                        "/uploads/product/202610/e8dd669d9f1e8b261a114e60499d61b6.png"
+                                    ],
+                         "skus":  [
+                                      {
+                                          "id":  "sku-106-01",
+                                          "specName":  "400g独立片装礼盒",
+                                          "price":  158.00,
+                                          "stock":  90,
+                                          "weightGram":  400
+                                      }
+                                  ],
+                         "sales":  3200,
+                         "isHot":  true
+                     }
+                 ]
 }

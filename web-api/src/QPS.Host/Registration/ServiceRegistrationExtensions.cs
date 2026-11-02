@@ -82,6 +82,7 @@ public static class ServiceRegistrationExtensions
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "QPS API", Version = "v1" });
+            c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 In = ParameterLocation.Header,

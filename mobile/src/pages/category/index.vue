@@ -1,20 +1,7 @@
 <template>
   <view class="page">
-    <!-- ============ 顶栏：道地选药 + 搜索 + 消息 ============ -->
-    <q-page-header gap="16rpx" :border="true" background="#ffffff">
-      <view class="brand">
-        <q-icon name="location" size="26" color="#2E7D32" />
-        <text class="brand-text">道地选药</text>
-      </view>
-      <view class="search-pill" @click="goSearch">
-        <q-icon name="search" size="22" color="#8A8578" />
-        <text class="search-text">搜索道地药材、名贵滋补、配方颗粒</text>
-      </view>
-      <view class="notice">
-        <q-icon name="chat" size="30" color="#1B1C1C" />
-        <view class="notice-dot"></view>
-      </view>
-    </q-page-header>
+    <!-- ============ 顶栏：统一标题 ============ -->
+    <q-page-header-back :show-back="false" title="道地选药" />
 
     <view class="page-body">
       <!-- ============ 左侧分类导航 ============ -->
@@ -38,7 +25,7 @@
       </scroll-view>
 
       <!-- ============ 右侧内容 ============ -->
-      <scroll-view scroll-y class="main" enhanced show-scrollbar="false" :lower-threshold="100" @scrolltolower="loadMore">
+      <q-scroll-list class="main" :loading="loading" :has-more="hasMore" more-text="上拉加载更多" @loadmore="loadMore">
         <!-- 筛选胶囊 -->
         <scroll-view scroll-x enhanced show-scrollbar="false" class="filter-scroll">
           <view class="filter-row">
@@ -106,15 +93,10 @@
           <text class="empty-text">该分类好物正在上新，敬请期待</text>
         </view>
 
-        <!-- 加载状态 -->
-        <view v-if="visibleProducts.length > 0" class="load-footer">
-          <text v-if="loading" class="load-text">加载中…</text>
-          <text v-else-if="!hasMore" class="load-text">—— 没有更多了 ——</text>
-          <text v-else class="load-text">上拉加载更多</text>
-        </view>
+        <!-- 加载状态由 q-scroll-list 统一展示 -->
 
         <view class="main-pad"></view>
-      </scroll-view>
+      </q-scroll-list>
     </view>
   </view>
 </template>
@@ -150,8 +132,7 @@ const loading = ref(false)
 
 function currentCategoryId(): string | undefined {
   if (activeFilter.value !== 'all') return activeFilter.value
-  const nav = sideNav.value.find(n => n.key === activeKey.value)
-  if (nav?.categoryIds?.length === 1) return nav.categoryIds[0]
+  if (activeKey.value !== 'all') return activeKey.value
   return undefined
 }
 
@@ -220,11 +201,8 @@ onShow(() => {
   applyPendingCategory()
 })
 
-const baseProducts = computed(() => {
-  const nav = sideNav.value.find(item => item.key === activeKey.value)
-  if (!nav || nav.categoryIds === null) return products.value
-  return products.value.filter(product => nav.categoryIds!.includes(product.categoryId || ''))
-})
+// 后端已按 parentId 展开到所有子分类，前端不再二次过滤
+const baseProducts = computed(() => products.value)
 
 const filterTabs = computed<FilterTab[]>(() => {
   const nav = sideNav.value.find(item => item.key === activeKey.value)
@@ -289,9 +267,6 @@ function goToProductDetail(id: string) {
   uni.navigateTo({ url: `/pages/product-detail/index?id=${id}` })
 }
 
-function goSearch() {
-  uni.navigateTo({ url: '/pages/search/index' })
-}
 </script>
 
 <style lang="scss" scoped>
@@ -309,9 +284,10 @@ $line: #E8E3D6;
 $price: #8B5000;
 
 .page {
-    display: flex;
+  display: flex;
   flex-direction: column;
-  height: 100vh;
+  // tabBar 页：100vh 会超出 uni-page-wrapper（H5 已扣掉底部 50px），用 --window-bottom 扣除
+  height: calc(100vh - var(--window-bottom, 0px));
   background: var(--page-bg);
   overflow: hidden;
 }

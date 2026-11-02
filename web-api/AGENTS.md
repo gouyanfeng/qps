@@ -16,6 +16,7 @@ dotnet test "E:\Code\QPS\web-api\QPS.sln" --no-build --logger "console;verbosity
 
 - 继承 `BaseEntity` 的实体默认走 EF 全局软删除过滤；常规查询不要重复写 `!IsDeleted`，只有必须查全量时才使用 `IgnoreQueryFilters()`。
 - 不要为了调试清空数据库；优先增量补齐或使用初始化逻辑。
+- **API / Handler 中禁止使用 EF Core 导航属性**（navigation properties）进行数据访问。所有查询必须通过 `DbContext` 的 `Set<T>()` 或注入的仓储显式查询，不得通过实体导航属性（如 `entity.Children`、`entity.Parent`）隐式加载或惰性加载关联数据。需要关联数据时，使用 `Include()` / `ThenInclude()` 显式加载，或单独查询后手动组装。
 - CRM 不使用 `CRM_CUSTOMER` 业务编码：具体基地属性使用 `CRM_HERB_BASE`；基地主体的联系人、跟进和负责人流转使用 `CRM_HERB_BASE_SUBJECT`；厂商使用 `CRM_VENDOR`。
 - CRM 相关硬编码收敛到 `QPS.Crm.Contracts.CrmCodes`，避免在 Handler 中散落业务编码和状态值。
 - 客户来源字段使用 `SourceId`，不要使用 `SourceLeadId`。

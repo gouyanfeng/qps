@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <q-page-header-back title="收货地址" subtitle="DELIVERY ADDRESSES" />
+    <q-page-header-back title="收货地址" />
     <scroll-view scroll-y class="page-body">
       <view v-for="address in addresses" :key="address.id" class="address-card" @click="selectAddress(address)">
         <view class="address-heading">

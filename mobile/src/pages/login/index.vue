@@ -1,11 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部返回 -->
-    <view class="login-nav">
-      <view class="nav-back" @click="goBack">
-        <q-icon name="arrow-left" size="20" color="#40493D" />
-      </view>
-    </view>
+    <q-page-header-back title="登录" fallback="/pages/index/index" />
 
     <view class="body">
       <!-- 品牌徽记 -->
@@ -148,9 +144,6 @@ function thirdLogin(name: string) {
   toast(`${name} 登录开发中`)
 }
 
-function goBack() {
-  uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
-}
 </script>
 
 <style lang="scss" scoped>

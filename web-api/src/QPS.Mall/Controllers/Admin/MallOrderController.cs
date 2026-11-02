@@ -97,6 +97,58 @@ public class MallOrderController : ControllerBase
     }
 
     /// <summary>
+    /// 分页查询支付单。
+    /// </summary>
+    [HttpGet("payments")]
+    public async Task<ActionResult<PaginationResponse<MallPaymentListDto>>> GetPayments(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] string? keyword = null,
+        [FromQuery] string? method = null,
+        [FromQuery] DateTime? startTime = null,
+        [FromQuery] DateTime? endTime = null)
+    {
+        var query = new GetMallPaymentsQuery
+        {
+            Page = page,
+            PageSize = pageSize,
+            Status = status,
+            Keyword = keyword,
+            Method = method,
+            StartTime = startTime,
+            EndTime = endTime
+        };
+
+        return Ok(await _mediator.Send(query));
+    }
+
+    /// <summary>
+    /// 分页查询退款单。
+    /// </summary>
+    [HttpGet("refunds")]
+    public async Task<ActionResult<PaginationResponse<MallRefundListDto>>> GetRefunds(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] string? keyword = null,
+        [FromQuery] DateTime? startTime = null,
+        [FromQuery] DateTime? endTime = null)
+    {
+        var query = new GetMallRefundsQuery
+        {
+            Page = page,
+            PageSize = pageSize,
+            Status = status,
+            Keyword = keyword,
+            StartTime = startTime,
+            EndTime = endTime
+        };
+
+        return Ok(await _mediator.Send(query));
+    }
+
+    /// <summary>
     /// 模拟支付结果。
     /// </summary>
     [HttpPost("payments/{id:guid}/simulate")]

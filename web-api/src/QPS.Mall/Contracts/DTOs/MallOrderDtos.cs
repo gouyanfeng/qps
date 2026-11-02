@@ -40,6 +40,8 @@ public class MallOrderDto
     public DateTime? CompletedAt { get; set; }
 
     public DateTime? CancelledAt { get; set; }
+
+    public List<MallOrderItemDto> Items { get; set; } = new();
 }
 
 /// <summary>
@@ -52,8 +54,6 @@ public class MallOrderDetailDto : MallOrderDto
     public string Remark { get; set; } = string.Empty;
 
     public DateTime? RefundedAt { get; set; }
-
-    public List<MallOrderItemDto> Items { get; set; } = new();
 
     public List<MallPaymentDto> Payments { get; set; } = new();
 

@@ -18,22 +18,42 @@ public class ResponseWrapperFilter : IAsyncResultFilter
 
     public async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
     {
-        if (context.Result is ObjectResult objectResult)
+        switch (context.Result)
         {
-            var value = objectResult.Value;
-            var valueType = value?.GetType();
-            if (valueType is { IsGenericType: true } &&
-                valueType.GetGenericTypeDefinition() == typeof(ApiResponse<>))
+            case ObjectResult objectResult:
             {
-                context.Result = new JsonResult(value, JsonOptions) { StatusCode = 200 };
+                var value = objectResult.Value;
+                var valueType = value?.GetType();
+                if (valueType is { IsGenericType: true } &&
+                    valueType.GetGenericTypeDefinition() == typeof(ApiResponse<>))
+                {
+                    context.Result = new JsonResult(value, JsonOptions) { StatusCode = 200 };
+                    await next();
+                    return;
+                }
+
+                var statusCode = objectResult.StatusCode;
+                if (statusCode.HasValue && statusCode.Value != 200)
+                {
+                    await next();
+                    return;
+                }
+
+                context.Result = new JsonResult(ApiResponse<object>.Success(value), JsonOptions) { StatusCode = 200 };
                 await next();
                 return;
             }
+            case StatusCodeResult statusCodeResult:
+                if (statusCodeResult.StatusCode != 200)
+                {
+                    await next();
+                    return;
+                }
+                break;
         }
 
-        object? data = context.Result is ObjectResult result ? result.Value : null;
-        context.Result = new JsonResult(ApiResponse<object>.Success(data), JsonOptions) { StatusCode = 200 };
-
+        object? payload = context.Result is ObjectResult r ? r.Value : null;
+        context.Result = new JsonResult(ApiResponse<object>.Success(payload), JsonOptions) { StatusCode = 200 };
         await next();
     }
 }

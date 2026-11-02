@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- ============ 顶栏 ============ -->
-    <q-page-header-back title="确认订单" subtitle="CHECKOUT ORDER · 道地本草直发" />
+    <q-page-header-back title="确认订单" />
 
     <scroll-view scroll-y class="page-body">
       <!-- 冷链配送地址卡 -->
@@ -85,7 +85,8 @@
             <text>优惠券</text>
           </view>
           <view class="discount-row-right">
-            <text class="discount-hint">暂无可用优惠券</text>
+            <text v-if="selectedCoupon" class="discount-neg">-¥{{ selectedCoupon.discountAmount.toFixed(2) }}</text>
+            <text v-else class="discount-hint">{{ availableCoupons.length ? `${availableCoupons.length}张可用` : '暂无可用优惠券' }}</text>
             <q-icon name="chevron-right" size="28" color="#999999" />
           </view>
         </view>
@@ -119,6 +120,10 @@
           <view class="fee-line">
             <text class="fee-label">运费</text>
             <text class="fee-value fee-free">已免</text>
+          </view>
+          <view v-if="selectedCoupon" class="fee-line">
+            <text class="fee-label">优惠券抵扣</text>
+            <text class="fee-value fee-neg">-¥{{ selectedCoupon.discountAmount.toFixed(2) }}</text>
           </view>
         </view>
       </section>
@@ -182,14 +187,56 @@
         提交订单
       </view>
     </view>
+
+    <!-- 优惠券选择弹窗 -->
+    <view v-if="showCouponPicker" class="coupon-picker-mask" @tap="showCouponPicker = false">
+      <view class="coupon-picker" @tap.stop>
+        <view class="picker-header">
+          <text class="picker-title">选择优惠券</text>
+          <view class="picker-close" @tap="showCouponPicker = false">
+            <q-icon name="close" size="22" color="#707A6C" />
+          </view>
+        </view>
+        <scroll-view scroll-y class="picker-body">
+          <view
+            v-for="c in availableCoupons"
+            :key="c.id"
+            class="picker-coupon-item"
+            :class="{ selected: selectedCoupon?.id === c.id }"
+            @tap="pickCoupon(c)"
+          >
+            <view class="picker-coupon-left">
+              <text class="picker-coupon-yen">¥</text>
+              <text class="picker-coupon-val">{{ Math.floor(c.discountAmount) }}</text>
+            </view>
+            <view class="picker-coupon-right">
+              <text class="picker-coupon-name">{{ c.couponName }}</text>
+              <text class="picker-coupon-threshold">{{ c.thresholdAmount > 0 ? `满${Math.floor(c.thresholdAmount)}元可用` : '无门槛' }}</text>
+              <text class="picker-coupon-expire">{{ formatCouponExpire(c.expireAt) }}</text>
+            </view>
+            <view v-if="selectedCoupon?.id === c.id" class="picker-check">
+              <q-icon name="check" size="18" color="#ffffff" />
+            </view>
+          </view>
+          <view v-if="!availableCoupons.length" class="picker-empty">
+            <text class="picker-empty-text">暂无可用优惠券</text>
+          </view>
+        </scroll-view>
+        <view v-if="selectedCoupon" class="picker-footer">
+          <view class="picker-clear-btn" @tap="pickCoupon(null)">
+            <text class="picker-clear-text">不使用优惠券</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, clearCart, getAddresses, createOrder } from '@/api'
-import type { MallAddress } from '@/api'
+import { getCartItems, clearCart, getAddresses, createOrder, getMyCoupons } from '@/api'
+import type { MallAddress, MemberCoupon } from '@/api'
 import type { CartItem } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 
@@ -197,13 +244,17 @@ const items = ref<CartItem[]>([])
 const address = ref<MallAddress | null>(null)
 const payMethod = ref('wechat')
 const remark = ref('')
+const availableCoupons = ref<MemberCoupon[]>([])
+const selectedCoupon = ref<MemberCoupon | null>(null)
+const showCouponPicker = ref(false)
 
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
 )
 
 const finalPrice = computed(() => {
-  return subtotal.value
+  const discount = selectedCoupon.value?.discountAmount ?? 0
+  return Math.max(0, subtotal.value - discount)
 })
 
 onShow(async () => {
@@ -231,6 +282,11 @@ onShow(async () => {
       ?? addresses.find(item => item.isDefault)
       ?? addresses[0]
       ?? null
+    const coupons = await getMyCoupons('claimed').catch(() => [] as MemberCoupon[])
+    availableCoupons.value = coupons.filter(c => {
+      if (c.thresholdAmount > 0 && subtotal.value < c.thresholdAmount) return false
+      return true
+    })
   } catch (error) {
     console.error('加载结算数据失败', error)
     if (error instanceof UnauthorizedError) return
@@ -239,7 +295,22 @@ onShow(async () => {
 })
 
 function editAddress() { uni.navigateTo({ url: '/pages/addresses/index' }) }
-function selectCoupon() { uni.showToast({ title: '暂无可用优惠券', icon: 'none' }) }
+function selectCoupon() {
+  if (!availableCoupons.value.length) {
+    uni.showToast({ title: '暂无可用优惠券', icon: 'none' })
+    return
+  }
+  showCouponPicker.value = true
+}
+function pickCoupon(coupon: MemberCoupon | null) {
+  selectedCoupon.value = coupon
+  showCouponPicker.value = false
+}
+function formatCouponExpire(expireAt: string): string {
+  if (!expireAt) return ''
+  const d = new Date(expireAt)
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} 到期`
+}
 function addRemark() {
   uni.showModal({
     title: '订单备注', editable: true, placeholderText: '选填',
@@ -766,5 +837,163 @@ $page-padding: 24rpx;
   border-radius: 48rpx;
   letter-spacing: 4rpx;
   box-shadow: 0 8rpx 24rpx rgba(46, 125, 50, 0.35);
+}
+
+/* ===== 优惠券选择弹窗 ===== */
+.coupon-picker-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.coupon-picker {
+  width: 100%;
+  max-height: 70vh;
+  background: #ffffff;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #F3F3F3;
+}
+
+.picker-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1B1C1C;
+}
+
+.picker-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.picker-body {
+  flex: 1;
+  padding: 16rpx 32rpx;
+  max-height: 50vh;
+}
+
+.picker-coupon-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  border-radius: 16rpx;
+  background: #F6F3F2;
+  border: 2rpx solid transparent;
+}
+
+.picker-coupon-item.selected {
+  border-color: $theme-primary;
+  background: #F4F9EF;
+}
+
+.picker-coupon-left {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 12rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 2rpx;
+}
+
+.picker-coupon-yen {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: $theme-accent;
+}
+
+.picker-coupon-val {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: $theme-accent;
+  line-height: 1;
+}
+
+.picker-coupon-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.picker-coupon-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1B1C1C;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-coupon-threshold {
+  font-size: 22rpx;
+  color: #40493D;
+}
+
+.picker-coupon-expire {
+  font-size: 20rpx;
+  color: #707A6C;
+}
+
+.picker-check {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 20rpx;
+  background: $theme-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.picker-empty {
+  padding: 80rpx 0;
+  text-align: center;
+}
+
+.picker-empty-text {
+  font-size: 26rpx;
+  color: #8A8A8A;
+}
+
+.picker-footer {
+  padding: 16rpx 32rpx 28rpx;
+  border-top: 1rpx solid #F3F3F3;
+}
+
+.picker-clear-btn {
+  text-align: center;
+  padding: 16rpx;
+  border-radius: 12rpx;
+  background: #F6F3F2;
+}
+
+.picker-clear-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #707A6C;
 }
 </style>

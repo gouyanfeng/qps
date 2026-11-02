@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <q-page-header-back title="会员登录" subtitle="MEMBER ACCOUNT" />
+    <q-page-header-back title="会员登录" />
     <view class="page-body">
       <view class="form-card">
         <text class="form-title">{{ isRegister ? '创建会员账号' : '欢迎回来' }}</text>

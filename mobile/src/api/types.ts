@@ -20,6 +20,20 @@ export interface ProductTag {
   isActive: boolean
 }
 
+export interface ProductPromotion {
+  id: string
+  name: string
+  description: string
+  triggerType: string
+  triggerConfigJson: string
+  actionType: string
+  actionConfigJson: string
+  scopeType: string
+  ruleText: string
+  startDate: string | null
+  endDate: string | null
+}
+
 export interface Product {
   id: string
   code: string
@@ -27,11 +41,13 @@ export interface Product {
   categoryId: string | null
   categoryName: string
   description: string
+  detailHtml: string
   images: string[]
   skus: Sku[]
   sales: number
   isHot: boolean
   tags: ProductTag[]
+  promotions: ProductPromotion[]
 }
 
 export interface Sku {

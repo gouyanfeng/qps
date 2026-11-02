@@ -274,8 +274,8 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  const regionRes = await regionApi.getChinaRegionList({ activeOnly: true })
-  buildRegionTree(regionRes?.data || [])
+  const regionRes = await regionApi.getChinaRegionList({ isActive: true, pageSize: 0 })
+  buildRegionTree(regionRes?.data?.list || [])
 })
 
 const handleReset = () => { searchForm.billingType = ''; searchForm.keyword = '' }

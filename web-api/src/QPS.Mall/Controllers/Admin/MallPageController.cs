@@ -50,10 +50,4 @@ public class MallPageController : ControllerBase
     {
         return Ok(await _mediator.Send(new ChangeMallPageStatusCommand { Id = id, IsActive = isActive }));
     }
-
-    [HttpGet("api/mall/pages/{pageCode}")]
-    public async Task<ActionResult<MallPageDto>> GetByCode(string pageCode)
-    {
-        return Ok(await _mediator.Send(new GetMallPageByCodeQuery { PageCode = pageCode }));
-    }
 }

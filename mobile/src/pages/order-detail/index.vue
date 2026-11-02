@@ -1,15 +1,6 @@
 <template>
   <view class="page">
-    <view class="header">
-      <view class="header-left" @tap="goBack">
-        <q-icon name="arrow-left" size="22" color="#1B1C1C" />
-      </view>
-      <text class="header-title">订单详情</text>
-      <view class="header-right" @tap="consult">
-        <q-icon name="service" size="18" color="#40493D" />
-        <text>药师咨询</text>
-      </view>
-    </view>
+    <q-page-header-back title="订单详情" />
 
     <scroll-view scroll-y class="page-body" v-if="order">
       <view class="status-banner" :class="'status-' + order.status">
@@ -128,7 +119,7 @@
 
         <view v-for="item in order.items" :key="item.id" class="prod-item">
           <view class="prod-img">
-            <image :src="item.productImage || placeholderImg" mode="aspectFill" />
+            <image :src="resolveFileUrl(item.productImage) || placeholderImg" mode="aspectFill" />
             <view class="prod-tag" v-if="item.badge">{{ item.badge }}</view>
           </view>
           <view class="prod-info">
@@ -228,12 +219,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getOrderDetail } from '@/api'
+import { getOrderDetail, cancelOrder, confirmReceipt } from '@/api'
+import { resolveFileUrl } from '@/utils/http'
 import type { MallOrderDetail } from '@/api'
 
 const order = ref<MallOrderDetail | null>(null)
 const orderNo = ref('')
-const placeholderImg = 'https://a0ai.marscode.cn/api/ide/v1/text_to_image?prompt=Traditional%20Chinese%20medicine%20herbs%20product%20placeholder&image_size=square'
+const placeholderImg = '/static/images/hero-herbs.jpg'
 
 onLoad(async options => {
   orderNo.value = (options?.orderNo as string) || ''
@@ -313,7 +305,7 @@ async function handleCancel() {
     success: async r => {
       if (!r.confirm) return
       try {
-        await fetch(`/api/mall/orders/${orderNo.value}/cancel`, { method: 'POST' })
+        await cancelOrder(orderNo.value)
         uni.showToast({ title: '已取消', icon: 'success' })
         order.value = await getOrderDetail(orderNo.value)
       } catch {
@@ -329,7 +321,7 @@ async function handleConfirm() {
     success: async r => {
       if (!r.confirm) return
       try {
-        await fetch(`/api/mall/orders/${orderNo.value}/confirm-receipt`, { method: 'POST' })
+        await confirmReceipt(orderNo.value)
         uni.showToast({ title: '已确认收货', icon: 'success' })
         order.value = await getOrderDetail(orderNo.value)
       } catch {
@@ -360,24 +352,6 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
   padding-bottom: 180rpx;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 28rpx;
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  background: #ffffff;
-  border-bottom: 1rpx solid #F0EFEB;
-}
-.header-left {
-  width: 56rpx; height: 56rpx;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 50%;
-}
-.header-title {
-  font-size: 32rpx; font-weight: 700; color: $on-surface;
-  letter-spacing: -0.5rpx;
-}
 .header-right {
   display: flex; align-items: center; gap: 4rpx;
   padding: 8rpx 16rpx;

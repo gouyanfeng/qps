@@ -131,12 +131,23 @@ export function request<T>(
     const token = getToken()
     if (token) header['Authorization'] = `Bearer ${token}`
 
+    let settled = false
+    const timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      reject(new Error('请求超时，请检查网络'))
+    }, 15000)
+
     uni.request({
       url: BASE_URL + path,
       method,
       data,
       header,
+      timeout: 15000,
       success(res) {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
         const body = res.data as ApiResp<T>
         if (res.statusCode === 200 && body && body.code === 200) {
           resolve(body.data)
@@ -149,6 +160,9 @@ export function request<T>(
         }
       },
       fail(err) {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
         reject(new Error(err.errMsg || '网络请求失败'))
       }
     })
@@ -165,12 +179,23 @@ export function requestRaw<T>(
     const token = getToken()
     if (token) header['Authorization'] = `Bearer ${token}`
 
+    let settled = false
+    const timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      reject(new Error('请求超时，请检查网络'))
+    }, 15000)
+
     uni.request({
       url: BASE_URL + path,
       method,
       data,
       header,
+      timeout: 15000,
       success(res) {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
         const body = res.data as ApiResp<T>
         if (res.statusCode === 401 || body?.code === 401) {
           handleUnauthorized(path)
@@ -178,6 +203,9 @@ export function requestRaw<T>(
         resolve(body)
       },
       fail(err) {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
         reject(new Error(err.errMsg || '网络请求失败'))
       }
     })

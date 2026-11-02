@@ -21,6 +21,7 @@ internal static class MallOrderDetailLoader
             {
                     Id = order.Id,
                     OrderNo = order.OrderNo,
+                    MemberId = order.MemberId,
                     Status = order.Status,
                     ReceiverName = order.ReceiverName,
                     ReceiverPhone = order.ReceiverPhone,
@@ -47,16 +48,19 @@ internal static class MallOrderDetailLoader
             throw new BusinessException(404, "订单不存在");
         }
 
-        dto.Items = await dbContext.MallOrderItems
-            .AsNoTracking()
-            .Where(item => item.OrderId == orderId && !item.IsDeleted)
-            .OrderBy(item => item.CreatedAt)
-            .Select(item => new MallOrderItemDto
+        dto.Items = await (
+            from item in dbContext.MallOrderItems.AsNoTracking()
+            where item.OrderId == orderId && !item.IsDeleted
+            join p in dbContext.MallProducts.AsNoTracking() on item.ProductId equals p.Id into products
+            from p in products.DefaultIfEmpty()
+            orderby item.CreatedAt
+            select new MallOrderItemDto
             {
                 Id = item.Id,
                 SkuId = item.SkuId,
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
+                ProductImage = p != null ? p.MainImageUrl : string.Empty,
                 SkuCode = item.SkuCode,
                 SpecName = item.SpecName,
                 UnitPrice = item.UnitPrice,
@@ -67,8 +71,8 @@ internal static class MallOrderDetailLoader
                 PromotionId = item.PromotionId,
                 PromotionName = item.PromotionName,
                 OriginalUnitPrice = item.OriginalUnitPrice
-            })
-            .ToListAsync(cancellationToken);
+            }
+        ).ToListAsync(cancellationToken);
 
         dto.PromotionDiscountAmount = dto.Items
             .Where(item => !item.IsGift && item.OriginalUnitPrice.HasValue)

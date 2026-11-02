@@ -69,7 +69,14 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
 
         if (request.CategoryId.HasValue)
         {
-            query = query.Where(product => product.CategoryId == request.CategoryId.Value);
+            var targetId = request.CategoryId.Value;
+            var expandedIds = await _dbContext.MallCategories
+                .Where(c => c.Id == targetId || c.ParentId == targetId)
+                .Select(c => c.Id)
+                .ToListAsync(cancellationToken);
+
+            query = query.Where(product =>
+                product.CategoryId.HasValue && expandedIds.Contains(product.CategoryId.Value));
         }
 
         if (request.IsHot.HasValue)

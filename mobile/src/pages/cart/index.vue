@@ -1,12 +1,13 @@
 <template>
   <view class="page">
     <!-- ============ 顶栏：标题 + 管理按钮 ============ -->
-    <q-page-header background="#ffffff">
-      <text class="title">购物车</text>
-      <text :class="['manage-btn', { 'manage-btn-on': editMode }]" @click="toggleEditMode">
-        {{ editMode ? '完成' : '管理' }}
-      </text>
-    </q-page-header>
+    <q-page-header-back :show-back="false" title="购物车">
+      <template #right>
+        <text :class="['manage-btn', { 'manage-btn-on': editMode }]" @click="toggleEditMode">
+          {{ editMode ? '完成' : '管理' }}
+        </text>
+      </template>
+    </q-page-header-back>
 
     <!-- ============ 内容区 ============ -->
     <scroll-view scroll-y class="page-body" enhanced>

@@ -12,7 +12,7 @@ test-results/
 .stitch-designs/
 
 # ComfyUI scripts & workflows
-comfy-api-workflow.json
+tools/comfyui/
 scripts/
 !scripts/.gitkeep
 

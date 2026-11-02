@@ -114,6 +114,42 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
             CancelledAt = order.CancelledAt
         });
 
-        return await dtoQuery.ToPaginationResponseAsync(request, cancellationToken);
+        var page = await dtoQuery.ToPaginationResponseAsync(request, cancellationToken);
+
+        var orderIds = page.List.Select(o => o.Id).ToList();
+        if (orderIds.Count > 0)
+        {
+            var items = await (
+                from i in _dbContext.MallOrderItems.AsNoTracking()
+                where orderIds.Contains(i.OrderId) && !i.IsDeleted
+                join p in _dbContext.MallProducts.AsNoTracking() on i.ProductId equals p.Id into products
+                from p in products.DefaultIfEmpty()
+                orderby i.CreatedAt
+                select new { i.OrderId, Dto = new MallOrderItemDto
+                {
+                    Id = i.Id,
+                    SkuId = i.SkuId,
+                    ProductId = i.ProductId,
+                    ProductName = i.ProductName,
+                    ProductImage = p != null ? p.MainImageUrl : string.Empty,
+                    SpecName = i.SpecName,
+                    UnitPrice = i.UnitPrice,
+                    Quantity = i.Quantity,
+                    ItemAmount = i.ItemAmount,
+                    IsGift = i.IsGift,
+                    PromotionName = i.PromotionName,
+                    OriginalUnitPrice = i.OriginalUnitPrice
+                }}
+            ).ToListAsync(cancellationToken);
+
+            var itemMap = items.GroupBy(x => x.OrderId).ToDictionary(g => g.Key, g => g.Select(x => x.Dto).ToList());
+            foreach (var order in page.List)
+            {
+                if (itemMap.TryGetValue(order.Id, out var orderItems))
+                    order.Items = orderItems;
+            }
+        }
+
+        return page;
     }
 }

@@ -56,10 +56,4 @@ public class MallNoticeController : ControllerBase
     {
         return Ok(await _mediator.Send(new SetMallNoticeTopCommand { Id = id, IsTop = isTop }));
     }
-
-    [HttpGet("api/mall/notices")]
-    public async Task<ActionResult<List<MallNoticeDto>>> GetActive()
-    {
-        return Ok(await _mediator.Send(new GetActiveMallNoticesQuery()));
-    }
 }
