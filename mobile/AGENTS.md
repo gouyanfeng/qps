@@ -2,16 +2,12 @@
 
 本文件约束 `E:\Code\QPS\mobile` 下的 uni-app 移动端项目。工作区通用规则见上级 `AGENTS.md`，本文件只补充移动端的技术栈、运行方式与踩坑经验。
 
-## 设计稿与页面还原（强制执行）
+## 设计稿与页面还原
 
-- 设计稿统一托管在 **Stitch** 平台，项目 ID：**3865239985937178831**。
-- **新页面开发流程**（必须严格按顺序执行）：
-  1. 从 Stitch 下载对应页面的设计稿到 `mobile/design/` 目录；
-  2. 以设计稿为准还原页面布局、颜色、间距、字体、图标；
-  3. 还原完成后截图与设计稿对照确认。
-- 不得跳过设计稿凭空实现新页面；不得以其他项目或通用模板代替 Stitch 设计稿。
-- 已有页面的改造，也必须以 Stitch 上的最新设计稿为准，不一致的地方以设计稿为准修正。
-- 设计稿文件统一存放在 `mobile/design/`，命名格式 `stitch-{页面名}-design.html`，该目录已加入 `.gitignore`，不入版本库。
+- 有设计稿时，以设计稿为准还原页面布局、颜色、间距、字体、图标，完成后截图对照确认。
+- 无设计稿时，按项目设计系统规范实现（复用 `q-*` 组件、统一主题变量与 `rpx` 间距），不得凭空拼凑样式。
+- 设计稿文件统一存放在 `mobile/design/`，命名格式 `stitch-{页面名}-design.html`，该目录随代码入库。
+- 示例项目原先使用 Stitch 平台（项目 ID `3865239985937178831`）存放设计稿；接入其它项目时替换为各自的设计源即可。
 
 ## 技术栈
 
@@ -57,7 +53,7 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
    - 在 TDesign 图标字体 CSS 里查该图标的码位（`.t-icon-xxx:before { content: "\eXXX" }`）
    - 在 `src/icons/iconfont.ts` 增加 `"图标名": "\uEXXX"`
    - 用 `fontTools.subset` 按新码位集合重新裁剪字体，更新 `iconfont.scss` 的 base64
-   - 参考实现：`codex-temp/gen-iconfont.py`（临时目录脚本，若长期维护建议迁入 `mobile/scripts`）
+   - 参考实现：`agent-temp/gen-iconfont.py`（临时目录脚本，若长期维护建议迁入 `mobile/scripts`）
 5. 历史教训：`t-icon` 的 SVG 雪碧图用 `<use href="#id">` 引用，在 App 端视图层不可靠；`index.html` 注入、`main.ts` 静态导入、renderjs、`v-html` 四种方案在真机上全部无效，最终改为字体方案
 
 ## 布局规范
@@ -129,7 +125,7 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 - 使用 `pages.json` 的**内置 tabBar** + `src/static/tabbar/*.png`（透明 PNG）
 - uni-app H5 **不支持** `tabBar.custom: true`，自定义 tabBar 组件不会挂载，不要再尝试
 - 内置 tabBar 只接受图片，不能放 Vue 图标组件
-- 图标由 `codex-temp/make-tabbar-icons.py` 从 780px 设计稿裁切生成：灰度取非激活态、彩色取激活态，alpha 通道透明，保持原生尺寸不放大
+- 图标由 `agent-temp/make-tabbar-icons.py` 从 780px 设计稿裁切生成：灰度取非激活态、彩色取激活态，alpha 通道透明，保持原生尺寸不放大
 
 ## 数据层
 
@@ -139,7 +135,7 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 
 ## 视觉基准
 
-设计稿在 `E:\Code\QPS\codex-temp\stitch-design-final\`（780px 宽 PNG，6 个页面）：
+设计稿在 `E:\Code\QPS\agent-temp\stitch-design-final\`（780px 宽 PNG，6 个页面）：
 
 - `01-homepage`、`02-category`、`03-cart`、`04-product-detail`、`05-profile`、`06-checkout`
 - 分类页左侧导航为 B3 Pro 风格：暖米白渐变、本草暗纹、多层卡片、朱红印章、双层三角引导
@@ -179,5 +175,5 @@ UI 验收脚本在 `E:\Code\QPS\ui-tests`（Playwright + Edge，390×844、DPR2�
 ## 编码与产物
 
 - 所有文本文件使用 UTF-8，注释与交互文案用中文
-- 临时脚本、调试产物放 `E:\Code\QPS\codex-temp`；截图与测试脚本放 `E:\Code\QPS\ui-tests`
+- 临时脚本、调试产物放 `E:\Code\QPS\agent-temp`；截图与测试脚本放 `E:\Code\QPS\ui-tests`
 - 改动保持最小范围，不回退他人未提交的修改
