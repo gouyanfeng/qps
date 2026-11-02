@@ -5,7 +5,7 @@ test-results/
 /.trae/
 /.workbuddy/
 /.worktrees/
-/codex-temp/
+/agent-temp/
 /ui-tests/
 
 # Stitch MCP design cache

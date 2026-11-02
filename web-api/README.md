@@ -2,9 +2,9 @@
 
 ## 项目定位
 
-本项目服务中药材基地卖方与药厂买方，通过供给信息、采购需求和业务跟进管理，支持中药材供需撮合与交易推进。
+QPS Backend 是通用框架的后端基座：模块化单体 + MediatR + EF Core，提供鉴权、权限、数据字典、操作日志以及统一的响应与分页契约。`QPS.Crm`、`QPS.Mall` 是示例业务模块，按需注册或整体替换。
 
-完整的项目背景和业务链路见 [项目背景与业务链路](../docs/product/项目背景与业务链路.md)。
+框架整体定位见 [根目录 README](../README.md)，示例业务背景见 [项目背景与业务链路](../docs/product/项目背景与业务链路.md)。
 
 QPS Backend is an ASP.NET Core 8 service that provides CRM and system
 administration capabilities, including authentication, users, roles,
@@ -28,9 +28,10 @@ permissions, CRM business data, data dictionaries, and error logging.
 ```text
 src/
   QPS.Shared/         公共契约、异常、分页、Pipeline 行为与领域事件
+  QPS.Api/            对外 API 契约与通用约定
   QPS.System/         系统模块：认证、用户、角色、权限、字典与日志
-  QPS.Crm/            CRM 模块：基地、厂商、采购需求、撮合机会、跟进任务与首页图表
-  QPS.Mall/           商场模块：商场门店
+  QPS.Crm/            示例模块：CRM 基地、厂商、采购需求、撮合机会、跟进任务与首页图表
+  QPS.Mall/           示例模块：商城商品、分类、订单、支付、退款与优惠券
   QPS.Persistence/    单一 AppDbContext、实体配置、迁移、当前用户与 JWT
   QPS.Host/           组合根：启动、鉴权、Swagger、过滤器与中间件
 tests/
@@ -65,7 +66,7 @@ tests/
 | CrmFollowTaskController | /api/admin/crm/follow-tasks | 当前负责人跟进任务工作台 |
 | CrmBusinessEntityAttributeController | /api/admin/crm/business-entity-attributes | CRM 业务实体扩展属性维护 |
 | DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
-| MallController | /api/admin/mall/* | 商场门店分页查询、详情、新增、编辑、启用/停用与删除 |
+| Mall（示例模块） | /api/admin/mall/*、/api/mall/* | 商品、分类、订单、支付、退款、优惠券、会员、Banner、活动、库存、运费模板等 |
 
 ## 运行
 

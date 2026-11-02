@@ -42,7 +42,7 @@ router.beforeEach(async (to, from, next) => {
   NProgress.start();
 
   // 2.动态设置标题
-  const title = "JUNAN";
+  const title = "QPS";
   document.title = to.meta.title ? `${to.meta.title} - ${title}` : title;
 
   // 3.判断是访问登陆页，有 Token 就在当前页面，没有 Token 重置路由到登陆页
