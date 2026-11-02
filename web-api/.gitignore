@@ -30,6 +30,9 @@ coverage/
 *.swp
 *.swo
 
+# 本机调试配置
+**/Properties/launchSettings.json
+
 # OS generated files
 .DS_Store
 Thumbs.db

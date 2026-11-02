@@ -27,7 +27,6 @@ QPS 是一套**模块化单体后端 + 管理后台 + 多端移动应用**的通
 ```text
 web-api/                    ASP.NET Core 后端（模块化单体）
   src/QPS.Host/             宿主：启动、全局过滤器、注册
-  src/QPS.Api/              对外 API 契约与通用约定
   src/QPS.Shared/           跨模块共享能力
   src/QPS.System/           基础模块（菜单、权限、区域、日志）
   src/QPS.Crm/              CRM 示例模块

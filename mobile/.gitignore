@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 .DS_Store
 dist
+.vite
 *.local
 
 # Stitch 设计稿（参考用，随代码入库）
