@@ -9,6 +9,7 @@ QPS 面向中药材基地卖方与药厂买方，统一管理供给信息、采�
 ```text
 web-api/        ASP.NET Core 后端
 admin/          Vue 3 管理端
+mobile/         uni-app 移动端（H5 / 小程序）
 codex-temp/     普通临时产物（已忽略）
 ui-tests/       Playwright UI 测试、截图和报告（已忽略）
 docs/           共享产品与研发文档

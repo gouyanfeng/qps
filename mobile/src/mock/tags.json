@@ -1,0 +1,27 @@
+{
+  "tags": [
+    { "code": "ROOT_HERB", "name": "根茎类", "color": "success", "sortOrder": 10 },
+    { "code": "FLOWER_TEA", "name": "花茶", "color": "danger", "sortOrder": 20 },
+    { "code": "FRUIT_HERB", "name": "果实类", "color": "warning", "sortOrder": 30 },
+    { "code": "NOURISHING", "name": "滋补", "color": "primary", "sortOrder": 40 },
+    { "code": "POPULAR", "name": "人气好物", "color": "warning", "sortOrder": 50 },
+    { "code": "GIFT_SET", "name": "礼盒装", "color": "info", "sortOrder": 60 },
+    { "code": "MINERAL", "name": "矿物类", "color": "info", "sortOrder": 70 }
+  ],
+  "productTags": [
+    { "productId": "prod-001", "tagCodes": ["ROOT_HERB", "NOURISHING"] },
+    { "productId": "prod-002", "tagCodes": ["ROOT_HERB", "NOURISHING"] },
+    { "productId": "prod-003", "tagCodes": ["ROOT_HERB", "NOURISHING"] },
+    { "productId": "prod-004", "tagCodes": ["FLOWER_TEA"] },
+    { "productId": "prod-005", "tagCodes": ["FLOWER_TEA"] },
+    { "productId": "prod-006", "tagCodes": ["FRUIT_HERB", "POPULAR"] },
+    { "productId": "prod-007", "tagCodes": ["NOURISHING"] },
+    { "productId": "prod-008", "tagCodes": ["MINERAL"] },
+    { "productId": "prod-101", "tagCodes": ["ROOT_HERB", "NOURISHING", "GIFT_SET"] },
+    { "productId": "prod-102", "tagCodes": ["FRUIT_HERB", "POPULAR"] },
+    { "productId": "prod-103", "tagCodes": ["FRUIT_HERB", "POPULAR"] },
+    { "productId": "prod-104", "tagCodes": ["ROOT_HERB", "NOURISHING"] },
+    { "productId": "prod-105", "tagCodes": ["FLOWER_TEA"] },
+    { "productId": "prod-106", "tagCodes": ["NOURISHING", "GIFT_SET"] }
+  ]
+}

@@ -27,14 +27,27 @@ permissions, CRM business data, data dictionaries, and error logging.
 
 ```text
 src/
-  1.QPS.Domain/          Domain entities and shared primitives
-  2.QPS.Application/     Application commands, queries, DTOs, and interfaces
-  3.QPS.Infrastructure/  EF Core, identity, and service implementations
-  4.QPS.WebAPI/          API controllers, filters, and startup
+  QPS.Shared/         公共契约、异常、分页、Pipeline 行为与领域事件
+  QPS.System/         系统模块：认证、用户、角色、权限、字典与日志
+  QPS.Crm/            CRM 模块：基地、厂商、采购需求、撮合机会、跟进任务与首页图表
+  QPS.Mall/           商场模块：商场门店
+  QPS.Persistence/    单一 AppDbContext、实体配置、迁移、当前用户与 JWT
+  QPS.Host/           组合根：启动、鉴权、Swagger、过滤器与中间件
 tests/
-  QPS.UnitTests/
-  QPS.IntegrationTests/
+  QPS.UnitTests/          单元测试
+  QPS.ArchitectureTests/  架构约束测试
 ```
+
+## 架构
+
+后端采用模块化单体：按业务模块划分项目，由 `QPS.Host` 组合根决定启用哪些模块。
+
+- 模块注册即启用：调用 `AddQpsCrm()` / `AddQpsMall()` 才会加载对应模块的 Handler 与 Controller，不调用则完全不参与运行；没有 appsettings 开关，也没有动态 DLL 加载。
+- 依赖方向为 `Shared ← System ← Crm ← Persistence ← Host`，`QPS.Mall` 仅依赖 `Shared`；模块之间禁止反向依赖和循环引用。
+- 校验、权限、事务三个公共 Pipeline 行为只在 `Shared` 中实现；业务模块不得重复定义。
+- 全系统只保留一个 `AppDbContext`，同时满足 `ISystemDbContext`、`ICrmDbContext`、`IMallDbContext` 与 `IUnitOfWork`。
+
+完整说明见 [模块化单体架构](../docs/architecture/模块化单体架构.md)。
 
 ## API Areas
 
@@ -52,6 +65,7 @@ tests/
 | CrmFollowTaskController | /api/admin/crm/follow-tasks | 当前负责人跟进任务工作台 |
 | CrmBusinessEntityAttributeController | /api/admin/crm/business-entity-attributes | CRM 业务实体扩展属性维护 |
 | DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
+| MallController | /api/admin/mall/* | 商场门店分页查询、详情、新增、编辑、启用/停用与删除 |
 
 ## 运行
 

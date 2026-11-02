@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using QPS.Application.Interfaces;
-using QPS.Domain.Entities.System;
-using QPS.Infrastructure.Database;
+using QPS.Shared.Contracts;
+using QPS.System.Domain.Entities;
+using QPS.Persistence.Database;
 
 namespace QPS.UnitTests.Common;
 

@@ -1,5 +1,5 @@
-# Local workspace state and generated artifacts
-/test-results/
+Local workspace state and generated artifacts
+test-results/
 /.agents/
 /.codex/
 /.trae/
@@ -7,3 +7,14 @@
 /.worktrees/
 /codex-temp/
 /ui-tests/
+
+# Stitch MCP design cache
+.stitch-designs/
+
+# ComfyUI scripts & workflows
+tools/comfyui/
+scripts/
+!scripts/.gitkeep
+
+# UI tests
+qps-ui-tests/

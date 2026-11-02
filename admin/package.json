@@ -13,6 +13,7 @@
     "axios": "^1.15.0",
     "echarts": "^6.0.0",
     "element-plus": "^2.7.6",
+    "element-tiptap": "^2.2.1",
     "md5": "^2.3.0",
     "nprogress": "^0.2.0",
     "pinia": "^3.0.4",

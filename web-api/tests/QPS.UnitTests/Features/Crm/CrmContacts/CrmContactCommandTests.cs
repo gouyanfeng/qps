@@ -1,10 +1,11 @@
+using QPS.Crm.Contracts;
 using Microsoft.EntityFrameworkCore;
-using QPS.Application.Contracts.Crm;
-using QPS.Application.Contracts.Crm.CrmContacts;
-using QPS.Application.Features.Crm;
-using QPS.Application.Features.Crm.CrmContacts;
-using QPS.Domain.Entities.Crm;
-using QPS.Domain.Exceptions;
+using QPS.Crm.Contracts.DTOs;
+using QPS.Crm.Contracts.DTOs.CrmContacts;
+using QPS.Crm.Application.Features;
+using QPS.Crm.Application.Features.CrmContacts;
+using QPS.Crm.Domain.Entities;
+using QPS.Shared.Exceptions;
 using QPS.UnitTests.Common;
 using Xunit;
 

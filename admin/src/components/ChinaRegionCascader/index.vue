@@ -141,8 +141,8 @@ const loadRegions = async () => {
 
   loading.value = true;
   try {
-    const res = await regionApi.getChinaRegionList({ activeOnly: true });
-    const { tree, map } = buildRegionTree(res.data || []);
+    const res = await regionApi.getChinaRegionList({ isActive: true, pageSize: 0 });
+    const { tree, map } = buildRegionTree(res.data?.list || []);
     cachedOptions = tree;
     cachedNodeMap = map;
     regionOptions.value = tree;
@@ -184,5 +184,3 @@ onMounted(loadRegions);
   width: 100%;
 }
 </style>
-
-

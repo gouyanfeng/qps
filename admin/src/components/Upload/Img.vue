@@ -55,20 +55,21 @@ import { ElNotification, formContextKey, formItemContextKey } from "element-plus
 import type { UploadProps, UploadRequestOptions } from "element-plus";
 
 interface UploadFileProps {
-  imageUrl: string; // 图片地址 ==> 必传
-  api?: (params: any) => Promise<any>; // 上传图片的 api 方法，一般项目上传都是同一个 api 方法，在组件里直接引入即可 ==> 非必传
-  drag?: boolean; // 是否支持拖拽上传 ==> 非必传（默认为 true）
-  disabled?: boolean; // 是否禁用上传组件 ==> 非必传（默认为 false）
-  fileSize?: number; // 图片大小限制 ==> 非必传（默认为 5M）
-  fileType?: File.ImageMimeType[]; // 图片类型限制 ==> 非必传（默认为 ["image/jpeg", "image/png", "image/gif"]）
-  height?: string; // 组件高度 ==> 非必传（默认为 150px）
-  width?: string; // 组件宽度 ==> 非必传（默认为 150px）
-  borderRadius?: string; // 组件边框圆角 ==> 非必传（默认为 8px）
+  imageUrl: string;
+  api?: (params: any, scene?: string) => Promise<any>;
+  scene?: string;
+  drag?: boolean;
+  disabled?: boolean;
+  fileSize?: number;
+  fileType?: File.ImageMimeType[];
+  height?: string;
+  width?: string;
+  borderRadius?: string;
 }
 
-// 接受父组件参数
 const props = withDefaults(defineProps<UploadFileProps>(), {
   imageUrl: "",
+  scene: "common",
   drag: true,
   disabled: false,
   fileSize: 5,
@@ -104,7 +105,7 @@ const handleHttpUpload = async (options: UploadRequestOptions) => {
   formData.append("file", options.file);
   try {
     const api = props.api ?? uploadImg;
-    const { data } = await api(formData);
+    const { data } = await api(formData, props.scene);
     emit("update:imageUrl", data.fileUrl);
     // 调用 el-form 内部的校验方法（可自动校验）
     formItemContext?.prop && formContext?.validateField([formItemContext.prop as string]);
@@ -300,5 +301,3 @@ const uploadError = () => {
   }
 }
 </style>
-
-

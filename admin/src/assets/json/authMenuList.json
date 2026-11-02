@@ -1,4 +1,4 @@
-﻿{
+{
   "code": 200,
   "data": [
     {
@@ -17,58 +17,252 @@
       }
     },
     {
-      "path": "/crm/follow-tasks",
-      "name": "followTask",
-      "component": "/crm/followTask/index",
-      "meta": { "icon": "List", "title": "我的待办", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_FOLLOW_TASK" }
-    },
-    {
-      "path": "/crm/herb-base",
-      "name": "herbBase",
-      "component": "/crm/herbBase/index",
+      "path": "/crm",
+      "name": "crm",
+      "redirect": "/crm/follow-tasks",
       "meta": {
-        "icon": "User",
-        "title": "基地管理",
+        "icon": "Connection",
+        "title": "CRM管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "CRM_HERB_BASE"
-      }
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/crm/follow-tasks",
+          "name": "followTask",
+          "component": "/crm/followTask/index",
+          "meta": {
+            "icon": "List",
+            "title": "我的待办",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_FOLLOW_TASK"
+          }
+        },
+        {
+          "path": "/crm/herb-base",
+          "name": "herbBase",
+          "component": "/crm/herbBase/index",
+          "meta": {
+            "icon": "User",
+            "title": "基地管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_HERB_BASE"
+          }
+        },
+        {
+          "path": "/crm/vendor",
+          "name": "vendor",
+          "component": "/crm/vendor/index",
+          "meta": {
+            "icon": "Shop",
+            "title": "厂商管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_VENDOR"
+          }
+        },
+        {
+          "path": "/crm/herb-base-supply",
+          "name": "herbBaseSupply",
+          "component": "/crm/herbBaseSupply/index",
+          "meta": {
+            "icon": "Goods",
+            "title": "供应列表",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_HERB_BASE"
+          }
+        },
+        {
+          "path": "/crm/purchase-demand",
+          "name": "purchaseDemand",
+          "component": "/crm/purchaseDemand/index",
+          "meta": {
+            "icon": "Tickets",
+            "title": "采购需求",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_PURCHASE_DEMAND_VIEW"
+          }
+        },
+        {
+          "path": "/crm/match-opportunity",
+          "name": "matchOpportunity",
+          "component": "/crm/matchOpportunity/index",
+          "meta": {
+            "icon": "Connection",
+            "title": "撮合机会",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_MATCH_OPPORTUNITY_VIEW"
+          }
+        }
+      ]
     },
     {
-      "path": "/crm/vendor",
-      "name": "vendor",
-      "component": "/crm/vendor/index",
+      "path": "/mall",
+      "name": "mall",
+      "redirect": "/mall/store",
       "meta": {
         "icon": "Shop",
-        "title": "厂商管理",
+        "title": "商场管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,
         "isAffix": false,
-        "isKeepAlive": true,
-        "permissionCode": "CRM_VENDOR"
-      }
-    },
-    {
-      "path": "/crm/herb-base-supply",
-      "name": "herbBaseSupply",
-      "component": "/crm/herbBaseSupply/index",
-      "meta": { "icon": "Goods", "title": "供应列表", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_HERB_BASE" }
-    },
-    {
-      "path": "/crm/purchase-demand",
-      "name": "purchaseDemand",
-      "component": "/crm/purchaseDemand/index",
-      "meta": { "icon": "Tickets", "title": "采购需求", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_PURCHASE_DEMAND_VIEW" }
-    },
-    {
-      "path": "/crm/match-opportunity",
-      "name": "matchOpportunity",
-      "component": "/crm/matchOpportunity/index",
-      "meta": { "icon": "Connection", "title": "撮合机会", "isLink": "", "isHide": false, "isFull": false, "isAffix": false, "isKeepAlive": true, "permissionCode": "CRM_MATCH_OPPORTUNITY_VIEW" }
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/mall/store",
+          "name": "mallStore",
+          "component": "/mall/store/index",
+          "meta": {
+            "icon": "OfficeBuilding",
+            "title": "商场门店",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/product",
+          "name": "mallProduct",
+          "component": "/mall/product/index",
+          "meta": {
+            "icon": "Goods",
+            "title": "商品管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/promotion",
+          "name": "mallPromotion",
+          "component": "/mall/promotion/index",
+          "meta": {
+            "icon": "Discount",
+            "title": "促销管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/activity",
+          "name": "mallActivity",
+          "component": "/mall/activity/index",
+          "meta": {
+            "icon": "Tickets",
+            "title": "活动管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/banner",
+          "name": "mallBanner",
+          "component": "/mall/banner/index",
+          "meta": {
+            "icon": "Picture",
+            "title": "Banner管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/category",
+          "name": "mallCategory",
+          "component": "/mall/category/index",
+          "meta": {
+            "icon": "Menu",
+            "title": "商品分类",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/stock",
+          "name": "mallStock",
+          "component": "/mall/stock/index",
+          "meta": {
+            "icon": "Coin",
+            "title": "库存管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/order",
+          "name": "mallOrder",
+          "component": "/mall/order/index",
+          "meta": {
+            "icon": "Tickets",
+            "title": "订单管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/freight",
+          "name": "mallFreight",
+          "component": "/mall/freight/index",
+          "meta": {
+            "icon": "Van",
+            "title": "运费规则",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        }
+      ]
     },
     {
       "path": "/system",
@@ -195,5 +389,3 @@
   ],
   "msg": "成功"
 }
-
-
