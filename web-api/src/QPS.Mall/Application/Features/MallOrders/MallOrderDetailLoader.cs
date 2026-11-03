@@ -78,6 +78,23 @@ internal static class MallOrderDetailLoader
             .Where(item => !item.IsGift && item.OriginalUnitPrice.HasValue)
             .Sum(item => (item.OriginalUnitPrice!.Value - item.UnitPrice) * item.Quantity);
 
+        var itemIds = dto.Items.Select(item => item.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var reviewedItemIds = await dbContext.MallProductReviews
+                .AsNoTracking()
+                .Where(review => review.OrderItemId.HasValue && itemIds.Contains(review.OrderItemId.Value))
+                .Select(review => review.OrderItemId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+            var reviewedItemIdSet = reviewedItemIds.ToHashSet();
+
+            foreach (var orderItem in dto.Items)
+            {
+                orderItem.Reviewed = reviewedItemIdSet.Contains(orderItem.Id);
+            }
+        }
+
         dto.Payments = await dbContext.MallPayments
             .AsNoTracking()
             .Where(payment => payment.OrderId == orderId && !payment.IsDeleted)

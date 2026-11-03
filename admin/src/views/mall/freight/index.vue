@@ -26,19 +26,19 @@
           <el-table-column label="计费方式" width="100" align="center">
             <template #default="{ row }">{{ billingTypeMap[row.billingType] }}</template>
           </el-table-column>
-          <el-table-column prop="regionCount" label="区域数" width="90" align="center" />
-          <el-table-column label="默认" width="80" align="center">
+          <el-table-column prop="regionCount" label="区域数" width="100" align="center" />
+          <el-table-column label="默认" width="100" align="center">
             <template #default="{ row }">
               <el-tag v-if="row.isDefault" type="warning">默认</el-tag>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="200" fixed="right">
+          <el-table-column label="操作" align="center" width="160" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>

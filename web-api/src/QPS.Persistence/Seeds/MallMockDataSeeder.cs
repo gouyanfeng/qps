@@ -829,7 +829,7 @@ public static class MallMockDataSeeder
             }
             else
             {
-                tag = MallTag.Create(code, name, color, sortOrder, true);
+                tag = MallTag.Create(code, name, color, sortOrder, true, MallTagType.Product);
                 existingTags.Add(code, tag);
                 newTags.Add(tag);
             }

@@ -49,12 +49,12 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="260" fixed="right">
+          <el-table-column label="操作" align="center" width="240" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button

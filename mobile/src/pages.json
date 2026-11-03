@@ -97,6 +97,20 @@
 				"navigationBarTitleText": "优惠券中心",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/product-reviews/index",
+			"style": {
+				"navigationBarTitleText": "商品评价",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/review-create/index",
+			"style": {
+				"navigationBarTitleText": "发表评价",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {

@@ -48,13 +48,17 @@ public static class MallModelConfiguration
         modelBuilder.Entity<MallTag>(entity =>
         {
             entity.ToTable("MallTags");
+            entity.Property(tag => tag.Type)
+                .HasMaxLength(20)
+                .IsRequired()
+                .HasDefaultValue(MallTagType.Product);
             entity.Property(tag => tag.Code).HasMaxLength(50).IsRequired();
             entity.Property(tag => tag.Name).HasMaxLength(50).IsRequired();
             entity.Property(tag => tag.Color).HasMaxLength(20).IsRequired();
-            entity.HasIndex(tag => tag.Code)
+            entity.HasIndex(tag => new { tag.Type, tag.Code })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
-            entity.HasIndex(tag => tag.Name)
+            entity.HasIndex(tag => new { tag.Type, tag.Name })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
         });
@@ -96,6 +100,27 @@ public static class MallModelConfiguration
                 .HasFilter("[IsDeleted] = 0");
             entity.Property(pt => pt.ProductId).HasColumnName("ProductsId");
             entity.Property(pt => pt.TagId).HasColumnName("TagsId");
+        });
+
+        modelBuilder.Entity<MallProductReview>(entity =>
+        {
+            entity.ToTable("MallProductReviews");
+            entity.Property(review => review.MemberNickname).HasMaxLength(50).IsRequired();
+            entity.Property(review => review.MemberLevelName).HasMaxLength(50).IsRequired();
+            entity.Property(review => review.Content).HasMaxLength(500).IsRequired();
+            entity.Property(review => review.SpecText).HasMaxLength(100).IsRequired();
+            entity.Property(review => review.Tags).HasMaxLength(200);
+            entity.Property(review => review.Images).HasMaxLength(1000).IsRequired().HasDefaultValue(string.Empty);
+            entity.Property(review => review.Rating).IsRequired();
+            entity.Property(review => review.IsFeatured).IsRequired().HasDefaultValue(false);
+            entity.Property(review => review.SortOrder).IsRequired().HasDefaultValue(0);
+            entity.Property(review => review.ReviewTime).IsRequired();
+            entity.Property(review => review.AuditStatus).IsRequired().HasDefaultValue(MallProductReview.AuditStatusApproved);
+            entity.Property(review => review.ReplyContent).HasMaxLength(500).IsRequired().HasDefaultValue(string.Empty);
+            entity.HasIndex(review => new { review.ProductId, review.ReviewTime });
+            entity.HasIndex(review => review.OrderItemId)
+                .IsUnique()
+                .HasFilter("[OrderItemId] IS NOT NULL AND [IsDeleted] = 0");
         });
 
         modelBuilder.Entity<MallSku>(entity =>

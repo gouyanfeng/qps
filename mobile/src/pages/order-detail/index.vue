@@ -137,7 +137,17 @@
             </view>
             <view class="prod-bottom">
               <text class="prod-price">¥{{ item.unitPrice.toFixed(2) }}</text>
-              <text class="prod-qty">×{{ item.quantity }}</text>
+              <view class="prod-bottom-right">
+                <text class="prod-qty">×{{ item.quantity }}</text>
+                <view
+                  v-if="order.status === 'Completed'"
+                  class="review-btn"
+                  :class="{ done: item.reviewed }"
+                  @tap.stop="handleReview(item)"
+                >
+                  <text>{{ item.reviewed ? '已评价' : '评价' }}</text>
+                </view>
+              </view>
             </view>
           </view>
         </view>
@@ -218,33 +228,50 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getOrderDetail, cancelOrder, confirmReceipt } from '@/api'
 import { resolveFileUrl } from '@/utils/http'
-import type { MallOrderDetail } from '@/api'
+import type { MallOrderDetail, MallOrderItem } from '@/api'
 
 const order = ref<MallOrderDetail | null>(null)
 const orderNo = ref('')
 const placeholderImg = '/static/images/hero-herbs.jpg'
 
-onLoad(async options => {
+onLoad(options => {
   orderNo.value = (options?.orderNo as string) || ''
   if (!orderNo.value) {
     uni.showToast({ title: '缺少订单号', icon: 'none' })
-    return
   }
+})
+
+onShow(() => {
+  if (orderNo.value) loadOrder()
+})
+
+async function loadOrder() {
   try {
     order.value = await getOrderDetail(orderNo.value)
   } catch (err) {
     console.error(err)
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
-})
+}
 
 function goBack() { uni.navigateBack() }
 function consult() { uni.showToast({ title: '正在连接药师…', icon: 'none' }) }
 function goConsult() { uni.showToast({ title: '正在连接药师…', icon: 'none' }) }
 function goShop() { uni.switchTab({ url: '/pages/index/index' }) }
+
+function handleReview(item: MallOrderItem) {
+  if (item.reviewed) {
+    uni.showToast({ title: '该商品已评价', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pages/review-create/index?orderNo=${encodeURIComponent(orderNo.value)}&itemId=${encodeURIComponent(item.id)}`
+  })
+}
+
 function afterSale() { uni.showToast({ title: '售后功能开发中', icon: 'none' }) }
 function traceOrigin() { uni.showToast({ title: '道地溯源功能开发中', icon: 'none' }) }
 function copyTrackNo() {
@@ -624,8 +651,24 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 .pt-gap { background: #F3F8F1; color: $primary; }
 .pt-cold { background: #E1F5FE; color: #0288D1; }
 .prod-bottom { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; }
+.prod-bottom-right { display: flex; align-items: center; gap: 14rpx; }
 .prod-price { font-size: 28rpx; font-weight: 700; color: $price; }
 .prod-qty { font-size: 24rpx; color: $muted; }
+.review-btn {
+  padding: 8rpx 22rpx;
+  border-radius: 100rpx;
+  background: #F3F8F1;
+  border: 1rpx solid rgba(46, 125, 50, 0.3);
+
+  text { font-size: 20rpx; font-weight: 600; color: $primary; }
+
+  &.done {
+    background: #F3F3F0;
+    border-color: #E0DDD6;
+
+    text { color: $muted; }
+  }
+}
 
 .prod-actions {
   display: flex; gap: 14rpx;

@@ -262,8 +262,8 @@ function orderActions(order: MallOrder): OrderAction[] {
       break
     case 'Completed':
       actions.push(
-        { label: '再次购买', type: 'default', handler: go },
-        { label: '评价有礼', type: 'primary', handler: go }
+        { label: '再次购买', type: 'default', handler: () => rebuy(order) },
+        { label: '评价有礼', type: 'primary', handler: () => goReview(order) }
       )
       break
     default:
@@ -274,6 +274,26 @@ function orderActions(order: MallOrder): OrderAction[] {
 
 function goDetail(orderNo: string) {
   uni.navigateTo({ url: `/pages/order-detail/index?orderNo=${orderNo}` })
+}
+
+function rebuy(order: MallOrder) {
+  const productId = order.items?.[0]?.productId
+  if (!productId) {
+    uni.showToast({ title: '商品信息缺失', icon: 'none' })
+    return
+  }
+  uni.navigateTo({ url: `/pages/product-detail/index?id=${productId}` })
+}
+
+function goReview(order: MallOrder) {
+  const target = order.items?.find(item => !item.reviewed)
+  if (!target) {
+    uni.showToast({ title: '该订单商品已全部评价', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pages/review-create/index?orderNo=${encodeURIComponent(order.orderNo)}&itemId=${encodeURIComponent(target.id)}`
+  })
 }
 
 function cancelOrder(orderNo: string) {

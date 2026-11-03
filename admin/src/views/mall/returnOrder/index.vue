@@ -51,7 +51,7 @@
           <el-table-column label="申请时间" width="170" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="280" fixed="right">
+          <el-table-column label="操作" align="center" width="300" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link @click="openDetail(row)">详情</el-button>
               <template v-if="row.status === 0">
@@ -95,7 +95,7 @@
   </div>
 </template>
 
-<script setup lang="ts" name="mallReturn">
+<script setup lang="ts" name="mallReturnOrder">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { mallReturnApi } from '@/api/modules/mallReturn'

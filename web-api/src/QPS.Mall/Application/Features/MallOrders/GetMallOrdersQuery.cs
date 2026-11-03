@@ -143,10 +143,27 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
             ).ToListAsync(cancellationToken);
 
             var itemMap = items.GroupBy(x => x.OrderId).ToDictionary(g => g.Key, g => g.Select(x => x.Dto).ToList());
+
+            var itemIds = items.Select(x => x.Dto.Id).ToList();
+            var reviewedItemIds = await _dbContext.MallProductReviews
+                .AsNoTracking()
+                .Where(review => review.OrderItemId.HasValue && itemIds.Contains(review.OrderItemId.Value))
+                .Select(review => review.OrderItemId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+            var reviewedItemIdSet = reviewedItemIds.ToHashSet();
+
             foreach (var order in page.List)
             {
                 if (itemMap.TryGetValue(order.Id, out var orderItems))
+                {
+                    foreach (var orderItem in orderItems)
+                    {
+                        orderItem.Reviewed = reviewedItemIdSet.Contains(orderItem.Id);
+                    }
+
                     order.Items = orderItems;
+                }
             }
         }
 

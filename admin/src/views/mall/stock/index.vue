@@ -51,7 +51,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="warnStock" label="预警库存" width="100" align="center" />
-          <el-table-column label="状态" width="90" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
@@ -59,7 +59,7 @@
           <el-table-column label="更新时间" width="180" align="center">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="190" fixed="right">
+          <el-table-column label="操作" align="center" width="190" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="Sort" @click="openAdjustDialog(row)">调整库存</el-button>
               <el-button type="primary" link :icon="Tickets" @click="openLogDrawer(row)">流水</el-button>

@@ -45,7 +45,7 @@
           <el-table-column label="创建时间" width="180" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="150" fixed="right">
+          <el-table-column label="操作" align="center" width="190" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <template v-if="row.status === 'Pending'">
                 <el-button type="success" link @click="simulateRefund(row, true)">退款成功</el-button>

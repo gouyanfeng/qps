@@ -83,6 +83,11 @@ public class MallOrderItemDto
     public Guid? PromotionId { get; set; }
     public string PromotionName { get; set; } = string.Empty;
     public decimal? OriginalUnitPrice { get; set; }
+
+    /// <summary>
+    /// 该明细是否已发表评价。
+    /// </summary>
+    public bool Reviewed { get; set; }
 }
 
 /// <summary>

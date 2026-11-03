@@ -53,7 +53,7 @@
               <span v-else>{{ matchProgressLabel(row) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="110" fixed="right">
+          <el-table-column label="操作" width="110" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canStartMatch(row)" link type="primary" @click="startMatch(row)">开始撮合</el-button></Permission>
             </template>

@@ -49,6 +49,7 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
     public DbSet<MallTag> MallTags { get; set; }
     public DbSet<MallProduct> MallProducts { get; set; }
     public DbSet<MallProductTag> MallProductTags { get; set; }
+    public DbSet<MallProductReview> MallProductReviews { get; set; }
     public DbSet<MallSku> MallSkus { get; set; }
     public DbSet<MallOrder> MallOrders { get; set; }
     public DbSet<MallOrderItem> MallOrderItems { get; set; }

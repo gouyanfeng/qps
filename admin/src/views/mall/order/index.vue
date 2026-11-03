@@ -52,9 +52,13 @@
           <el-table-column label="下单时间" width="180" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="100" fixed="right">
+          <el-table-column label="操作" align="center" width="280" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDetail(row.id)">详情</el-button>
+              <el-button v-if="row.status === 'PendingPayment'" type="danger" link :icon="CircleClose" @click="cancelOrder(row)">取消</el-button>
+              <el-button v-if="row.status === 'Paid'" type="primary" link :icon="Van" @click="openShipmentDialog(row)">发货</el-button>
+              <el-button v-if="row.status === 'Paid'" type="warning" link :icon="RefreshLeft" @click="createRefund(row)">退款</el-button>
+              <el-button v-if="row.status === 'Shipped'" type="success" link :icon="CircleCheck" @click="confirmReceipt(row)">收货</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -66,12 +70,31 @@
       :order-id="currentOrderId"
       @refreshed="queryPageRef?.getTableList()"
     />
+
+    <el-dialog v-model="shipmentDialogVisible" title="录入运单并发货" width="480px">
+      <el-form :model="shipmentForm" label-width="90px">
+        <el-form-item label="快递公司" required>
+          <el-input v-model="shipmentForm.expressCompany" placeholder="请输入快递公司" maxlength="50" />
+        </el-form-item>
+        <el-form-item label="快递单号" required>
+          <el-input v-model="shipmentForm.trackingNo" placeholder="请输入快递单号" maxlength="64" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="shipmentForm.remark" placeholder="请输入备注" maxlength="200" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="shipmentDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="shipmentSubmitting" @click="submitShipment">确定发货</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts" name="mallOrder">
 import { ref, reactive, onMounted } from 'vue'
-import { View } from '@element-plus/icons-vue'
+import { View, CircleClose, Van, CircleCheck, RefreshLeft } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { mallOrderApi } from '@/api/modules/mallOrder'
 import { mallStoreApi } from '@/api/modules/mallStore'
 import QueryPage from '@/components/QueryPage/index.vue'
@@ -135,6 +158,68 @@ const loadStores = async () => {
 const openDetail = (id: string) => {
   currentOrderId.value = id
   drawerVisible.value = true
+}
+
+const shipmentDialogVisible = ref(false)
+const shipmentSubmitting = ref(false)
+const currentShipmentOrderId = ref('')
+const shipmentForm = reactive({
+  expressCompany: '',
+  trackingNo: '',
+  remark: ''
+})
+
+const cancelOrder = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('取消后订单库存将回补，确定取消该订单吗？', '取消订单', { type: 'warning' })
+    await mallOrderApi.cancelOrder(row.id)
+    ElMessage.success('取消订单成功')
+    queryPageRef.value?.getTableList()
+  } catch {}
+}
+
+const openShipmentDialog = (row: any) => {
+  currentShipmentOrderId.value = row.id
+  Object.assign(shipmentForm, { expressCompany: '', trackingNo: '', remark: '' })
+  shipmentDialogVisible.value = true
+}
+
+const submitShipment = async () => {
+  if (!shipmentForm.expressCompany.trim()) { ElMessage.warning('请输入快递公司'); return }
+  if (!shipmentForm.trackingNo.trim()) { ElMessage.warning('请输入快递单号'); return }
+  shipmentSubmitting.value = true
+  try {
+    await mallOrderApi.createShipment(currentShipmentOrderId.value, {
+      expressCompany: shipmentForm.expressCompany.trim(),
+      trackingNo: shipmentForm.trackingNo.trim(),
+      remark: shipmentForm.remark.trim()
+    })
+    ElMessage.success('发货成功')
+    shipmentDialogVisible.value = false
+    queryPageRef.value?.getTableList()
+  } catch {} finally {
+    shipmentSubmitting.value = false
+  }
+}
+
+const confirmReceipt = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确定该订单已签收吗？', '确认收货', { type: 'warning' })
+    await mallOrderApi.confirmReceipt(row.id)
+    ElMessage.success('确认收货成功')
+    queryPageRef.value?.getTableList()
+  } catch {}
+}
+
+const createRefund = async (row: any) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入退款原因', '申请整单退款', {
+      inputPlaceholder: '例如：客户取消购买'
+    })
+    await mallOrderApi.createRefund(row.id, { reason: value || '' })
+    ElMessage.success('退款申请已提交')
+    queryPageRef.value?.getTableList()
+  } catch {}
 }
 
 const getStatusType = (status: string) => {

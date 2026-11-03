@@ -114,7 +114,7 @@
           <el-table-column prop="updatedAt" label="更新时间" width="150" sortable="custom">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="360" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="390" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
               <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
@@ -772,11 +772,3 @@ const formatDate = (value?: string | null) => {
   }
 }
 </style>
-
-
-
-
-
-
-
-

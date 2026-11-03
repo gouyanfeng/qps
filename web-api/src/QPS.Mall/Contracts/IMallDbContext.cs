@@ -17,6 +17,8 @@ public interface IMallDbContext
 
     DbSet<MallProductTag> MallProductTags { get; }
 
+    DbSet<MallProductReview> MallProductReviews { get; }
+
     DbSet<MallSku> MallSkus { get; }
 
     DbSet<MallOrder> MallOrders { get; }

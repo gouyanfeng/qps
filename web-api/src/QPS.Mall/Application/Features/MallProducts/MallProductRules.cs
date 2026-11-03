@@ -320,7 +320,10 @@ internal static class MallProductRules
         if (ids.Length == 0) return new List<MallTag>();
 
         var tags = await dbContext.MallTags
-            .Where(tag => ids.Contains(tag.Id) && tag.IsActive && !tag.IsDeleted)
+            .Where(tag => ids.Contains(tag.Id) &&
+                          tag.Type == MallTagType.Product &&
+                          tag.IsActive &&
+                          !tag.IsDeleted)
             .ToListAsync(cancellationToken);
         if (tags.Count != ids.Length)
         {

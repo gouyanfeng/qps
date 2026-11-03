@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallReturns;
+using QPS.Mall.Contracts.DTOs;
+using QPS.Shared.Common;
 
 namespace QPS.Mall.Controllers.Admin;
 
@@ -13,6 +15,36 @@ public class MallReturnAdminController : ControllerBase
     public MallReturnAdminController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet("returns")]
+    public async Task<ActionResult<PaginationResponse<MallReturnListDto>>> GetReturns(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string sortField = "CreatedAt",
+        [FromQuery] string sortDirection = "Descending",
+        [FromQuery] string? status = null,
+        [FromQuery] string? keyword = null,
+        [FromQuery] Guid? storeId = null)
+    {
+        var query = new GetMallReturnsQuery
+        {
+            Page = page,
+            PageSize = pageSize,
+            SortField = sortField,
+            SortDirection = sortDirection,
+            Status = status,
+            Keyword = keyword,
+            StoreId = storeId
+        };
+
+        return Ok(await _mediator.Send(query));
+    }
+
+    [HttpGet("returns/{id:guid}")]
+    public async Task<ActionResult<MallReturnDetailDto>> GetReturn(Guid id)
+    {
+        return Ok(await _mediator.Send(new GetMallReturnQuery { Id = id }));
     }
 
     [HttpPost("returns/{returnNo}/approve")]

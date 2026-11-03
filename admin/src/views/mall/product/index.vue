@@ -83,7 +83,7 @@
           <el-table-column label="创建时间" width="180" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="300" fixed="right">
+          <el-table-column label="操作" align="center" width="300" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="Goods" @click="openSkuDialog(row)">规格</el-button>
               <el-button type="primary" link :icon="EditPen" @click="openProductDialog('编辑', row)">编辑</el-button>
@@ -103,8 +103,10 @@
     </QueryPage>
 
     <!-- 新增 / 编辑商品 -->
-    <el-dialog v-model="productDialogVisible" :title="productDialogTitle" width="760px">
+    <el-dialog v-model="productDialogVisible" :title="productDialogTitle" width="900px">
       <el-form :model="productForm" label-width="100px">
+        <el-tabs v-model="productEditTab" type="border-card">
+          <el-tab-pane label="基本信息" name="basic">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="商品编码" required>
@@ -163,22 +165,26 @@
             <template #tip>最多上传 9 张图片</template>
           </UploadImgs>
         </el-form-item>
-        <el-form-item label="商品详情">
+        <el-form-item v-if="productDialogType === '新增'" label="上架状态">
+          <el-switch v-model="productForm.isActive" active-text="上架" inactive-text="下架" />
+        </el-form-item>
+          </el-tab-pane>
+          <el-tab-pane label="商品详情" name="detail">
+        <el-form-item label="商品详情" class="full-editor">
           <div class="product-detail-editor">
             <ElementTiptap
               v-model:content="productForm.detailHtml"
               :extensions="productDetailExtensions"
               :locale="editorLocale"
-              height="280px"
+              height="460px"
             />
             <div class="detail-editor-hint" :class="{ 'is-over-limit': productForm.detailHtml.length > 50000 }">
               HTML 长度 {{ productForm.detailHtml.length.toLocaleString() }} / 50,000 字符；图片请使用工具栏上传。
             </div>
           </div>
         </el-form-item>
-        <el-form-item v-if="productDialogType === '新增'" label="上架状态">
-          <el-switch v-model="productForm.isActive" active-text="上架" inactive-text="下架" />
-        </el-form-item>
+          </el-tab-pane>
+        </el-tabs>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -197,15 +203,20 @@
         <el-table-column prop="name" label="标签名称" min-width="140" />
         <el-table-column label="颜色" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.color || 'success'" size="small">{{ row.name }}</el-tag>
+            <el-tag
+              v-if="isHexColor(row.color)"
+              size="small"
+              :style="{ background: row.color, borderColor: row.color, color: '#fff' }"
+            >{{ row.name }}</el-tag>
+            <el-tag v-else :type="row.color || 'success'" size="small">{{ row.name }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="190" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right" class-name="actions-column" header-class-name="actions-column">
           <template #default="{ row }">
             <el-button link type="primary" @click="openTagForm(row)">编辑</el-button>
             <el-button link :type="row.isActive ? 'warning' : 'success'" @click="toggleTagStatus(row)">
@@ -229,13 +240,12 @@
           <el-input v-model="tagForm.name" maxlength="50" />
         </el-form-item>
         <el-form-item label="颜色">
-          <el-select v-model="tagForm.color" style="width: 100%">
-            <el-option label="绿色" value="success" />
-            <el-option label="橙色" value="warning" />
-            <el-option label="蓝色" value="primary" />
-            <el-option label="灰色" value="info" />
-            <el-option label="红色" value="danger" />
-          </el-select>
+          <el-color-picker
+            v-model="tagForm.color"
+            color-format="hex"
+            :predefine="tagPredefineColors"
+            @active-change="(value: string) => value && (tagForm.color = value)"
+          />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="tagForm.sortOrder" :min="0" :max="9999" />
@@ -379,12 +389,12 @@
             </template>
           </el-table-column>
           <el-table-column prop="warnStock" label="预警" width="70" align="center" />
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200" align="center" fixed="right">
+          <el-table-column label="操作" width="220" align="center" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button link type="primary" :icon="EditPen" @click="openSkuForm(row)">编辑</el-button>
               <el-button
@@ -545,6 +555,19 @@ const categoryOptions = ref<any[]>([])
 const leafCategoryOptions = computed(() => categoryOptions.value.filter(item => !item.hasChildren && item.isActive))
 const tagOptions = ref<any[]>([])
 const activeTagOptions = computed(() => tagOptions.value.filter(tag => tag.isActive))
+const tagPredefineColors = ['#2E7D32', '#C2410C', '#409EFF', '#909399', '#F56C6C', '#E6A23C']
+const LEGACY_TAG_COLORS: Record<string, string> = {
+  success: '#67C23A',
+  warning: '#E6A23C',
+  primary: '#409EFF',
+  info: '#909399',
+  danger: '#F56C6C'
+}
+const isHexColor = (color: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(color || ''))
+const normalizeTagColor = (color: string) => {
+  if (isHexColor(color)) return color
+  return LEGACY_TAG_COLORS[String(color || '').toLowerCase()] || ''
+}
 
 const loadCategories = async () => {
   try {
@@ -554,7 +577,7 @@ const loadCategories = async () => {
       ...category,
       hasChildren: categoryOptions.value.some((child: any) => child.parentId === category.id)
     }))
-    const tagResult = await mallTagApi.getTags()
+    const tagResult = await mallTagApi.getTags({ type: 'Product' })
     tagOptions.value = tagResult.data || []
   } catch {
     ElMessage.error('加载分类或标签失败')
@@ -569,6 +592,7 @@ const productDialogTitle = ref('')
 const productDialogType = ref('')
 const currentProductId = ref('')
 const submitting = ref(false)
+const productEditTab = ref('basic')
 const albumFileList = ref<UploadUserFile[]>([])
 const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
 const resolveDetailImageUrls = (html: string) => html.replace(
@@ -940,7 +964,7 @@ const editingTagId = ref('')
 const tagForm = reactive({
   code: '',
   name: '',
-  color: 'success',
+  color: '#2E7D32',
   sortOrder: 0,
   isActive: true
 })
@@ -953,8 +977,14 @@ const openTagManager = async () => {
 const openTagForm = (tag?: any) => {
   editingTagId.value = tag?.id || ''
   Object.assign(tagForm, tag
-    ? { code: tag.code, name: tag.name, color: tag.color || 'success', sortOrder: tag.sortOrder, isActive: tag.isActive }
-    : { code: '', name: '', color: 'success', sortOrder: tagOptions.value.length, isActive: true })
+    ? {
+        code: tag.code,
+        name: tag.name,
+        color: normalizeTagColor(tag.color),
+        sortOrder: tag.sortOrder,
+        isActive: tag.isActive
+      }
+    : { code: '', name: '', color: '#2E7D32', sortOrder: tagOptions.value.length, isActive: true })
   tagFormVisible.value = true
 }
 
@@ -965,7 +995,13 @@ const submitTag = async () => {
   }
   tagSubmitting.value = true
   try {
-    const payload = { ...tagForm, code: tagForm.code.trim(), name: tagForm.name.trim() }
+    const payload = {
+      ...tagForm,
+      type: 'Product',
+      code: tagForm.code.trim(),
+      name: tagForm.name.trim(),
+      color: tagForm.color || ''
+    }
     if (editingTagId.value) await mallTagApi.updateTag(editingTagId.value, payload)
     else await mallTagApi.addTag(payload)
     ElMessage.success('标签已保存')
@@ -1275,10 +1311,6 @@ const isLowStock = (row: any) => row.warnStock > 0 && row.stock <= row.warnStock
 }
 
 .product-detail-editor {
-  width: 100%;
-}
-
-.product-detail-editor :deep(.el-tiptap-editor) {
   width: 100%;
 }
 

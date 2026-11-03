@@ -89,7 +89,7 @@
                   <el-table-column prop="specification" label="规格" min-width="120" />
                   <el-table-column prop="supplyCycle" label="供货周期" min-width="120" />
                   <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
-                  <el-table-column label="状态" width="96">
+                  <el-table-column label="状态" width="100">
                     <template #default="{ row }"><el-tag size="small">{{ row.isExpired ? "已过期" : row.status || "-" }}</el-tag></template>
                   </el-table-column>
                   <el-table-column label="有效期" width="150">

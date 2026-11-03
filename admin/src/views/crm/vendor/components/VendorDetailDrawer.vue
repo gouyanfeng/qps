@@ -85,7 +85,7 @@
               <el-table-column label="提出日期" width="164"><template #default="{ row }">{{ formatDate(row.demandAt) }}</template></el-table-column>
               <el-table-column label="期望到货" width="164"><template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template></el-table-column>
               <el-table-column prop="receivingAddress" label="收货地" min-width="180" show-overflow-tooltip />
-              <el-table-column label="状态" width="96" align="center">
+              <el-table-column label="状态" width="100" align="center">
                 <template #default="{ row }">
                   <el-tag :type="getPurchaseDemandStatusType(row.status)" size="small" effect="light">{{ row.status || "-" }}</el-tag>
                 </template>

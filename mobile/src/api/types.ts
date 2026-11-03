@@ -20,6 +20,16 @@ export interface ProductTag {
   isActive: boolean
 }
 
+export interface MallTagItem {
+  id: string
+  type: string
+  code: string
+  name: string
+  color: string
+  sortOrder: number
+  isActive: boolean
+}
+
 export interface ProductPromotion {
   id: string
   name: string
@@ -119,4 +129,31 @@ export interface CartItem {
   certText?: string
   /** 库存紧张红色提示，如「仅剩最后2件，请尽快结算」 */
   stockTip?: string
+}
+
+export interface ProductReview {
+  id: string
+  memberNickname: string
+  memberLevelName: string
+  rating: number
+  content: string
+  specText: string
+  tags: string[]
+  images: string[]
+  replyContent: string
+  reviewTime: string
+}
+
+export interface ReviewTagStat {
+  tag: string
+  count: number
+}
+
+export interface ProductReviewPage {
+  items: ProductReview[]
+  totalCount: number
+  positiveRate: number
+  allTotalCount: number
+  allPositiveRate: number
+  tagStats: ReviewTagStat[]
 }

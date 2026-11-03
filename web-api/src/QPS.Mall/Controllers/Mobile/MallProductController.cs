@@ -46,4 +46,24 @@ public class MallProductController : ControllerBase
     {
         return Ok(await _mediator.Send(new GetMallProductQuery { Id = id }, cancellationToken));
     }
+
+    [HttpGet("products/{id:guid}/reviews")]
+    public async Task<ActionResult<MallProductReviewPageDto>> GetReviews(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 5,
+        [FromQuery] string? tag = null,
+        [FromQuery] bool featuredOnly = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetMallProductReviewsQuery
+        {
+            ProductId = id,
+            Page = page,
+            PageSize = pageSize,
+            Tag = tag,
+            FeaturedOnly = featuredOnly
+        };
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
 }

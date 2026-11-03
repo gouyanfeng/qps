@@ -5,8 +5,11 @@ import {
   isLoggedIn,
   resolveFileUrl
 } from '@/utils/http'
-import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem, MallActivity, BannerLinkType } from './types'
+import type { ApiResp } from '@/utils/http'
+import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem, MallActivity, BannerLinkType, ProductReview, ProductReviewPage, MallTagItem } from './types'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+const MEMBER_TOKEN_STORAGE_KEY = 'qps_member_token'
 const LEGACY_CART_STORAGE_KEY = 'qps_cart_items'
 const MEMBER_ID_STORAGE_KEY = 'qps_member_id'
 const deselectedCartSkuIds = new Set<string>()
@@ -101,6 +104,97 @@ export async function getProducts(
 export async function getProductById(id: string): Promise<Product | undefined> {
   const p = await request<ApiProduct>(`/api/mall/products/${encodeURIComponent(id)}`)
   return p ? mapProduct(p) : undefined
+}
+
+export async function getProductReviews(
+  productId: string,
+  page: number = 1,
+  pageSize: number = 5,
+  tag?: string,
+  featuredOnly?: boolean
+): Promise<ProductReviewPage> {
+  const params: string[] = [`page=${page}`, `pageSize=${pageSize}`]
+  if (tag) params.push(`tag=${encodeURIComponent(tag)}`)
+  if (featuredOnly) params.push('featuredOnly=true')
+
+  const raw = await request<ProductReviewPage | { data: ProductReviewPage }>(
+    `/api/mall/products/${encodeURIComponent(productId)}/reviews?${params.join('&')}`
+  )
+  // 兼容全局包装里直接返回分页数据或再套一层 data 的情况
+  const payload = ((raw as { data?: ProductReviewPage })?.data ?? raw) as ProductReviewPage
+  return {
+    items: Array.isArray(payload?.items)
+      ? payload.items.map(item => ({
+          ...item,
+          images: Array.isArray(item.images) ? item.images : [],
+          replyContent: item.replyContent ?? ''
+        }))
+      : [],
+    totalCount: payload?.totalCount ?? 0,
+    positiveRate: payload?.positiveRate ?? 0,
+    allTotalCount: payload?.allTotalCount ?? payload?.totalCount ?? 0,
+    allPositiveRate: payload?.allPositiveRate ?? payload?.positiveRate ?? 0,
+    tagStats: Array.isArray(payload?.tagStats) ? payload.tagStats : []
+  }
+}
+
+export async function getReviewTags(): Promise<MallTagItem[]> {
+  const raw = await request<MallTagItem[] | { data: MallTagItem[] }>(
+    '/api/mall/tags?type=Review&isActive=true'
+  )
+  const payload = ((raw as { data?: MallTagItem[] })?.data ?? raw) as MallTagItem[]
+  return Array.isArray(payload) ? payload : []
+}
+
+export interface ProductReviewCreatePayload {
+  orderNo: string
+  orderItemId: string
+  rating: number
+  content: string
+  tags: string[]
+  images: string[]
+}
+
+export function createProductReview(
+  productId: string,
+  payload: ProductReviewCreatePayload
+): Promise<ProductReview> {
+  return request<ProductReview>(
+    `/api/mall/products/${encodeURIComponent(productId)}/reviews`,
+    'POST',
+    payload
+  )
+}
+
+export function uploadReviewImage(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const token = uni.getStorageSync(MEMBER_TOKEN_STORAGE_KEY) || ''
+    uni.uploadFile({
+      url: `${API_BASE_URL}/api/mall/file/upload/img?scene=review`,
+      filePath,
+      name: 'file',
+      header: token ? { Authorization: `Bearer ${token}` } : {},
+      success(res) {
+        let body: ApiResp<{ fileUrl?: string }> | null = null
+        try {
+          body = typeof res.data === 'string'
+            ? (JSON.parse(res.data) as ApiResp<{ fileUrl?: string }>)
+            : (res.data as unknown as ApiResp<{ fileUrl?: string }>)
+        } catch {
+          body = null
+        }
+        const fileUrl = body?.data?.fileUrl
+        if (res.statusCode === 200 && body?.code === 200 && fileUrl) {
+          resolve(fileUrl)
+          return
+        }
+        reject(new Error(body?.msg || `图片上传失败(${res.statusCode})`))
+      },
+      fail(err) {
+        reject(new Error(err.errMsg || '图片上传失败'))
+      }
+    })
+  })
 }
 
 export async function getHotProducts(): Promise<Product[]> {
@@ -377,6 +471,7 @@ export function getMyOrders(status?: string): Promise<ApiPage<MallOrder>> {
 
 export interface MallOrderItem {
   id: string
+  productId: string
   productName: string
   productImage: string
   specName: string
@@ -387,6 +482,7 @@ export interface MallOrderItem {
   promotionName: string
   badge: string
   originalUnitPrice: number | null
+  reviewed?: boolean
 }
 
 export interface MallOrder {

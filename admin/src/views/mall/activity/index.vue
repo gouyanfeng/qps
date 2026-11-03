@@ -63,12 +63,12 @@
             </template>
           </el-table-column>
           <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
-          <el-table-column label="状态" width="90" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="260" fixed="right">
+          <el-table-column label="操作" align="center" width="280" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDrawer(row)">详情</el-button>
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
@@ -128,7 +128,7 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="80" align="center">
+            <el-table-column label="状态" width="100" align="center">
               <template #default="{ row }">
                 <el-tag size="small" :type="row.isActive ? 'success' : 'info'">
                   {{ row.isActive ? '启用' : '停用' }}
@@ -147,8 +147,10 @@
     </el-drawer>
 
     <!-- 新增 / 编辑活动 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="760px" top="5vh">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="900px" top="5vh">
       <el-form :model="form" label-width="100px">
+        <el-tabs v-model="editTab" type="border-card">
+          <el-tab-pane label="基本信息" name="basic">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="活动名称" required>
@@ -209,15 +211,23 @@
         <el-form-item label="活动说明">
           <el-input v-model="form.description" type="textarea" :rows="2" maxlength="500" show-word-limit />
         </el-form-item>
-        <el-form-item label="活动详情">
-          <el-input
-            v-model="form.detailHtml"
-            type="textarea"
-            :rows="8"
-            maxlength="50000"
-            placeholder="支持 HTML，将在活动详情中展示"
-          />
+          </el-tab-pane>
+          <el-tab-pane label="活动详情" name="detail">
+        <el-form-item label="活动详情" class="full-editor">
+          <div class="activity-detail-editor">
+            <ElementTiptap
+              v-model:content="form.detailHtml"
+              :extensions="activityDetailExtensions"
+              :locale="editorLocale"
+              height="460px"
+            />
+            <div class="detail-editor-hint" :class="{ 'is-over-limit': form.detailHtml.length > 50000 }">
+              HTML 长度 {{ form.detailHtml.length.toLocaleString() }} / 50,000 字符；图片请使用工具栏上传。
+            </div>
+          </div>
         </el-form-item>
+          </el-tab-pane>
+        </el-tabs>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -238,6 +248,59 @@ import { mallPromotionApi } from '@/api/modules/mallPromotion'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
+import { uploadImg } from '@/api/modules/upload'
+import {
+  ElementTiptap,
+  Document,
+  Text,
+  Paragraph,
+  Heading,
+  Bold,
+  Italic,
+  Underline,
+  Strike,
+  BulletList,
+  OrderedList,
+  Blockquote,
+  Link,
+  Image as TiptapImage,
+  Table,
+  TextAlign,
+  Color,
+  Highlight,
+  History,
+  HorizontalRule,
+  FormatClear,
+  Fullscreen
+} from 'element-tiptap'
+import editorLocale from 'element-tiptap/lib/locales/zh'
+import 'element-tiptap/lib/style.css'
+
+const uploadActivityDetailImage = async (file: File): Promise<string> => {
+  if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+    ElMessage.warning('图片仅支持 JPG、PNG 或 GIF 格式')
+    throw new Error('活动详情仅支持上传图片')
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('活动详情图片大小不能超过 5MB')
+    throw new Error('活动详情图片超过 5MB')
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await uploadImg(formData, 'activity')
+  if (!data.fileUrl) {
+    ElMessage.error('图片上传成功，但未返回图片地址')
+    throw new Error('活动详情图片上传未返回地址')
+  }
+  return resolveFileUrl(data.fileUrl)
+}
+
+const imageOptions: Parameters<typeof TiptapImage.configure>[0] & {
+  uploadRequest: (file: File) => Promise<string>
+} = {
+  uploadRequest: uploadActivityDetailImage
+}
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
@@ -247,7 +310,32 @@ const currentId = ref('')
 const submitting = ref(false)
 const drawerVisible = ref(false)
 const detail = ref<any>(null)
+const editTab = ref('basic')
 const promotionOptions = ref<any[]>([])
+
+const activityDetailExtensions = [
+  Document,
+  Text,
+  Paragraph,
+  Heading,
+  Bold,
+  Italic,
+  Underline,
+  Strike,
+  BulletList,
+  OrderedList,
+  Blockquote,
+  Link,
+  TiptapImage.configure(imageOptions),
+  Table,
+  TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  Color,
+  Highlight,
+  History,
+  HorizontalRule,
+  FormatClear,
+  Fullscreen
+]
 
 const searchForm = reactive({
   keyword: '',
@@ -508,5 +596,20 @@ const remove = async (row: any) => {
   padding: 24px 0;
   text-align: center;
   color: var(--el-text-color-secondary);
+}
+
+.activity-detail-editor {
+  width: 100%;
+}
+
+.detail-editor-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.detail-editor-hint.is-over-limit {
+  color: var(--el-color-danger);
+  font-weight: 600;
 }
 </style>
