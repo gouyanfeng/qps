@@ -77,12 +77,17 @@
             class="result-item qps-card qps-shadow-sm qps-tap"
             @click="goToProductDetail(product.id)"
           >
-            <image :src="product.images[0]" mode="aspectFill" class="result-image" />
+            <q-cached-image :src="product.images[0]" mode="aspectFill" class="result-image" />
             <view class="result-info">
               <text class="result-name">{{ product.name }}</text>
               <text class="result-category">{{ product.categoryName }}</text>
               <view v-if="product.tags.length" class="result-tags">
-                <text v-for="tag in product.tags" :key="tag.id" class="result-tag">{{ tag.name }}</text>
+                <text
+                  v-for="tag in product.tags"
+                  :key="tag.id"
+                  class="result-tag"
+                  :style="tagChipStyle(tag.color)"
+                >{{ tag.name }}</text>
               </view>
               <text class="result-desc">{{ product.description }}</text>
               <view class="result-bottom">
@@ -105,6 +110,7 @@ import { ref, onMounted } from 'vue'
 import { searchProducts } from '@/api'
 import type { Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
+import { tagChipStyle } from '@/utils/tagColor'
 
 const keyword = ref('')
 const hasSearched = ref(false)

@@ -12,6 +12,11 @@
               <el-option v-for="item in leafCategoryOptions" :key="item.id" :label="item.name" :value="item.id" />
             </el-select>
           </el-form-item>
+          <el-form-item label="门店">
+            <el-select v-model="searchForm.storeId" placeholder="全部门店" clearable>
+              <el-option v-for="store in storeOptions" :key="store.id" :label="store.name" :value="store.id" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.isActive" placeholder="全部">
               <el-option label="全部" value="" />
@@ -49,12 +54,29 @@
           <el-table-column label="分类" width="130" show-overflow-tooltip>
             <template #default="{ row }">{{ row.categoryName || '-' }}</template>
           </el-table-column>
+          <el-table-column label="所属门店" width="140" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.storeName || '-' }}</template>
+          </el-table-column>
           <el-table-column label="标签" min-width="180">
             <template #default="{ row }">
               <el-tag v-for="tag in row.tags || []" :key="tag.id" size="small" class="product-tag">
                 {{ tag.name }}
               </el-tag>
               <span v-if="!row.tags?.length">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="参与促销" min-width="180">
+            <template #default="{ row }">
+              <el-tag
+                v-for="promo in row.promotions || []"
+                :key="promo.id"
+                size="small"
+                type="warning"
+                class="product-tag"
+              >
+                {{ promo.ruleText || promo.name }}
+              </el-tag>
+              <span v-if="!row.promotions?.length">-</span>
             </template>
           </el-table-column>
           <el-table-column prop="description" label="商品描述" min-width="220" show-overflow-tooltip />
@@ -124,6 +146,15 @@
             <el-form-item label="商品分类" required>
               <el-select v-model="productForm.categoryId" placeholder="请选择末级分类" style="width: 100%">
                 <el-option v-for="item in leafCategoryOptions" :key="item.id" :label="`${item.parentName || '未分组'} / ${item.name}`" :value="item.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="所属门店" required>
+              <el-select v-model="productForm.storeId" placeholder="请选择所属门店" style="width: 100%">
+                <el-option v-for="store in storeOptions" :key="store.id" :label="store.name" :value="store.id" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -492,6 +523,7 @@ import 'element-tiptap/lib/style.css'
 import { mallProductApi } from '@/api/modules/mallProduct'
 import { mallTagApi } from '@/api/modules/mallTag'
 import { mallCategoryApi } from '@/api/modules/mallCategory'
+import { mallStoreApi } from '@/api/modules/mallStore'
 import { uploadImg } from '@/api/modules/upload'
 import UploadImg from '@/components/Upload/Img.vue'
 import UploadImgs from '@/components/Upload/Imgs.vue'
@@ -553,6 +585,7 @@ const queryPageRef = ref()
 // 分类选项
 const categoryOptions = ref<any[]>([])
 const leafCategoryOptions = computed(() => categoryOptions.value.filter(item => !item.hasChildren && item.isActive))
+const storeOptions = ref<any[]>([])
 const tagOptions = ref<any[]>([])
 const activeTagOptions = computed(() => tagOptions.value.filter(tag => tag.isActive))
 const tagPredefineColors = ['#2E7D32', '#C2410C', '#409EFF', '#909399', '#F56C6C', '#E6A23C']
@@ -584,7 +617,17 @@ const loadCategories = async () => {
   }
 }
 
+const loadStoreOptions = async () => {
+  try {
+    const result = await mallStoreApi.getStoreList({ page: 1, pageSize: 100, isActive: true })
+    storeOptions.value = result.data?.list || []
+  } catch {
+    ElMessage.error('加载门店列表失败')
+  }
+}
+
 onMounted(loadCategories)
+onMounted(loadStoreOptions)
 
 // ---------------- 商品 ----------------
 const productDialogVisible = ref(false)
@@ -607,6 +650,7 @@ const normalizeDetailImageUrls = (html: string) => html.replace(
 const searchForm = reactive({
   keyword: '',
   categoryId: '',
+  storeId: '',
   isActive: '' as boolean | ''
 })
 
@@ -615,6 +659,7 @@ const productForm = reactive({
   name: '',
   description: '',
   categoryId: '',
+  storeId: '',
   mainImageUrl: '',
   albumImages: [] as string[],
   detailHtml: '',
@@ -953,6 +998,7 @@ const handleReset = () => {
   Object.assign(searchForm, {
     keyword: '',
     categoryId: '',
+    storeId: '',
     isActive: ''
   })
 }
@@ -1040,6 +1086,7 @@ const resetProductForm = () => {
     name: '',
     description: '',
     categoryId: '',
+    storeId: storeOptions.value[0]?.id || '',
     mainImageUrl: '',
     albumImages: [],
     detailHtml: '',
@@ -1054,6 +1101,10 @@ const openProductDialog = (type: string, row?: any) => {
   productDialogTitle.value = `${type}商品`
   productDialogType.value = type
 
+  if (!storeOptions.value.length) {
+    ElMessage.warning('请先在门店管理中创建门店')
+  }
+
   if (type === '新增') {
     resetProductForm()
     currentProductId.value = ''
@@ -1063,6 +1114,7 @@ const openProductDialog = (type: string, row?: any) => {
       name: row.name,
       description: row.description,
       categoryId: row.categoryId || '',
+      storeId: row.storeId || '',
       mainImageUrl: row.mainImageUrl || '',
       albumImages: row.albumImages || [],
       detailHtml: resolveDetailImageUrls(row.detailHtml || ''),
@@ -1093,6 +1145,10 @@ const validateProductForm = () => {
     ElMessage.warning('请选择商品末级分类')
     return false
   }
+  if (!productForm.storeId) {
+    ElMessage.warning('请选择商品所属门店')
+    return false
+  }
   return true
 }
 
@@ -1110,6 +1166,7 @@ const submitProduct = async () => {
       name: productForm.name.trim(),
       description: productForm.description.trim(),
       categoryId: productForm.categoryId || null,
+      storeId: productForm.storeId,
       mainImageUrl: productForm.mainImageUrl || '',
       albumImages: productForm.albumImages,
       detailHtml: normalizeDetailImageUrls(productForm.detailHtml),

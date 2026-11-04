@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain.Entities;
+using QPS.Mall.Application.Features.MallPromotions;
 
 namespace QPS.Mall.Application.Features.MallProducts;
 
@@ -28,11 +29,7 @@ public class MallProductPromotionEnricher
         var now = DateTime.UtcNow;
         var promotions = await _dbContext.MallPromotions
             .AsNoTracking()
-            .Where(promotion =>
-                promotion.IsActive &&
-                !promotion.IsDeleted &&
-                (promotion.StartDate == null || promotion.StartDate <= now) &&
-                (promotion.EndDate == null || promotion.EndDate >= now))
+            .WhereEffective(_dbContext, now)
             .OrderByDescending(promotion => promotion.CreatedAt)
             .ToListAsync(cancellationToken);
 
@@ -43,6 +40,19 @@ public class MallProductPromotionEnricher
                 .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
                 .GroupBy(s => s.PromotionId)
                 .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
+
+        // 促销标签：命中的促销所配置的标签合并进商品展示标签
+        var promotionTagIds = promotions
+            .Where(p => p.PromotionTagId.HasValue)
+            .Select(p => p.PromotionTagId!.Value)
+            .Distinct()
+            .ToList();
+        var promotionTagsById = promotionTagIds.Count == 0
+            ? new Dictionary<Guid, MallTag>()
+            : await _dbContext.MallTags
+                .AsNoTracking()
+                .Where(t => promotionTagIds.Contains(t.Id) && t.Type == MallTagType.Promotion && t.IsActive && !t.IsDeleted)
+                .ToDictionaryAsync(t => t.Id, cancellationToken);
 
         foreach (var product in products)
         {
@@ -64,6 +74,29 @@ public class MallProductPromotionEnricher
                 .SelectMany(sku => sku.Promotions)
                 .DistinctBy(promotion => promotion.Id)
                 .ToList();
+
+            var matchedTagIds = product.Promotions
+                .Select(p => promotions.FirstOrDefault(pe => pe.Id == p.Id))
+                .Where(pe => pe?.PromotionTagId.HasValue == true)
+                .Select(pe => pe!.PromotionTagId!.Value)
+                .Distinct();
+            foreach (var tagId in matchedTagIds)
+            {
+                if (promotionTagsById.TryGetValue(tagId, out var tag) &&
+                    product.Tags.All(t => t.Id != tag.Id))
+                {
+                    product.Tags.Add(new MallTagDto
+                    {
+                        Id = tag.Id,
+                        Type = tag.Type,
+                        Code = tag.Code,
+                        Name = tag.Name,
+                        Color = tag.Color,
+                        SortOrder = tag.SortOrder,
+                        IsActive = tag.IsActive
+                    });
+                }
+            }
         }
     }
 
@@ -197,6 +230,11 @@ public class MallProductPromotionEnricher
             "Gift" when action.TryGetProperty("quantity", out var giftQuantity)
                 => $"赠 {giftQuantity.GetInt32()} 件",
             "Gift" => "赠送商品",
+            "TradeIn" when action.TryGetProperty("tradeInPrice", out var tip) && action.TryGetProperty("quantity", out var tiQty)
+                => $"加 ¥{tip.GetDecimal():0.##} 换购 {tiQty.GetInt32()} 件",
+            "TradeIn" when action.TryGetProperty("tradeInPrice", out var tip2)
+                => $"加 ¥{tip2.GetDecimal():0.##} 换购",
+            "TradeIn" => "换购商品",
             "FreightFree" => "免运费",
             _ => promotion.Description
         };

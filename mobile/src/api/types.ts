@@ -13,6 +13,7 @@ export interface CategoryChild {
 
 export interface ProductTag {
   id: string
+  type: string
   code: string
   name: string
   color: string
@@ -34,14 +35,12 @@ export interface ProductPromotion {
   id: string
   name: string
   description: string
-  triggerType: string
-  triggerConfigJson: string
+  promotionType: number
+  thresholdAmount: number
   actionType: string
   actionConfigJson: string
   scopeType: string
   ruleText: string
-  startDate: string | null
-  endDate: string | null
 }
 
 export interface Product {
@@ -50,6 +49,7 @@ export interface Product {
   name: string
   categoryId: string | null
   categoryName: string
+  storeName: string
   description: string
   detailHtml: string
   images: string[]
@@ -82,7 +82,8 @@ export enum BannerLinkType {
   InternalCategory = 1,
   InternalPage = 2,
   ExternalUrl = 3,
-  InternalActivity = 4
+  InternalActivity = 4,
+  InternalRegistrationActivity = 5
 }
 
 export interface MallActivityPromotion {
@@ -90,10 +91,8 @@ export interface MallActivityPromotion {
   promotionId: string
   name: string
   description: string
-  triggerType: string
+  promotionType: number
   actionType: string
-  startDate: string | null
-  endDate: string | null
   isActive: boolean
 }
 

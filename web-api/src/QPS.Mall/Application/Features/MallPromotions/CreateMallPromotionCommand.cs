@@ -30,15 +30,20 @@ public class CreateMallPromotionHandler : IRequestHandler<CreateMallPromotionCom
             req.ScopeType,
             req.Scopes,
             cancellationToken);
+        await MallPromotionRules.ValidatePromotionTagAsync(
+            _dbContext,
+            req.PromotionTagId,
+            cancellationToken);
 
         var promotion = MallPromotion.Create(
             req.Name.Trim(),
             req.Description?.Trim() ?? string.Empty,
-            req.TriggerType,
-            req.TriggerConfigJson,
+            (MallPromotionType)req.PromotionType,
+            req.ThresholdAmount,
             req.ActionType,
             req.ActionConfigJson,
             req.ScopeType,
+            req.PromotionTagId,
             req.MaxUsagePerUser,
             req.MaxUsagePerOrder,
             req.StartDate,

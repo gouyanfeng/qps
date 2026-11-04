@@ -15,7 +15,7 @@
           @change="onSwiperChange"
         >
           <swiper-item v-for="(img, idx) in product.images" :key="idx">
-            <image :src="img" mode="aspectFill" class="swiper-img" />
+            <q-cached-image :src="img" mode="aspectFill" class="swiper-img" />
           </swiper-item>
         </swiper>
 
@@ -39,18 +39,23 @@
           </view>
         </view>
 
-        <text class="product-name">{{ product.name }}</text>
+        <view class="name-row">
+          <text class="product-name">{{ product.name }}</text>
+          <view v-if="product.tags.length" class="pill-row">
+            <view v-for="tag in product.tags" :key="tag.id" class="pill" :style="tagChipStyle(tag.color)">
+              <text class="pill-text" :style="{ color: resolveTagColor(tag.color) }">{{ tag.name }}</text>
+            </view>
+          </view>
+        </view>
+
+        <view v-if="product.storeName" class="store-line">
+          <q-icon name="location" size="22" color="#6B6B6B" />
+          <text class="store-line-text">门店：{{ product.storeName }}</text>
+        </view>
 
         <view v-if="product.description" class="sell-point">
           <q-icon name="tree-round-dot" size="22" color="#2E7D32" />
           <text class="sell-point-text">{{ product.description }}</text>
-        </view>
-
-        <view v-if="product.tags.length" class="pill-row">
-          <view v-for="(tag, idx) in product.tags" :key="tag.id" class="pill">
-            <q-icon :name="tagIcon(idx)" size="22" color="#2E7D32" />
-            <text class="pill-text">{{ tag.name }}</text>
-          </view>
         </view>
       </view>
 
@@ -179,11 +184,11 @@
             </view>
             <text class="review-content">{{ review.content }}</text>
             <view v-if="review.images.length" class="review-images">
-              <image
+              <q-cached-image
                 v-for="(img, imgIdx) in review.images"
                 :key="imgIdx"
                 class="review-image"
-                :src="resolveFileUrl(img)"
+                :src="img"
                 mode="aspectFill"
                 @click="previewReviewImages(review.images, imgIdx)"
               />
@@ -276,6 +281,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getProductById, getProductReviews, addToCart as addCart } from '@/api'
 import type { Product, ProductPromotion, Sku, ProductReview, ProductReviewPage } from '@/api/types'
 import { resolveFileUrl, UnauthorizedError } from '@/utils/http'
+import { resolveTagColor, tagChipStyle } from '@/utils/tagColor'
 
 const product = ref<Product | null>(null)
 const productId = ref('')
@@ -410,17 +416,13 @@ function stockText(sku: Sku) {
   return sku.stock <= 3 ? `仅剩 ${sku.stock} 件` : '库存充足'
 }
 
-function tagIcon(index: number) {
-  return ['certificate', 'qrcode', 'snowflake'][index % 3]
-}
-
-// 促销行左侧标签：按触发/优惠类型归类（折扣优先于满额条件）
+// 促销行左侧标签：按优惠类型归类（所有类型统一基于订单门槛）
 function promoBadge(promo: ProductPromotion) {
   if (promo.actionType === 'FreightFree') return '包邮'
   if (promo.actionType === 'Gift') return '赠品'
   if (promo.actionType === 'DiscountRate') return '特价'
-  if (promo.triggerType === 'FullAmount' && promo.actionType === 'DiscountAmount') return '满减'
-  if (promo.actionType === 'DiscountAmount') return '特价'
+  if (promo.actionType === 'DiscountAmount') return '满减'
+  if (promo.actionType === 'TradeIn') return '换购'
   return '优惠'
 }
 
@@ -433,7 +435,8 @@ function promoBadgeTone(promo: ProductPromotion) {
 function promoAction(promo: ProductPromotion) {
   if (promo.actionType === 'FreightFree') return '已享'
   if (promo.actionType === 'Gift') return '查看 ›'
-  if (promo.triggerType === 'FullAmount' && promo.actionType === 'DiscountAmount') return '去领券 ›'
+  if (promo.actionType === 'DiscountAmount') return '去领券 ›'
+  if (promo.actionType === 'TradeIn') return '去换购 ›'
   return '去凑单 ›'
 }
 
@@ -543,13 +546,23 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 }
 .price-off text { font-size: 20rpx; font-weight: 600; color: #C2410C; }
 
+.name-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx;
+  margin: 18rpx 0 0;
+}
 .product-name {
-  display: block;
   font-family: 'Noto Serif SC', 'Songti SC', 'STSong', serif;
   font-size: 36rpx; font-weight: 700;
   color: $on-surface; line-height: 1.45;
   letter-spacing: 1rpx;
-  margin: 18rpx 0 0;
+}
+
+.store-line {
+  display: flex; align-items: center; gap: 8rpx;
+  margin-top: 12rpx;
+}
+.store-line-text {
+  font-size: 22rpx; color: $muted;
 }
 
 .sell-point {
@@ -563,17 +576,14 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 }
 
 .pill-row {
-  display: flex; flex-wrap: wrap; gap: 14rpx;
-  margin-top: 20rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid $line;
+  display: flex; flex-wrap: wrap; gap: 10rpx;
 }
 .pill {
-  display: flex; align-items: center; gap: 8rpx;
-  padding: 10rpx 20rpx;
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 6rpx 14rpx;
   background: #F1F7EF;
   border: 1rpx solid rgba(46, 125, 50, 0.18);
-  border-radius: 10rpx;
+  border-radius: 999rpx;
 }
 .pill-text { font-size: 21rpx; font-weight: 600; color: $primary; }
 

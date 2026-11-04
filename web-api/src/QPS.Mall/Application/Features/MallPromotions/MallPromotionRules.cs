@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallPromotions;
@@ -10,18 +11,12 @@ internal static class MallPromotionRules
 {
     public const int NameMax = 50;
     public const int DescriptionMax = 200;
-    public const int TriggerTypeMax = 30;
     public const int ActionTypeMax = 30;
     public const int ScopeTypeMax = 30;
 
-    private static readonly HashSet<string> ValidTriggerTypes = new()
-    {
-        "FullAmount", "BuyProduct"
-    };
-
     private static readonly HashSet<string> ValidActionTypes = new()
     {
-        "Gift", "DiscountAmount", "DiscountRate", "FreightFree"
+        "DiscountAmount", "DiscountRate", "Gift", "TradeIn"
     };
 
     private static readonly HashSet<string> ValidScopeTypes = new()
@@ -31,14 +26,14 @@ internal static class MallPromotionRules
 
     public static void ValidateCreate(MallPromotionCreateRequest req)
     {
-        Validate(req.Name, req.Description, req.TriggerType, req.TriggerConfigJson, req.ActionType,
+        Validate(req.Name, req.Description, req.PromotionType, req.ThresholdAmount, req.ActionType,
             req.ActionConfigJson, req.ScopeType, req.Scopes, req.MaxUsagePerUser,
             req.MaxUsagePerOrder, req.StartDate, req.EndDate);
     }
 
     public static void ValidateUpdate(MallPromotionUpdateRequest req)
     {
-        Validate(req.Name, req.Description, req.TriggerType, req.TriggerConfigJson, req.ActionType,
+        Validate(req.Name, req.Description, req.PromotionType, req.ThresholdAmount, req.ActionType,
             req.ActionConfigJson, req.ScopeType, req.Scopes, req.MaxUsagePerUser,
             req.MaxUsagePerOrder, req.StartDate, req.EndDate);
     }
@@ -46,8 +41,8 @@ internal static class MallPromotionRules
     private static void Validate(
         string name,
         string? description,
-        string triggerType,
-        string triggerConfigJson,
+        int promotionType,
+        decimal thresholdAmount,
         string actionType,
         string actionConfigJson,
         string scopeType,
@@ -63,8 +58,11 @@ internal static class MallPromotionRules
         if (!string.IsNullOrEmpty(description) && description.Length > DescriptionMax)
             throw new BusinessException(400, $"描述不能超过 {DescriptionMax} 字");
 
-        if (string.IsNullOrWhiteSpace(triggerType)) throw new BusinessException(400, "触发方式不能为空");
-        if (!ValidTriggerTypes.Contains(triggerType)) throw new BusinessException(400, $"无效的触发方式：{triggerType}");
+        if (!Enum.IsDefined(typeof(MallPromotionType), promotionType))
+            throw new BusinessException(400, $"无效的促销类型：{promotionType}");
+
+        if (thresholdAmount <= 0)
+            throw new BusinessException(400, "订单门槛必须大于 0");
 
         if (string.IsNullOrWhiteSpace(actionType)) throw new BusinessException(400, "优惠方式不能为空");
         if (!ValidActionTypes.Contains(actionType)) throw new BusinessException(400, $"无效的优惠方式：{actionType}");
@@ -78,38 +76,18 @@ internal static class MallPromotionRules
         if (startDate.HasValue && endDate.HasValue && startDate > endDate)
             throw new BusinessException(400, "开始时间不能晚于结束时间");
 
-        ValidateConfiguration(triggerType, triggerConfigJson, actionType, actionConfigJson);
+        ValidateConfiguration(actionType, actionConfigJson);
         ValidateScopes(scopeType, scopes);
     }
 
     private static void ValidateConfiguration(
-        string triggerType,
-        string triggerConfigJson,
         string actionType,
         string actionConfigJson)
     {
         try
         {
-            using var trigger = JsonDocument.Parse(triggerConfigJson);
             using var action = JsonDocument.Parse(actionConfigJson);
-            var triggerConfig = trigger.RootElement;
             var actionConfig = action.RootElement;
-
-            if (triggerType == "FullAmount" &&
-                (!triggerConfig.TryGetProperty("minAmount", out var minAmount) || minAmount.GetDecimal() <= 0))
-                throw new BusinessException(400, "满额促销门槛必须大于 0");
-
-            if (triggerType == "BuyProduct")
-            {
-                if (triggerConfig.TryGetProperty("productIds", out var productIds) &&
-                    (productIds.ValueKind != JsonValueKind.Array ||
-                     productIds.GetArrayLength() == 0 ||
-                     productIds.EnumerateArray().Any(item =>
-                         !Guid.TryParse(item.GetString(), out var productId) || productId == Guid.Empty)))
-                    throw new BusinessException(400, "买赠促销购买商品配置无效");
-                if (triggerConfig.TryGetProperty("minQuantity", out var quantity) && quantity.GetInt32() < 1)
-                    throw new BusinessException(400, "购买数量必须大于 0");
-            }
 
             if (actionType == "DiscountAmount" &&
                 (!actionConfig.TryGetProperty("amount", out var amount) || amount.GetDecimal() <= 0))
@@ -126,6 +104,17 @@ internal static class MallPromotionRules
                     throw new BusinessException(400, "买赠促销必须指定有效的赠送规格");
                 if (!actionConfig.TryGetProperty("quantity", out var giftQuantity) || giftQuantity.GetInt32() < 1)
                     throw new BusinessException(400, "赠送数量必须大于 0");
+            }
+
+            if (actionType == "TradeIn")
+            {
+                if (!actionConfig.TryGetProperty("skuId", out var tradeInSkuId) ||
+                    !Guid.TryParse(tradeInSkuId.GetString(), out _))
+                    throw new BusinessException(400, "换购促销必须指定有效的换购规格");
+                if (!actionConfig.TryGetProperty("quantity", out var tradeInQty) || tradeInQty.GetInt32() < 1)
+                    throw new BusinessException(400, "换购数量必须大于 0");
+                if (!actionConfig.TryGetProperty("tradeInPrice", out var tradeInPrice) || tradeInPrice.GetDecimal() <= 0)
+                    throw new BusinessException(400, "换购价格必须大于 0");
             }
         }
         catch (JsonException)
@@ -178,5 +167,18 @@ internal static class MallPromotionRules
         };
         if (targetCount != targetIds.Length)
             throw new BusinessException(400, "部分促销适用对象不存在或已停用");
+    }
+
+    public static async Task ValidatePromotionTagAsync(
+        IMallDbContext dbContext,
+        Guid? promotionTagId,
+        CancellationToken cancellationToken)
+    {
+        if (promotionTagId is not { } tagId) return;
+
+        var exists = await dbContext.MallTags
+            .AnyAsync(tag => tag.Id == tagId && tag.Type == MallTagType.Promotion && tag.IsActive && !tag.IsDeleted, cancellationToken);
+        if (!exists)
+            throw new BusinessException(400, "促销标签不存在、已停用或类型不是促销标签");
     }
 }

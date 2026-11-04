@@ -73,10 +73,10 @@
             @tap="goDetail(order.orderNo)"
           >
             <view class="item-image-wrap">
-              <image
+              <q-cached-image
                 v-if="item.productImage"
                 class="item-image"
-                :src="resolveFileUrl(item.productImage)"
+                :src="item.productImage"
                 mode="aspectFill"
               />
               <view v-else class="item-image-placeholder">

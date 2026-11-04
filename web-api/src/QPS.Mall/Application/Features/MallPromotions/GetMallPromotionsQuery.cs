@@ -2,16 +2,20 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Shared.Common;
 
 namespace QPS.Mall.Application.Features.MallPromotions;
 
-public class GetMallPromotionsQuery : IRequest<List<MallPromotionDto>>
+public class GetMallPromotionsQuery : IRequest<PaginationResponse<MallPromotionDto>>
 {
     public string? Keyword { get; set; }
     public bool? IsActive { get; set; }
+    public string? ActionType { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
 }
 
-public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, List<MallPromotionDto>>
+public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, PaginationResponse<MallPromotionDto>>
 {
     private readonly IMallDbContext _dbContext;
 
@@ -20,7 +24,7 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
         _dbContext = dbContext;
     }
 
-    public async Task<List<MallPromotionDto>> Handle(
+    public async Task<PaginationResponse<MallPromotionDto>> Handle(
         GetMallPromotionsQuery request,
         CancellationToken cancellationToken)
     {
@@ -39,8 +43,20 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
             query = query.Where(p => p.IsActive == request.IsActive.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(request.ActionType))
+        {
+            var at = request.ActionType.Trim();
+            query = query.Where(p => p.ActionType == at);
+        }
+
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1 ? 10 : request.PageSize;
+
+        var totalCount = await query.CountAsync(cancellationToken);
         var promotions = await query
             .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         var promotionIds = promotions.Select(p => p.Id).ToList();
@@ -52,7 +68,9 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
 
         var scopeMap = allScopes.GroupBy(s => s.PromotionId).ToDictionary(g => g.Key, g => g.ToList());
 
-        return promotions.Select(p => Map(p, scopeMap.TryGetValue(p.Id, out var scopes) ? scopes : new List<Domain.Entities.MallPromotionScope>())).ToList();
+        var list = promotions.Select(p => Map(p, scopeMap.TryGetValue(p.Id, out var scopes) ? scopes : new List<Domain.Entities.MallPromotionScope>())).ToList();
+
+        return new PaginationResponse<MallPromotionDto>(list, totalCount, page, pageSize);
     }
 
     private static MallPromotionDto Map(Domain.Entities.MallPromotion p, List<Domain.Entities.MallPromotionScope> scopes) => new()
@@ -60,10 +78,11 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
         Id = p.Id,
         Name = p.Name,
         Description = p.Description,
-        TriggerType = p.TriggerType,
-        TriggerConfigJson = p.TriggerConfigJson,
+        PromotionType = p.PromotionType,
+        ThresholdAmount = p.ThresholdAmount,
         ActionType = p.ActionType,
         ActionConfigJson = p.ActionConfigJson,
+        PromotionTagId = p.PromotionTagId,
         ScopeType = p.ScopeType,
         MaxUsagePerUser = p.MaxUsagePerUser,
         MaxUsagePerOrder = p.MaxUsagePerOrder,

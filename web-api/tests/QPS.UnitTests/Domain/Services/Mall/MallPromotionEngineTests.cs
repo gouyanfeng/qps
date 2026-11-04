@@ -18,15 +18,14 @@ public class MallPromotionEngineTests
         var promotion = MallPromotion.Create(
             "指定分类满减",
             string.Empty,
-            "FullAmount",
-            """{"minAmount":20}""",
+            MallPromotionType.DiscountAmount,
+            20m,
             "DiscountAmount",
             """{"amount":10}""",
             "Category",
+            null,
             0,
             0,
-            null,
-            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -79,15 +78,14 @@ public class MallPromotionEngineTests
         var promotion = MallPromotion.Create(
             "指定分类满减",
             string.Empty,
-            "FullAmount",
-            """{"minAmount":50}""",
+            MallPromotionType.DiscountAmount,
+            50m,
             "DiscountAmount",
             """{"amount":10}""",
             "Category",
+            null,
             0,
             0,
-            null,
-            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -132,15 +130,14 @@ public class MallPromotionEngineTests
         var promotion = MallPromotion.Create(
             "父级分类折扣",
             string.Empty,
-            "FullAmount",
-            """{"minAmount":1}""",
+            MallPromotionType.DiscountRate,
+            1m,
             "DiscountRate",
             """{"rate":0.5}""",
             "Category",
+            null,
             0,
             0,
-            null,
-            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -183,15 +180,14 @@ public class MallPromotionEngineTests
         var promotion = MallPromotion.Create(
             "买二赠一",
             string.Empty,
-            "BuyProduct",
-            $$"""{"productIds":["{{buyProductId}}"],"minQuantity":2}""",
+            MallPromotionType.Gift,
+            0m,
             "Gift",
             $$"""{"skuId":"{{giftSkuId}}","quantity":1}""",
             "Product",
+            null,
             0,
             0,
-            null,
-            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -250,17 +246,16 @@ public class MallPromotionEngineTests
         var otherProductId = Guid.NewGuid();
         var giftSkuId = Guid.NewGuid();
         var promotion = MallPromotion.Create(
-            "指定商品买二赠一",
+            "指定商品满额买赠",
             string.Empty,
-            "BuyProduct",
-            """{"minQuantity":2}""",
+            MallPromotionType.Gift,
+            40m,
             "Gift",
             $$"""{"skuId":"{{giftSkuId}}","quantity":1}""",
             "Product",
+            null,
             0,
             0,
-            null,
-            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -268,17 +263,18 @@ public class MallPromotionEngineTests
         };
 
         var engine = new MallPromotionEngine(
-            new TriggerStrategyRegistry(new ITriggerStrategy[] { new BuyProductTrigger() }),
+            new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
             new ActionStrategyRegistry(new IActionStrategy[] { new GiftAction() }));
         var context = new OrderContext
         {
             Items =
             [
-                new SkuOrderRow { ProductId = targetProductId, Quantity = 1 },
-                new SkuOrderRow { ProductId = otherProductId, Quantity = 10 }
+                new SkuOrderRow { ProductId = targetProductId, OriginalPrice = 20, CurrentPrice = 20, Quantity = 1 },
+                new SkuOrderRow { ProductId = otherProductId, OriginalPrice = 10, CurrentPrice = 10, Quantity = 10 }
             ]
         };
 
+        // 目标商品金额未达门槛（20 < 40）→ 不触发
         Assert.Empty(engine.Match([promotion], scopeMap, context));
 
         context.Items[0].Quantity = 2;

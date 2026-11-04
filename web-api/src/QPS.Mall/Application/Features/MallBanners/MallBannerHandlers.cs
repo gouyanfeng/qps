@@ -195,7 +195,7 @@ public class MallBannerHandlers :
             throw new BusinessException(400, "Banner跳转类型无效");
         }
 
-        if (linkType == MallBannerLinkType.InternalActivity &&
+        if (linkType is MallBannerLinkType.InternalActivity or MallBannerLinkType.InternalRegistrationActivity &&
             (!Guid.TryParse(linkValue, out var activityId) ||
              !await _dbContext.MallActivities.AnyAsync(activity => activity.Id == activityId && !activity.IsDeleted, ct)))
         {

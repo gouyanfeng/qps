@@ -23,8 +23,10 @@ public class MallProductController : ControllerBase
         [FromQuery] string? keyword = null,
         [FromQuery] Guid? storeId = null,
         [FromQuery] Guid? categoryId = null,
+        [FromQuery] Guid? activityId = null,
         [FromQuery] bool? isHot = null,
         [FromQuery] string? tagCode = null,
+        [FromQuery] string? sort = null,
         CancellationToken cancellationToken = default)
     {
         var query = new GetMallProductsQuery
@@ -34,8 +36,10 @@ public class MallProductController : ControllerBase
             Keyword = keyword,
             StoreId = storeId,
             CategoryId = categoryId,
+            ActivityId = activityId,
             IsHot = isHot,
             TagCode = tagCode,
+            SortBy = sort,
             IsActive = true
         };
         return Ok(await _mediator.Send(query, cancellationToken));

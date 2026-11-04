@@ -24,7 +24,7 @@
     <scroll-view scroll-y class="page-body" enhanced>
       <swiper v-if="banners.length" class="catalog-banner" autoplay circular indicator-dots>
         <swiper-item v-for="banner in banners" :key="banner.id" @click="handleBannerClick(banner)">
-          <image :src="banner.image" mode="aspectFill" class="catalog-banner-image" />
+          <q-cached-image :src="banner.image" mode="aspectFill" class="catalog-banner-image" />
           <view class="catalog-banner-title">{{ banner.title }}</view>
         </swiper-item>
       </swiper>
@@ -60,7 +60,7 @@
           class="category-item"
           @click="goToCategory(item.id)"
         >
-          <image v-if="item.icon" class="category-dot" :src="item.icon" mode="aspectFill" />
+          <q-cached-image v-if="item.icon" class="category-dot" :src="item.icon" mode="aspectFill" />
           <view v-else class="category-dot category-dot-empty">
             <q-icon name="tea" size="36" color="#2E7D32" />
           </view>
@@ -103,13 +103,18 @@
             class="product-card"
             @click="goToProductDetail(p.id)"
           >
-            <image :src="p.image" mode="aspectFill" class="product-image" />
+            <q-cached-image :src="p.image" mode="aspectFill" class="product-image" />
+            <view v-if="p.promoBadge" class="promo-corner" :style="{ backgroundColor: p.promoBadge.color }">
+              <text class="promo-corner-text">{{ p.promoBadge.name }}</text>
+            </view>
             <view class="product-info">
               <view class="product-tags">
                 <view class="mini-tag" :style="{ borderColor: p.tone, color: p.tone }">
                   <text>{{ p.cert }}</text>
                 </view>
-                <text v-if="p.certSub" class="mini-tag-sub">{{ p.certSub }}</text>
+                <view v-if="p.certSub" class="mini-tag" :style="{ borderColor: p.toneSub, color: p.toneSub }">
+                  <text>{{ p.certSub }}</text>
+                </view>
               </view>
               <text class="product-name">{{ p.name }}</text>
               <text class="product-spec">规格：{{ p.spec }}</text>
@@ -145,6 +150,7 @@ import { getCategories, getHotProducts, getBanners, addToCart } from '@/api'
 import { BannerLinkType } from '@/api/types'
 import type { Category, Banner, Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
+import { resolveTagColor } from '@/utils/tagColor'
 
 interface FeaturedItem {
   id: string
@@ -159,7 +165,9 @@ interface FeaturedItem {
   cert: string
   certSub: string
   tone: string
+  toneSub: string
   sales: string
+  promoBadge?: { name: string; color: string }
 }
 
 const categoryItems = ref<Array<{ id: string; name: string; icon: string }>>([])
@@ -183,8 +191,10 @@ onMounted(async () => {
     banners.value = loadedBanners
     featured.value = products.filter(product => product.skus.length > 0).slice(0, 6).map((product: Product) => {
       const sku = product.skus[0]
-      const firstTag = product.tags[0]
-      const secondTag = product.tags[1]
+      const displayTags = product.tags.filter((tag) => tag.type !== 'Promotion')
+      const promoTag = product.tags.find((tag) => tag.type === 'Promotion')
+      const firstTag = displayTags[0]
+      const secondTag = displayTags[1]
       return {
         id: product.id,
         skuId: sku.id,
@@ -198,7 +208,11 @@ onMounted(async () => {
         sales: String(product.sales),
         cert: firstTag?.name || product.categoryName,
         certSub: secondTag?.name || '',
-        tone: firstTag?.color === 'danger' ? '#C2185B' : firstTag?.color === 'warning' ? '#D97700' : '#2E7D32'
+        tone: resolveTagColor(firstTag?.color),
+        toneSub: resolveTagColor(secondTag?.color),
+        promoBadge: promoTag
+          ? { name: promoTag.name, color: resolveTagColor(promoTag.color) || '#C2410C' }
+          : undefined
       }
     })
   } catch (error) {
@@ -246,7 +260,7 @@ function handleBannerClick(banner: Banner) {
     goToProductDetail(banner.link)
   } else if (banner.linkType === BannerLinkType.InternalCategory) {
     goToCategory(banner.link)
-  } else if (banner.linkType === BannerLinkType.InternalActivity) {
+  } else if (banner.linkType === BannerLinkType.InternalActivity || banner.linkType === BannerLinkType.InternalRegistrationActivity) {
     uni.navigateTo({ url: `/pages/activity-detail/index?id=${encodeURIComponent(banner.link)}` })
   }
 }
@@ -565,10 +579,26 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 }
 
 .product-card {
+  position: relative;
   background: $card;
   border-radius: 18rpx;
   overflow: hidden;
   box-shadow: $shadow-soft;
+}
+
+.promo-corner {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  z-index: 2;
+  padding: 4rpx 14rpx;
+  border-radius: 12rpx 0 12rpx 12rpx;
+}
+
+.promo-corner-text {
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 30rpx;
 }
 
 .product-image {
@@ -599,11 +629,6 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   font-size: 17rpx;
   font-weight: 500;
   line-height: 1.6;
-}
-
-.mini-tag-sub {
-  font-size: 17rpx;
-  color: $text-secondary;
 }
 
 .product-name {

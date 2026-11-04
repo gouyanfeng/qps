@@ -5,7 +5,7 @@ using QPS.Shared.Exceptions;
 namespace QPS.Mall.Application.Features.MallStores;
 
 /// <summary>
-/// 商场门店字段规范化与校验。
+/// 商城门店字段规范化与校验。
 /// </summary>
 internal static class MallStoreRules
 {

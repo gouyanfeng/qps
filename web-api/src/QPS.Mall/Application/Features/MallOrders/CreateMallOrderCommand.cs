@@ -1,12 +1,14 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Application.Features.MallFreightRules;
+using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain;
 using QPS.Mall.Domain.Entities;
 using QPS.Mall.Domain.Services;
 using QPS.Shared.Exceptions;
+using System.Text.Json;
 
 namespace QPS.Mall.Application.Features.MallOrders;
 
@@ -125,7 +127,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var activePromotions = await _dbContext.MallPromotions
             .AsNoTracking()
-            .Where(p => !p.IsDeleted && p.IsActive)
+            .WhereEffective(_dbContext, now)
             .ToListAsync(cancellationToken);
 
         var promotionIds = activePromotions.Select(p => p.Id).ToList();
@@ -191,10 +193,119 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             orderCtx.PromotionUsageMap = usages.ToDictionary(u => u.PromotionId, u => u.UsageCount);
         }
 
+        // ===== 换购项（适用源=订单价格的 TradeIn 促销，用户在结算页主动选择）=====
+        // 换购金额不计入促销触发门槛（originalGoodsAmount 仅统计正常商品原价）。
+        var exchangeRows = new List<ExchangeOrderRow>();
+        if (request.ExchangeItems.Count > 0)
+        {
+            if (request.ExchangeItems.Select(e => e.PromotionId).Distinct().Count() != request.ExchangeItems.Count)
+            {
+                throw new BusinessException(400, "同一换购活动不能重复提交");
+            }
+
+            var exchangePromotionIds = request.ExchangeItems.Select(e => e.PromotionId).ToList();
+            var exchangePromotions = await _dbContext.MallPromotions
+                .AsNoTracking()
+                .Where(p => exchangePromotionIds.Contains(p.Id))
+                .WhereEffective(_dbContext, now)
+                .ToListAsync(cancellationToken);
+
+            foreach (var exchangeItem in request.ExchangeItems)
+            {
+                var promotion = exchangePromotions.FirstOrDefault(p => p.Id == exchangeItem.PromotionId);
+                if (promotion == null)
+                {
+                    throw new BusinessException(400, "换购活动不存在或已结束");
+                }
+                if (promotion.ActionType != "TradeIn" || promotion.ScopeType != "Order" || promotion.TriggerType != "FullAmount")
+                {
+                    throw new BusinessException(400, "无效的换购活动");
+                }
+
+                if (promotion.MaxUsagePerUser > 0
+                    && orderCtx.UserId.HasValue
+                    && orderCtx.PromotionUsageMap.TryGetValue(promotion.Id, out var exchangeUsed)
+                    && exchangeUsed >= promotion.MaxUsagePerUser)
+                {
+                    throw new BusinessException(400, $"换购活动「{promotion.Name}」已达每人限用次数");
+                }
+
+                decimal minAmount = promotion.ThresholdAmount;
+                decimal tradeInPrice;
+                int maxQuantity;
+                Guid configSkuId;
+                try
+                {
+                    using var exchangeActionDoc = JsonDocument.Parse(promotion.ActionConfigJson);
+                    var exchangeConfig = exchangeActionDoc.RootElement;
+                    if (!exchangeConfig.TryGetProperty("skuId", out var exchangeSkuElem) ||
+                        !Guid.TryParse(exchangeSkuElem.GetString(), out configSkuId) ||
+                        !exchangeConfig.TryGetProperty("tradeInPrice", out var tradeInPriceElem) ||
+                        !exchangeConfig.TryGetProperty("quantity", out var maxQuantityElem))
+                    {
+                        throw new BusinessException(400, "换购活动配置无效");
+                    }
+                    tradeInPrice = tradeInPriceElem.GetDecimal();
+                    maxQuantity = maxQuantityElem.GetInt32();
+                }
+                catch (JsonException)
+                {
+                    throw new BusinessException(400, "换购活动配置不是有效 JSON");
+                }
+
+                if (tradeInPrice <= 0 || minAmount <= 0)
+                {
+                    throw new BusinessException(400, "换购价格或门槛配置无效");
+                }
+                if (originalGoodsAmount < minAmount)
+                {
+                    throw new BusinessException(400, $"订单金额未达到换购活动「{promotion.Name}」门槛（满 ¥{minAmount:0.##} 可换购）");
+                }
+                if (exchangeItem.SkuId != configSkuId)
+                {
+                    throw new BusinessException(400, "换购规格与活动配置不一致");
+                }
+                if (exchangeItem.Quantity < 1 || exchangeItem.Quantity > maxQuantity)
+                {
+                    throw new BusinessException(400, $"换购数量须在 1 到 {maxQuantity} 件之间");
+                }
+
+                exchangeRows.Add(new ExchangeOrderRow(promotion, exchangeItem.SkuId, tradeInPrice, exchangeItem.Quantity));
+            }
+
+            // 换购规格校验（跟踪查询，后续扣库存需写入状态）与计重。
+            var exchangeSkuIds = exchangeRows.Select(e => e.SkuId).Distinct().ToList();
+            var exchangeSkuRows = await (
+                    from sku in _dbContext.MallSkus
+                    join product in _dbContext.MallProducts on sku.ProductId equals product.Id
+                    where exchangeSkuIds.Contains(sku.Id) && !sku.IsDeleted && !product.IsDeleted
+                    select new { Sku = sku, Product = product })
+                .ToListAsync(cancellationToken);
+            var exchangeSkuMap = exchangeSkuRows.ToDictionary(row => row.Sku.Id);
+
+            foreach (var exchange in exchangeRows)
+            {
+                if (!exchangeSkuMap.TryGetValue(exchange.SkuId, out var exchangeRow))
+                {
+                    throw new BusinessException(400, "换购商品规格不存在");
+                }
+                if (!exchangeRow.Sku.IsActive || !exchangeRow.Product.IsActive)
+                {
+                    throw new BusinessException(400, $"换购商品「{exchangeRow.Product.Name}」已下架");
+                }
+
+                exchangeRow.Sku.EnsureStockEnough(exchange.Quantity);
+                totalWeightGram += exchangeRow.Sku.WeightGram * exchange.Quantity;
+                totalVolumeCm3 += exchangeRow.Sku.VolumeCm3 * exchange.Quantity;
+                exchange.Bind(exchangeRow.Sku, exchangeRow.Product);
+            }
+        }
+
         var matchedPromotions = _promotionEngine.Match(activePromotions, promotionScopeMap, orderCtx);
         var applyResult = _promotionEngine.Apply(orderCtx.Items, matchedPromotions);
 
-        var goodsAmount = applyResult.Items.Sum(i => i.CurrentPrice * i.Quantity);
+        var goodsAmount = applyResult.Items.Sum(i => i.CurrentPrice * i.Quantity)
+            + exchangeRows.Sum(e => e.TradeInPrice * e.Quantity);
 
         var templateIds = new HashSet<Guid>();
         if (defaultTemplate is not null)
@@ -247,6 +358,20 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
                 WeightGram = row.Sku.WeightGram,
                 VolumeCm3 = row.Sku.VolumeCm3,
                 LineAmount = appliedItem.CurrentPrice * appliedItem.Quantity
+            });
+        }
+
+        foreach (var exchange in exchangeRows)
+        {
+            freightItems.Add(new FreightItemRow
+            {
+                SkuId = exchange.Sku!.Id,
+                ProductId = exchange.Product!.Id,
+                FreightTemplateId = exchange.Product.FreightTemplateId,
+                Quantity = exchange.Quantity,
+                WeightGram = exchange.Sku.WeightGram,
+                VolumeCm3 = exchange.Sku.VolumeCm3,
+                LineAmount = exchange.TradeInPrice * exchange.Quantity
             });
         }
 
@@ -352,6 +477,36 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
                 originalUnitPrice: originalUnitPrice));
         }
 
+        foreach (var exchange in exchangeRows)
+        {
+            var exchangeSku = exchange.Sku!;
+            var beforeExchangeStock = exchangeSku.DeductStock(exchange.Quantity);
+
+            _dbContext.MallStockLogs.Add(MallStockLog.Create(
+                exchangeSku.Id,
+                exchangeSku.SkuCode,
+                exchangeSku.SpecName,
+                MallStockChangeType.OrderDeduct,
+                beforeExchangeStock,
+                exchangeSku.Stock,
+                relatedOrderNo: orderNo));
+
+            _dbContext.MallOrderItems.Add(MallOrderItem.Create(
+                order.Id,
+                exchangeSku.Id,
+                exchange.Product!.Id,
+                exchange.Product.Name,
+                exchangeSku.SkuCode,
+                exchangeSku.SpecName,
+                exchange.TradeInPrice,
+                exchange.Quantity,
+                exchangeSku.WeightGram,
+                isGift: false,
+                promotionId: exchange.Promotion.Id,
+                promotionName: exchange.Promotion.Name,
+                originalUnitPrice: exchangeSku.Price));
+        }
+
         if (applyResult.GiftSkus.Count > 0)
         {
             var giftSkuIds = applyResult.GiftSkus.Select(g => g.SkuId).Distinct().ToList();
@@ -400,20 +555,24 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             }
         }
 
-        if (orderCtx.UserId.HasValue && matchedPromotions.Count > 0)
+        if (orderCtx.UserId.HasValue && (matchedPromotions.Count > 0 || exchangeRows.Count > 0))
         {
-            var usagePromotionIds = matchedPromotions.Select(m => m.Promotion.Id).Distinct().ToList();
+            var usageTargets = matchedPromotions.Select(m => m.Promotion)
+                .Concat(exchangeRows.Select(e => e.Promotion))
+                .DistinctBy(p => p.Id)
+                .ToList();
+            var usagePromotionIds = usageTargets.Select(p => p.Id).ToList();
             var existingUsages = await _dbContext.MallPromotionUsages
                 .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == orderCtx.UserId.Value && !u.IsDeleted)
                 .ToListAsync(cancellationToken);
 
             var usageDict = existingUsages.ToDictionary(u => u.PromotionId);
 
-            foreach (var m in matchedPromotions)
+            foreach (var promotion in usageTargets)
             {
-                if (!usageDict.TryGetValue(m.Promotion.Id, out var usage))
+                if (!usageDict.TryGetValue(promotion.Id, out var usage))
                 {
-                    usage = MallPromotionUsage.Create(m.Promotion.Id, orderCtx.UserId.Value);
+                    usage = MallPromotionUsage.Create(promotion.Id, orderCtx.UserId.Value);
                     _dbContext.MallPromotionUsages.Add(usage);
                 }
                 usage.Increment(now);
@@ -440,5 +599,37 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         }
 
         return normalized;
+    }
+}
+
+/// <summary>
+/// 已通过校验的换购下单行；Sku/Product 在规格校验后绑定（跟踪查询，用于扣库存）。
+/// </summary>
+internal sealed class ExchangeOrderRow
+{
+    public ExchangeOrderRow(MallPromotion promotion, Guid skuId, decimal tradeInPrice, int quantity)
+    {
+        Promotion = promotion;
+        SkuId = skuId;
+        TradeInPrice = tradeInPrice;
+        Quantity = quantity;
+    }
+
+    public MallPromotion Promotion { get; }
+
+    public Guid SkuId { get; }
+
+    public decimal TradeInPrice { get; }
+
+    public int Quantity { get; }
+
+    public MallSku? Sku { get; private set; }
+
+    public MallProduct? Product { get; private set; }
+
+    public void Bind(MallSku sku, MallProduct product)
+    {
+        Sku = sku;
+        Product = product;
     }
 }

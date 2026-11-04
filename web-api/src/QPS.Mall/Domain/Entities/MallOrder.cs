@@ -4,7 +4,7 @@ using QPS.Shared.Exceptions;
 namespace QPS.Mall.Domain.Entities;
 
 /// <summary>
-/// 商场订单。
+/// 商城订单。
 /// </summary>
 public class MallOrder : BaseEntity
 {

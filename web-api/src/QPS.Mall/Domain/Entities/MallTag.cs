@@ -19,9 +19,14 @@ public static class MallTagType
     public const string Review = "Review";
 
     /// <summary>
+    /// 促销标签：由促销活动配置，参与促销的商品展示时自动打上。
+    /// </summary>
+    public const string Promotion = "Promotion";
+
+    /// <summary>
     /// 内置常用类型，供前端下拉预置。
     /// </summary>
-    public static readonly string[] Common = { Product, Review };
+    public static readonly string[] Common = { Product, Review, Promotion };
 }
 
 public class MallTag : BaseEntity

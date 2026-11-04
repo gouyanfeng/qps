@@ -111,13 +111,16 @@ public class MallPromotionDto
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = string.Empty;
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 
     public string ActionConfigJson { get; set; } = string.Empty;
+
+    /// <summary>促销标签（关联 MallTags），参与该促销的商品展示时带上。</summary>
+    public Guid? PromotionTagId { get; set; }
 
     public string ScopeType { get; set; } = string.Empty;
 
@@ -149,19 +152,50 @@ public class MallPromotionScopeDto
     public string ScopeTargetName { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// 移动端换购资格（适用源=订单价格的 TradeIn 促销）。
+/// </summary>
+public class MallExchangeOfferDto
+{
+    public Guid PromotionId { get; set; }
+
+    public string PromotionName { get; set; } = string.Empty;
+
+    public decimal MinAmount { get; set; }
+
+    public Guid SkuId { get; set; }
+
+    public string ProductName { get; set; } = string.Empty;
+
+    public string SpecName { get; set; } = string.Empty;
+
+    public string ProductImage { get; set; } = string.Empty;
+
+    public decimal OriginalPrice { get; set; }
+
+    public decimal TradeInPrice { get; set; }
+
+    public int MaxQuantity { get; set; }
+}
+
 public class MallPromotionCreateRequest
 {
     public string Name { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    /// <summary>促销类型：0 满减 / 1 折扣 / 2 买赠 / 3 换购。</summary>
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = "{}";
+    /// <summary>订单门槛金额。</summary>
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 
     public string ActionConfigJson { get; set; } = "{}";
+
+    /// <summary>促销标签（关联 MallTags，可选）。</summary>
+    public Guid? PromotionTagId { get; set; }
 
     public string ScopeType { get; set; } = "Global";
 
@@ -184,13 +218,16 @@ public class MallPromotionUpdateRequest
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = "{}";
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 
     public string ActionConfigJson { get; set; } = "{}";
+
+    /// <summary>促销标签（关联 MallTags，可选）。</summary>
+    public Guid? PromotionTagId { get; set; }
 
     public string ScopeType { get; set; } = "Global";
 

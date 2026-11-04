@@ -30,6 +30,7 @@ interface ApiProduct {
   name: string
   categoryId: string | null
   categoryName: string
+  storeName?: string
   description: string
   detailHtml?: string
   mainImageUrl: string
@@ -89,11 +90,31 @@ export async function getProducts(
   categoryId?: string,
   tagCode?: string,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
+  sort?: string
 ): Promise<{ items: Product[]; hasMore: boolean }> {
   const params: string[] = [`page=${page}`, `pageSize=${pageSize}`]
   if (categoryId) params.push(`categoryId=${encodeURIComponent(categoryId)}`)
   if (tagCode) params.push(`tagCode=${encodeURIComponent(tagCode)}`)
+  if (sort && sort !== 'default') params.push(`sort=${encodeURIComponent(sort)}`)
+  const data = await request<ApiPage<ApiProduct>>(`/api/mall/products?${params.join('&')}`)
+  const items = (data.items || data.list || []).map(mapProduct)
+  const total = data.totalCount ?? data.total ?? 0
+  const hasMore = data.hasMore ?? (total > page * pageSize && items.length === pageSize)
+  return { items, hasMore }
+}
+
+/** 活动商品：只返回活动关联的有效促销范围内的商品 */
+export async function getActivityProducts(
+  activityId: string,
+  categoryId?: string,
+  page: number = 1,
+  pageSize: number = 20,
+  sort?: string
+): Promise<{ items: Product[]; hasMore: boolean }> {
+  const params: string[] = [`page=${page}`, `pageSize=${pageSize}`, `activityId=${encodeURIComponent(activityId)}`]
+  if (categoryId) params.push(`categoryId=${encodeURIComponent(categoryId)}`)
+  if (sort && sort !== 'default') params.push(`sort=${encodeURIComponent(sort)}`)
   const data = await request<ApiPage<ApiProduct>>(`/api/mall/products?${params.join('&')}`)
   const items = (data.items || data.list || []).map(mapProduct)
   const total = data.totalCount ?? data.total ?? 0
@@ -219,6 +240,7 @@ function mapProduct(p: ApiProduct): Product {
     name: p.name,
     categoryId: p.categoryId,
     categoryName: p.categoryName,
+    storeName: p.storeName || '',
     description: p.description,
     detailHtml: p.detailHtml || '',
     images: rawImages.map(resolveFileUrl),
@@ -232,7 +254,15 @@ function mapProduct(p: ApiProduct): Product {
     })),
     sales: p.sales || 0,
     isHot: p.isHot || false,
-    tags: (p.tags || []).filter(tag => tag.isActive),
+    tags: (p.tags || []).filter(tag => tag.isActive).map(tag => ({
+      id: tag.id,
+      type: tag.type || '',
+      code: tag.code,
+      name: tag.name,
+      color: tag.color,
+      sortOrder: tag.sortOrder,
+      isActive: tag.isActive
+    })),
     promotions: (p.promotions || [])
   }
 }
@@ -552,6 +582,24 @@ export interface CreateOrderRequest {
   receiverAddress: string
   remark: string
   items: Array<{ skuId: string; quantity: number }>
+  exchangeItems?: Array<{ promotionId: string; skuId: string; quantity: number }>
+}
+
+export interface ExchangeOffer {
+  promotionId: string
+  promotionName: string
+  minAmount: number
+  skuId: string
+  productName: string
+  specName: string
+  productImage: string
+  originalPrice: number
+  tradeInPrice: number
+  maxQuantity: number
+}
+
+export function getExchangeOffers(amount: number): Promise<ExchangeOffer[]> {
+  return request<ExchangeOffer[]>(`/api/mall/promotions/exchange?amount=${amount}`, 'GET')
 }
 
 export interface MallOrderDetail extends MallOrder {

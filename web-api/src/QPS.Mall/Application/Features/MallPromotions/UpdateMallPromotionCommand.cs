@@ -32,6 +32,10 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             req.ScopeType,
             req.Scopes,
             cancellationToken);
+        await MallPromotionRules.ValidatePromotionTagAsync(
+            _dbContext,
+            req.PromotionTagId,
+            cancellationToken);
 
         var promotion = await _dbContext.MallPromotions
             .FirstOrDefaultAsync(p => p.Id == command.PromotionId && !p.IsDeleted, cancellationToken);
@@ -44,11 +48,12 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
         promotion.Update(
             req.Name.Trim(),
             req.Description?.Trim() ?? string.Empty,
-            req.TriggerType,
-            req.TriggerConfigJson,
+            (MallPromotionType)req.PromotionType,
+            req.ThresholdAmount,
             req.ActionType,
             req.ActionConfigJson,
             req.ScopeType,
+            req.PromotionTagId,
             req.MaxUsagePerUser,
             req.MaxUsagePerOrder,
             req.StartDate,

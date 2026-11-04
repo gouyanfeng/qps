@@ -275,6 +275,28 @@ public static class MallMockDataSeeder
                 item.GetProperty("actionConfigJson").GetString()!,
                 productIdsByMockId,
                 skuIdsByMockId);
+
+            // 从旧 triggerConfigJson 解析门槛金额
+            decimal thresholdAmount = 0;
+            try
+            {
+                using var triggerDoc = JsonDocument.Parse(triggerConfigJson);
+                if (triggerDoc.RootElement.TryGetProperty("minAmount", out var maElem))
+                    thresholdAmount = maElem.GetDecimal();
+                else if (triggerDoc.RootElement.TryGetProperty("minQuantity", out var mqElem))
+                    thresholdAmount = mqElem.GetDecimal();
+            }
+            catch { /* 忽略 */ }
+
+            // 从 actionType 映射 PromotionType 枚举
+            var promotionType = actionType switch
+            {
+                "DiscountAmount" => MallPromotionType.DiscountAmount,
+                "DiscountRate" => MallPromotionType.DiscountRate,
+                "Gift" => MallPromotionType.Gift,
+                "TradeIn" => MallPromotionType.TradeIn,
+                _ => MallPromotionType.DiscountAmount
+            };
             var scopeType = item.TryGetProperty("scopeType", out var scopeElement)
                 ? scopeElement.GetString() ?? "Global"
                 : "Global";
@@ -285,7 +307,6 @@ public static class MallMockDataSeeder
                 ? perOrderElement.GetInt32()
                 : 0;
             var isActive = !item.TryGetProperty("isActive", out var activeElement) || activeElement.GetBoolean();
-            var (startDate, endDate) = ResolveTimeWindow(item, now);
             sourcePromotionNames.Add(name);
 
             if (!promotionsByName.TryGetValue(name, out var promotion))
@@ -293,15 +314,16 @@ public static class MallMockDataSeeder
                 promotion = MallPromotion.Create(
                     name,
                     description,
-                    triggerType,
-                    triggerConfigJson,
+                    promotionType,
+                    thresholdAmount,
                     actionType,
                     actionConfigJson,
                     scopeType,
+                    promotionTagId: null,
                     maxUsagePerUser,
                     maxUsagePerOrder,
-                    startDate,
-                    endDate,
+                    startDate: null,
+                    endDate: null,
                     isActive: isActive);
                 db.MallPromotions.Add(promotion);
                 promotionsByName.Add(name, promotion);
@@ -311,15 +333,16 @@ public static class MallMockDataSeeder
                 promotion.Update(
                     name,
                     description,
-                    triggerType,
-                    triggerConfigJson,
+                    promotionType,
+                    thresholdAmount,
                     actionType,
                     actionConfigJson,
                     scopeType,
+                    promotion.PromotionTagId,
                     maxUsagePerUser,
                     maxUsagePerOrder,
-                    startDate,
-                    endDate);
+                    startDate: null,
+                    endDate: null);
                 promotion.ChangeStatus(isActive);
                 promotion.IsDeleted = false;
             }
@@ -339,8 +362,9 @@ public static class MallMockDataSeeder
             .IgnoreQueryFilters()
             .Where(scope => managedPromotionIds.Contains(scope.PromotionId))
             .ToListAsync(ct);
-        var existingScopesByKey = existingScopes.ToDictionary(
-            scope => (scope.PromotionId, scope.ScopeTargetType, scope.ScopeTargetId));
+        var existingScopesByKey = existingScopes
+            .GroupBy(scope => (scope.PromotionId, scope.ScopeTargetType, scope.ScopeTargetId))
+            .ToDictionary(group => group.Key, group => group.First());
         foreach (var scope in existingScopes)
         {
             scope.IsDeleted = true;
@@ -537,8 +561,9 @@ public static class MallMockDataSeeder
             .IgnoreQueryFilters()
             .Where(link => activityIds.Contains(link.ActivityId))
             .ToListAsync(ct);
-        var existingLinksByPair = existingLinks.ToDictionary(
-            link => (link.ActivityId, link.PromotionId));
+        var existingLinksByPair = existingLinks
+            .GroupBy(link => (link.ActivityId, link.PromotionId))
+            .ToDictionary(group => group.Key, group => group.First());
         foreach (var link in existingLinks)
         {
             link.IsDeleted = true;

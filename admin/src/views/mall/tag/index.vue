@@ -133,7 +133,7 @@ const queryPageRef = ref()
 const submitting = ref(false)
 const dialogVisible = ref(false)
 const editingId = ref('')
-const typeOptions = ref<string[]>(['Product', 'Review'])
+const typeOptions = ref<string[]>(['Product', 'Review', 'Promotion'])
 
 const searchForm = reactive({
   type: '',
@@ -163,12 +163,14 @@ const form = reactive({
 const typeLabel = (type: string) => {
   if (type === 'Product') return '商品'
   if (type === 'Review') return '评价'
+  if (type === 'Promotion') return '促销'
   return type || '-'
 }
 
 const typeTagTone = (type: string) => {
   if (type === 'Product') return 'primary'
   if (type === 'Review') return 'warning'
+  if (type === 'Promotion') return 'danger'
   return 'info'
 }
 
@@ -182,11 +184,11 @@ const normalizePickerColor = (color: string) => {
 const loadTypeOptions = async () => {
   try {
     const result = await mallTagApi.getTags()
-    const values = new Set<string>(['Product', 'Review'])
+    const values = new Set<string>(['Product', 'Review', 'Promotion'])
     ;(result.data || []).forEach((tag: any) => tag.type && values.add(tag.type))
     typeOptions.value = Array.from(values)
   } catch {
-    typeOptions.value = ['Product', 'Review']
+    typeOptions.value = ['Product', 'Review', 'Promotion']
   }
 }
 

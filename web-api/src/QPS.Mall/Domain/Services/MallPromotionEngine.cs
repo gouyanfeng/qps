@@ -6,7 +6,7 @@ namespace QPS.Mall.Domain.Services;
 public class MallPromotionEngine
 {
     private static readonly HashSet<string> DiscountActions = new() { "DiscountRate" };
-    private static readonly HashSet<string> StackableActions = new() { "DiscountAmount", "FreightFree", "Gift" };
+    private static readonly HashSet<string> StackableActions = new() { "DiscountAmount", "FreightFree", "Gift", "TradeIn" };
 
     private readonly ITriggerStrategyRegistry _triggers;
     private readonly IActionStrategyRegistry _actions;
@@ -30,7 +30,9 @@ public class MallPromotionEngine
         foreach (var p in promotions)
         {
             if (!p.IsActive || p.IsDeleted) continue;
-            if (!p.IsWithinTimeWindow(now)) continue;
+
+            // 换购为用户在结算时主动选择，不走引擎自动应用。
+            if (p.ActionType == "TradeIn") continue;
 
             if (p.MaxUsagePerUser > 0
                 && ctx.UserId.HasValue
@@ -52,15 +54,9 @@ public class MallPromotionEngine
                 Items = scopeRows,
                 PromotionUsageMap = ctx.PromotionUsageMap
             };
-            using var triggerDoc = JsonDocument.Parse(p.TriggerConfigJson);
-            var triggerConfig = triggerDoc.RootElement;
-            var triggerContext = p.TriggerType == "BuyProduct" &&
-                triggerConfig.TryGetProperty("productIds", out _)
-                    ? ctx
-                    : scopedTriggerContext;
 
-            var strategy = _triggers.Get(p.TriggerType);
-            if (!strategy.IsMatch(triggerContext, triggerConfig)) continue;
+            // 所有促销统一使用订单门槛（独立列 ThresholdAmount），直接比较范围内商品金额。
+            if (scopedTriggerContext.GoodsAmount < p.ThresholdAmount) continue;
 
             allMatched.Add(new MatchedPromotion
             {

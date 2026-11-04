@@ -367,13 +367,14 @@ const getPromotionTypeName = (promotion: any) => {
   if (promotion.actionType === 'DiscountAmount') return '满减'
   if (promotion.actionType === 'DiscountRate') return '折扣'
   if (promotion.actionType === 'Gift') return '买赠'
+  if (promotion.actionType === 'TradeIn') return '换购'
   return promotion.actionType || '其他'
 }
 
 const loadPromotions = async () => {
   try {
-    const result = await mallPromotionApi.getList({})
-    promotionOptions.value = result.data || []
+    const result = await mallPromotionApi.getList({ page: 1, pageSize: 1000 })
+    promotionOptions.value = result.data?.list || result.data || []
   } catch {
     ElMessage.error('加载促销列表失败')
   }

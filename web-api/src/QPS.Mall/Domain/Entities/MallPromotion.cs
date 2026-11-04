@@ -2,19 +2,28 @@ using QPS.Shared.Common;
 
 namespace QPS.Mall.Domain.Entities;
 
+/// <summary>
+/// 促销类型枚举，直接映射到数据库列 MallPromotion.PromotionType。
+/// </summary>
+public enum MallPromotionType
+{
+    DiscountAmount = 0,   // 满减
+    DiscountRate = 1,      // 折扣
+    Gift = 2,              // 买赠
+    TradeIn = 3            // 换购
+}
+
 public class MallPromotion : BaseEntity
 {
     public string Name { get; private set; } = string.Empty;
 
     public string Description { get; private set; } = string.Empty;
 
-    public string TriggerType { get; private set; } = string.Empty;
+    /// <summary>促销类型（0 满减 / 1 折扣 / 2 买赠 / 3 换购），独立列，用于查询筛选。</summary>
+    public int PromotionType { get; private set; }
 
-    public string TriggerConfigJson { get; private set; } = "{}";
-
-    public string ActionType { get; private set; } = string.Empty;
-
-    public string ActionConfigJson { get; private set; } = "{}";
+    /// <summary>订单门槛金额（单位：元），独立列。按范围内商品金额累计 ≥ 此值时促销生效。</summary>
+    public decimal ThresholdAmount { get; private set; }
 
     public string ScopeType { get; private set; } = "Global";
 
@@ -22,24 +31,37 @@ public class MallPromotion : BaseEntity
 
     public int MaxUsagePerOrder { get; private set; }
 
+    /// <summary>可选的促销自身时间窗口（与所挂活动时间取交集；为空则仅由活动控制）。</summary>
     public DateTime? StartDate { get; private set; }
 
     public DateTime? EndDate { get; private set; }
 
     public bool IsActive { get; private set; }
 
-    private MallPromotion()
-    {
-    }
+    /// <summary>动作类型：DiscountAmount / DiscountRate / Gift / TradeIn。</summary>
+    public string ActionType { get; private set; } = string.Empty;
+
+    /// <summary>动作参数 JSON：{amount} / {rate} / {skuId,quantity} / {skuId,quantity,tradeInPrice}。</summary>
+    public string ActionConfigJson { get; private set; } = "{}";
+
+    /// <summary>促销标签（可选，关联 MallTags），参与该促销的商品展示时带上此标签。</summary>
+    public Guid? PromotionTagId { get; private set; }
+
+    // 旧触发列（向后兼容保留），不再作为主数据源。
+    public string TriggerType { get; private set; } = string.Empty;
+    public string TriggerConfigJson { get; private set; } = "{}";
+
+    private MallPromotion() { }
 
     private MallPromotion(
         string name,
         string description,
-        string triggerType,
-        string triggerConfigJson,
+        MallPromotionType promotionType,
+        decimal thresholdAmount,
         string actionType,
         string actionConfigJson,
         string scopeType,
+        Guid? promotionTagId,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -48,26 +70,29 @@ public class MallPromotion : BaseEntity
     {
         Name = name;
         Description = description;
-        TriggerType = triggerType;
-        TriggerConfigJson = triggerConfigJson;
+        PromotionType = (int)promotionType;
+        ThresholdAmount = thresholdAmount;
         ActionType = actionType;
         ActionConfigJson = actionConfigJson;
         ScopeType = scopeType;
+        PromotionTagId = promotionTagId;
         MaxUsagePerUser = maxUsagePerUser;
         MaxUsagePerOrder = maxUsagePerOrder;
         StartDate = startDate;
         EndDate = endDate;
         IsActive = isActive;
+        SyncLegacyTrigger();
     }
 
     public static MallPromotion Create(
         string name,
         string description,
-        string triggerType,
-        string triggerConfigJson,
+        MallPromotionType promotionType,
+        decimal thresholdAmount,
         string actionType,
         string actionConfigJson,
         string scopeType,
+        Guid? promotionTagId,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -75,28 +100,20 @@ public class MallPromotion : BaseEntity
         bool isActive)
     {
         return new MallPromotion(
-            name,
-            description,
-            triggerType,
-            triggerConfigJson,
-            actionType,
-            actionConfigJson,
-            scopeType,
-            maxUsagePerUser,
-            maxUsagePerOrder,
-            startDate,
-            endDate,
-            isActive);
+            name, description, promotionType, thresholdAmount,
+            actionType, actionConfigJson, scopeType, promotionTagId,
+            maxUsagePerUser, maxUsagePerOrder, startDate, endDate, isActive);
     }
 
     public void Update(
         string name,
         string description,
-        string triggerType,
-        string triggerConfigJson,
+        MallPromotionType promotionType,
+        decimal thresholdAmount,
         string actionType,
         string actionConfigJson,
         string scopeType,
+        Guid? promotionTagId,
         int maxUsagePerUser,
         int maxUsagePerOrder,
         DateTime? startDate,
@@ -104,23 +121,24 @@ public class MallPromotion : BaseEntity
     {
         Name = name;
         Description = description;
-        TriggerType = triggerType;
-        TriggerConfigJson = triggerConfigJson;
+        PromotionType = (int)promotionType;
+        ThresholdAmount = thresholdAmount;
         ActionType = actionType;
         ActionConfigJson = actionConfigJson;
         ScopeType = scopeType;
+        PromotionTagId = promotionTagId;
         MaxUsagePerUser = maxUsagePerUser;
         MaxUsagePerOrder = maxUsagePerOrder;
         StartDate = startDate;
         EndDate = endDate;
+        SyncLegacyTrigger();
+    }
+
+    private void SyncLegacyTrigger()
+    {
+        TriggerType = "FullAmount";
+        TriggerConfigJson = $"{{\"minAmount\":{ThresholdAmount:0.##}}}";
     }
 
     public void ChangeStatus(bool isActive) => IsActive = isActive;
-
-    public bool IsWithinTimeWindow(DateTime now)
-    {
-        if (StartDate.HasValue && now < StartDate.Value) return false;
-        if (EndDate.HasValue && now > EndDate.Value) return false;
-        return true;
-    }
 }

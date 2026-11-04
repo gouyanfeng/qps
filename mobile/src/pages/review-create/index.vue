@@ -8,9 +8,9 @@
       <!-- 商品信息 -->
       <view v-if="item" class="product-card">
         <view class="product-image">
-          <image
+          <q-cached-image
             v-if="item.productImage"
-            :src="resolveFileUrl(item.productImage)"
+            :src="item.productImage"
             mode="aspectFill"
           />
           <q-icon v-else name="tea" size="28" color="#BDBDBD" />

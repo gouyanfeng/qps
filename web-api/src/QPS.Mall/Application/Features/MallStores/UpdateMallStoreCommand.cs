@@ -8,7 +8,7 @@ using QPS.Shared.Exceptions;
 namespace QPS.Mall.Application.Features.MallStores;
 
 /// <summary>
-/// 编辑商场门店。
+/// 编辑商城门店。
 /// </summary>
 public class UpdateMallStoreCommand : IRequest<bool>
 {

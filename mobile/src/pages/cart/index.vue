@@ -68,7 +68,7 @@
 
               <!-- 2. 商品图 -->
               <view class="goods-image-wrap">
-                <image :src="item.productImage" mode="aspectFill" class="goods-image" />
+                <q-cached-image :src="item.productImage" mode="aspectFill" class="goods-image" />
                 <view v-if="item.badge" class="goods-badge">
                   <text class="goods-badge-text">{{ item.badge }}</text>
                 </view>
@@ -137,7 +137,7 @@
           </view>
 
           <view v-for="b in bonusItems" :key="b.id" class="bonus-card">
-            <image :src="b.image" mode="aspectFill" class="bonus-image" />
+            <q-cached-image :src="b.image" mode="aspectFill" class="bonus-image" />
             <view class="bonus-info">
               <text class="bonus-name">{{ b.name }}</text>
               <text class="bonus-desc">{{ b.desc }}</text>

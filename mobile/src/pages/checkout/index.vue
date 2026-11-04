@@ -59,7 +59,7 @@
         </view>
         <view class="goods-list">
           <view class="goods-item" v-for="item in items" :key="item.productId">
-            <image class="goods-img" :src="item.productImage" mode="aspectFill" />
+            <q-cached-image class="goods-img" :src="item.productImage" mode="aspectFill" />
             <view class="goods-info">
               <view class="goods-name">{{ item.productName }}</view>
               <view class="goods-spec">{{ item.specName }}</view>
@@ -99,6 +99,42 @@
             <text class="discount-hint">下单时自动匹配，优惠金额以结算结果为准</text>
           </view>
         </view>
+
+        <!-- 优惠换购 -->
+        <view v-if="exchangeOffers.length" class="exchange-block">
+          <view class="exchange-title">
+            <q-icon name="coupon" size="28" color="#E2601F" />
+            <text class="exchange-title-text">优惠换购</text>
+            <text class="exchange-title-tip">满足门槛的商品可加价换购</text>
+          </view>
+          <view v-for="offer in exchangeOffers" :key="offer.promotionId" class="exchange-item">
+            <q-cached-image class="exchange-img" :src="offer.productImage" mode="aspectFill" />
+            <view class="exchange-info">
+              <text class="exchange-name">{{ offer.productName }}</text>
+              <text class="exchange-spec">{{ offer.specName }}</text>
+              <view class="exchange-price-row">
+                <text class="exchange-price">¥{{ offer.tradeInPrice.toFixed(2) }}</text>
+                <text class="exchange-origin">¥{{ offer.originalPrice.toFixed(2) }}</text>
+              </view>
+            </view>
+            <view class="exchange-qty">
+              <view
+                :class="['qty-btn', { 'qty-btn-off': (exchangeQty[offer.skuId] || 0) === 0 }]"
+                @tap="changeExchangeQty(offer, -1)"
+              >
+                <q-icon name="minus" size="24" color="#333333" />
+              </view>
+              <text class="qty-num">{{ exchangeQty[offer.skuId] || 0 }}</text>
+              <view
+                :class="['qty-btn', { 'qty-btn-off': (exchangeQty[offer.skuId] || 0) >= offer.maxQuantity }]"
+                @tap="changeExchangeQty(offer, 1)"
+              >
+                <q-icon name="add" size="24" color="#333333" />
+              </view>
+            </view>
+          </view>
+        </view>
+
         <view class="discount-row" @tap="addRemark">
           <view class="discount-row-left">
             <q-icon name="edit" size="30" color="#2E7D32" />
@@ -235,8 +271,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, clearCart, getAddresses, createOrder, getMyCoupons } from '@/api'
-import type { MallAddress, MemberCoupon } from '@/api'
+import { getCartItems, clearCart, getAddresses, createOrder, getMyCoupons, getExchangeOffers } from '@/api'
+import type { MallAddress, MemberCoupon, ExchangeOffer } from '@/api'
 import type { CartItem } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 
@@ -247,14 +283,20 @@ const remark = ref('')
 const availableCoupons = ref<MemberCoupon[]>([])
 const selectedCoupon = ref<MemberCoupon | null>(null)
 const showCouponPicker = ref(false)
+const exchangeOffers = ref<ExchangeOffer[]>([])
+const exchangeQty = ref<Record<string, number>>({})
 
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
 )
 
+const exchangeAmount = computed(() =>
+  exchangeOffers.value.reduce((s, offer) => s + offer.tradeInPrice * (exchangeQty.value[offer.skuId] || 0), 0)
+)
+
 const finalPrice = computed(() => {
   const discount = selectedCoupon.value?.discountAmount ?? 0
-  return Math.max(0, subtotal.value - discount)
+  return Math.max(0, subtotal.value + exchangeAmount.value - discount)
 })
 
 onShow(async () => {
@@ -287,6 +329,14 @@ onShow(async () => {
       if (c.thresholdAmount > 0 && subtotal.value < c.thresholdAmount) return false
       return true
     })
+    // 换购资格（静默失败不影响结算）
+    try {
+      exchangeOffers.value = await getExchangeOffers(subtotal.value)
+      exchangeQty.value = {}
+    } catch (error) {
+      console.warn('换购资格加载失败', error)
+      exchangeOffers.value = []
+    }
   } catch (error) {
     console.error('加载结算数据失败', error)
     if (error instanceof UnauthorizedError) return
@@ -305,6 +355,12 @@ function selectCoupon() {
 function pickCoupon(coupon: MemberCoupon | null) {
   selectedCoupon.value = coupon
   showCouponPicker.value = false
+}
+function changeExchangeQty(offer: ExchangeOffer, delta: number) {
+  const current = exchangeQty.value[offer.skuId] || 0
+  const next = Math.min(offer.maxQuantity, Math.max(0, current + delta))
+  if (next === current) return
+  exchangeQty.value = { ...exchangeQty.value, [offer.skuId]: next }
 }
 function formatCouponExpire(expireAt: string): string {
   if (!expireAt) return ''
@@ -330,10 +386,17 @@ function submitOrder() {
 
   uni.showModal({
     title: '确认提交',
-    content: `商品金额（优惠前）¥${finalPrice.value.toFixed(2)}，促销优惠将在下单时自动核算。确认创建订单？`,
+    content: `商品金额（优惠前）¥${finalPrice.value.toFixed(2)}${exchangeAmount.value > 0 ? `（含换购 ¥${exchangeAmount.value.toFixed(2)}）` : ''}，促销优惠将在下单时自动核算。确认创建订单？`,
     success: async r => {
       if (!r.confirm || !address.value) return
       try {
+        const exchangeItems = exchangeOffers.value
+          .filter(offer => (exchangeQty.value[offer.skuId] || 0) > 0)
+          .map(offer => ({
+            promotionId: offer.promotionId,
+            skuId: offer.skuId,
+            quantity: exchangeQty.value[offer.skuId]
+          }))
         const order = await createOrder({
           receiverName: address.value.receiverName,
           receiverPhone: address.value.receiverPhone,
@@ -342,7 +405,8 @@ function submitOrder() {
           districtName: address.value.districtName,
           receiverAddress: address.value.detailAddress,
           remark: remark.value,
-          items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity }))
+          items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
+          exchangeItems
         })
         try {
           await clearCart()
@@ -685,6 +749,97 @@ $page-padding: 24rpx;
   transform: scale(0.75);
   transform-origin: right center;
   margin-left: 4rpx;
+}
+
+/* ===== 优惠换购 ===== */
+.exchange-block {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #F3F3F3;
+}
+.exchange-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.exchange-title-text {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 600;
+}
+.exchange-title-tip {
+  font-size: 20rpx;
+  color: #E2601F;
+}
+.exchange-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+.exchange-img {
+  width: 110rpx;
+  height: 110rpx;
+  flex-shrink: 0;
+  border-radius: 12rpx;
+  background: #F5F3F0;
+}
+.exchange-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.exchange-name {
+  font-size: 26rpx;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exchange-spec {
+  font-size: 22rpx;
+  color: #999;
+}
+.exchange-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10rpx;
+}
+.exchange-price {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #E2601F;
+}
+.exchange-origin {
+  font-size: 20rpx;
+  color: #BBB;
+  text-decoration: line-through;
+}
+.exchange-qty {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+.qty-btn {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid #DDD;
+  border-radius: 8rpx;
+  background: #fff;
+}
+.qty-btn-off {
+  opacity: 0.35;
+}
+.qty-num {
+  min-width: 40rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #333;
 }
 
 .fee-detail {

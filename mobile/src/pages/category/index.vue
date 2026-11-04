@@ -64,12 +64,20 @@
             @click="goToProductDetail(p.id)"
           >
             <view class="thumb">
-              <image :src="p.images[0]" mode="aspectFill" class="thumb-img" />
+              <q-cached-image :src="p.images[0]" mode="aspectFill" class="thumb-img" />
+              <view v-if="promoTagOf(p)" class="promo-corner" :style="{ backgroundColor: resolveTagColor(promoTagOf(p)!.color) || '#C2410C' }">
+                <text class="promo-corner-text">{{ promoTagOf(p)!.name }}</text>
+              </view>
             </view>
             <view class="p-info">
               <text class="p-name">{{ p.name }}</text>
-              <view v-if="p.tags.length" class="product-tags">
-                <text v-for="tag in p.tags" :key="tag.id" class="product-tag">{{ tag.name }}</text>
+              <view v-if="displayTags(p).length" class="product-tags">
+                <text
+                  v-for="tag in displayTags(p)"
+                  :key="tag.id"
+                  class="product-tag"
+                  :style="tagChipStyle(tag.color)"
+                >{{ tag.name }}</text>
               </view>
               <text class="p-desc">{{ p.description }}</text>
               <view class="p-divider"></view>
@@ -107,6 +115,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { getCategories, getProducts, addToCart } from '@/api'
 import type { Category, Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
+import { tagChipStyle, resolveTagColor } from '@/utils/tagColor'
 
 interface SideNavItem {
   key: string
@@ -220,6 +229,14 @@ const visibleProducts = computed(() => {
     !activeTagCode.value || product.tags.some(tag => tag.code === activeTagCode.value)
   )
 })
+
+function promoTagOf(product: Product) {
+  return product.tags.find(tag => tag.type === 'Promotion')
+}
+
+function displayTags(product: Product) {
+  return product.tags.filter(tag => tag.type !== 'Promotion')
+}
 
 function selectSide(key: string) {
   if (activeKey.value === key) return
@@ -552,6 +569,19 @@ $price: #8B5000;
   margin: 14rpx 14rpx 0;
   border-radius: 12rpx;
   overflow: hidden;
+}
+.promo-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  padding: 4rpx 14rpx;
+  border-radius: 12rpx 0 12rpx 12rpx;
+}
+.promo-corner-text {
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 30rpx;
 }
 .thumb-img {
   width: 100%;

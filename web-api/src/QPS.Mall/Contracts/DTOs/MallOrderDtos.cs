@@ -1,7 +1,7 @@
 namespace QPS.Mall.Contracts.DTOs;
 
 /// <summary>
-/// 商场订单列表项。
+/// 商城订单列表项。
 /// </summary>
 public class MallOrderDto
 {
@@ -182,6 +182,23 @@ public class CreateMallOrderRequest
     public string Remark { get; set; } = string.Empty;
 
     public List<CreateMallOrderItemRequest> Items { get; set; } = new();
+
+    /// <summary>
+    /// 换购项（适用源=订单价格的 TradeIn 促销，用户在结算页主动选择）。
+    /// </summary>
+    public List<CreateMallOrderExchangeItemRequest> ExchangeItems { get; set; } = new();
+}
+
+/// <summary>
+/// 外部下单换购明细。
+/// </summary>
+public class CreateMallOrderExchangeItemRequest
+{
+    public Guid PromotionId { get; set; }
+
+    public Guid SkuId { get; set; }
+
+    public int Quantity { get; set; }
 }
 
 /// <summary>

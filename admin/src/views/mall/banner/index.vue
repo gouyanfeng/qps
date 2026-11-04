@@ -95,12 +95,13 @@
             <el-option label="分类页" :value="1" />
             <el-option label="静态页" :value="2" />
             <el-option label="外链" :value="3" />
-            <el-option label="活动详情" :value="4" />
+            <el-option label="促销活动" :value="4" />
+            <el-option label="报名活动" :value="5" />
           </el-select>
         </el-form-item>
         <el-form-item label="跳转值" required>
           <el-select
-            v-if="form.linkType === 4"
+            v-if="form.linkType === 4 || form.linkType === 5"
             v-model="form.linkValue"
             filterable
             clearable
@@ -159,7 +160,7 @@ import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
 
-const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 4: '活动' }
+const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 4: '促销活动', 5: '报名活动' }
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
@@ -261,7 +262,9 @@ const submitForm = async () => {
   if (!form.storeId) { ElMessage.warning('请选择门店'); return }
   if (!form.position.trim()) { ElMessage.warning('请输入展示位置'); return }
   if (!form.imageUrl.trim()) { ElMessage.warning('请上传 Banner 图片'); return }
-  if (form.linkType === 4 && !form.linkValue.trim()) { ElMessage.warning('请选择活动'); return }
+  if (form.linkType === 4 || form.linkType === 5) {
+    if (!form.linkValue.trim()) { ElMessage.warning(form.linkType === 4 ? '请选择促销活动' : '请选择报名活动'); return }
+  }
 
   submitting.value = true
   try {

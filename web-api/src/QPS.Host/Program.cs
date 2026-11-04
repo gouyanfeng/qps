@@ -66,7 +66,7 @@ using (var scope = app.Services.CreateScope())
         var strategy = dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
-            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database.MigrateAsync();
         });
 
         var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
@@ -109,12 +109,18 @@ Directory.CreateDirectory(webRootPath);
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(webRootPath)
+    FileProvider = new PhysicalFileProvider(webRootPath),
+    OnPrepareResponse = context =>
+    {
+        // 上传目录内文件名均为 GUID，内容不会覆盖，可交由浏览器长期缓存。
+        if (context.Context.Request.Path.StartsWithSegments("/uploads"))
+        {
+            context.Context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+        }
+    }
 });
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
-
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();

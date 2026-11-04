@@ -9,7 +9,8 @@ public enum MallBannerLinkType
     InternalCategory = 1,
     InternalPage = 2,
     ExternalUrl = 3,
-    InternalActivity = 4
+    InternalActivity = 4,
+    InternalRegistrationActivity = 5
 }
 
 public class MallBanner : BaseEntity

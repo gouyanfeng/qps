@@ -119,7 +119,7 @@
 
         <view v-for="item in order.items" :key="item.id" class="prod-item">
           <view class="prod-img">
-            <image :src="resolveFileUrl(item.productImage) || placeholderImg" mode="aspectFill" />
+            <q-cached-image :src="resolveFileUrl(item.productImage) || placeholderImg" mode="aspectFill" />
             <view class="prod-tag" v-if="item.badge">{{ item.badge }}</view>
           </view>
           <view class="prod-info">

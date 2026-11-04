@@ -1,7 +1,7 @@
 namespace QPS.Mall.Contracts.DTOs;
 
 /// <summary>
-/// 新增商场门店请求。
+/// 新增商城门店请求。
 /// </summary>
 public class MallStoreCreateRequest
 {
