@@ -23,12 +23,31 @@ public class MallCartController : ControllerBase
     }
 
     [HttpGet("carts/{userId:guid}")]
-    public async Task<ActionResult<MallCartDto>> GetCart(Guid userId)
+    public async Task<ActionResult<MallCartDto>> GetCart(
+        Guid userId,
+        [FromQuery] string? skuIds = null)
     {
+        // 带 skuIds 参数（即使为空串）表示按选中商品试算；不带表示全部选中
+        var selectedSkuIds = Request.Query.ContainsKey("skuIds")
+            ? ParseSkuIds(skuIds ?? string.Empty)
+            : null;
+
         return Ok(await _mediator.Send(new GetMallCartQuery
         {
-            UserId = _currentUser.GetUserId()
+            UserId = _currentUser.GetUserId(),
+            SelectedSkuIds = selectedSkuIds
         }));
+    }
+
+    /// <summary>解析选中 SKU 列表；空串返回空集合（未选中任何商品）。</summary>
+    private static List<Guid> ParseSkuIds(string skuIds)
+    {
+        return skuIds
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(value => Guid.TryParse(value, out var id) ? id : (Guid?)null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
     }
 
     [HttpPost("carts/add")]

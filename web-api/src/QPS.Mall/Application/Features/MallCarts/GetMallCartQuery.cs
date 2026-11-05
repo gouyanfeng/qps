@@ -1,24 +1,29 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain.Entities;
-using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallCarts;
 
 public class GetMallCartQuery : IRequest<MallCartDto>
 {
     public Guid UserId { get; set; }
+
+    /// <summary>当前选中的 SKU；为 null 表示全部选中。</summary>
+    public IReadOnlyCollection<Guid>? SelectedSkuIds { get; set; }
 }
 
 public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
 {
     private readonly IMallDbContext _dbContext;
+    private readonly MallPromotionPreviewService _promotionPreview;
 
-    public GetMallCartHandler(IMallDbContext dbContext)
+    public GetMallCartHandler(IMallDbContext dbContext, MallPromotionPreviewService promotionPreview)
     {
         _dbContext = dbContext;
+        _promotionPreview = promotionPreview;
     }
 
     public async Task<MallCartDto> Handle(
@@ -60,20 +65,26 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         }
 
         var skuIds = cartItems.Select(i => i.SkuId).Distinct().ToList();
-        var skuRows = await (
+        var skuRows = (await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
                 where skuIds.Contains(sku.Id)
                 select new { Sku = sku, Product = product })
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .Select(row => new CartSkuRow(row.Sku, row.Product))
+            .ToList();
 
-        var skuMap = skuRows.ToDictionary(r => r.Sku.Id);
+        var skuMap = skuRows.ToDictionary(row => row.Sku.Id);
         var items = new List<MallCartItemDto>();
+        var selectedPromotionItems = new List<MallPromotionPreviewItem>();
         var totalAmount = 0m;
+        var selectedAmount = 0m;
         var totalQuantity = 0;
 
         foreach (var cartItem in cartItems)
         {
+            var isSelected = request.SelectedSkuIds is null || request.SelectedSkuIds.Contains(cartItem.SkuId);
+
             if (skuMap.TryGetValue(cartItem.SkuId, out var row))
             {
                 var lineAmount = row.Sku.Price * cartItem.Quantity;
@@ -82,6 +93,14 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
 
                 var available = Math.Min(row.Sku.Stock, cartItem.Quantity);
                 var isValid = row.Sku.IsActive && row.Product.IsActive && row.Sku.Stock >= cartItem.Quantity;
+                if (isSelected)
+                {
+                    selectedAmount += lineAmount;
+                    if (isValid)
+                    {
+                        selectedPromotionItems.Add(new MallPromotionPreviewItem(cartItem.SkuId, cartItem.Quantity));
+                    }
+                }
 
                 items.Add(new MallCartItemDto
                 {
@@ -121,14 +140,32 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             }
         }
 
+        var preview = await _promotionPreview.PreviewAsync(
+            request.UserId,
+            selectedPromotionItems,
+            cancellationToken);
+
         return new MallCartDto
         {
             Id = cart.Id,
             UserId = cart.UserId,
             TotalQuantity = totalQuantity,
             TotalAmount = totalAmount,
+            SelectedAmount = selectedAmount,
+            PromotionDiscountAmount = preview.DiscountAmount,
+            PayableAmount = selectedAmount - preview.DiscountAmount,
+            PromotionDetails = preview.Lines
+                .Select(line => new MallCartPromotionDto
+                {
+                    PromotionId = line.PromotionId,
+                    Name = line.Name,
+                    DiscountAmount = line.DiscountAmount
+                })
+                .ToList(),
             LastActiveAt = cart.LastActiveAt,
             Items = items
         };
     }
+
+    private sealed record CartSkuRow(MallSku Sku, MallProduct Product);
 }

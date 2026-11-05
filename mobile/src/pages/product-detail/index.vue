@@ -32,7 +32,7 @@
           <view class="price-main">
             <text class="price-symbol">¥</text>
             <text class="price-value">{{ currentSku.price }}</text>
-            <text v-if="currentSku.marketPrice > 0" class="price-original">¥{{ currentSku.marketPrice }}</text>
+            <text v-if="crossedPrice > 0" class="price-original">¥{{ crossedPrice }}</text>
           </view>
           <view v-if="marketSaving > 0" class="price-off">
             <text>限时特惠 · 立减¥{{ marketSaving }}</text>
@@ -341,11 +341,17 @@ const currentSku = computed(() => {
   return skus.find(s => s.specName === selectedSpecs.value['规格']) ?? skus[0] ?? { id: '', specName: '', price: 0, marketPrice: 0, stock: 0, weightGram: 0 }
 })
 
+// 划线价：市场价高于现价时展示
+const crossedPrice = computed(() => {
+  const sku = currentSku.value
+  return sku.marketPrice > sku.price ? sku.marketPrice : 0
+})
+
 // 价格卡右侧的限时立减提示（不命中划线价时不展示）
 const marketSaving = computed(() => {
-  const sku = currentSku.value
-  if (!sku.marketPrice || sku.marketPrice <= sku.price) return 0
-  return Number((sku.marketPrice - sku.price).toFixed(2))
+  const crossed = crossedPrice.value
+  if (crossed <= currentSku.value.price) return 0
+  return Number((crossed - currentSku.value.price).toFixed(2))
 })
 
 // 促销标题栏右侧的领券立省金额：取命中促销里最大的立减额度
@@ -469,9 +475,21 @@ async function addToCart(): Promise<boolean> {
     return false
   }
 }
-async function buyNow() {
-  if (!await addToCart()) return
-  setTimeout(() => uni.navigateTo({ url: '/pages/checkout/index' }), 500)
+function buyNow() {
+  if (!product.value) return
+  const sku = currentSku.value
+  // 立即购买不走购物车：写入直购缓存，由确认订单页读取
+  uni.setStorageSync('qps_buy_now_item', {
+    skuId: sku.id,
+    productId: product.value.id,
+    productName: product.value.name,
+    productImage: product.value.images[0] || '',
+    specName: sku.specName || '默认规格',
+    price: sku.price,
+    quantity: quantity.value,
+    weightGram: sku.weightGram
+  })
+  uni.navigateTo({ url: '/pages/checkout/index' })
 }
 function goCart() { uni.switchTab({ url: '/pages/cart/index' }) }
 </script>

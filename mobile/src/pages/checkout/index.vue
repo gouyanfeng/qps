@@ -96,7 +96,16 @@
             <text>促销活动</text>
           </view>
           <view class="discount-row-right">
-            <text class="discount-hint">下单时自动匹配，优惠金额以结算结果为准</text>
+            <text v-if="promotionDiscount > 0" class="discount-neg">-¥{{ promotionDiscount.toFixed(2) }}</text>
+            <text v-else class="discount-hint">暂无可用促销</text>
+          </view>
+        </view>
+
+        <!-- 促销优惠明细 -->
+        <view v-if="promotionDetails.length" class="promotion-detail">
+          <view v-for="detail in promotionDetails" :key="detail.promotionId" class="promotion-detail-row">
+            <text class="promotion-detail-name">{{ detail.name }}</text>
+            <text class="promotion-detail-value">-¥{{ detail.discountAmount.toFixed(2) }}</text>
           </view>
         </view>
 
@@ -121,6 +130,10 @@
           <view class="fee-line">
             <text class="fee-label">运费</text>
             <text class="fee-value fee-free">已免</text>
+          </view>
+          <view v-if="promotionDiscount > 0" class="fee-line">
+            <text class="fee-label">促销优惠</text>
+            <text class="fee-value fee-neg">-¥{{ promotionDiscount.toFixed(2) }}</text>
           </view>
           <view v-if="selectedCoupon" class="fee-line">
             <text class="fee-label">优惠券抵扣</text>
@@ -236,8 +249,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, clearCart, getAddresses, createOrder, getMyCoupons } from '@/api'
-import type { MallAddress, MemberCoupon } from '@/api'
+import { getCartItems, clearCart, getAddresses, createOrder, getMyCoupons, previewOrder } from '@/api'
+import type { MallAddress, MemberCoupon, OrderPreview } from '@/api'
 import type { CartItem } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 
@@ -248,14 +261,18 @@ const remark = ref('')
 const availableCoupons = ref<MemberCoupon[]>([])
 const selectedCoupon = ref<MemberCoupon | null>(null)
 const showCouponPicker = ref(false)
+const promotionPreview = ref<OrderPreview | null>(null)
 
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
 )
 
+const promotionDiscount = computed(() => promotionPreview.value?.promotionDiscountAmount ?? 0)
+const promotionDetails = computed(() => promotionPreview.value?.promotionDetails ?? [])
+
 const finalPrice = computed(() => {
   const discount = selectedCoupon.value?.discountAmount ?? 0
-  return Math.max(0, subtotal.value - discount)
+  return Math.max(0, subtotal.value - promotionDiscount.value - discount)
 })
 
 onShow(async () => {
@@ -276,6 +293,14 @@ onShow(async () => {
       uni.removeStorageSync('qps_buy_now_item')
     } else {
       items.value = (await getCartItems()).filter(item => item.selected)
+    }
+    if (items.value.length > 0) {
+      promotionPreview.value = await previewOrder(
+        items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity }))
+      ).catch(error => {
+        console.error('促销试算失败', error)
+        return null
+      })
     }
     const addresses = await getAddresses()
     const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
@@ -331,7 +356,7 @@ function submitOrder() {
 
   uni.showModal({
     title: '确认提交',
-    content: `商品金额（优惠前）¥${finalPrice.value.toFixed(2)}，促销优惠将在下单时自动核算。确认创建订单？`,
+    content: `商品金额 ¥${subtotal.value.toFixed(2)}，促销优惠 ¥${promotionDiscount.value.toFixed(2)}，应付 ¥${finalPrice.value.toFixed(2)}。确认创建订单？`,
     success: async r => {
       if (!r.confirm || !address.value) return
       try {
@@ -647,6 +672,34 @@ $page-padding: 24rpx;
 
 /* ===== 优惠明细 ===== */
 .discount-card { padding: 8rpx 28rpx; }
+
+/* ===== 促销优惠明细 ===== */
+.promotion-detail {
+  padding: 4rpx 0 12rpx;
+  margin-left: 58rpx;
+  border-bottom: 1rpx solid #F2EEE9;
+}
+.promotion-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 4rpx 0;
+}
+.promotion-detail-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 24rpx;
+  color: #707A6C;
+}
+.promotion-detail-value {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #E2601F;
+}
 .discount-row {
   display: flex;
   justify-content: space-between;

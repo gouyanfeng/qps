@@ -10,9 +10,31 @@ public class MallCartDto
 
     public decimal TotalAmount { get; set; }
 
+    /// <summary>当前选中商品的原价合计。</summary>
+    public decimal SelectedAmount { get; set; }
+
+    /// <summary>预计促销优惠金额（按购物车选中且有效的商品与数量试算，最终以下单结果为准）。</summary>
+    public decimal PromotionDiscountAmount { get; set; }
+
+    /// <summary>预计应付金额 = SelectedAmount - PromotionDiscountAmount。</summary>
+    public decimal PayableAmount { get; set; }
+
+    /// <summary>预计促销优惠明细（逐条促销的优惠金额）。</summary>
+    public List<MallCartPromotionDto> PromotionDetails { get; set; } = new();
+
     public DateTime LastActiveAt { get; set; }
 
     public List<MallCartItemDto> Items { get; set; } = new();
+}
+
+public class MallCartPromotionDto
+{
+    public Guid PromotionId { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>该促销带来的优惠金额。</summary>
+    public decimal DiscountAmount { get; set; }
 }
 
 public class MallCartItemDto

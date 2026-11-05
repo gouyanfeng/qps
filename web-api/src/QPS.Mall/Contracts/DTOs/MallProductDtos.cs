@@ -72,6 +72,7 @@ public class MallSkuDto
 
     public string SpecName { get; set; } = string.Empty;
 
+    /// <summary>售价。</summary>
     public decimal Price { get; set; }
 
     public decimal MarketPrice { get; set; }

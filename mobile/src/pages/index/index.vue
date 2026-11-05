@@ -184,7 +184,8 @@ onMounted(async () => {
     }))
     banners.value = loadedBanners
     featured.value = products.filter(product => product.skus.length > 0).slice(0, 6).map((product: Product) => {
-      const sku = product.skus[0]
+      // 列表价取所有规格中的最低促销价
+      const sku = product.skus.reduce((min, item) => (item.price < min.price ? item : min))
       const displayTags = product.tags.filter((tag) => tag.type !== 'Promotion')
       const promoTag = product.tags.find((tag) => tag.type === 'Promotion')
       const firstTag = displayTags[0]

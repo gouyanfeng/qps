@@ -32,6 +32,16 @@ public class MallOrderController : ControllerBase
         return Ok(await _mediator.Send(new CreateMallOrderCommand { Request = request }));
     }
 
+    [HttpPost("orders/preview")]
+    public async Task<ActionResult<MallOrderPreviewDto>> PreviewOrder([FromBody] PreviewMallOrderRequest request)
+    {
+        return Ok(await _mediator.Send(new PreviewMallOrderQuery
+        {
+            MemberId = _currentUser.GetUserId(),
+            Request = request
+        }));
+    }
+
     [HttpGet("orders")]
     public async Task<ActionResult<PaginationResponse<MallOrderDto>>> GetMyOrders(
         [FromQuery] int page = 1,

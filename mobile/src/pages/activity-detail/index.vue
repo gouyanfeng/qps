@@ -320,7 +320,8 @@ function loadMore() {
 }
 
 function mapProductItem(product: Product): ProductItem {
-  const sku = product.skus[0]
+  // 列表价取所有规格中的最低促销价
+  const sku = product.skus.reduce((min, item) => (item.price < min.price ? item : min), product.skus[0])
   const displayTags = product.tags.filter(t => t.type !== 'Promotion')
   const promoTag = product.tags.find(t => t.type === 'Promotion')
   const salesPercent = product.sales > 0 ? Math.min(99, Math.round(product.sales / (product.sales + Math.max(1, sku.stock)) * 100)) : 0

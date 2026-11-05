@@ -84,8 +84,8 @@
               <view class="p-bottom">
                 <view class="price-row">
                   <text class="p-symbol">¥</text>
-                  <text class="p-price">{{ formatPrice(p.skus[0].price) }}</text>
-                  <text class="p-origin">¥{{ Math.round(p.skus[0].price * 1.15) }}</text>
+                  <text class="p-price">{{ formatPrice(minPriceOf(p)) }}</text>
+                  <text v-if="crossedPriceOf(p) > 0" class="p-origin">¥{{ formatPrice(crossedPriceOf(p)) }}</text>
                 </view>
                 <view class="add-btn" @click.stop="quickAdd(p)">
                   <q-icon name="add" size="20" color="#ffffff" />
@@ -255,6 +255,18 @@ function selectFilter(id: string) {
 
 function formatPrice(price: number): string {
   return price % 1 === 0 ? String(price) : price.toFixed(1)
+}
+
+// 列表价：所有规格中的最低促销价
+function minPriceOf(product: Product): number {
+  return product.skus.length ? Math.min(...product.skus.map(sku => sku.price)) : 0
+}
+
+// 划线价：最低价规格的市场价；不高于现价时不展示
+function crossedPriceOf(product: Product): number {
+  if (!product.skus.length) return 0
+  const sku = product.skus.reduce((min, item) => (item.price < min.price ? item : min))
+  return sku.marketPrice > sku.price ? sku.marketPrice : 0
 }
 
 async function quickAdd(p: Product) {

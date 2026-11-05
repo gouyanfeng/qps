@@ -258,6 +258,39 @@ export async function getCartItems(): Promise<CartItem[]> {
   return getRemoteCart()
 }
 
+export interface CartPromotionDetail {
+  promotionId: string
+  name: string
+  discountAmount: number
+}
+
+export interface CartSummary {
+  items: CartItem[]
+  /** 选中商品的原价合计 */
+  selectedAmount: number
+  /** 预计促销优惠金额（按选中商品试算，最终以下单结果为准） */
+  promotionDiscountAmount: number
+  /** 预计应付金额 */
+  payableAmount: number
+  /** 预计促销优惠明细 */
+  promotionDetails: CartPromotionDetail[]
+}
+
+export async function getCartOverview(selectedSkuIds?: string[]): Promise<CartSummary> {
+  const cart = await fetchRemoteCart(selectedSkuIds)
+  return {
+    items: mapCartItems(cart),
+    selectedAmount: Number(cart.selectedAmount || 0),
+    promotionDiscountAmount: Number(cart.promotionDiscountAmount || 0),
+    payableAmount: Number(cart.payableAmount || 0),
+    promotionDetails: (cart.promotionDetails || []).map(detail => ({
+      promotionId: detail.promotionId,
+      name: detail.name,
+      discountAmount: Number(detail.discountAmount || 0)
+    }))
+  }
+}
+
 interface MallCartResponse {
   items: Array<{
     skuId: string
@@ -273,15 +306,28 @@ interface MallCartResponse {
     isValid: boolean
     invalidReason: string | null
   }>
+  promotionDiscountAmount?: number
+  payableAmount?: number
+  selectedAmount?: number
+  promotionDetails?: Array<{
+    promotionId: string
+    name: string
+    discountAmount: number
+  }>
 }
 
 function isGuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 }
 
-async function getRemoteCart(): Promise<CartItem[]> {
+async function fetchRemoteCart(selectedSkuIds?: string[]): Promise<MallCartResponse> {
   const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
-  const cart = await request<MallCartResponse>(`/api/mall/carts/${memberId}`)
+  // 未传表示全部选中；传空数组表示未选中任何商品
+  const query = selectedSkuIds === undefined ? '' : `?skuIds=${selectedSkuIds.join(',')}`
+  return request<MallCartResponse>(`/api/mall/carts/${memberId}${query}`)
+}
+
+function mapCartItems(cart: MallCartResponse): CartItem[] {
   return (cart.items || []).map(item => ({
     productId: item.productId,
     productName: item.productName,
@@ -297,6 +343,10 @@ async function getRemoteCart(): Promise<CartItem[]> {
     isValid: item.isValid,
     invalidReason: item.invalidReason
   }))
+}
+
+async function getRemoteCart(): Promise<CartItem[]> {
+  return mapCartItems(await fetchRemoteCart())
 }
 
 export async function addToCart(item: CartItem): Promise<CartItem[]> {
@@ -547,6 +597,24 @@ export interface MallAddress {
 
 export function createOrder(data: CreateOrderRequest): Promise<MallOrderDetail> {
   return request<MallOrderDetail>('/api/mall/orders', 'POST', data)
+}
+
+export interface OrderPromotionDetail {
+  promotionId: string
+  name: string
+  discountAmount: number
+}
+
+export interface OrderPreview {
+  goodsAmount: number
+  promotionDiscountAmount: number
+  promotionDetails: OrderPromotionDetail[]
+  payableAmount: number
+}
+
+/** 订单确认页价格预览：按当前商品与数量试算促销优惠。 */
+export function previewOrder(items: Array<{ skuId: string; quantity: number }>): Promise<OrderPreview> {
+  return request<OrderPreview>('/api/mall/orders/preview', 'POST', { items })
 }
 
 export interface CreateOrderRequest {

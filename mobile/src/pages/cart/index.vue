@@ -160,9 +160,29 @@
         <view class="bb-total-row">
           <text class="bb-total-label">合计：</text>
           <text class="bb-total-symbol">¥</text>
-          <text class="bb-total-price">{{ totalPrice.toFixed(2) }}</text>
+          <text class="bb-total-price">{{ selectedAmount.toFixed(2) }}</text>
+          <text
+            v-if="promotionDetails.length"
+            class="bb-detail-toggle"
+            @click="detailVisible = !detailVisible"
+          >{{ detailVisible ? '收起' : '明细' }}</text>
         </view>
-        <text class="bb-fee">已免运费 ¥12 · 优惠已抵扣</text>
+        <text v-if="promotionDiscount > 0" class="bb-fee">
+          已优惠 ¥{{ promotionDiscount.toFixed(2) }} · 预计应付 ¥{{ payableAmount.toFixed(2) }}
+        </text>
+        <text v-else class="bb-fee">暂无可用促销优惠</text>
+      </view>
+
+      <!-- 优惠明细面板 -->
+      <view v-if="detailVisible && promotionDetails.length" class="bb-detail-panel">
+        <view v-for="detail in promotionDetails" :key="detail.promotionId" class="bb-detail-item">
+          <text class="bb-detail-name">{{ detail.name }}</text>
+          <text class="bb-detail-value">-¥{{ detail.discountAmount.toFixed(2) }}</text>
+        </view>
+        <view class="bb-detail-item bb-detail-total">
+          <text class="bb-detail-name">已优惠</text>
+          <text class="bb-detail-value">-¥{{ promotionDiscount.toFixed(2) }}</text>
+        </view>
       </view>
 
       <view :class="['checkout-btn', { 'checkout-btn-disabled': selectedCount === 0 }]" @click="checkout">
@@ -178,26 +198,50 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
-  getCartItems,
+  getCartOverview,
   updateCartItemQuantity,
   removeCartItem,
   toggleCartItemSelection,
   setCartItemsSelection
 } from '@/api'
 import type { CartItem } from '@/api/types'
+import type { CartPromotionDetail } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
 const cartItems = ref<CartItem[]>([])
+const selectedAmount = ref(0)
+const promotionDiscount = ref(0)
+const payableAmount = ref(0)
+const promotionDetails = ref<CartPromotionDetail[]>([])
+const detailVisible = ref(false)
 const editMode = ref(false)
 
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const selectedCount = computed(() => selectedItems.value.length)
-const totalPrice = computed(() => selectedItems.value.reduce((s, i) => s + i.price * i.quantity, 0))
 const isAllSelected = computed(() => cartItems.value.length > 0 && selectedCount.value === cartItems.value.length)
+
+let refreshSeq = 0
+
+async function refreshCart() {
+  const seq = ++refreshSeq
+  // 首次加载本地还没有商品时按全部选中处理
+  const selectedSkuIds = cartItems.value.length
+    ? cartItems.value.filter(item => item.selected).map(item => item.skuId)
+    : undefined
+  const overview = await getCartOverview(selectedSkuIds)
+  if (seq !== refreshSeq) return
+
+  cartItems.value = overview.items
+  selectedAmount.value = overview.selectedAmount
+  promotionDiscount.value = overview.promotionDiscountAmount
+  payableAmount.value = overview.payableAmount
+  promotionDetails.value = overview.promotionDetails
+  if (!overview.promotionDetails.length) detailVisible.value = false
+}
 
 onShow(async () => {
   try {
-    cartItems.value = await getCartItems()
+    await refreshCart()
   } catch (error) {
     console.error('加载购物车失败', error)
     if (error instanceof UnauthorizedError) return
@@ -208,9 +252,18 @@ onShow(async () => {
 function toggleEditMode() { editMode.value = !editMode.value }
 function toggleSelection(skuId: string) {
   cartItems.value = toggleCartItemSelection(cartItems.value, skuId)
+  syncPricePreview()
 }
 function toggleSelectAll() {
   cartItems.value = setCartItemsSelection(cartItems.value, !isAllSelected.value)
+  syncPricePreview()
+}
+function syncPricePreview() {
+  refreshCart().catch(error => {
+    console.error('计算优惠失败', error)
+    if (error instanceof UnauthorizedError) return
+    uni.showToast({ title: '优惠计算失败', icon: 'none' })
+  })
 }
 async function increaseQuantity(skuId: string) {
   const it = cartItems.value.find(i => i.skuId === skuId)
@@ -222,7 +275,8 @@ async function decreaseQuantity(skuId: string) {
 }
 async function updateQuantity(skuId: string, quantity: number) {
   try {
-    cartItems.value = await updateCartItemQuantity(skuId, quantity)
+    await updateCartItemQuantity(skuId, quantity)
+    await refreshCart()
   } catch (error) {
     console.error('更新购物车数量失败', error)
     if (error instanceof UnauthorizedError) return
@@ -236,7 +290,8 @@ function deleteItem(skuId: string) {
     success: async r => {
       if (!r.confirm) return
       try {
-        cartItems.value = await removeCartItem(skuId)
+        await removeCartItem(skuId)
+        await refreshCart()
       } catch (error) {
         console.error('删除购物车商品失败', error)
         if (error instanceof UnauthorizedError) return
@@ -500,6 +555,55 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
 .bb-total-symbol { font-size: 24rpx; font-weight: 700; color: $theme-primary; }
 .bb-total-price { font-size: 44rpx; font-weight: 800; color: $theme-primary; line-height: 1; letter-spacing: -0.5rpx; }
 .bb-fee { font-size: 19rpx; color: #8A8F86; }
+
+.bb-detail-toggle {
+  margin-left: 8rpx;
+  font-size: 19rpx;
+  color: $theme-primary;
+  text-decoration: underline;
+}
+
+.bb-detail-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  padding: 12rpx 24rpx;
+  background: #ffffff;
+  border-top: 1rpx solid rgba(232, 227, 214, 0.9);
+  box-shadow: 0 -6rpx 18rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.bb-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.bb-detail-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 21rpx;
+  color: $on-surface-variant;
+}
+
+.bb-detail-value {
+  font-size: 21rpx;
+  font-weight: 700;
+  color: $theme-primary;
+}
+
+.bb-detail-total {
+  padding-top: 8rpx;
+  border-top: 1rpx dashed rgba(232, 227, 214, 0.9);
+}
 
 .checkout-btn {
   flex-shrink: 0;

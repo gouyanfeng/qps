@@ -27,13 +27,16 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 {
     private readonly IMallDbContext _dbContext;
     private readonly MallPromotionEngine _promotionEngine;
+    private readonly MallPromotionContextBuilder _promotionContextBuilder;
 
     public CreateMallOrderHandler(
         IMallDbContext dbContext,
-        MallPromotionEngine promotionEngine)
+        MallPromotionEngine promotionEngine,
+        MallPromotionContextBuilder promotionContextBuilder)
     {
         _dbContext = dbContext;
         _promotionEngine = promotionEngine;
+        _promotionContextBuilder = promotionContextBuilder;
     }
 
     public async Task<MallOrderDetailDto> Handle(
@@ -78,7 +81,18 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         var skuMap = await LoadAndValidateSkuMapAsync(request.Items, cancellationToken);
         var totals = SumOrderTotals(request.Items, skuMap);
         var defaultFreightTemplate = await LoadDefaultFreightTemplateAsync(cancellationToken);
-        var promotionData = await LoadPromotionDataAsync(request, skuMap, cancellationToken);
+        var quantitiesBySku = request.Items
+            .GroupBy(item => item.SkuId)
+            .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
+        var promotionData = await _promotionContextBuilder.BuildAsync(
+            request.MemberId!.Value,
+            skuMap.Values
+                .Select(row => new MallPromotionSkuInput(
+                    row.Sku,
+                    row.Product,
+                    quantitiesBySku[row.Sku.Id]))
+                .ToList(),
+            cancellationToken);
 
         return new MallOrderBuildContext
         {
@@ -187,90 +201,6 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         return await _dbContext.MallFreightTemplates
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, cancellationToken);
-    }
-
-    /// <summary>装配促销阶段数据：有效促销、范围表与促销引擎订单上下文。</summary>
-    private async Task<MallPromotionData> LoadPromotionDataAsync(
-        CreateMallOrderRequest request,
-        Dictionary<Guid, (MallSku Sku, MallProduct Product)> skuMap,
-        CancellationToken cancellationToken)
-    {
-        // MemberId 已在 ResolveReceiverAddressAsync 阶段校验非空
-        var memberId = request.MemberId!.Value;
-        var quantitiesBySku = request.Items
-            .GroupBy(item => item.SkuId)
-            .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
-        var now = DateTime.Now;
-
-        var activePromotions = await _dbContext.MallPromotions
-            .AsNoTracking()
-            .WhereEffective(now)
-            .ToListAsync(cancellationToken);
-
-        var promotionIds = activePromotions.Select(p => p.Id).ToList();
-        var scopeMap = promotionIds.Count == 0
-            ? new Dictionary<Guid, List<MallPromotionScope>>()
-            : await _dbContext.MallPromotionScopes
-                .Where(s => promotionIds.Contains(s.PromotionId))
-                .GroupBy(s => s.PromotionId)
-                .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
-
-        var productCategoryIds = skuMap.Values
-            .Where(row => row.Product.CategoryId.HasValue)
-            .Select(row => row.Product.CategoryId!.Value)
-            .Distinct()
-            .ToArray();
-        var categoryParents = await _dbContext.MallCategories
-            .Where(category => productCategoryIds.Contains(category.Id))
-            .Select(category => new { category.Id, category.ParentId })
-            .ToDictionaryAsync(category => category.Id, category => category.ParentId, cancellationToken);
-
-        var orderCtx = new OrderContext
-        {
-            UserId = memberId,
-            Items = skuMap.Values.Select(row =>
-            {
-                var categoryIds = new List<Guid>();
-                if (row.Product.CategoryId.HasValue)
-                {
-                    var categoryId = row.Product.CategoryId.Value;
-                    categoryIds.Add(categoryId);
-                    if (categoryParents.TryGetValue(categoryId, out var parentId) && parentId.HasValue)
-                    {
-                        categoryIds.Add(parentId.Value);
-                    }
-                }
-
-                return new SkuOrderRow
-                {
-                    SkuId = row.Sku.Id,
-                    ProductId = row.Product.Id,
-                    CategoryId = row.Product.CategoryId,
-                    CategoryIds = categoryIds,
-                    OriginalPrice = row.Sku.Price,
-                    CurrentPrice = row.Sku.Price,
-                    Quantity = quantitiesBySku.GetValueOrDefault(row.Sku.Id),
-                    WeightGram = row.Sku.WeightGram
-                };
-            }).ToList()
-        };
-
-        if (activePromotions.Count > 0)
-        {
-            var usagePromotionIds = activePromotions.Select(p => p.Id).ToList();
-            var usages = await _dbContext.MallPromotionUsages
-                .AsNoTracking()
-                .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == memberId)
-                .ToListAsync(cancellationToken);
-            orderCtx.PromotionUsageMap = usages.ToDictionary(u => u.PromotionId, u => u.UsageCount);
-        }
-
-        return new MallPromotionData
-        {
-            ActivePromotions = activePromotions,
-            ScopeMap = scopeMap,
-            OrderContext = orderCtx
-        };
     }
 
     /// <summary>阶段二：促销引擎匹配与应用（逐行改价、免运费标记、赠品清单）。</summary>
@@ -613,12 +543,3 @@ internal sealed class MallOrderTotals
     public int TotalVolumeCm3 { get; set; }
 }
 
-/// <summary>促销阶段装配数据：有效促销、范围表与促销引擎订单上下文。</summary>
-internal sealed class MallPromotionData
-{
-    public required List<MallPromotion> ActivePromotions { get; init; }
-
-    public required Dictionary<Guid, List<MallPromotionScope>> ScopeMap { get; init; }
-
-    public required OrderContext OrderContext { get; init; }
-}

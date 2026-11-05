@@ -235,3 +235,47 @@ public class CreateMallShipmentRequest
 
     public string Remark { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// 订单确认页价格预览请求。
+/// </summary>
+public class PreviewMallOrderRequest
+{
+    [MinLength(1, ErrorMessage = "请选择要结算的商品")]
+    public List<PreviewMallOrderItem> Items { get; set; } = new();
+}
+
+public class PreviewMallOrderItem
+{
+    public Guid SkuId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "商品数量必须大于 0")]
+    public int Quantity { get; set; }
+}
+
+/// <summary>
+/// 订单确认页价格预览结果。
+/// </summary>
+public class MallOrderPreviewDto
+{
+    /// <summary>商品原价合计。</summary>
+    public decimal GoodsAmount { get; set; }
+
+    /// <summary>促销优惠金额。</summary>
+    public decimal PromotionDiscountAmount { get; set; }
+
+    /// <summary>促销优惠明细。</summary>
+    public List<MallOrderPromotionDto> PromotionDetails { get; set; } = new();
+
+    /// <summary>应付金额 = GoodsAmount - PromotionDiscountAmount。</summary>
+    public decimal PayableAmount { get; set; }
+}
+
+public class MallOrderPromotionDto
+{
+    public Guid PromotionId { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public decimal DiscountAmount { get; set; }
+}
