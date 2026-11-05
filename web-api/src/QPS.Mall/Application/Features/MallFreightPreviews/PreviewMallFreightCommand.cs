@@ -37,13 +37,13 @@ public class PreviewMallFreightHandler : IRequestHandler<PreviewMallFreightComma
 
         var defaultTemplate = await _dbContext.MallFreightTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive && !t.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, cancellationToken);
 
         var skuIds = req.Items.Select(i => i.SkuId).Distinct().ToList();
         var skuRows = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
-                where skuIds.Contains(sku.Id) && !sku.IsDeleted && !product.IsDeleted
+                where skuIds.Contains(sku.Id)
                 select new { Sku = sku, Product = product })
             .ToListAsync(cancellationToken);
 
@@ -68,14 +68,14 @@ public class PreviewMallFreightHandler : IRequestHandler<PreviewMallFreightComma
         {
             var templates = await _dbContext.MallFreightTemplates
                 .AsNoTracking()
-                .Where(t => templateIds.Contains(t.Id) && !t.IsDeleted && t.IsActive)
+                .Where(t => templateIds.Contains(t.Id) && t.IsActive)
                 .ToListAsync(cancellationToken);
 
             templateMap = templates.ToDictionary(t => t.Id);
 
             var regions = await _dbContext.MallFreightRegions
                 .AsNoTracking()
-                .Where(r => templateIds.Contains(r.TemplateId) && !r.IsDeleted)
+                .Where(r => templateIds.Contains(r.TemplateId))
                 .ToListAsync(cancellationToken);
 
             regionMap = regions.GroupBy(r => r.TemplateId)

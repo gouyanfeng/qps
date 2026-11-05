@@ -13,7 +13,6 @@ public static class MallPromotionEffectiveQuery
     {
         return query.Where(promotion =>
             promotion.IsActive &&
-            !promotion.IsDeleted &&
             (promotion.StartDate == null || promotion.StartDate <= now) &&
             (promotion.EndDate == null || promotion.EndDate >= now));
     }

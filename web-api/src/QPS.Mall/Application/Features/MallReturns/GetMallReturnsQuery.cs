@@ -30,7 +30,7 @@ public class GetMallReturnsHandler : IRequestHandler<GetMallReturnsQuery, Pagina
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallReturns
-            .Where(r => !r.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Status))
@@ -86,7 +86,7 @@ public class GetMallReturnHandler : IRequestHandler<GetMallReturnQuery, MallRetu
     public async Task<MallReturnDetailDto> Handle(GetMallReturnQuery request, CancellationToken cancellationToken)
     {
         var r = await _dbContext.MallReturns
-            .Where(x => x.Id == request.Id && !x.IsDeleted)
+            .Where(x => x.Id == request.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (r == null)

@@ -26,7 +26,7 @@ public class GetMallAddressHandler : IRequestHandler<GetMallAddressQuery, MallAd
     {
         var a = await _dbContext.MallAddresses
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.AddressId && !x.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == request.AddressId, cancellationToken);
 
         if (a is null)
         {

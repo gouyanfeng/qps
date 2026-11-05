@@ -74,7 +74,7 @@ public class CreateMallProductReviewHandler
 
         var orderItem = await _dbContext.MallOrderItems
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == payload.OrderItemId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == payload.OrderItemId, cancellationToken);
 
         if (orderItem is null ||
             orderItem.OrderId != order.Id ||

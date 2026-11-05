@@ -68,7 +68,7 @@ public class GetCrmHerbBaseHandler : IRequestHandler<GetCrmHerbBaseQuery, CrmHer
     {
         var dto = await (
             from customer in _dbContext.CrmHerbBases
-            where customer.Id == customerId && !customer.IsDeleted
+            where customer.Id == customerId
             select new CrmHerbBaseDto
             {
                 Id = customer.Id,

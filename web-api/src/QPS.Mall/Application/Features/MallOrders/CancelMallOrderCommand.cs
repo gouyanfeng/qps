@@ -51,8 +51,7 @@ public class CancelMallOrderHandler : IRequestHandler<CancelMallOrderCommand, bo
         var pendingPayments = await _dbContext.MallPayments
             .Where(payment =>
                 payment.OrderId == order.Id &&
-                payment.Status == MallPaymentStatus.Pending &&
-                !payment.IsDeleted)
+                payment.Status == MallPaymentStatus.Pending)
             .ToListAsync(cancellationToken);
 
         foreach (var payment in pendingPayments)

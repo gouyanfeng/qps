@@ -130,7 +130,7 @@ public static class MallMockDataSeeder
                 banner.StartDate,
                 banner.EndDate);
             existing.ChangeStatus(true);
-            existing.IsDeleted = false;
+            existing.Restore();
         }
         db.MallBanners.AddRange(newBanners);
         await db.SaveChangesAsync(ct);
@@ -228,7 +228,7 @@ public static class MallMockDataSeeder
             // mock 数据未提供图标时保留后台已维护的图标，避免每次启动覆盖上传结果
             existing.Update(code, name, parentId, icon ?? existing.Icon, sortOrder);
             existing.ChangeStatus(true);
-            existing.IsDeleted = false;
+            existing.Restore();
             return existing;
         }
 
@@ -329,7 +329,7 @@ public static class MallMockDataSeeder
                     startDate: null,
                     endDate: null);
                 promotion.ChangeStatus(isActive);
-                promotion.IsDeleted = false;
+                promotion.Restore();
             }
 
             promotionIdsByMockId.Add(mockId, promotion.Id);
@@ -352,7 +352,7 @@ public static class MallMockDataSeeder
             .ToDictionary(group => group.Key, group => group.First());
         foreach (var scope in existingScopes)
         {
-            scope.IsDeleted = true;
+            scope.SoftDelete();
         }
 
         using var scopesDocument = JsonDocument.Parse(File.ReadAllText(path));
@@ -380,7 +380,7 @@ public static class MallMockDataSeeder
                 var key = (promotionId, scopeType, target);
                 if (existingScopesByKey.TryGetValue(key, out var existingScope))
                 {
-                    existingScope.IsDeleted = false;
+                    existingScope.Restore();
                 }
                 else
                 {
@@ -527,7 +527,7 @@ public static class MallMockDataSeeder
             {
                 activity.Update(name, subtitle, coverImage, description, detailHtml, startDate, endDate, sortOrder);
                 activity.ChangeStatus(isActive);
-                activity.IsDeleted = false;
+                activity.Restore();
             }
 
             activityIdsByMockId.Add(mockId, activity.Id);
@@ -699,7 +699,7 @@ public static class MallMockDataSeeder
                     product.IsHot,
                     null);
                 product.ChangeStatus(true);
-                product.IsDeleted = false;
+                product.Restore();
             }
             else
             {
@@ -739,7 +739,7 @@ public static class MallMockDataSeeder
                         // 市场价由后台维护，种子同步时保留已有值
                         existingSku.Update(skuCode, specName, price, weightGram, stock, 5, marketPrice: existingSku.MarketPrice);
                         existingSku.ChangeStatus(true);
-                        existingSku.IsDeleted = false;
+                        existingSku.Restore();
                         skus.Add(existingSku);
                     }
                     else
@@ -791,7 +791,7 @@ public static class MallMockDataSeeder
             {
                 tag.Update(code, name, color, sortOrder);
                 tag.ChangeStatus(true);
-                tag.IsDeleted = false;
+                tag.Restore();
             }
             else
             {
@@ -837,7 +837,7 @@ public static class MallMockDataSeeder
         {
             if (!link.IsDeleted && tagCodeById.TryGetValue(link.TagId, out var code) && code.StartsWith("MOCK-TAG-", StringComparison.Ordinal))
             {
-                link.IsDeleted = true;
+                link.SoftDelete();
             }
         }
 

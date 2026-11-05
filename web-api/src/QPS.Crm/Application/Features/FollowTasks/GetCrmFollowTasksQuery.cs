@@ -39,12 +39,12 @@ public class GetCrmFollowTasksHandler : IRequestHandler<GetCrmFollowTasksQuery, 
         var now = DateTime.Now;
         var today = now.Date;
         var tomorrow = today.AddDays(1);
-        var subjects = await _dbContext.CrmHerbBaseSubjects.Where(x => !x.IsDeleted && x.OwnerUserId == ownerId)
+        var subjects = await _dbContext.CrmHerbBaseSubjects.Where(x => x.OwnerUserId == ownerId)
             .Select(x => new CrmFollowTaskDto { EntityId = x.Id, EntityType = SubjectType, EntityName = x.SubjectName ?? string.Empty, ContactName = x.PrimaryContactName ?? string.Empty, ContactPhone = x.PrimaryContactPhone ?? string.Empty, LastFollowAt = x.LastFollowAt, LastFollowResult = x.LastFollowResult ?? string.Empty, NextFollowAt = x.NextFollowAt }).ToListAsync(cancellationToken);
-        var vendors = await _dbContext.CrmVendors.Where(x => !x.IsDeleted && x.OwnerUserId == ownerId)
-            .Select(x => new CrmFollowTaskDto { EntityId = x.Id, EntityType = VendorType, EntityName = x.VendorName, ContactName = _dbContext.CrmContacts.Where(c => !c.IsDeleted && c.EntityType == VendorType && c.EntityId == x.Id && c.Status != "无效").OrderByDescending(c => c.IsPrimary).ThenBy(c => c.CreatedAt).Select(c => c.ContactName).FirstOrDefault() ?? string.Empty, ContactPhone = _dbContext.CrmContacts.Where(c => !c.IsDeleted && c.EntityType == VendorType && c.EntityId == x.Id && c.Status != "无效").OrderByDescending(c => c.IsPrimary).ThenBy(c => c.CreatedAt).Select(c => c.Phone).FirstOrDefault() ?? string.Empty, LastFollowAt = x.LastFollowAt, LastFollowResult = x.LastFollowResult, NextFollowAt = x.NextFollowAt }).ToListAsync(cancellationToken);
+        var vendors = await _dbContext.CrmVendors.Where(x => x.OwnerUserId == ownerId)
+            .Select(x => new CrmFollowTaskDto { EntityId = x.Id, EntityType = VendorType, EntityName = x.VendorName, ContactName = _dbContext.CrmContacts.Where(c => c.EntityType == VendorType && c.EntityId == x.Id && c.Status != "无效").OrderByDescending(c => c.IsPrimary).ThenBy(c => c.CreatedAt).Select(c => c.ContactName).FirstOrDefault() ?? string.Empty, ContactPhone = _dbContext.CrmContacts.Where(c => c.EntityType == VendorType && c.EntityId == x.Id && c.Status != "无效").OrderByDescending(c => c.IsPrimary).ThenBy(c => c.CreatedAt).Select(c => c.Phone).FirstOrDefault() ?? string.Empty, LastFollowAt = x.LastFollowAt, LastFollowResult = x.LastFollowResult, NextFollowAt = x.NextFollowAt }).ToListAsync(cancellationToken);
         var opportunities = await _dbContext.CrmMatchOpportunities
-            .Where(x => !x.IsDeleted && x.OwnerUserId == ownerId && x.Status == CrmMatchOpportunity.InProgress)
+            .Where(x => x.OwnerUserId == ownerId && x.Status == CrmMatchOpportunity.InProgress)
             .Select(x => new CrmFollowTaskDto
             {
                 EntityId = x.Id,

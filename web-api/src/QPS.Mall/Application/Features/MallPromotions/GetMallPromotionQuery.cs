@@ -26,7 +26,7 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
     {
         var p = await _dbContext.MallPromotions
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.PromotionId && !x.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == request.PromotionId, cancellationToken);
 
         if (p is null)
         {
@@ -34,7 +34,7 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
         }
 
         var scopes = await _dbContext.MallPromotionScopes
-            .Where(s => s.PromotionId == p.Id && !s.IsDeleted)
+            .Where(s => s.PromotionId == p.Id)
             .ToListAsync(cancellationToken);
 
         return new MallPromotionDto

@@ -48,8 +48,7 @@ public class GetCrmHerbBasesHandler : IRequestHandler<GetCrmHerbBasesQuery, Pagi
 
     public async Task<PaginationResponse<CrmHerbBaseDto>> Handle(GetCrmHerbBasesQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.CrmHerbBases
-            .Where(c => !c.IsDeleted);
+        var query = _dbContext.CrmHerbBases.AsQueryable();
 
         if (!string.IsNullOrEmpty(request.BaseName))
             query = query.Where(c => c.BaseName.Contains(request.BaseName));
@@ -174,6 +173,3 @@ public class GetCrmHerbBasesHandler : IRequestHandler<GetCrmHerbBasesQuery, Pagi
         }
     }
 }
-
-
-

@@ -166,7 +166,7 @@ internal static class MallPromotionRules
         if (promotionTagId is not { } tagId) return;
 
         var exists = await dbContext.MallTags
-            .AnyAsync(tag => tag.Id == tagId && tag.Type == MallTagType.Promotion && tag.IsActive && !tag.IsDeleted, cancellationToken);
+            .AnyAsync(tag => tag.Id == tagId && tag.Type == MallTagType.Promotion && tag.IsActive, cancellationToken);
         if (!exists)
             throw new BusinessException(400, "促销标签不存在、已停用或类型不是促销标签");
     }

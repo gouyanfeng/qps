@@ -26,7 +26,7 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
     public async Task<bool> Handle(UpdateMallProductCommand request, CancellationToken cancellationToken)
     {
         var product = await _dbContext.MallProducts
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (product is null)
         {
@@ -67,11 +67,11 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
             request.Request.FreightTemplateId);
 
         var existingLinks = await _dbContext.MallProductTags
-            .Where(link => link.ProductId == product.Id && !link.IsDeleted)
+            .Where(link => link.ProductId == product.Id)
             .ToListAsync(cancellationToken);
         foreach (var link in existingLinks)
         {
-            link.IsDeleted = true;
+            link.SoftDelete();
         }
 
         foreach (var tag in tags)

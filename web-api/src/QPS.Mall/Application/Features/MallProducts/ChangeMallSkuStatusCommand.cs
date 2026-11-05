@@ -28,7 +28,7 @@ public class ChangeMallSkuStatusHandler : IRequestHandler<ChangeMallSkuStatusCom
     public async Task<bool> Handle(ChangeMallSkuStatusCommand request, CancellationToken cancellationToken)
     {
         var sku = await _dbContext.MallSkus
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (sku is null)
         {

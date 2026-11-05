@@ -79,7 +79,6 @@
               <span v-if="!row.promotions?.length">-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="description" label="商品描述" min-width="220" show-overflow-tooltip />
           <el-table-column label="规格数" width="90" align="center">
             <template #default="{ row }">
               <el-tag size="small" type="info">{{ (row.skus || []).length }}</el-tag>
@@ -105,7 +104,7 @@
           <el-table-column label="创建时间" width="180" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="300" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" align="center" width="400" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="Goods" @click="openSkuDialog(row)">规格</el-button>
               <el-button type="primary" link :icon="EditPen" @click="openProductDialog('编辑', row)">编辑</el-button>
@@ -118,6 +117,7 @@
                 {{ row.isActive ? '下架' : '上架' }}
               </el-button>
               <el-button type="danger" link :icon="Delete" @click="deleteProduct(row)">删除</el-button>
+              <el-button type="primary" link :icon="CopyDocument" @click="copyProduct(row)">拷贝</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -502,7 +502,7 @@
 <script setup lang="ts" name="mallProduct">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { CirclePlus, EditPen, Delete, SwitchButton, Goods, Plus } from '@element-plus/icons-vue'
+import { CirclePlus, EditPen, Delete, SwitchButton, Goods, Plus, CopyDocument } from '@element-plus/icons-vue'
 import type { UploadUserFile } from 'element-plus'
 import {
   ElementTiptap,
@@ -1256,6 +1256,21 @@ const deleteProduct = async (row: any) => {
     })
     await mallProductApi.deleteProduct(row.id)
     ElMessage.success('删除商品成功')
+    queryPageRef.value?.getTableList()
+  } catch {
+    // 已取消或失败
+  }
+}
+
+const copyProduct = async (row: any) => {
+  try {
+    await ElMessageBox.confirm(`确定要拷贝商品"${row.name}"吗？拷贝后名称为"${row.name}拷贝"，默认下架。`, '拷贝商品', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+    await mallProductApi.copyProduct(row.id)
+    ElMessage.success('拷贝商品成功')
     queryPageRef.value?.getTableList()
   } catch {
     // 已取消或失败

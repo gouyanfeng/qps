@@ -29,8 +29,7 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallPromotions
-            .AsNoTracking()
-            .Where(p => !p.IsDeleted);
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
@@ -63,7 +62,7 @@ public class GetMallPromotionsHandler : IRequestHandler<GetMallPromotionsQuery, 
         var allScopes = promotionIds.Count == 0
             ? new List<Domain.Entities.MallPromotionScope>()
             : await _dbContext.MallPromotionScopes
-                .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
+                .Where(s => promotionIds.Contains(s.PromotionId))
                 .ToListAsync(cancellationToken);
 
         var scopeMap = allScopes.GroupBy(s => s.PromotionId).ToDictionary(g => g.Key, g => g.ToList());

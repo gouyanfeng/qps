@@ -31,13 +31,13 @@ public class RemoveFromMallCartHandler : IRequestHandler<RemoveFromMallCartComma
     {
         var cart = await _dbContext.MallCarts
             .FirstOrDefaultAsync(
-                c => c.UserId == command.UserId && !c.IsDeleted,
+                c => c.UserId == command.UserId,
                 cancellationToken);
 
         if (cart is null) throw new BusinessException(404, "购物车不存在");
 
         var item = await _dbContext.MallCartItems
-            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == command.SkuId && !i.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == command.SkuId, cancellationToken);
 
         if (item is not null)
         {
@@ -47,7 +47,7 @@ public class RemoveFromMallCartHandler : IRequestHandler<RemoveFromMallCartComma
         cart.Touch();
 
         var remainingCount = await _dbContext.MallCartItems
-            .CountAsync(i => i.CartId == cart.Id && !i.IsDeleted, cancellationToken);
+            .CountAsync(i => i.CartId == cart.Id, cancellationToken);
 
         if (remainingCount == 0)
         {

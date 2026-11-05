@@ -92,14 +92,13 @@ internal static class CrmVendorDemands
     {
         var latestPlan = await dbContext.CrmVendorDemands
             .Where(plan =>
-                !plan.IsDeleted &&
                 plan.VendorId == vendor.Id &&
                 (!excludedPlanId.HasValue || plan.Id != excludedPlanId.Value))
             .OrderByDescending(plan => plan.DemandAt)
             .ThenByDescending(plan => plan.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (candidatePlan is { IsDeleted: false } &&
+        if (candidatePlan is not null &&
             candidatePlan.VendorId == vendor.Id &&
             (!excludedPlanId.HasValue || candidatePlan.Id != excludedPlanId.Value) &&
             IsLater(candidatePlan, latestPlan))

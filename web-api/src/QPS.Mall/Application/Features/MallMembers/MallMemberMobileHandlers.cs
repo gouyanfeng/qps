@@ -32,7 +32,7 @@ public class GetMallMemberPointLogsHandler : IRequestHandler<GetMallMemberPointL
     {
         return await _db.MallMemberPoints
             .AsNoTracking()
-            .Where(x => x.MemberId == req.MemberId && !x.IsDeleted)
+            .Where(x => x.MemberId == req.MemberId)
             .OrderByDescending(x => x.CreatedAt)
             .Take(req.Limit)
             .Select(x => new MallMemberPointLogDto
@@ -101,7 +101,7 @@ public class GetMallMemberOrderBadgeHandler : IRequestHandler<GetMallMemberOrder
     {
         var counts = await _db.MallOrders
             .AsNoTracking()
-            .Where(x => x.MemberId == req.MemberId && !x.IsDeleted)
+            .Where(x => x.MemberId == req.MemberId)
             .Select(x => x.Status)
             .GroupBy(status => status)
             .Select(group => new { Status = group.Key, Count = group.Count() })

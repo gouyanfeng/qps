@@ -16,7 +16,7 @@ internal static class MallOrderDetailLoader
         CancellationToken cancellationToken)
     {
         var dto = await dbContext.MallOrders
-            .Where(order => order.Id == orderId && !order.IsDeleted)
+            .Where(order => order.Id == orderId)
             .Select(order => new MallOrderDetailDto
             {
                     Id = order.Id,
@@ -50,7 +50,7 @@ internal static class MallOrderDetailLoader
 
         dto.Items = await (
             from item in dbContext.MallOrderItems.AsNoTracking()
-            where item.OrderId == orderId && !item.IsDeleted
+            where item.OrderId == orderId
             join p in dbContext.MallProducts.AsNoTracking() on item.ProductId equals p.Id into products
             from p in products.DefaultIfEmpty()
             orderby item.CreatedAt
@@ -97,7 +97,7 @@ internal static class MallOrderDetailLoader
 
         dto.Payments = await dbContext.MallPayments
             .AsNoTracking()
-            .Where(payment => payment.OrderId == orderId && !payment.IsDeleted)
+            .Where(payment => payment.OrderId == orderId)
             .OrderBy(payment => payment.CreatedAt)
             .Select(payment => new MallPaymentDto
             {
@@ -115,7 +115,7 @@ internal static class MallOrderDetailLoader
 
         dto.Refunds = await dbContext.MallRefunds
             .AsNoTracking()
-            .Where(refund => refund.OrderId == orderId && !refund.IsDeleted)
+            .Where(refund => refund.OrderId == orderId)
             .OrderBy(refund => refund.CreatedAt)
             .Select(refund => new MallRefundDto
             {
@@ -132,7 +132,7 @@ internal static class MallOrderDetailLoader
 
         dto.Shipment = await dbContext.MallShipments
             .AsNoTracking()
-            .Where(shipment => shipment.OrderId == orderId && !shipment.IsDeleted)
+            .Where(shipment => shipment.OrderId == orderId)
             .Select(shipment => new MallShipmentDto
             {
                 Id = shipment.Id,

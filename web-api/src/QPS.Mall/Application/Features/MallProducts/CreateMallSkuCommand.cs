@@ -29,7 +29,7 @@ public class CreateMallSkuHandler : IRequestHandler<CreateMallSkuCommand, bool>
     public async Task<bool> Handle(CreateMallSkuCommand request, CancellationToken cancellationToken)
     {
         var productExists = await _dbContext.MallProducts.AnyAsync(
-            product => product.Id == request.ProductId && !product.IsDeleted,
+            product => product.Id == request.ProductId,
             cancellationToken);
 
         if (!productExists)

@@ -23,7 +23,7 @@ public class DeleteCrmVendorDemandHandler : IRequestHandler<DeleteCrmVendorDeman
     public async Task<bool> Handle(DeleteCrmVendorDemandCommand request, CancellationToken cancellationToken)
     {
         var plan = await _dbContext.CrmVendorDemands
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
         if (plan == null)
         {
             throw new BusinessException(404, "采购需求不存在");
@@ -32,7 +32,7 @@ public class DeleteCrmVendorDemandHandler : IRequestHandler<DeleteCrmVendorDeman
             ?? throw new BusinessException(404, "厂商不存在");
 
         await CrmVendorDemands.EnsureNoUnclosedMatchOpportunitiesAsync(_dbContext, plan.Id, cancellationToken);
-        plan.IsDeleted = true;
+        plan.SoftDelete();
         await CrmVendorDemands.RefreshLatestAsync(_dbContext, vendor, cancellationToken, excludedPlanId: plan.Id);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

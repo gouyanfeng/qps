@@ -35,7 +35,7 @@ public class GetMallRefundsHandler : IRequestHandler<GetMallRefundsQuery, Pagina
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallRefunds
-            .Where(r => !r.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Status))

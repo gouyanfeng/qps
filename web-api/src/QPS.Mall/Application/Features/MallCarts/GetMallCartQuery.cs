@@ -27,7 +27,7 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
     {
         var cart = await _dbContext.MallCarts
             .FirstOrDefaultAsync(
-                c => c.UserId == request.UserId && !c.IsDeleted,
+                c => c.UserId == request.UserId,
                 cancellationToken);
 
         if (cart is null)
@@ -42,7 +42,7 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         }
 
         var cartItems = await _dbContext.MallCartItems
-            .Where(i => i.CartId == cart.Id && !i.IsDeleted)
+            .Where(i => i.CartId == cart.Id)
             .OrderBy(i => i.CreatedAt)
             .ToListAsync(cancellationToken);
 
@@ -63,7 +63,7 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         var skuRows = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
-                where skuIds.Contains(sku.Id) && !sku.IsDeleted && !product.IsDeleted
+                where skuIds.Contains(sku.Id)
                 select new { Sku = sku, Product = product })
             .ToListAsync(cancellationToken);
 

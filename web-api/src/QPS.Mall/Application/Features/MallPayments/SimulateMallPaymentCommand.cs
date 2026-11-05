@@ -67,8 +67,7 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
             item =>
                 item.OrderId == payment.OrderId &&
                 item.Status == MallPaymentStatus.Success &&
-                item.Id != payment.Id &&
-                !item.IsDeleted,
+                item.Id != payment.Id,
             cancellationToken);
 
         if (alreadyPaid)
@@ -77,7 +76,7 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
         }
 
         var order = await _dbContext.MallOrders
-            .FirstOrDefaultAsync(item => item.Id == payment.OrderId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == payment.OrderId, cancellationToken);
 
         if (order is null)
         {
@@ -102,7 +101,7 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
         {
             payment = await _dbContext.MallPayments
                 .FirstOrDefaultAsync(
-                    item => item.Id == command.PaymentId.Value && !item.IsDeleted,
+                    item => item.Id == command.PaymentId.Value,
                     cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(command.PaymentNo))
@@ -110,7 +109,7 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
             var paymentNo = command.PaymentNo.Trim();
             payment = await _dbContext.MallPayments
                 .FirstOrDefaultAsync(
-                    item => item.PaymentNo == paymentNo && !item.IsDeleted,
+                    item => item.PaymentNo == paymentNo,
                     cancellationToken);
         }
         else

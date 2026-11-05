@@ -75,13 +75,13 @@ public class ApproveMallReturnHandler : IRequestHandler<ApproveMallReturnCommand
         if (command.ReturnId.HasValue)
         {
             r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value, cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(command.ReturnNo))
         {
             var normalized = command.ReturnNo.Trim();
             r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.ReturnNo == normalized && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.ReturnNo == normalized, cancellationToken);
         }
         else
         {

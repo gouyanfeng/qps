@@ -26,7 +26,7 @@ public class UpdateCrmVendorDemandHandler : IRequestHandler<UpdateCrmVendorDeman
     public async Task<bool> Handle(UpdateCrmVendorDemandCommand request, CancellationToken cancellationToken)
     {
         var vendor = await _dbContext.CrmVendors
-            .FirstOrDefaultAsync(item => item.Id == request.Request.VendorId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Request.VendorId, cancellationToken);
         if (vendor == null)
         {
             throw new BusinessException(404, "厂商不存在");
@@ -34,7 +34,7 @@ public class UpdateCrmVendorDemandHandler : IRequestHandler<UpdateCrmVendorDeman
 
         var plan = await _dbContext.CrmVendorDemands
             .Include(item => item.Items)
-            .FirstOrDefaultAsync(item => item.Id == request.Id && item.VendorId == request.Request.VendorId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id && item.VendorId == request.Request.VendorId, cancellationToken);
         if (plan == null)
         {
             throw new BusinessException(404, "采购需求不存在");

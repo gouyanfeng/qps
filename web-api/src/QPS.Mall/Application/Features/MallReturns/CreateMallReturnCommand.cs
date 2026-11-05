@@ -45,7 +45,7 @@ public class CreateMallReturnHandler : IRequestHandler<CreateMallReturnCommand, 
 
         var existingReturn = await _dbContext.MallReturns
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.OrderId == order.Id && !r.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(r => r.OrderId == order.Id, cancellationToken);
 
         if (existingReturn != null && existingReturn.Status != MallReturnStatus.Rejected)
         {
@@ -54,7 +54,7 @@ public class CreateMallReturnHandler : IRequestHandler<CreateMallReturnCommand, 
 
         var payment = await _dbContext.MallPayments
             .AsNoTracking()
-            .Where(p => p.OrderId == order.Id && p.Status == MallPaymentStatus.Success && !p.IsDeleted)
+            .Where(p => p.OrderId == order.Id && p.Status == MallPaymentStatus.Success)
             .Select(p => new { p.Id, p.Amount })
             .FirstOrDefaultAsync(cancellationToken);
 

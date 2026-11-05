@@ -28,7 +28,7 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
         var request = command.Request;
 
         var template = await _dbContext.MallFreightTemplates
-            .FirstOrDefaultAsync(t => t.Id == command.TemplateId && !t.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == command.TemplateId, cancellationToken);
 
         if (template is null)
         {
@@ -42,7 +42,7 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
         template.Update(request.Name, request.BillingType, request.IsDefault, request.IsActive);
 
         var existingRegions = await _dbContext.MallFreightRegions
-            .Where(r => r.TemplateId == template.Id && !r.IsDeleted)
+            .Where(r => r.TemplateId == template.Id)
             .ToListAsync(cancellationToken);
 
         var existingRegionMap = existingRegions.ToDictionary(r => r.Id);
@@ -90,7 +90,7 @@ public class UpdateMallFreightTemplateHandler : IRequestHandler<UpdateMallFreigh
         if (request.IsDefault)
         {
             var existingDefaults = await _dbContext.MallFreightTemplates
-                .Where(t => t.IsDefault && !t.IsDeleted)
+                .Where(t => t.IsDefault)
                 .ToListAsync(cancellationToken);
 
             foreach (var existing in existingDefaults)

@@ -22,7 +22,7 @@ public class DeleteMallActivityHandler : IRequestHandler<DeleteMallActivityComma
     public async Task<bool> Handle(DeleteMallActivityCommand command, CancellationToken cancellationToken)
     {
         var activity = await _dbContext.MallActivities
-            .FirstOrDefaultAsync(item => item.Id == command.ActivityId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == command.ActivityId, cancellationToken);
 
         if (activity is null)
         {
@@ -30,7 +30,7 @@ public class DeleteMallActivityHandler : IRequestHandler<DeleteMallActivityComma
         }
 
         activity.ChangeStatus(false);
-        activity.IsDeleted = true;
+        activity.SoftDelete();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

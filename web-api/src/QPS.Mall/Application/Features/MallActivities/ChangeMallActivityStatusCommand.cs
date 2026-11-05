@@ -27,7 +27,7 @@ public class ChangeMallActivityStatusHandler : IRequestHandler<ChangeMallActivit
     {
         var activity = await _dbContext.MallActivities
             .FirstOrDefaultAsync(
-                item => item.Id == command.ActivityId && !item.IsDeleted,
+                item => item.Id == command.ActivityId,
                 cancellationToken);
 
         if (activity is null)

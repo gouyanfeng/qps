@@ -32,7 +32,7 @@ public class DeleteMallProductReviewHandler : IRequestHandler<DeleteMallProductR
             throw new BusinessException(404, "评价不存在");
         }
 
-        review.IsDeleted = true;
+        review.SoftDelete();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

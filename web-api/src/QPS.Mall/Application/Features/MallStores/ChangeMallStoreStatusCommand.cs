@@ -28,7 +28,7 @@ public class ChangeMallStoreStatusHandler : IRequestHandler<ChangeMallStoreStatu
     public async Task<bool> Handle(ChangeMallStoreStatusCommand request, CancellationToken cancellationToken)
     {
         var store = await _dbContext.MallStores
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (store is null)
         {

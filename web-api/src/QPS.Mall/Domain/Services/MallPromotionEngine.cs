@@ -24,7 +24,7 @@ public class MallPromotionEngine
 
         foreach (var p in promotions)
         {
-            if (!p.IsActive || p.IsDeleted) continue;
+            if (!p.IsActive) continue;
 
             if (p.MaxUsagePerUser > 0
                 && ctx.UserId.HasValue

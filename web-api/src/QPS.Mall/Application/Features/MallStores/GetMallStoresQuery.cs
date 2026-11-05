@@ -43,7 +43,7 @@ public class GetMallStoresHandler : IRequestHandler<GetMallStoresQuery, Paginati
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallStores
-            .Where(store => !store.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))

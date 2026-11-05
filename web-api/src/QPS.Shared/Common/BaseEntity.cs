@@ -27,6 +27,14 @@ public abstract class BaseEntity
         IsDeleted = true;
     }
 
+    /// <summary>
+    /// 恢复已软删除的实体，仅用于数据初始化等需要查全量的场景。
+    /// </summary>
+    public void Restore()
+    {
+        IsDeleted = false;
+    }
+
     public override bool Equals(object obj)
     {
         if (obj == null || !(obj is BaseEntity))

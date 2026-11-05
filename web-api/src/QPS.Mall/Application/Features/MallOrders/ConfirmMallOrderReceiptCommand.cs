@@ -38,7 +38,7 @@ public class ConfirmMallOrderReceiptHandler : IRequestHandler<ConfirmMallOrderRe
         order.MarkCompleted();
 
         var shipment = await _dbContext.MallShipments
-            .FirstOrDefaultAsync(item => item.OrderId == order.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.OrderId == order.Id, cancellationToken);
 
         shipment?.MarkDelivered();
 

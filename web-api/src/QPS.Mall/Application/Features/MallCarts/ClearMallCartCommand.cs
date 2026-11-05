@@ -23,7 +23,7 @@ public class ClearMallCartHandler : IRequestHandler<ClearMallCartCommand, bool>
     {
         var cart = await _dbContext.MallCarts
             .FirstOrDefaultAsync(
-                c => c.UserId == command.UserId && !c.IsDeleted,
+                c => c.UserId == command.UserId,
                 cancellationToken);
 
         if (cart is null) return true;

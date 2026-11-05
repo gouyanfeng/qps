@@ -37,7 +37,7 @@ public class MallProductPromotionEnricher
         var promotionScopeMap = promotionIds.Count == 0
             ? new Dictionary<Guid, List<MallPromotionScope>>()
             : await _dbContext.MallPromotionScopes
-                .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
+                .Where(s => promotionIds.Contains(s.PromotionId))
                 .GroupBy(s => s.PromotionId)
                 .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
 
@@ -51,7 +51,7 @@ public class MallProductPromotionEnricher
             ? new Dictionary<Guid, MallTag>()
             : await _dbContext.MallTags
                 .AsNoTracking()
-                .Where(t => promotionTagIds.Contains(t.Id) && t.Type == MallTagType.Promotion && t.IsActive && !t.IsDeleted)
+                .Where(t => promotionTagIds.Contains(t.Id) && t.Type == MallTagType.Promotion && t.IsActive)
                 .ToDictionaryAsync(t => t.Id, cancellationToken);
 
         foreach (var product in products)
@@ -115,7 +115,7 @@ public class MallProductPromotionEnricher
         {
             var categories = await _dbContext.MallCategories
                 .AsNoTracking()
-                .Where(category => pendingIds.Contains(category.Id) && !category.IsDeleted)
+                .Where(category => pendingIds.Contains(category.Id))
                 .Select(category => new { category.Id, category.ParentId })
                 .ToListAsync(cancellationToken);
             pendingIds.Clear();

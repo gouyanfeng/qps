@@ -55,7 +55,7 @@ public class BatchAdjustMallSkusHandler : IRequestHandler<BatchAdjustMallSkusCom
         var remark = MallStockRules.NormalizeRemark(request.Request.Remark);
 
         var skus = await _dbContext.MallSkus
-            .Where(sku => ids.Contains(sku.Id) && !sku.IsDeleted)
+            .Where(sku => ids.Contains(sku.Id))
             .ToListAsync(cancellationToken);
 
         if (skus.Count != ids.Count)

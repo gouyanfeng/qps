@@ -26,7 +26,7 @@ public class GetPermissionTreeHandler : IRequestHandler<GetPermissionTreeQuery, 
     public async Task<List<PermissionTreeNodeDto>> Handle(GetPermissionTreeQuery request, CancellationToken cancellationToken)
     {
         var permissions = await _dbContext.SystemPermissions
-            .Where(p => !p.IsDeleted)
+            
             .ToListAsync(cancellationToken);
 
         // 构建树：根节点（ParentId 为 null）

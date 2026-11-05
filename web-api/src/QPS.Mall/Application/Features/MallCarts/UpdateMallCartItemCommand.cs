@@ -31,19 +31,19 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
 
         var cart = await _dbContext.MallCarts
             .FirstOrDefaultAsync(
-                c => c.UserId == req.UserId && !c.IsDeleted,
+                c => c.UserId == req.UserId,
                 cancellationToken);
 
         if (cart is null) throw new BusinessException(404, "购物车不存在");
 
         var item = await _dbContext.MallCartItems
-            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == req.SkuId && !i.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == req.SkuId, cancellationToken);
         if (item is null) throw new BusinessException(400, "购物车中没有该商品");
 
         if (req.Quantity > 0)
         {
             var sku = await _dbContext.MallSkus
-                .FirstOrDefaultAsync(s => s.Id == req.SkuId && !s.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(s => s.Id == req.SkuId, cancellationToken);
             if (sku is null) throw new BusinessException(404, "商品规格不存在");
             if (sku.Stock < req.Quantity)
                 throw new BusinessException(400, $"库存不足，仅剩 {sku.Stock}");
@@ -58,7 +58,7 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
         cart.Touch();
 
         var remainingCount = await _dbContext.MallCartItems
-            .CountAsync(i => i.CartId == cart.Id && !i.IsDeleted, cancellationToken);
+            .CountAsync(i => i.CartId == cart.Id, cancellationToken);
 
         if (remainingCount == 0)
         {

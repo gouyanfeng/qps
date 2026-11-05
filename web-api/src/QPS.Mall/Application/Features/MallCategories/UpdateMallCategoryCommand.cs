@@ -28,7 +28,7 @@ public class UpdateMallCategoryHandler : IRequestHandler<UpdateMallCategoryComma
     public async Task<bool> Handle(UpdateMallCategoryCommand request, CancellationToken cancellationToken)
     {
         var category = await _dbContext.MallCategories
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (category is null)
         {

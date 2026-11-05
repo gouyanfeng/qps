@@ -49,12 +49,12 @@ public class ShipMallReturnHandler : IRequestHandler<ShipMallReturnCommand, Mall
         if (command.ReturnId.HasValue)
         {
             r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value, cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(command.ReturnNo))
         {
             r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.ReturnNo == command.ReturnNo.Trim() && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.ReturnNo == command.ReturnNo.Trim(), cancellationToken);
         }
         else
         {

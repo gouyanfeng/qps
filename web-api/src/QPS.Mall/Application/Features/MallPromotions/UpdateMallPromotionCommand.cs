@@ -38,7 +38,7 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             cancellationToken);
 
         var promotion = await _dbContext.MallPromotions
-            .FirstOrDefaultAsync(p => p.Id == command.PromotionId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == command.PromotionId, cancellationToken);
 
         if (promotion is null)
         {
@@ -67,7 +67,7 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
 
         foreach (var scope in existingScopes)
         {
-            scope.IsDeleted = true;
+            scope.SoftDelete();
         }
 
         foreach (var scopeReq in req.Scopes.Where(_ => req.ScopeType != "Global"))

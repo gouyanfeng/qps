@@ -17,7 +17,7 @@ public static class CrmHerbBaseSubjectScoreInputBuilder
         }
 
         var bases = await dbContext.CrmHerbBases
-            .Where(item => item.HerbBaseSubjectId == subjectId && !item.IsDeleted)
+            .Where(item => item.HerbBaseSubjectId == subjectId)
             .Select(item => new
             {
                 item.Id,
@@ -36,7 +36,6 @@ public static class CrmHerbBaseSubjectScoreInputBuilder
             ? 0
             : await dbContext.CrmHerbBaseSupplies
                 .Where(item =>
-                    !item.IsDeleted &&
                     baseIds.Contains(item.HerbBaseId) &&
                     !string.IsNullOrWhiteSpace(item.ProductName))
                 .Select(item => item.ProductName)
@@ -45,7 +44,6 @@ public static class CrmHerbBaseSubjectScoreInputBuilder
 
         var contacts = await dbContext.CrmContacts
             .Where(item =>
-                !item.IsDeleted &&
                 item.EntityType == CrmCodes.HerbBaseSubjectEntityType &&
                 item.EntityId == subjectId)
             .Select(item => new

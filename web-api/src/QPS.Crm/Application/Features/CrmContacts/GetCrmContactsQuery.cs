@@ -37,7 +37,7 @@ public class GetCrmContactsHandler : IRequestHandler<GetCrmContactsQuery, List<C
         await EnsureTargetExists(target, cancellationToken);
 
         return await _dbContext.CrmContacts
-            .Where(c => !c.IsDeleted && c.EntityType == target.EntityType && c.EntityId == target.EntityId)
+            .Where(c => c.EntityType == target.EntityType && c.EntityId == target.EntityId)
             .OrderByDescending(c => c.IsPrimary)
             .ThenBy(c => c.CreatedAt)
             .Select(c => new CrmContactDto
@@ -64,9 +64,9 @@ public class GetCrmContactsHandler : IRequestHandler<GetCrmContactsQuery, List<C
         var exists = target.EntityType switch
         {
             CrmCodes.HerbBaseSubjectEntityType => await _dbContext.CrmHerbBaseSubjects
-                .AnyAsync(subject => subject.Id == target.EntityId && !subject.IsDeleted, cancellationToken),
+                .AnyAsync(subject => subject.Id == target.EntityId, cancellationToken),
             CrmCodes.VendorEntityType => await _dbContext.CrmVendors
-                .AnyAsync(vendor => vendor.Id == target.EntityId && !vendor.IsDeleted, cancellationToken),
+                .AnyAsync(vendor => vendor.Id == target.EntityId, cancellationToken),
             _ => false
         };
 

@@ -29,8 +29,7 @@ public class GetChinaRegionsQueryHandler : IRequestHandler<GetChinaRegionsQuery,
     public async Task<PaginationResponse<ChinaRegionDto>> Handle(GetChinaRegionsQuery request, CancellationToken cancellationToken)
     {
         var query = _dbContext.SystemChinaRegions
-            .AsNoTracking()
-            .Where(region => !region.IsDeleted);
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Code))
         {

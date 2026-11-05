@@ -85,7 +85,7 @@ public class CreateCrmVendorHandler : IRequestHandler<CreateCrmVendorCommand, bo
     {
         var exists = await _dbContext.CrmVendors
             .AnyAsync(
-                vendor => !vendor.IsDeleted && vendor.NormalizedVendorName == normalizedVendorName,
+                vendor => vendor.NormalizedVendorName == normalizedVendorName,
                 cancellationToken);
 
         if (exists)

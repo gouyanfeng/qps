@@ -45,7 +45,7 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
         var pageSize = request.PageSize < 1 ? 10 : request.PageSize;
 
         var query = _dbContext.MallProducts
-            .Where(product => !product.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -56,12 +56,10 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
                 product.Name.Contains(keyword) ||
                 _dbContext.MallProductTags.Any(pt =>
                     pt.ProductId == product.Id &&
-                    !pt.IsDeleted &&
                     _dbContext.MallTags.Any(tag =>
                         tag.Id == pt.TagId &&
                         tag.Name.Contains(keyword) &&
-                        tag.IsActive &&
-                        !tag.IsDeleted)));
+                        tag.IsActive)));
         }
 
         if (request.StoreId.HasValue && request.StoreId.Value != Guid.Empty)
@@ -97,12 +95,10 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
             query = query.Where(product =>
                 _dbContext.MallProductTags.Any(pt =>
                     pt.ProductId == product.Id &&
-                    !pt.IsDeleted &&
                     _dbContext.MallTags.Any(tag =>
                         tag.Id == pt.TagId &&
                         tag.Code == tagCode &&
-                        tag.IsActive &&
-                        !tag.IsDeleted)));
+                        tag.IsActive)));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -114,7 +110,7 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
                 .ThenBy(product => product.SortOrder),
             "price" => query
                 .OrderBy(product => _dbContext.MallSkus
-                    .Where(sku => sku.ProductId == product.Id && !sku.IsDeleted && sku.IsActive)
+                    .Where(sku => sku.ProductId == product.Id && sku.IsActive)
                     .Min(sku => (decimal?)sku.Price))
                 .ThenBy(product => product.SortOrder),
             _ => query
@@ -148,7 +144,7 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
         {
             var skusByProduct = await _dbContext.MallSkus
                 .AsNoTracking()
-                .Where(sku => productIds.Contains(sku.ProductId) && sku.IsActive && !sku.IsDeleted)
+                .Where(sku => productIds.Contains(sku.ProductId) && sku.IsActive)
                 .OrderBy(sku => sku.CreatedAt)
                 .Select(sku => new MallSkuDto
                 {
@@ -176,7 +172,7 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
 
             var tagsByProduct = await (from pt in _dbContext.MallProductTags
                                        join tag in _dbContext.MallTags on pt.TagId equals tag.Id
-                                       where productIds.Contains(pt.ProductId) && !pt.IsDeleted && tag.IsActive && !tag.IsDeleted
+                                       where productIds.Contains(pt.ProductId) && tag.IsActive
                                        select new
                                        {
                                            ProductId = pt.ProductId,

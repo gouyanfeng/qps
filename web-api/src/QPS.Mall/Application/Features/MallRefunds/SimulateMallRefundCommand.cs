@@ -44,7 +44,7 @@ public class SimulateMallRefundHandler : IRequestHandler<SimulateMallRefundComma
         }
 
         var order = await _dbContext.MallOrders
-            .FirstOrDefaultAsync(item => item.Id == refund.OrderId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == refund.OrderId, cancellationToken);
 
         if (order is null)
         {
@@ -91,7 +91,7 @@ public class SimulateMallRefundHandler : IRequestHandler<SimulateMallRefundComma
         {
             refund = await _dbContext.MallRefunds
                 .FirstOrDefaultAsync(
-                    item => item.Id == command.RefundId.Value && !item.IsDeleted,
+                    item => item.Id == command.RefundId.Value,
                     cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(command.RefundNo))
@@ -99,7 +99,7 @@ public class SimulateMallRefundHandler : IRequestHandler<SimulateMallRefundComma
             var refundNo = command.RefundNo.Trim();
             refund = await _dbContext.MallRefunds
                 .FirstOrDefaultAsync(
-                    item => item.RefundNo == refundNo && !item.IsDeleted,
+                    item => item.RefundNo == refundNo,
                     cancellationToken);
         }
         else

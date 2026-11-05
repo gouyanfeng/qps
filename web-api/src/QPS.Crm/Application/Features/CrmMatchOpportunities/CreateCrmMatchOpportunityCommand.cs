@@ -45,7 +45,7 @@ public class CreateCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IReques
             throw new BusinessException(400, "该采购明细已有未关闭的撮合机会");
         }
 
-        var vendor = await dbContext.CrmVendors.FirstOrDefaultAsync(item => item.Id == demand.VendorId && !item.IsDeleted, cancellationToken)
+        var vendor = await dbContext.CrmVendors.FirstOrDefaultAsync(item => item.Id == demand.VendorId, cancellationToken)
             ?? throw new BusinessException(404, "需求厂商不存在");
         var supplies = await CrmMatchOpportunitySource.LoadEligibleSuppliesAsync(dbContext, request.SupplyIds, cancellationToken);
 

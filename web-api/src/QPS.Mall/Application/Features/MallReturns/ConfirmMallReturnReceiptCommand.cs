@@ -36,7 +36,7 @@ public class ConfirmMallReturnReceiptHandler : IRequestHandler<ConfirmMallReturn
         }
 
         var order = await _dbContext.MallOrders
-            .FirstOrDefaultAsync(o => o.Id == returnEntity.OrderId && !o.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(o => o.Id == returnEntity.OrderId, cancellationToken);
 
         if (order is null)
         {
@@ -86,13 +86,13 @@ public class ConfirmMallReturnReceiptHandler : IRequestHandler<ConfirmMallReturn
         if (command.ReturnId.HasValue)
         {
             r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value, cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(command.ReturnNo))
         {
             var normalized = command.ReturnNo.Trim();
             r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.ReturnNo == normalized && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.ReturnNo == normalized, cancellationToken);
         }
         else
         {

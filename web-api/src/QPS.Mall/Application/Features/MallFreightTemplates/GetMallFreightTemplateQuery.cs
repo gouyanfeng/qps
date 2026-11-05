@@ -25,7 +25,7 @@ public class GetMallFreightTemplateHandler : IRequestHandler<GetMallFreightTempl
         CancellationToken cancellationToken)
     {
         var template = await _dbContext.MallFreightTemplates
-            .FirstOrDefaultAsync(t => t.Id == request.TemplateId && !t.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == request.TemplateId, cancellationToken);
 
         if (template is null)
         {
@@ -33,7 +33,7 @@ public class GetMallFreightTemplateHandler : IRequestHandler<GetMallFreightTempl
         }
 
         var regions = await _dbContext.MallFreightRegions
-            .Where(r => r.TemplateId == request.TemplateId && !r.IsDeleted)
+            .Where(r => r.TemplateId == request.TemplateId)
             .OrderBy(r => r.IsDefaultRegion ? 1 : 0)
             .ThenBy(r => r.RegionName)
             .Select(r => new MallFreightRegionDto

@@ -120,6 +120,7 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
 
     public override int SaveChanges()
     {
+        ApplySoftDelete();
         AddOperationLogs();
         SetAuditFields();
         return base.SaveChanges();
@@ -127,10 +128,33 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        ApplySoftDelete();
         AddOperationLogs();
         SetAuditFields();
 
         return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void ApplySoftDelete()
+    {
+        var entries = ChangeTracker.Entries<BaseEntity>()
+            .Where(entry => entry.State == EntityState.Deleted)
+            .Where(entry => entry.Entity is not SystemOperationLog)
+            .Where(entry => entry.Entity is not SystemErrorLog)
+            .ToList();
+
+        foreach (var entry in entries)
+        {
+            entry.State = EntityState.Modified;
+            entry.Entity.SoftDelete();
+
+            foreach (var property in entry.Properties)
+            {
+                property.IsModified = property.Metadata.Name is nameof(BaseEntity.IsDeleted)
+                    or nameof(BaseEntity.UpdatedAt)
+                    or nameof(BaseEntity.UpdatedBy);
+            }
+        }
     }
 
     private void SetAuditFields()

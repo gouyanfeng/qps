@@ -57,7 +57,7 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
         GetMallOrdersQuery request,
         CancellationToken cancellationToken)
     {
-        var query = _dbContext.MallOrders.Where(order => !order.IsDeleted);
+        var query = _dbContext.MallOrders.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
@@ -99,7 +99,7 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
             ReceiverPhone = order.ReceiverPhone,
             GoodsAmount = order.GoodsAmount,
             PromotionDiscountAmount = _dbContext.MallOrderItems
-                .Where(orderItem => orderItem.OrderId == order.Id && !orderItem.IsDeleted &&
+                .Where(orderItem => orderItem.OrderId == order.Id &&
                                     !orderItem.IsGift && orderItem.OriginalUnitPrice.HasValue)
                 .Sum(orderItem => (orderItem.OriginalUnitPrice!.Value - orderItem.UnitPrice) * orderItem.Quantity),
             FreightAmount = order.FreightAmount,
@@ -121,7 +121,7 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
         {
             var items = await (
                 from i in _dbContext.MallOrderItems.AsNoTracking()
-                where orderIds.Contains(i.OrderId) && !i.IsDeleted
+                where orderIds.Contains(i.OrderId)
                 join p in _dbContext.MallProducts.AsNoTracking() on i.ProductId equals p.Id into products
                 from p in products.DefaultIfEmpty()
                 orderby i.CreatedAt

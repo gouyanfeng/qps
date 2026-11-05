@@ -105,7 +105,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var address = await _dbContext.MallAddresses
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == request.AddressId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.AddressId, cancellationToken);
         if (address is null || address.UserId != request.MemberId)
         {
             throw new BusinessException(400, "收货地址不存在或已删除，请重新选择");
@@ -123,7 +123,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         var rows = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
-                where ids.Contains(sku.Id) && !sku.IsDeleted && !product.IsDeleted
+                where ids.Contains(sku.Id)
                 select new { Sku = sku, Product = product })
             .ToListAsync(cancellationToken);
 
@@ -186,7 +186,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
     {
         return await _dbContext.MallFreightTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive && !t.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, cancellationToken);
     }
 
     /// <summary>装配促销阶段数据：有效促销、范围表与促销引擎订单上下文。</summary>
@@ -211,7 +211,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         var scopeMap = promotionIds.Count == 0
             ? new Dictionary<Guid, List<MallPromotionScope>>()
             : await _dbContext.MallPromotionScopes
-                .Where(s => promotionIds.Contains(s.PromotionId) && !s.IsDeleted)
+                .Where(s => promotionIds.Contains(s.PromotionId))
                 .GroupBy(s => s.PromotionId)
                 .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
 
@@ -260,7 +260,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             var usagePromotionIds = activePromotions.Select(p => p.Id).ToList();
             var usages = await _dbContext.MallPromotionUsages
                 .AsNoTracking()
-                .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == memberId && !u.IsDeleted)
+                .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == memberId)
                 .ToListAsync(cancellationToken);
             orderCtx.PromotionUsageMap = usages.ToDictionary(u => u.PromotionId, u => u.UsageCount);
         }
@@ -351,13 +351,13 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var templates = await _dbContext.MallFreightTemplates
             .AsNoTracking()
-            .Where(t => templateIds.Contains(t.Id) && !t.IsDeleted)
+            .Where(t => templateIds.Contains(t.Id))
             .ToListAsync(cancellationToken);
         context.FreightTemplateMap = templates.ToDictionary(t => t.Id);
 
         var regions = await _dbContext.MallFreightRegions
             .AsNoTracking()
-            .Where(r => templateIds.Contains(r.TemplateId) && !r.IsDeleted)
+            .Where(r => templateIds.Contains(r.TemplateId))
             .ToListAsync(cancellationToken);
         context.FreightRegionMap = regions.GroupBy(r => r.TemplateId)
             .ToDictionary(g => g.Key, g => g.OrderBy(r => r.IsDefaultRegion).ToList());
@@ -426,7 +426,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         var orderNo = MallNumberGenerator.Generate("ORD");
 
         var orderNoExists = await _dbContext.MallOrders
-            .AnyAsync(order => order.OrderNo == orderNo && !order.IsDeleted, cancellationToken);
+            .AnyAsync(order => order.OrderNo == orderNo, cancellationToken);
         if (orderNoExists)
         {
             throw new BusinessException(400, "订单号已存在");
@@ -555,7 +555,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             .ToList();
         var usagePromotionIds = usageTargets.Select(p => p.Id).ToList();
         var existingUsages = await _dbContext.MallPromotionUsages
-            .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == orderCtx.UserId.Value && !u.IsDeleted)
+            .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == orderCtx.UserId.Value)
             .ToListAsync(cancellationToken);
 
         var usageDict = existingUsages.ToDictionary(u => u.PromotionId);

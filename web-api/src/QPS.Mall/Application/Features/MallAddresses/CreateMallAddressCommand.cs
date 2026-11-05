@@ -29,7 +29,7 @@ public class CreateMallAddressHandler : IRequestHandler<CreateMallAddressCommand
         if (req.IsDefault && req.UserId.HasValue)
         {
             var existingDefaults = await _dbContext.MallAddresses
-                .Where(a => a.UserId == req.UserId.Value && a.IsDefault && !a.IsDeleted)
+                .Where(a => a.UserId == req.UserId.Value && a.IsDefault)
                 .ToListAsync(cancellationToken);
 
             foreach (var a in existingDefaults) a.SetDefault(false);

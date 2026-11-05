@@ -27,7 +27,7 @@ public class GetMallStoreHandler : IRequestHandler<GetMallStoreQuery, MallStoreD
     {
         var dto = await _dbContext.MallStores
             .AsNoTracking()
-            .Where(store => store.Id == request.Id && !store.IsDeleted)
+            .Where(store => store.Id == request.Id)
             .Select(store => new MallStoreDto
             {
                 Id = store.Id,

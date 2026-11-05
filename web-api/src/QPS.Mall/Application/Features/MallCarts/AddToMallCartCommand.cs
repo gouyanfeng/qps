@@ -33,7 +33,7 @@ public class AddToMallCartHandler : IRequestHandler<AddToMallCartCommand, MallCa
         var skuRow = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
-                where sku.Id == req.SkuId && !sku.IsDeleted && !product.IsDeleted
+                where sku.Id == req.SkuId
                 select new { Sku = sku, Product = product })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -45,7 +45,7 @@ public class AddToMallCartHandler : IRequestHandler<AddToMallCartCommand, MallCa
 
         var cart = await _dbContext.MallCarts
             .FirstOrDefaultAsync(
-                c => c.UserId == req.UserId && !c.IsDeleted,
+                c => c.UserId == req.UserId,
                 cancellationToken);
 
         if (cart is null)

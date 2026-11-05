@@ -26,7 +26,7 @@ public class CreateCrmVendorDemandHandler : IRequestHandler<CreateCrmVendorDeman
     public async Task<bool> Handle(CreateCrmVendorDemandCommand request, CancellationToken cancellationToken)
     {
         var vendor = await _dbContext.CrmVendors
-            .FirstOrDefaultAsync(vendor => vendor.Id == request.Request.VendorId && !vendor.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(vendor => vendor.Id == request.Request.VendorId, cancellationToken);
         if (vendor == null)
         {
             throw new BusinessException(404, "厂商不存在");

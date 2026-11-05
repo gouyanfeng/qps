@@ -63,7 +63,6 @@ public class SetPrimaryCrmContactHandler : IRequestHandler<SetPrimaryCrmContactC
     {
         var contact = await _dbContext.CrmContacts.FirstOrDefaultAsync(
             item =>
-                !item.IsDeleted &&
                 item.Id == contactId &&
                 item.EntityType == target.EntityType &&
                 item.EntityId == target.EntityId,
@@ -75,7 +74,7 @@ public class SetPrimaryCrmContactHandler : IRequestHandler<SetPrimaryCrmContactC
     private async Task<CrmHerbBaseSubject> GetSubject(Guid subjectId, CancellationToken cancellationToken)
     {
         var subject = await _dbContext.CrmHerbBaseSubjects
-            .FirstOrDefaultAsync(item => item.Id == subjectId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == subjectId, cancellationToken);
 
         return subject ?? throw new BusinessException(404, "药材基地主体不存在");
     }
@@ -83,7 +82,7 @@ public class SetPrimaryCrmContactHandler : IRequestHandler<SetPrimaryCrmContactC
     private async Task EnsureVendorExists(Guid vendorId, CancellationToken cancellationToken)
     {
         var exists = await _dbContext.CrmVendors
-            .AnyAsync(item => item.Id == vendorId && !item.IsDeleted, cancellationToken);
+            .AnyAsync(item => item.Id == vendorId, cancellationToken);
 
         if (!exists)
         {
@@ -106,7 +105,6 @@ public class SetPrimaryCrmContactHandler : IRequestHandler<SetPrimaryCrmContactC
     {
         var siblings = await _dbContext.CrmContacts
             .Where(c =>
-                !c.IsDeleted &&
                 c.EntityType == target.EntityType &&
                 c.EntityId == target.EntityId &&
                 c.Id != contactId &&

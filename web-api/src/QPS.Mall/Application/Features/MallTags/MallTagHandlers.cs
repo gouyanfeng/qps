@@ -49,7 +49,7 @@ public class MallTagHandlers :
 
     public async Task<List<MallTagDto>> Handle(GetMallTagsQuery request, CancellationToken cancellationToken)
     {
-        var query = _dbContext.MallTags.AsNoTracking().Where(tag => !tag.IsDeleted);
+        var query = _dbContext.MallTags.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(request.Type))
         {
             var type = request.Type.Trim();
@@ -95,7 +95,7 @@ public class MallTagHandlers :
     public async Task<bool> Handle(UpdateMallTagCommand command, CancellationToken cancellationToken)
     {
         var tag = await _dbContext.MallTags.FirstOrDefaultAsync(
-            item => item.Id == command.Id && !item.IsDeleted,
+            item => item.Id == command.Id,
             cancellationToken);
         if (tag is null) throw new BusinessException(404, "标签不存在");
 
@@ -110,7 +110,7 @@ public class MallTagHandlers :
     public async Task<bool> Handle(ChangeMallTagStatusCommand command, CancellationToken cancellationToken)
     {
         var tag = await _dbContext.MallTags.FirstOrDefaultAsync(
-            item => item.Id == command.Id && !item.IsDeleted,
+            item => item.Id == command.Id,
             cancellationToken);
         if (tag is null) throw new BusinessException(404, "标签不存在");
         tag.ChangeStatus(command.IsActive);
@@ -121,18 +121,18 @@ public class MallTagHandlers :
     public async Task<bool> Handle(DeleteMallTagCommand command, CancellationToken cancellationToken)
     {
         var tag = await _dbContext.MallTags.FirstOrDefaultAsync(
-            item => item.Id == command.Id && !item.IsDeleted, cancellationToken);
+            item => item.Id == command.Id, cancellationToken);
         if (tag is null) throw new BusinessException(404, "标签不存在");
 
         var hasLinkedProducts = await _dbContext.MallProductTags.AnyAsync(
-            link => link.TagId == tag.Id && !link.IsDeleted,
+            link => link.TagId == tag.Id,
             cancellationToken);
         if (hasLinkedProducts)
         {
             throw new BusinessException(400, "该标签仍关联商品，无法删除，请先移除商品上的标签");
         }
 
-        tag.IsDeleted = true;
+        tag.SoftDelete();
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -145,7 +145,7 @@ public class MallTagHandlers :
         CancellationToken cancellationToken)
     {
         var duplicated = await _dbContext.MallTags.AnyAsync(
-            tag => !tag.IsDeleted &&
+            tag =>
                    tag.Type == type &&
                    (tag.Code == code || tag.Name == name) &&
                    (!excludeId.HasValue || tag.Id != excludeId.Value),
@@ -200,8 +200,7 @@ public class GetMallTagsPageHandler
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallTags
-            .AsNoTracking()
-            .Where(tag => !tag.IsDeleted);
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Type))
         {

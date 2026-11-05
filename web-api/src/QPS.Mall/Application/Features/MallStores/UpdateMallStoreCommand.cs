@@ -29,7 +29,7 @@ public class UpdateMallStoreHandler : IRequestHandler<UpdateMallStoreCommand, bo
     public async Task<bool> Handle(UpdateMallStoreCommand request, CancellationToken cancellationToken)
     {
         var store = await _dbContext.MallStores
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (store is null)
         {

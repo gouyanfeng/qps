@@ -53,8 +53,7 @@ public class CreateMallRefundHandler : IRequestHandler<CreateMallRefundCommand, 
             .AsNoTracking()
             .Where(item =>
                 item.OrderId == order.Id &&
-                item.Status == MallPaymentStatus.Success &&
-                !item.IsDeleted)
+                item.Status == MallPaymentStatus.Success)
             .Select(item => new { item.Id, item.Amount })
             .FirstOrDefaultAsync(cancellationToken);
 

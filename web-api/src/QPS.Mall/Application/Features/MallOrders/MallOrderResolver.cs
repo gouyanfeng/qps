@@ -19,13 +19,13 @@ internal static class MallOrderResolver
         if (orderId.HasValue)
         {
             order = await dbContext.MallOrders
-                .FirstOrDefaultAsync(item => item.Id == orderId.Value && !item.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(item => item.Id == orderId.Value, cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(orderNo))
         {
             var normalized = orderNo.Trim();
             order = await dbContext.MallOrders
-                .FirstOrDefaultAsync(item => item.OrderNo == normalized && !item.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(item => item.OrderNo == normalized, cancellationToken);
         }
         else
         {
@@ -48,7 +48,7 @@ internal static class MallOrderResolver
     {
         var items = await dbContext.MallOrderItems
             .AsNoTracking()
-            .Where(item => item.OrderId == order.Id && !item.IsDeleted)
+            .Where(item => item.OrderId == order.Id)
             .ToListAsync(cancellationToken);
 
         if (items.Count == 0)
@@ -59,7 +59,7 @@ internal static class MallOrderResolver
         var skuIds = items.Select(item => item.SkuId).Distinct().ToList();
 
         var skus = await dbContext.MallSkus
-            .Where(sku => skuIds.Contains(sku.Id) && !sku.IsDeleted)
+            .Where(sku => skuIds.Contains(sku.Id))
             .ToListAsync(cancellationToken);
 
         var skuMap = skus.ToDictionary(sku => sku.Id);
@@ -93,7 +93,7 @@ internal static class MallOrderResolver
         if (!userId.HasValue) return;
 
         var promotionIds = await dbContext.MallOrderItems
-            .Where(item => item.OrderId == order.Id && item.PromotionId != null && !item.IsDeleted)
+            .Where(item => item.OrderId == order.Id && item.PromotionId != null)
             .Select(item => item.PromotionId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -101,7 +101,7 @@ internal static class MallOrderResolver
         if (promotionIds.Count == 0) return;
 
         var usages = await dbContext.MallPromotionUsages
-            .Where(u => promotionIds.Contains(u.PromotionId) && u.UserId == userId.Value && !u.IsDeleted)
+            .Where(u => promotionIds.Contains(u.PromotionId) && u.UserId == userId.Value)
             .ToListAsync(cancellationToken);
 
         foreach (var usage in usages)

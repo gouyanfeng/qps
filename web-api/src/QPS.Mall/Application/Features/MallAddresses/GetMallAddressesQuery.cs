@@ -32,7 +32,7 @@ public class GetMallAddressesHandler : IRequestHandler<GetMallAddressesQuery, Li
         }
 
         var addresses = await query
-            .Where(a => !a.IsDeleted)
+            
             .OrderByDescending(a => a.IsDefault)
             .ThenByDescending(a => a.CreatedAt)
             .ToListAsync(cancellationToken);

@@ -27,7 +27,7 @@ public class GetMallCategoryHandler : IRequestHandler<GetMallCategoryQuery, Mall
     {
         var dto = await _dbContext.MallCategories
             .AsNoTracking()
-            .Where(category => category.Id == request.Id && !category.IsDeleted)
+            .Where(category => category.Id == request.Id)
             .Select(category => new MallCategoryDto
             {
                 Id = category.Id,

@@ -22,7 +22,7 @@ public class DeleteMallAddressHandler : IRequestHandler<DeleteMallAddressCommand
     public async Task<bool> Handle(DeleteMallAddressCommand command, CancellationToken cancellationToken)
     {
         var address = await _dbContext.MallAddresses
-            .FirstOrDefaultAsync(a => a.Id == command.AddressId && !a.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == command.AddressId, cancellationToken);
 
         if (address is null)
         {

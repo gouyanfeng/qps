@@ -36,7 +36,7 @@ public class GetMallOrderByNoHandler : IRequestHandler<GetMallOrderByNoQuery, Ma
 
         var orderId = await _dbContext.MallOrders
             .AsNoTracking()
-            .Where(order => order.OrderNo == orderNo && !order.IsDeleted)
+            .Where(order => order.OrderNo == orderNo)
             .Select(order => (Guid?)order.Id)
             .FirstOrDefaultAsync(cancellationToken);
 

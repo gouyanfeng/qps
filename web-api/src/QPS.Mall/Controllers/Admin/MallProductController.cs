@@ -106,6 +106,15 @@ public class MallProductController : ControllerBase
     }
 
     /// <summary>
+    /// 拷贝商品（含规格与标签，新商品名称追加"拷贝"）。
+    /// </summary>
+    [HttpPost("products/{id:guid}/copy")]
+    public async Task<ActionResult<bool>> CopyProduct(Guid id)
+    {
+        return Ok(await _mediator.Send(new CopyMallProductCommand { Id = id }));
+    }
+
+    /// <summary>
     /// 新增商品规格。
     /// </summary>
     [HttpPost("products/{productId:guid}/skus")]

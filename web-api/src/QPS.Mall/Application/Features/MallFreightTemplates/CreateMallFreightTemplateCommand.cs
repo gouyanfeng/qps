@@ -58,7 +58,7 @@ public class CreateMallFreightTemplateHandler : IRequestHandler<CreateMallFreigh
         if (request.IsDefault)
         {
             var existingDefaults = await _dbContext.MallFreightTemplates
-                .Where(t => t.IsDefault && !t.IsDeleted)
+                .Where(t => t.IsDefault)
                 .ToListAsync(cancellationToken);
 
             foreach (var existing in existingDefaults)

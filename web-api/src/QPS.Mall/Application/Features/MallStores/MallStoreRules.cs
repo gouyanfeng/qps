@@ -75,7 +75,6 @@ internal static class MallStoreRules
     {
         var duplicated = await dbContext.MallStores.AnyAsync(
             store =>
-                !store.IsDeleted &&
                 store.Code == code &&
                 (!excludeId.HasValue || store.Id != excludeId.Value),
             cancellationToken);

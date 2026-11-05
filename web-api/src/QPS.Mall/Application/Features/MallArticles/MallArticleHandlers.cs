@@ -82,7 +82,7 @@ public class MallArticleHandlers :
 
     public async Task<List<MallArticleListItemDto>> Handle(GetMallArticlesQuery query, CancellationToken ct)
     {
-        var q = _dbContext.MallArticles.AsNoTracking().Where(a => !a.IsDeleted);
+        var q = _dbContext.MallArticles.AsNoTracking();
         if (query.ArticleType.HasValue) q = q.Where(a => a.ArticleType == query.ArticleType.Value);
         if (!string.IsNullOrEmpty(query.Keyword)) q = q.Where(a => a.Title.Contains(query.Keyword!) || a.Summary.Contains(query.Keyword!));
         if (query.IsActive.HasValue) q = q.Where(a => a.IsActive == query.IsActive.Value);
@@ -98,7 +98,7 @@ public class MallArticleHandlers :
 
     public async Task<MallArticleDto> Handle(GetMallArticleQuery query, CancellationToken ct)
     {
-        var a = await _dbContext.MallArticles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id && !x.IsDeleted, ct);
+        var a = await _dbContext.MallArticles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id, ct);
         if (a is null) throw new BusinessException(404, "文章不存在");
 
         return Map(a);
@@ -107,7 +107,7 @@ public class MallArticleHandlers :
     public async Task<List<MallArticleListItemDto>> Handle(GetPublishedMallArticlesQuery query, CancellationToken ct)
     {
         var q = _dbContext.MallArticles.AsNoTracking()
-            .Where(a => !a.IsDeleted && a.IsActive && a.PublishedAt != null);
+            .Where(a => a.IsActive && a.PublishedAt != null);
         if (query.ArticleType.HasValue) q = q.Where(a => a.ArticleType == query.ArticleType.Value);
 
         return await q.OrderByDescending(a => a.IsTop).ThenBy(a => a.SortOrder).ThenByDescending(a => a.PublishedAt)
@@ -121,7 +121,7 @@ public class MallArticleHandlers :
 
     public async Task<MallArticleDto> Handle(GetPublishedMallArticleDetailQuery query, CancellationToken ct)
     {
-        var a = await _dbContext.MallArticles.FirstOrDefaultAsync(x => x.Id == query.Id && !x.IsDeleted && x.IsActive && x.PublishedAt != null, ct);
+        var a = await _dbContext.MallArticles.FirstOrDefaultAsync(x => x.Id == query.Id && x.IsActive && x.PublishedAt != null, ct);
         if (a is null) throw new BusinessException(404, "文章不存在或未发布");
 
         a.IncrementViewCount();
@@ -143,7 +143,7 @@ public class MallArticleHandlers :
 
     public async Task<MallArticleDto> Handle(UpdateMallArticleCommand command, CancellationToken ct)
     {
-        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id && !a.IsDeleted, ct);
+        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id, ct);
         if (article is null) throw new BusinessException(404, "文章不存在");
 
         var r = command.Request;
@@ -156,7 +156,7 @@ public class MallArticleHandlers :
 
     public async Task<bool> Handle(DeleteMallArticleCommand command, CancellationToken ct)
     {
-        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id && !a.IsDeleted, ct);
+        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id, ct);
         if (article is null) throw new BusinessException(404, "文章不存在");
 
         _dbContext.MallArticles.Remove(article);
@@ -166,7 +166,7 @@ public class MallArticleHandlers :
 
     public async Task<bool> Handle(PublishMallArticleCommand command, CancellationToken ct)
     {
-        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id && !a.IsDeleted, ct);
+        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id, ct);
         if (article is null) throw new BusinessException(404, "文章不存在");
 
         article.Publish();
@@ -176,7 +176,7 @@ public class MallArticleHandlers :
 
     public async Task<bool> Handle(UnpublishMallArticleCommand command, CancellationToken ct)
     {
-        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id && !a.IsDeleted, ct);
+        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id, ct);
         if (article is null) throw new BusinessException(404, "文章不存在");
 
         article.Unpublish();
@@ -186,7 +186,7 @@ public class MallArticleHandlers :
 
     public async Task<bool> Handle(SetMallArticleTopCommand command, CancellationToken ct)
     {
-        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id && !a.IsDeleted, ct);
+        var article = await _dbContext.MallArticles.FirstOrDefaultAsync(a => a.Id == command.Id, ct);
         if (article is null) throw new BusinessException(404, "文章不存在");
 
         article.SetTop(command.IsTop);
