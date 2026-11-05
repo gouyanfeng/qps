@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace QPS.Mall.Contracts.DTOs;
 
 /// <summary>
@@ -153,61 +155,35 @@ public class MallShipmentDto
 }
 
 /// <summary>
-/// 外部下单请求。
+/// 创建订单请求（移动端下单）。
 /// </summary>
 public class CreateMallOrderRequest
 {
     /// <summary>
-    /// 下单会员ID，移动端JWT解析后自动注入，后台代下单可空。
+    /// 下单会员ID，移动端JWT解析后自动注入。
     /// </summary>
     public Guid? MemberId { get; set; }
 
     /// <summary>
-    /// 外部订单号，为空时由系统生成。
+    /// 收货地址ID（会员地址簿），下单时按该地址快照收货信息。
     /// </summary>
-    public string? OrderNo { get; set; }
+    public Guid AddressId { get; set; }
 
-    public string ReceiverName { get; set; } = string.Empty;
-
-    public string ReceiverPhone { get; set; } = string.Empty;
-
-    public string ProvinceName { get; set; } = string.Empty;
-
-    public string CityName { get; set; } = string.Empty;
-
-    public string DistrictName { get; set; } = string.Empty;
-
-    public string ReceiverAddress { get; set; } = string.Empty;
-
+    [MaxLength(500, ErrorMessage = "订单备注不能超过 500 个字符")]
     public string Remark { get; set; } = string.Empty;
 
+    [MinLength(1, ErrorMessage = "请至少提交一个商品规格")]
     public List<CreateMallOrderItemRequest> Items { get; set; } = new();
-
-    /// <summary>
-    /// 换购项（适用源=订单价格的 TradeIn 促销，用户在结算页主动选择）。
-    /// </summary>
-    public List<CreateMallOrderExchangeItemRequest> ExchangeItems { get; set; } = new();
 }
 
 /// <summary>
-/// 外部下单换购明细。
-/// </summary>
-public class CreateMallOrderExchangeItemRequest
-{
-    public Guid PromotionId { get; set; }
-
-    public Guid SkuId { get; set; }
-
-    public int Quantity { get; set; }
-}
-
-/// <summary>
-/// 外部下单明细。
+/// 下单商品明细。
 /// </summary>
 public class CreateMallOrderItemRequest
 {
     public Guid SkuId { get; set; }
 
+    [Range(1, int.MaxValue, ErrorMessage = "商品数量必须大于 0")]
     public int Quantity { get; set; }
 }
 

@@ -311,6 +311,31 @@ internal static class MallProductRules
         }
     }
 
+    public static async Task EnsureFreightTemplateValidAsync(
+        IMallDbContext dbContext,
+        Guid? freightTemplateId,
+        CancellationToken cancellationToken)
+    {
+        if (!freightTemplateId.HasValue || freightTemplateId.Value == Guid.Empty)
+        {
+            throw new BusinessException(400, "请选择运费模板");
+        }
+
+        var template = await dbContext.MallFreightTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == freightTemplateId.Value && !item.IsDeleted, cancellationToken);
+
+        if (template is null)
+        {
+            throw new BusinessException(404, "运费模板不存在");
+        }
+
+        if (!template.IsActive)
+        {
+            throw new BusinessException(400, "运费模板已停用");
+        }
+    }
+
     public static async Task<List<MallTag>> GetActiveTagsAsync(
         IMallDbContext dbContext,
         IEnumerable<Guid>? tagIds,

@@ -16,7 +16,7 @@ internal static class MallPromotionRules
 
     private static readonly HashSet<string> ValidActionTypes = new()
     {
-        "DiscountAmount", "DiscountRate", "Gift", "TradeIn"
+        "DiscountAmount", "DiscountRate", "Gift"
     };
 
     private static readonly HashSet<string> ValidScopeTypes = new()
@@ -104,17 +104,6 @@ internal static class MallPromotionRules
                     throw new BusinessException(400, "买赠促销必须指定有效的赠送规格");
                 if (!actionConfig.TryGetProperty("quantity", out var giftQuantity) || giftQuantity.GetInt32() < 1)
                     throw new BusinessException(400, "赠送数量必须大于 0");
-            }
-
-            if (actionType == "TradeIn")
-            {
-                if (!actionConfig.TryGetProperty("skuId", out var tradeInSkuId) ||
-                    !Guid.TryParse(tradeInSkuId.GetString(), out _))
-                    throw new BusinessException(400, "换购促销必须指定有效的换购规格");
-                if (!actionConfig.TryGetProperty("quantity", out var tradeInQty) || tradeInQty.GetInt32() < 1)
-                    throw new BusinessException(400, "换购数量必须大于 0");
-                if (!actionConfig.TryGetProperty("tradeInPrice", out var tradeInPrice) || tradeInPrice.GetDecimal() <= 0)
-                    throw new BusinessException(400, "换购价格必须大于 0");
             }
         }
         catch (JsonException)

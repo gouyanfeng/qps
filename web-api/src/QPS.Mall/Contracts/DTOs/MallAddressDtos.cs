@@ -152,39 +152,13 @@ public class MallPromotionScopeDto
     public string ScopeTargetName { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// 移动端换购资格（适用源=订单价格的 TradeIn 促销）。
-/// </summary>
-public class MallExchangeOfferDto
-{
-    public Guid PromotionId { get; set; }
-
-    public string PromotionName { get; set; } = string.Empty;
-
-    public decimal MinAmount { get; set; }
-
-    public Guid SkuId { get; set; }
-
-    public string ProductName { get; set; } = string.Empty;
-
-    public string SpecName { get; set; } = string.Empty;
-
-    public string ProductImage { get; set; } = string.Empty;
-
-    public decimal OriginalPrice { get; set; }
-
-    public decimal TradeInPrice { get; set; }
-
-    public int MaxQuantity { get; set; }
-}
-
 public class MallPromotionCreateRequest
 {
     public string Name { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>促销类型：0 满减 / 1 折扣 / 2 买赠 / 3 换购。</summary>
+    /// <summary>促销类型：0 满减 / 1 折扣 / 2 买赠。</summary>
     public int PromotionType { get; set; }
 
     /// <summary>订单门槛金额。</summary>

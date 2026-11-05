@@ -32,15 +32,6 @@ public class DeleteMallActivityHandler : IRequestHandler<DeleteMallActivityComma
         activity.ChangeStatus(false);
         activity.IsDeleted = true;
 
-        var links = await _dbContext.MallActivityPromotions
-            .Where(item => item.ActivityId == command.ActivityId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var link in links)
-        {
-            link.IsDeleted = true;
-        }
-
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

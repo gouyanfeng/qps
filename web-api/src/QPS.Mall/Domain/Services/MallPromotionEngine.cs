@@ -6,16 +6,12 @@ namespace QPS.Mall.Domain.Services;
 public class MallPromotionEngine
 {
     private static readonly HashSet<string> DiscountActions = new() { "DiscountRate" };
-    private static readonly HashSet<string> StackableActions = new() { "DiscountAmount", "FreightFree", "Gift", "TradeIn" };
+    private static readonly HashSet<string> StackableActions = new() { "DiscountAmount", "FreightFree", "Gift" };
 
-    private readonly ITriggerStrategyRegistry _triggers;
     private readonly IActionStrategyRegistry _actions;
 
-    public MallPromotionEngine(
-        ITriggerStrategyRegistry triggers,
-        IActionStrategyRegistry actions)
+    public MallPromotionEngine(IActionStrategyRegistry actions)
     {
-        _triggers = triggers;
         _actions = actions;
     }
 
@@ -24,15 +20,11 @@ public class MallPromotionEngine
         Dictionary<Guid, List<MallPromotionScope>> scopeMap,
         OrderContext ctx)
     {
-        var now = ctx.Now;
         var allMatched = new List<MatchedPromotion>();
 
         foreach (var p in promotions)
         {
             if (!p.IsActive || p.IsDeleted) continue;
-
-            // 换购为用户在结算时主动选择，不走引擎自动应用。
-            if (p.ActionType == "TradeIn") continue;
 
             if (p.MaxUsagePerUser > 0
                 && ctx.UserId.HasValue
@@ -44,19 +36,9 @@ public class MallPromotionEngine
             var scopeRows = FilterByScope(p, scopes, ctx.Items);
             if (scopeRows.Count == 0) continue;
 
-            var scopedTriggerContext = new OrderContext
-            {
-                GoodsAmount = scopeRows.Sum(item => item.OriginalPrice * item.Quantity),
-                UserId = ctx.UserId,
-                IsFirstOrder = ctx.IsFirstOrder,
-                UserOrderCount = ctx.UserOrderCount,
-                Now = ctx.Now,
-                Items = scopeRows,
-                PromotionUsageMap = ctx.PromotionUsageMap
-            };
-
             // 所有促销统一使用订单门槛（独立列 ThresholdAmount），直接比较范围内商品金额。
-            if (scopedTriggerContext.GoodsAmount < p.ThresholdAmount) continue;
+            var scopedAmount = scopeRows.Sum(item => item.OriginalPrice * item.Quantity);
+            if (scopedAmount < p.ThresholdAmount) continue;
 
             allMatched.Add(new MatchedPromotion
             {

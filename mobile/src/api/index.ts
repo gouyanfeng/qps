@@ -10,7 +10,6 @@ import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem,
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const MEMBER_TOKEN_STORAGE_KEY = 'qps_member_token'
-const LEGACY_CART_STORAGE_KEY = 'qps_cart_items'
 const MEMBER_ID_STORAGE_KEY = 'qps_member_id'
 const deselectedCartSkuIds = new Set<string>()
 export { isLoggedIn }
@@ -104,24 +103,6 @@ export async function getProducts(
   return { items, hasMore }
 }
 
-/** 活动商品：只返回活动关联的有效促销范围内的商品 */
-export async function getActivityProducts(
-  activityId: string,
-  categoryId?: string,
-  page: number = 1,
-  pageSize: number = 20,
-  sort?: string
-): Promise<{ items: Product[]; hasMore: boolean }> {
-  const params: string[] = [`page=${page}`, `pageSize=${pageSize}`, `activityId=${encodeURIComponent(activityId)}`]
-  if (categoryId) params.push(`categoryId=${encodeURIComponent(categoryId)}`)
-  if (sort && sort !== 'default') params.push(`sort=${encodeURIComponent(sort)}`)
-  const data = await request<ApiPage<ApiProduct>>(`/api/mall/products?${params.join('&')}`)
-  const items = (data.items || data.list || []).map(mapProduct)
-  const total = data.totalCount ?? data.total ?? 0
-  const hasMore = data.hasMore ?? (total > page * pageSize && items.length === pageSize)
-  return { items, hasMore }
-}
-
 export async function getProductById(id: string): Promise<Product | undefined> {
   const p = await request<ApiProduct>(`/api/mall/products/${encodeURIComponent(id)}`)
   return p ? mapProduct(p) : undefined
@@ -138,11 +119,9 @@ export async function getProductReviews(
   if (tag) params.push(`tag=${encodeURIComponent(tag)}`)
   if (featuredOnly) params.push('featuredOnly=true')
 
-  const raw = await request<ProductReviewPage | { data: ProductReviewPage }>(
+  const payload = await request<ProductReviewPage>(
     `/api/mall/products/${encodeURIComponent(productId)}/reviews?${params.join('&')}`
   )
-  // 兼容全局包装里直接返回分页数据或再套一层 data 的情况
-  const payload = ((raw as { data?: ProductReviewPage })?.data ?? raw) as ProductReviewPage
   return {
     items: Array.isArray(payload?.items)
       ? payload.items.map(item => ({
@@ -160,10 +139,9 @@ export async function getProductReviews(
 }
 
 export async function getReviewTags(): Promise<MallTagItem[]> {
-  const raw = await request<MallTagItem[] | { data: MallTagItem[] }>(
+  const payload = await request<MallTagItem[]>(
     '/api/mall/tags?type=Review&isActive=true'
   )
-  const payload = ((raw as { data?: MallTagItem[] })?.data ?? raw) as MallTagItem[]
   return Array.isArray(payload) ? payload : []
 }
 
@@ -277,7 +255,6 @@ export function getMallActivity(id: string): Promise<MallActivity> {
 }
 
 export async function getCartItems(): Promise<CartItem[]> {
-  uni.removeStorageSync(LEGACY_CART_STORAGE_KEY)
   return getRemoteCart()
 }
 
@@ -401,7 +378,6 @@ export async function login(req: LoginRequest): Promise<AuthResponse> {
 function saveAuthResponse(response: MallAuthResponse): AuthResponse {
   setToken(response.token)
   uni.setStorageSync(MEMBER_ID_STORAGE_KEY, response.memberId)
-  uni.removeStorageSync(LEGACY_CART_STORAGE_KEY)
   deselectedCartSkuIds.clear()
   return {
     accessToken: response.token,
@@ -574,32 +550,9 @@ export function createOrder(data: CreateOrderRequest): Promise<MallOrderDetail> 
 }
 
 export interface CreateOrderRequest {
-  receiverName: string
-  receiverPhone: string
-  provinceName: string
-  cityName: string
-  districtName: string
-  receiverAddress: string
+  addressId: string
   remark: string
   items: Array<{ skuId: string; quantity: number }>
-  exchangeItems?: Array<{ promotionId: string; skuId: string; quantity: number }>
-}
-
-export interface ExchangeOffer {
-  promotionId: string
-  promotionName: string
-  minAmount: number
-  skuId: string
-  productName: string
-  specName: string
-  productImage: string
-  originalPrice: number
-  tradeInPrice: number
-  maxQuantity: number
-}
-
-export function getExchangeOffers(amount: number): Promise<ExchangeOffer[]> {
-  return request<ExchangeOffer[]>(`/api/mall/promotions/exchange?amount=${amount}`, 'GET')
 }
 
 export interface MallOrderDetail extends MallOrder {
@@ -694,6 +647,5 @@ export async function getChinaRegions(): Promise<ChinaRegionNode[]> {
 export function logout(): void {
   clearToken()
   uni.removeStorageSync(MEMBER_ID_STORAGE_KEY)
-  uni.removeStorageSync(LEGACY_CART_STORAGE_KEY)
   deselectedCartSkuIds.clear()
 }

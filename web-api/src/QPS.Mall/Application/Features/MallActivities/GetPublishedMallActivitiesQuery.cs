@@ -37,51 +37,9 @@ public class GetPublishedMallActivitiesHandler
             .ThenByDescending(activity => activity.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var activityIds = activities.Select(a => a.Id).ToList();
-        var linksByActivity = activityIds.Count == 0
-            ? new Dictionary<Guid, List<MallActivityPromotion>>()
-            : (await _dbContext.MallActivityPromotions
-                .AsNoTracking()
-                .Where(link => activityIds.Contains(link.ActivityId) && !link.IsDeleted)
-                .ToListAsync(cancellationToken))
-            .GroupBy(link => link.ActivityId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        var promotions = await LoadActivePromotionsAsync(linksByActivity, now, cancellationToken);
-
         return activities
-            .Select(activity => MallActivityMapper.ToListItem(
-                activity,
-                linksByActivity.TryGetValue(activity.Id, out var links) ? links : new List<MallActivityPromotion>(),
-                promotions,
-                includeInactivePromotions: false))
+            .Select(MallActivityMapper.ToListItem)
             .ToList();
-    }
-
-    private async Task<Dictionary<Guid, MallPromotion>> LoadActivePromotionsAsync(
-        Dictionary<Guid, List<MallActivityPromotion>> linksByActivity,
-        DateTime now,
-        CancellationToken cancellationToken)
-    {
-        var promotionIds = linksByActivity.Values
-            .SelectMany(links => links)
-            .Select(link => link.PromotionId)
-            .Distinct()
-            .ToList();
-
-        if (promotionIds.Count == 0)
-        {
-            return new Dictionary<Guid, MallPromotion>();
-        }
-
-        return await _dbContext.MallPromotions
-            .AsNoTracking()
-            .Where(promotion =>
-                promotionIds.Contains(promotion.Id) &&
-                promotion.IsActive &&
-                (promotion.StartDate == null || promotion.StartDate <= now) &&
-                (promotion.EndDate == null || promotion.EndDate >= now))
-            .ToDictionaryAsync(promotion => promotion.Id, cancellationToken);
     }
 }
 
@@ -119,23 +77,6 @@ public class GetPublishedMallActivityDetailHandler
             throw new BusinessException(404, "活动不存在或已结束");
         }
 
-        var links = await _dbContext.MallActivityPromotions
-            .AsNoTracking()
-            .Where(link => link.ActivityId == activity.Id && !link.IsDeleted)
-            .ToListAsync(cancellationToken);
-
-        var promotionIds = links.Select(link => link.PromotionId).Distinct().ToList();
-        var promotions = promotionIds.Count == 0
-            ? new Dictionary<Guid, MallPromotion>()
-            : await _dbContext.MallPromotions
-                .AsNoTracking()
-                .Where(promotion =>
-                    promotionIds.Contains(promotion.Id) &&
-                    promotion.IsActive &&
-                    (promotion.StartDate == null || promotion.StartDate <= now) &&
-                    (promotion.EndDate == null || promotion.EndDate >= now))
-                .ToDictionaryAsync(promotion => promotion.Id, cancellationToken);
-
-        return MallActivityMapper.ToDetail(activity, links, promotions, includeInactivePromotions: false);
+        return MallActivityMapper.ToDetail(activity);
     }
 }

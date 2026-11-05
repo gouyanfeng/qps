@@ -96,7 +96,7 @@ public static class MallMockDataSeeder
             categoryIdsByMockId,
             skuIdsByMockId,
             ct);
-        var activityIdsByMockId = await SyncActivitiesAsync(db, activitiesPath, promotionIdsByMockId, ct);
+        var activityIdsByMockId = await SyncActivitiesAsync(db, activitiesPath, ct);
         var banners = ParseBanners(
             bannersPath,
             activityIdsByMockId,
@@ -265,28 +265,14 @@ public static class MallMockDataSeeder
             var description = item.TryGetProperty("description", out var descriptionElement)
                 ? descriptionElement.GetString() ?? string.Empty
                 : string.Empty;
-            var triggerType = item.GetProperty("triggerType").GetString()!;
-            var triggerConfigJson = ResolvePromotionConfig(
-                item.GetProperty("triggerConfigJson").GetString()!,
-                productIdsByMockId,
-                skuIdsByMockId);
+            var thresholdAmount = item.TryGetProperty("thresholdAmount", out var thresholdElement)
+                ? thresholdElement.GetDecimal()
+                : 0m;
             var actionType = item.GetProperty("actionType").GetString()!;
             var actionConfigJson = ResolvePromotionConfig(
                 item.GetProperty("actionConfigJson").GetString()!,
                 productIdsByMockId,
                 skuIdsByMockId);
-
-            // 从旧 triggerConfigJson 解析门槛金额
-            decimal thresholdAmount = 0;
-            try
-            {
-                using var triggerDoc = JsonDocument.Parse(triggerConfigJson);
-                if (triggerDoc.RootElement.TryGetProperty("minAmount", out var maElem))
-                    thresholdAmount = maElem.GetDecimal();
-                else if (triggerDoc.RootElement.TryGetProperty("minQuantity", out var mqElem))
-                    thresholdAmount = mqElem.GetDecimal();
-            }
-            catch { /* 忽略 */ }
 
             // 从 actionType 映射 PromotionType 枚举
             var promotionType = actionType switch
@@ -294,7 +280,6 @@ public static class MallMockDataSeeder
                 "DiscountAmount" => MallPromotionType.DiscountAmount,
                 "DiscountRate" => MallPromotionType.DiscountRate,
                 "Gift" => MallPromotionType.Gift,
-                "TradeIn" => MallPromotionType.TradeIn,
                 _ => MallPromotionType.DiscountAmount
             };
             var scopeType = item.TryGetProperty("scopeType", out var scopeElement)
@@ -487,7 +472,6 @@ public static class MallMockDataSeeder
     private static async Task<Dictionary<string, Guid>> SyncActivitiesAsync(
         AppDbContext db,
         string path,
-        IReadOnlyDictionary<string, Guid> promotionIdsByMockId,
         CancellationToken ct)
     {
         var existingActivities = await db.MallActivities
@@ -556,49 +540,6 @@ public static class MallMockDataSeeder
 
         await db.SaveChangesAsync(ct);
 
-        var activityIds = activityIdsByMockId.Values.ToArray();
-        var existingLinks = await db.MallActivityPromotions
-            .IgnoreQueryFilters()
-            .Where(link => activityIds.Contains(link.ActivityId))
-            .ToListAsync(ct);
-        var existingLinksByPair = existingLinks
-            .GroupBy(link => (link.ActivityId, link.PromotionId))
-            .ToDictionary(group => group.Key, group => group.First());
-        foreach (var link in existingLinks)
-        {
-            link.IsDeleted = true;
-        }
-        using var linkDocument = JsonDocument.Parse(File.ReadAllText(path));
-        foreach (var item in linkDocument.RootElement.GetProperty("activities").EnumerateArray())
-        {
-            var mockId = item.GetProperty("id").GetString()!;
-            var activityId = activityIdsByMockId[mockId];
-            if (!item.TryGetProperty("promotionIds", out var promotionElements))
-            {
-                continue;
-            }
-
-            foreach (var promotionMockId in promotionElements.EnumerateArray().Select(element => element.GetString()!).Distinct())
-            {
-                if (!promotionIdsByMockId.TryGetValue(promotionMockId, out var promotionId))
-                {
-                    throw new InvalidDataException($"测试活动 {mockId} 引用了不存在的促销: {promotionMockId}");
-                }
-
-                if (existingLinksByPair.TryGetValue((activityId, promotionId), out var existingLink))
-                {
-                    existingLink.IsDeleted = false;
-                }
-                else
-                {
-                    var link = MallActivityPromotion.Create(activityId, promotionId);
-                    db.MallActivityPromotions.Add(link);
-                    existingLinksByPair.Add((activityId, promotionId), link);
-                }
-            }
-        }
-
-        await db.SaveChangesAsync(ct);
         return activityIdsByMockId;
     }
 

@@ -30,7 +30,6 @@ public class CreateMallActivityHandler : IRequestHandler<CreateMallActivityComma
         var detailHtml = MallActivityRules.NormalizeDetailHtml(req.DetailHtml);
         var sortOrder = MallActivityRules.NormalizeSortOrder(req.SortOrder);
         MallActivityRules.ValidateTimeWindow(req.StartDate, req.EndDate);
-        await MallActivityRules.EnsurePromotionsExistAsync(_dbContext, req.PromotionIds, cancellationToken);
 
         var activity = MallActivity.Create(
             name,
@@ -44,11 +43,6 @@ public class CreateMallActivityHandler : IRequestHandler<CreateMallActivityComma
             req.IsActive);
 
         _dbContext.MallActivities.Add(activity);
-
-        foreach (var promotionId in req.PromotionIds.Distinct())
-        {
-            _dbContext.MallActivityPromotions.Add(MallActivityPromotion.Create(activity.Id, promotionId));
-        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

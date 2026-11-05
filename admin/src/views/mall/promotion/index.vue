@@ -8,7 +8,6 @@
               <el-option label="满减" value="DiscountAmount" />
               <el-option label="折扣" value="DiscountRate" />
               <el-option label="买赠" value="Gift" />
-              <el-option label="换购" value="TradeIn" />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
@@ -39,6 +38,13 @@
               {{ getPromotionRule(row) }}
             </template>
           </el-table-column>
+          <el-table-column label="时间窗口" width="240">
+            <template #default="{ row }">
+              <span style="font-size: 12px; color: #666">
+                {{ formatDate(row.startDate) }} ~ {{ formatDate(row.endDate) }}
+              </span>
+            </template>
+          </el-table-column>
           <el-table-column label="范围" width="120" align="center">
             <template #default="{ row }">{{ scopeMap[row.scopeType] || row.scopeType }}</template>
           </el-table-column>
@@ -63,7 +69,7 @@
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="860px" top="3vh" class="promotion-dialog">
       <el-form :model="form" label-width="110px" class="promotion-form">
         <section class="form-section">
-          <div class="section-title">活动信息与适用范围</div>
+          <div class="section-title">促销信息与适用范围</div>
         <el-row :gutter="16">
           <el-col :span="24">
             <el-form-item label="促销名称" required>
@@ -71,7 +77,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="活动说明">
+        <el-form-item label="促销说明">
           <el-input v-model="form.description" maxlength="200" show-word-limit />
         </el-form-item>
         <el-row :gutter="16">
@@ -81,7 +87,6 @@
                 <el-option label="满减" :value="0" />
                 <el-option label="折扣" :value="1" />
                 <el-option label="买赠" :value="2" />
-                <el-option label="换购" :value="3" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -155,53 +160,38 @@
             </el-col>
           </el-row>
         </template>
-        <template v-if="form.promotionType === 3">
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="换购规格" required>
-                <el-select v-model="form.giftSkuId" filterable style="width: 100%">
-                  <el-option v-for="sku in skuOptions" :key="sku.id" :label="`${sku.productName} / ${sku.specName}`" :value="sku.id" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="换购数量" required>
-                <el-input-number v-model="form.giftQuantity" :min="1" :max="99" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="换购价格" required>
-                <el-input-number v-model="form.tradeInPrice" :min="0.01" :precision="2" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </template>
         </section>
 
         <section class="form-section">
-        <div class="section-title">其他设置</div>
-        <div class="section-tip">促销生效时间由关联的商城活动控制，未关联有效活动的促销不生效</div>
+        <div class="section-title">促销时间与其他设置</div>
+        <div class="section-tip">促销时间可不填（长期有效）；填写后在该时间窗口内自动生效</div>
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="优先级">
-              <el-input-number v-model="form.priority" :min="0" :max="999" style="width: 100%" />
+            <el-form-item label="开始时间">
+              <el-date-picker v-model="form.startDate" type="datetime" placeholder="可选，留空则不限" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ssZ" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="结束时间">
+              <el-date-picker v-model="form.endDate" type="datetime" placeholder="可选，留空则不限" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ssZ" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="每人限用">
               <el-input-number v-model="form.maxUsagePerUser" :min="0" :max="99999" style="width: 100%" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="允许叠加">
-              <el-switch v-model="form.combinable" />
+            <el-form-item label="每单限用">
+              <el-input-number v-model="form.maxUsagePerOrder" :min="0" :max="99999" style="width: 100%" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="启用状态">
               <el-switch v-model="form.isActive" active-text="启用" inactive-text="停用" />
@@ -228,6 +218,7 @@ import { mallPromotionApi } from '@/api/modules/mallPromotion'
 import { mallProductApi } from '@/api/modules/mallProduct'
 import { mallCategoryApi } from '@/api/modules/mallCategory'
 import { mallTagApi } from '@/api/modules/mallTag'
+import { formatDate } from '@/utils'
 import QueryPage from '@/components/QueryPage/index.vue'
 
 
@@ -266,10 +257,9 @@ const form = reactive({
   discountPercent: 0.8,
   giftQuantity: 1,
   giftSkuId: '',
-  tradeInPrice: 9.9,
   promotionTagId: '',
-  priority: 0,
-  combinable: false,
+  startDate: '',
+  endDate: '',
   maxUsagePerUser: 0,
   maxUsagePerOrder: 0,
   isActive: true
@@ -301,7 +291,6 @@ const getPromotionTypeName = (promotion: any) => {
   if (promotion.actionType === 'DiscountAmount') return '满减'
   if (promotion.actionType === 'DiscountRate') return '折扣'
   if (promotion.actionType === 'Gift') return '买赠'
-  if (promotion.actionType === 'TradeIn') return '换购'
   return promotion.actionType || '其他'
 }
 
@@ -317,9 +306,6 @@ const getPromotionRule = (promotion: any) => {
   }
   if (promotion.actionType === 'Gift') {
     return `满 ¥${threshold.toFixed(2)} 赠 ${Number(action.quantity || 1)} 件赠品`
-  }
-  if (promotion.actionType === 'TradeIn') {
-    return `满 ¥${threshold.toFixed(2)} 可加 ¥${Number(action.tradeInPrice || 0).toFixed(2)} 换购 ${Number(action.quantity || 1)} 件`
   }
   return promotion.description || '-'
 }
@@ -355,10 +341,9 @@ const resetForm = () => {
   form.thresholdAmount = 100; form.discountAmount = 20
   form.discountPercent = 0.8; form.giftQuantity = 1
   form.giftSkuId = ''
-  form.tradeInPrice = 9.9
   form.promotionTagId = ''
-  form.priority = 0
-  form.combinable = false; form.maxUsagePerUser = 0; form.maxUsagePerOrder = 0; form.isActive = true
+  form.startDate = ''; form.endDate = ''
+  form.maxUsagePerUser = 0; form.maxUsagePerOrder = 0; form.isActive = true
 }
 
 const handleTypeChange = () => {
@@ -366,7 +351,6 @@ const handleTypeChange = () => {
   if (form.promotionType === 0) { form.discountAmount = 20 }
   if (form.promotionType === 1) { form.discountPercent = 0.8 }
   if (form.promotionType === 2) { form.giftQuantity = 1 }
-  if (form.promotionType === 3) { form.giftQuantity = 1; form.tradeInPrice = 9.9 }
 }
 
 const handleScopeTypeChange = () => {
@@ -386,18 +370,16 @@ const openDialog = (type: string, row?: any) => {
     Object.assign(form, {
       name: row.name,
       description: row.description || '',
-      promotionType: row.promotionType ?? (row.actionType === 'DiscountAmount' ? 0 : row.actionType === 'DiscountRate' ? 1 : row.actionType === 'Gift' ? 2 : row.actionType === 'TradeIn' ? 3 : 0),
+      promotionType: row.promotionType ?? (row.actionType === 'DiscountAmount' ? 0 : row.actionType === 'DiscountRate' ? 1 : 2),
       scopeType: row.scopeType || 'Global',
       scopeTargetIds: (row.scopes || []).map((scope: any) => scope.scopeTargetId),
-      thresholdAmount: Number(row.thresholdAmount) > 0 ? Number(row.thresholdAmount) : 100,
+      thresholdAmount: Number(row.thresholdAmount) || 0,
       discountAmount: action.amount || 20,
       discountPercent: action.rate || 0.8,
       giftQuantity: action.quantity || 1,
       giftSkuId: action.skuId || '',
-      tradeInPrice: action.tradeInPrice || 9.9,
       promotionTagId: row.promotionTagId || '',
-      priority: row.priority || 0,
-      combinable: row.combinable || false,
+      startDate: row.startDate, endDate: row.endDate,
       maxUsagePerUser: row.maxUsagePerUser || 0,
       maxUsagePerOrder: row.maxUsagePerOrder || 0,
       isActive: row.isActive
@@ -424,24 +406,17 @@ const submitForm = async () => {
     ElMessage.warning('请选择赠送规格')
     return
   }
-  if (form.promotionType === 3) {
-    if (!form.giftSkuId) { ElMessage.warning('请选择换购规格'); return }
-    if (form.tradeInPrice <= 0) { ElMessage.warning('换购价格必须大于 0'); return }
-  }
 
   submitting.value = true
   try {
     const actionType = form.promotionType === 0 ? 'DiscountAmount'
       : form.promotionType === 1 ? 'DiscountRate'
-      : form.promotionType === 2 ? 'Gift'
-      : 'TradeIn'
+      : 'Gift'
     const actionConfigJson = JSON.stringify(form.promotionType === 0
       ? { amount: form.discountAmount }
       : form.promotionType === 1
         ? { rate: form.discountPercent }
-        : form.promotionType === 2
-          ? { skuId: form.giftSkuId, quantity: form.giftQuantity }
-          : { skuId: form.giftSkuId, quantity: form.giftQuantity, tradeInPrice: form.tradeInPrice })
+        : { skuId: form.giftSkuId, quantity: form.giftQuantity })
     const scopeType = form.scopeType
     const scopeTargetType = scopeType
     const payload = {
@@ -456,10 +431,10 @@ const submitForm = async () => {
       scopes: scopeType === 'Global'
         ? []
         : form.scopeTargetIds.map(scopeTargetId => ({ scopeTargetType, scopeTargetId })),
-      priority: form.priority,
-      combinable: form.combinable,
       maxUsagePerUser: form.maxUsagePerUser,
       maxUsagePerOrder: form.maxUsagePerOrder,
+      startDate: form.startDate || null,
+      endDate: form.endDate || null,
       isActive: form.isActive
     }
     if (dialogType.value === '新增') {

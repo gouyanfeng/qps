@@ -176,12 +176,6 @@
         <text class="popup-title">活动规则</text>
         <scroll-view scroll-y class="popup-body">
           <text class="popup-text">{{ activity?.description || '暂无详细规则说明' }}</text>
-          <view v-if="activity?.promotions.length" class="popup-promos">
-            <view v-for="promo in activity?.promotions" :key="promo.id" class="popup-promo-item">
-              <text class="popup-promo-name">{{ promo.name }}</text>
-              <text v-if="promo.description" class="popup-promo-desc">{{ promo.description }}</text>
-            </view>
-          </view>
         </scroll-view>
         <view class="popup-close" @tap="showRulesPopup = false">
           <text class="popup-close-text">我知道了</text>
@@ -194,7 +188,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMallActivity, getCategories, getProducts, getActivityProducts, addToCart, getCartItems } from '@/api'
+import { getMallActivity, getCategories, getProducts, addToCart, getCartItems } from '@/api'
 import type { MallActivity, Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 import { resolveTagColor } from '@/utils/tagColor'
@@ -217,7 +211,6 @@ interface ProductItem {
 }
 
 const activity = ref<MallActivity | null>(null)
-const activityId = ref('')
 const loading = ref(true)
 const loadingProducts = ref(false)
 const products = ref<ProductItem[]>([])
@@ -258,7 +251,6 @@ onLoad(async (options) => {
       loadCartSafely()
     ])
     activity.value = act
-    activityId.value = options.id
     if (cats.length) {
       categories.value = [
         { id: 'all', name: '全部推荐' },
@@ -306,9 +298,7 @@ async function loadProducts() {
   loadingProducts.value = true
   try {
     const categoryId = activeCategory.value !== 'all' ? activeCategory.value : undefined
-    const data = activityId.value
-      ? await getActivityProducts(activityId.value, categoryId, productPage.value, 20, activeSort.value)
-      : await getProducts(categoryId, undefined, productPage.value, 20, activeSort.value)
+    const data = await getProducts(categoryId, undefined, productPage.value, 20, activeSort.value)
     const newItems = data.items.filter(p => p.skus.length > 0).map(mapProductItem)
     if (productPage.value === 1) {
       products.value = newItems
@@ -1046,33 +1036,6 @@ $shadow-soft: 0 4rpx 20rpx -6rpx rgba(46, 125, 50, 0.1);
   font-size: 26rpx;
   color: $text-secondary;
   line-height: 1.8;
-}
-
-.popup-promos {
-  margin-top: 24rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.popup-promo-item {
-  padding: 16rpx;
-  background: $primary-light;
-  border-radius: 12rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
-
-.popup-promo-name {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #8B5000;
-}
-
-.popup-promo-desc {
-  font-size: 22rpx;
-  color: $text-secondary;
 }
 
 .popup-close {

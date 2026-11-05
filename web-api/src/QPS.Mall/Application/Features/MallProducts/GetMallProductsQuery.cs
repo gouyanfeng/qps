@@ -22,9 +22,6 @@ public class GetMallProductsQuery : PaginationRequest, IRequest<PaginationRespon
 
     public string? TagCode { get; set; }
 
-    /// <summary>按活动筛选：只返回活动关联的有效促销范围内的商品。</summary>
-    public Guid? ActivityId { get; set; }
-
     /// <summary>排序：default 综合序 / sales 销量降序 / price 价格升序。</summary>
     public string? SortBy { get; set; }
 }
@@ -47,25 +44,9 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
         var page = request.Page < 1 ? 1 : request.Page;
         var pageSize = request.PageSize < 1 ? 10 : request.PageSize;
 
-        var activityScope = request.ActivityId.HasValue
-            ? await ResolveActivityScopeAsync(request.ActivityId.Value, cancellationToken)
-            : null;
-        if (activityScope is { IsEmpty: true })
-        {
-            return new PaginationResponse<MallProductDto>(new List<MallProductDto>(), 0, page, pageSize);
-        }
-
         var query = _dbContext.MallProducts
             .Where(product => !product.IsDeleted)
             .AsQueryable();
-
-        if (activityScope is { IsGlobal: false })
-        {
-            var scope = activityScope;
-            query = query.Where(product =>
-                scope.ProductIds.Contains(product.Id) ||
-                (product.CategoryId.HasValue && scope.CategoryIds.Contains(product.CategoryId.Value)));
-        }
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
@@ -222,91 +203,6 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
         return new PaginationResponse<MallProductDto>(list, totalCount, page, pageSize);
     }
 
-    /// <summary>解析活动的有效促销范围：Global 全场 / 指定商品 / 指定规格 / 指定分类（含子分类）。</summary>
-    private async Task<ActivityProductScope> ResolveActivityScopeAsync(Guid activityId, CancellationToken cancellationToken)
-    {
-        var now = DateTime.UtcNow;
-        var activity = await _dbContext.MallActivities
-            .AsNoTracking()
-            .FirstOrDefaultAsync(item =>
-                item.Id == activityId &&
-                item.IsActive &&
-                !item.IsDeleted &&
-                (item.StartDate == null || item.StartDate <= now) &&
-                (item.EndDate == null || item.EndDate >= now), cancellationToken);
-        if (activity is null)
-        {
-            throw new BusinessException(404, "活动不存在或已结束");
-        }
-
-        var promotionRows = await (
-            from link in _dbContext.MallActivityPromotions
-            join promotion in _dbContext.MallPromotions on link.PromotionId equals promotion.Id
-            where link.ActivityId == activityId &&
-                !link.IsDeleted &&
-                !promotion.IsDeleted &&
-                promotion.IsActive &&
-                (promotion.StartDate == null || promotion.StartDate <= now) &&
-                (promotion.EndDate == null || promotion.EndDate >= now)
-            select new { promotion.Id, promotion.ScopeType })
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        // 促销的全场范围由实体 ScopeType 表达，scope 表只存指定分类/商品/规格目标
-        if (promotionRows.Any(promotion => promotion.ScopeType == "Global"))
-        {
-            return new ActivityProductScope(true, new HashSet<Guid>(), new HashSet<Guid>());
-        }
-
-        var promotionIds = promotionRows.Select(promotion => promotion.Id).ToList();
-        var scopes = promotionIds.Count == 0
-            ? new List<MallPromotionScope>()
-            : await _dbContext.MallPromotionScopes
-                .AsNoTracking()
-                .Where(scope => promotionIds.Contains(scope.PromotionId) && !scope.IsDeleted)
-                .ToListAsync(cancellationToken);
-
-        var productIds = scopes
-            .Where(scope => scope.ScopeTargetType == "Product")
-            .Select(scope => scope.ScopeTargetId)
-            .ToHashSet();
-        var skuIds = scopes
-            .Where(scope => scope.ScopeTargetType == "Sku")
-            .Select(scope => scope.ScopeTargetId)
-            .ToList();
-        if (skuIds.Count > 0)
-        {
-            var skuProductIds = await _dbContext.MallSkus
-                .AsNoTracking()
-                .Where(sku => skuIds.Contains(sku.Id) && !sku.IsDeleted)
-                .Select(sku => sku.ProductId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-            productIds.UnionWith(skuProductIds);
-        }
-
-        var categoryIds = scopes
-            .Where(scope => scope.ScopeTargetType == "Category")
-            .Select(scope => scope.ScopeTargetId)
-            .ToHashSet();
-        if (categoryIds.Count > 0)
-        {
-            var childIds = await _dbContext.MallCategories
-                .AsNoTracking()
-                .Where(category => category.ParentId != null && categoryIds.Contains(category.ParentId.Value) && !category.IsDeleted)
-                .Select(category => category.Id)
-                .ToListAsync(cancellationToken);
-            categoryIds.UnionWith(childIds);
-        }
-
-        return new ActivityProductScope(false, productIds, categoryIds);
-    }
-
-    private sealed record ActivityProductScope(bool IsGlobal, HashSet<Guid> ProductIds, HashSet<Guid> CategoryIds)
-    {
-        public bool IsEmpty => !IsGlobal && ProductIds.Count == 0 && CategoryIds.Count == 0;
-    }
-
     internal static MallProductDto Map(MallProduct product, string storeName, string categoryName)
     {
         return new MallProductDto
@@ -326,6 +222,7 @@ public class GetMallProductsHandler : IRequestHandler<GetMallProductsQuery, Pagi
             IsActive = product.IsActive,
             IsHot = product.IsHot,
             Sales = product.Sales,
+            FreightTemplateId = product.FreightTemplateId,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt
         };

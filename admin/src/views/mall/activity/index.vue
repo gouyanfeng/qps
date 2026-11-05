@@ -48,20 +48,6 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="关联促销" min-width="220">
-            <template #default="{ row }">
-              <el-tag
-                v-for="promotion in row.promotions || []"
-                :key="promotion.id"
-                size="small"
-                class="promotion-tag"
-                :type="promotion.isActive ? 'success' : 'info'"
-              >
-                {{ promotion.name }}
-              </el-tag>
-              <span v-if="!row.promotions?.length">-</span>
-            </template>
-          </el-table-column>
           <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
           <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
@@ -108,35 +94,10 @@
 
         <el-descriptions :column="2" border class="detail-desc">
           <el-descriptions-item label="排序">{{ detail.sortOrder }}</el-descriptions-item>
-          <el-descriptions-item label="关联促销数">{{ detail.promotions.length }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ formatDate(detail.createdAt) }}</el-descriptions-item>
           <el-descriptions-item label="更新时间">{{ formatDate(detail.updatedAt) }}</el-descriptions-item>
           <el-descriptions-item label="活动说明" :span="2">{{ detail.description || '-' }}</el-descriptions-item>
         </el-descriptions>
-
-        <div class="detail-section">
-          <div class="section-title">关联促销</div>
-          <el-table :data="detail.promotions" border size="small">
-            <el-table-column prop="name" label="促销名称" min-width="140" show-overflow-tooltip />
-            <el-table-column label="类型" width="90" align="center">
-              <template #default="{ row }">{{ getPromotionTypeName(row) }}</template>
-            </el-table-column>
-            <el-table-column label="时间窗口" width="200">
-              <template #default="{ row }">
-                <span style="font-size: 12px; color: #666">
-                  {{ formatDate(row.startDate) }} ~ {{ formatDate(row.endDate) }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag size="small" :type="row.isActive ? 'success' : 'info'">
-                  {{ row.isActive ? '启用' : '停用' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
 
         <div class="detail-section">
           <div class="section-title">活动详情</div>
@@ -191,23 +152,6 @@
             <template #tip>建议上传 16:9 图片，大小不超过 5MB</template>
           </UploadImg>
         </el-form-item>
-        <el-form-item label="关联促销">
-          <el-select
-            v-model="form.promotionIds"
-            multiple
-            filterable
-            clearable
-            style="width: 100%"
-            placeholder="请选择要关联的促销"
-          >
-            <el-option
-              v-for="promotion in promotionOptions"
-              :key="promotion.id"
-              :label="`${promotion.name}（${getPromotionTypeName(promotion)}）`"
-              :value="promotion.id"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="活动说明">
           <el-input v-model="form.description" type="textarea" :rows="2" maxlength="500" show-word-limit />
         </el-form-item>
@@ -240,11 +184,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, Delete, EditPen, View } from '@element-plus/icons-vue'
 import { mallActivityApi } from '@/api/modules/mallActivity'
-import { mallPromotionApi } from '@/api/modules/mallPromotion'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
@@ -311,7 +254,6 @@ const submitting = ref(false)
 const drawerVisible = ref(false)
 const detail = ref<any>(null)
 const editTab = ref('basic')
-const promotionOptions = ref<any[]>([])
 
 const activityDetailExtensions = [
   Document,
@@ -350,8 +292,7 @@ const form = reactive({
   detailHtml: '',
   dateRange: [] as string[],
   sortOrder: 0,
-  isActive: true,
-  promotionIds: [] as string[]
+  isActive: true
 })
 
 const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
@@ -362,25 +303,6 @@ const coverImageModel = computed({
     form.coverImage = value.startsWith(apiOrigin) ? value.slice(apiOrigin.length) : value
   }
 })
-
-const getPromotionTypeName = (promotion: any) => {
-  if (promotion.actionType === 'DiscountAmount') return '满减'
-  if (promotion.actionType === 'DiscountRate') return '折扣'
-  if (promotion.actionType === 'Gift') return '买赠'
-  if (promotion.actionType === 'TradeIn') return '换购'
-  return promotion.actionType || '其他'
-}
-
-const loadPromotions = async () => {
-  try {
-    const result = await mallPromotionApi.getList({ page: 1, pageSize: 1000 })
-    promotionOptions.value = result.data?.list || result.data || []
-  } catch {
-    ElMessage.error('加载促销列表失败')
-  }
-}
-
-onMounted(loadPromotions)
 
 const handleReset = () => {
   searchForm.keyword = ''
@@ -396,7 +318,6 @@ const resetForm = () => {
   form.dateRange = []
   form.sortOrder = 0
   form.isActive = true
-  form.promotionIds = []
 }
 
 const openDialog = async (type: string, row?: any) => {
@@ -424,8 +345,7 @@ const openDialog = async (type: string, row?: any) => {
       detailHtml: data.detailHtml || '',
       dateRange: data.startDate || data.endDate ? [data.startDate, data.endDate] : [],
       sortOrder: data.sortOrder || 0,
-      isActive: data.isActive,
-      promotionIds: (data.promotions || []).map((item: any) => item.promotionId)
+      isActive: data.isActive
     })
     currentId.value = data.id
     dialogVisible.value = true
@@ -463,7 +383,6 @@ const submitForm = async () => {
     startDate: form.dateRange[0] || null,
     endDate: form.dateRange[1] || null,
     sortOrder: form.sortOrder,
-    promotionIds: form.promotionIds,
     ...(dialogType.value === '新增' ? { isActive: form.isActive } : {})
   }
 
@@ -520,10 +439,6 @@ const remove = async (row: any) => {
   margin-top: 2px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-}
-
-.promotion-tag {
-  margin: 0 6px 4px 0;
 }
 
 .activity-detail {

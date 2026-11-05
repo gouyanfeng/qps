@@ -422,7 +422,6 @@ function promoBadge(promo: ProductPromotion) {
   if (promo.actionType === 'Gift') return '赠品'
   if (promo.actionType === 'DiscountRate') return '特价'
   if (promo.actionType === 'DiscountAmount') return '满减'
-  if (promo.actionType === 'TradeIn') return '换购'
   return '优惠'
 }
 
@@ -436,7 +435,6 @@ function promoAction(promo: ProductPromotion) {
   if (promo.actionType === 'FreightFree') return '已享'
   if (promo.actionType === 'Gift') return '查看 ›'
   if (promo.actionType === 'DiscountAmount') return '去领券 ›'
-  if (promo.actionType === 'TradeIn') return '去换购 ›'
   return '去凑单 ›'
 }
 

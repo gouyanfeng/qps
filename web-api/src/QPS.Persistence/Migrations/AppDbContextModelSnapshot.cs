@@ -121,7 +121,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId", "AttributeCode", "AttributeValue");
 
-                    b.ToTable("CrmBusinessEntityAttributes", (string)null);
+                    b.ToTable("CrmBusinessEntityAttributes");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmContact", b =>
@@ -198,7 +198,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId", "Phone");
 
-                    b.ToTable("CrmContacts", (string)null);
+                    b.ToTable("CrmContacts");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmFollowRecord", b =>
@@ -263,7 +263,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId", "CreatedAt");
 
-                    b.ToTable("CrmFollowRecords", (string)null);
+                    b.ToTable("CrmFollowRecords");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmHerbBase", b =>
@@ -377,7 +377,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("HerbBaseSubjectId");
 
-                    b.ToTable("CrmHerbBases", (string)null);
+                    b.ToTable("CrmHerbBases");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmHerbBaseSubject", b =>
@@ -458,7 +458,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("SubjectType", "IsDeleted");
 
-                    b.ToTable("CrmHerbBaseSubjects", (string)null);
+                    b.ToTable("CrmHerbBaseSubjects");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmHerbBaseSupply", b =>
@@ -556,7 +556,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("ProductName", "Status", "ValidUntil");
 
-                    b.ToTable("CrmHerbBaseSupplies", (string)null);
+                    b.ToTable("CrmHerbBaseSupplies");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchCandidate", b =>
@@ -834,7 +834,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId", "CreatedAt");
 
-                    b.ToTable("CrmTransferRecords", (string)null);
+                    b.ToTable("CrmTransferRecords");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmVendor", b =>
@@ -911,7 +911,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("OwnerUserId", "NextFollowAt");
 
-                    b.ToTable("CrmVendors", (string)null);
+                    b.ToTable("CrmVendors");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmVendorDemand", b =>
@@ -1134,46 +1134,6 @@ namespace QPS.Persistence.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("MallActivities", (string)null);
-                });
-
-            modelBuilder.Entity("QPS.Mall.Domain.Entities.MallActivityPromotion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ActivityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("PromotionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PromotionId");
-
-                    b.HasIndex("ActivityId", "PromotionId")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.ToTable("MallActivityPromotions", (string)null);
                 });
 
             modelBuilder.Entity("QPS.Mall.Domain.Entities.MallAddress", b =>
@@ -2671,6 +2631,12 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<Guid?>("PromotionTagId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PromotionType")
+                        .HasColumnType("int");
+
                     b.Property<string>("ScopeType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2679,14 +2645,8 @@ namespace QPS.Persistence.Migrations
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("TriggerConfigJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TriggerType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                    b.Property<decimal>("ThresholdAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3331,7 +3291,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("Level", "ParentCode");
 
-                    b.ToTable("SystemChinaRegions", (string)null);
+                    b.ToTable("SystemChinaRegions");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemDataDictionary", b =>
@@ -3386,7 +3346,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("SystemDataDictionaries", (string)null);
+                    b.ToTable("SystemDataDictionaries");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemErrorLog", b =>
@@ -3457,7 +3417,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemErrorLogs", (string)null);
+                    b.ToTable("SystemErrorLogs");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemOperationLog", b =>
@@ -3525,7 +3485,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("SystemOperationLogs", (string)null);
+                    b.ToTable("SystemOperationLogs");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemPermission", b =>
@@ -3564,7 +3524,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemPermissions", (string)null);
+                    b.ToTable("SystemPermissions");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemRole", b =>
@@ -3600,7 +3560,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemRoles", (string)null);
+                    b.ToTable("SystemRoles");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemRolePermission", b =>
@@ -3634,7 +3594,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemRolePermissions", (string)null);
+                    b.ToTable("SystemRolePermissions");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemUser", b =>
@@ -3680,7 +3640,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemUsers", (string)null);
+                    b.ToTable("SystemUsers");
                 });
 
             modelBuilder.Entity("QPS.System.Domain.Entities.SystemUserRole", b =>
@@ -3714,7 +3674,7 @@ namespace QPS.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SystemUserRoles", (string)null);
+                    b.ToTable("SystemUserRoles");
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmFollowRecord", b =>

@@ -64,19 +64,6 @@ public class DiscountRateAction : IActionStrategy
     }
 }
 
-public class TradeInAction : IActionStrategy
-{
-    public string ActionType => "TradeIn";
-
-    /// <summary>
-    /// 换购由用户在结算页主动选择，通过下单请求的 ExchangeItems 链路处理，
-    /// 不参与引擎自动应用；保留注册以维持策略解析完整。
-    /// </summary>
-    public void Execute(ApplyContext ctx, JsonElement config, MatchedPromotion matchedPromotion)
-    {
-    }
-}
-
 public class FreightFreeAction : IActionStrategy
 {
     public string ActionType => "FreightFree";

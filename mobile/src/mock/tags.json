@@ -1,12 +1,12 @@
 {
   "tags": [
-    { "code": "ROOT_HERB", "name": "根茎类", "color": "success", "sortOrder": 10 },
-    { "code": "FLOWER_TEA", "name": "花茶", "color": "danger", "sortOrder": 20 },
-    { "code": "FRUIT_HERB", "name": "果实类", "color": "warning", "sortOrder": 30 },
-    { "code": "NOURISHING", "name": "滋补", "color": "primary", "sortOrder": 40 },
-    { "code": "POPULAR", "name": "人气好物", "color": "warning", "sortOrder": 50 },
-    { "code": "GIFT_SET", "name": "礼盒装", "color": "info", "sortOrder": 60 },
-    { "code": "MINERAL", "name": "矿物类", "color": "info", "sortOrder": 70 }
+    { "code": "ROOT_HERB", "name": "根茎类", "color": "#67C23A", "sortOrder": 10 },
+    { "code": "FLOWER_TEA", "name": "花茶", "color": "#F56C6C", "sortOrder": 20 },
+    { "code": "FRUIT_HERB", "name": "果实类", "color": "#E6A23C", "sortOrder": 30 },
+    { "code": "NOURISHING", "name": "滋补", "color": "#409EFF", "sortOrder": 40 },
+    { "code": "POPULAR", "name": "人气好物", "color": "#E6A23C", "sortOrder": 50 },
+    { "code": "GIFT_SET", "name": "礼盒装", "color": "#909399", "sortOrder": 60 },
+    { "code": "MINERAL", "name": "矿物类", "color": "#909399", "sortOrder": 70 }
   ],
   "productTags": [
     { "productId": "prod-001", "tagCodes": ["ROOT_HERB", "NOURISHING"] },

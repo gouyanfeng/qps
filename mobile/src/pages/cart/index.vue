@@ -126,33 +126,6 @@
           </view>
         </section>
 
-        <!-- section 药食同源·超值换购 -->
-        <section class="bonus-section">
-          <view class="bonus-header">
-            <view class="bonus-title-wrap">
-              <q-icon name="gift" size="15" color="#B26A00" />
-              <text class="bonus-title-text">药食同源 · 超值换购</text>
-            </view>
-            <text class="bonus-cond">满¥199可用｜已达标（已选 0/1 件）</text>
-          </view>
-
-          <view v-for="b in bonusItems" :key="b.id" class="bonus-card">
-            <q-cached-image :src="b.image" mode="aspectFill" class="bonus-image" />
-            <view class="bonus-info">
-              <text class="bonus-name">{{ b.name }}</text>
-              <text class="bonus-desc">{{ b.desc }}</text>
-              <view class="bonus-price-row">
-                <text class="bonus-price-label">加¥</text>
-                <text class="bonus-price">{{ b.price.toFixed(1) }}</text>
-                <text class="bonus-origin">¥{{ b.originPrice.toFixed(2) }}</text>
-              </view>
-            </view>
-            <view class="bonus-add-btn" @click="addBonus(b)">
-              <text class="bonus-add-text">+ 换购</text>
-            </view>
-          </view>
-        </section>
-
         <!-- section 道地承诺 三栏 -->
         <section class="promise-section">
           <view class="promise-item">
@@ -206,31 +179,16 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
   getCartItems,
-  getProducts,
-  addToCart,
   updateCartItemQuantity,
   removeCartItem,
   toggleCartItemSelection,
   setCartItemsSelection
 } from '@/api'
-import type { CartItem, Product } from '@/api/types'
+import type { CartItem } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 
 const cartItems = ref<CartItem[]>([])
 const editMode = ref(false)
-
-// 换购商品（静态示例，与设计稿一致）
-const bonusItems = ref<Array<{
-  id: string
-  skuId: string
-  name: string
-  desc: string
-  price: number
-  originPrice: number
-  image: string
-  weightGram: number
-  specName: string
-}>>([])
 
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const selectedCount = computed(() => selectedItems.value.length)
@@ -239,12 +197,7 @@ const isAllSelected = computed(() => cartItems.value.length > 0 && selectedCount
 
 onShow(async () => {
   try {
-    const [items, pRes] = await Promise.all([getCartItems(), getProducts()])
-    cartItems.value = items
-    bonusItems.value = pRes.items
-      .filter((product: Product) => product.skus.length > 0 && !items.some(item => item.productId === product.id))
-      .slice(0, 1)
-      .map(mapBonusProduct)
+    cartItems.value = await getCartItems()
   } catch (error) {
     console.error('加载购物车失败', error)
     if (error instanceof UnauthorizedError) return
@@ -301,40 +254,6 @@ function checkout() {
   uni.navigateTo({ url: '/pages/checkout/index' })
 }
 function goToIndex() { uni.switchTab({ url: '/pages/index/index' }) }
-async function addBonus(b: (typeof bonusItems.value)[number]) {
-  try {
-    cartItems.value = await addToCart({
-    productId: b.id,
-    productName: b.name,
-    productImage: b.image,
-    skuId: b.skuId,
-    specName: b.specName,
-    price: b.price,
-    quantity: 1,
-    weightGram: b.weightGram,
-    selected: true
-  })
-    uni.showToast({ title: '已加入购物车', icon: 'none' })
-  } catch (error) {
-    console.error('加入购物车失败', error)
-    if (error instanceof UnauthorizedError) return
-    uni.showToast({ title: '加入购物车失败', icon: 'none' })
-  }
-}
-function mapBonusProduct(product: Product) {
-  const sku = product.skus[0]
-  return {
-    id: product.id,
-    skuId: sku.id,
-    name: product.name,
-    desc: product.description,
-    price: sku.price,
-    originPrice: sku.price * 1.15,
-    image: product.images[0] || '',
-    weightGram: sku.weightGram,
-    specName: sku.specName
-  }
-}
 </script>
 
 <style lang="scss" scoped>
@@ -537,57 +456,6 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
   &.disabled { opacity: 0.3; }
 }
 .step-val { width: 54rpx; text-align: center; font-size: 25rpx; font-weight: 600; color: $on-surface; }
-
-// ============ section 药食同源·超值换购 ============
-.bonus-section {
-  margin-bottom: 24rpx;
-  padding: 22rpx 24rpx;
-  background: #FFFDF6;
-  border: 1rpx solid #F0DCB0;
-  border-radius: 24rpx;
-  box-shadow: $herbal-shadow;
-}
-.bonus-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12rpx; margin-bottom: 16rpx;
-}
-.bonus-title-wrap { display: flex; align-items: center; gap: 8rpx; flex-shrink: 0; }
-.bonus-title-text { font-size: 27rpx; font-weight: 700; color: #8B5000; }
-.bonus-cond { font-size: 19rpx; color: #A98B5E; text-align: right; }
-
-.bonus-card {
-  display: flex; align-items: center; gap: 18rpx;
-  padding: 16rpx;
-  background: #ffffff;
-  border: 1rpx solid rgba(240, 220, 176, 0.7);
-  border-radius: 18rpx;
-}
-.bonus-image {
-  width: 132rpx; height: 132rpx; border-radius: 14rpx;
-  background: $surface-low; flex-shrink: 0;
-}
-.bonus-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
-.bonus-name {
-  font-size: 25rpx; font-weight: 600; color: $on-surface;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.bonus-desc { font-size: 20rpx; color: #8A8F86; }
-.bonus-price-row { display: flex; align-items: baseline; gap: 4rpx; }
-.bonus-price-label { font-size: 20rpx; font-weight: 700; color: $theme-accent; }
-.bonus-price { font-size: 34rpx; font-weight: 700; color: $theme-accent; line-height: 1; }
-.bonus-origin {
-  font-size: 19rpx; color: #B0B5AC;
-  text-decoration: line-through; margin-left: 8rpx;
-}
-.bonus-add-btn {
-  flex-shrink: 0;
-  height: 56rpx; padding: 0 26rpx;
-  display: flex; align-items: center; justify-content: center;
-  background: $theme-accent;
-  border-radius: 100rpx;
-  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
-}
-.bonus-add-text { font-size: 23rpx; font-weight: 700; color: #ffffff; }
 
 // ============ section 道地承诺 三栏 ============
 .promise-section {

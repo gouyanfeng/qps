@@ -42,7 +42,6 @@ public class UpdateMallActivityHandler : IRequestHandler<UpdateMallActivityComma
         var detailHtml = MallActivityRules.NormalizeDetailHtml(req.DetailHtml);
         var sortOrder = MallActivityRules.NormalizeSortOrder(req.SortOrder);
         MallActivityRules.ValidateTimeWindow(req.StartDate, req.EndDate);
-        await MallActivityRules.EnsurePromotionsExistAsync(_dbContext, req.PromotionIds, cancellationToken);
 
         activity.Update(
             name,
@@ -53,19 +52,6 @@ public class UpdateMallActivityHandler : IRequestHandler<UpdateMallActivityComma
             req.StartDate,
             req.EndDate,
             sortOrder);
-
-        var existingLinks = await _dbContext.MallActivityPromotions
-            .Where(link => link.ActivityId == activity.Id && !link.IsDeleted)
-            .ToListAsync(cancellationToken);
-        foreach (var link in existingLinks)
-        {
-            link.IsDeleted = true;
-        }
-
-        foreach (var promotionId in req.PromotionIds.Distinct())
-        {
-            _dbContext.MallActivityPromotions.Add(MallActivityPromotion.Create(activity.Id, promotionId));
-        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

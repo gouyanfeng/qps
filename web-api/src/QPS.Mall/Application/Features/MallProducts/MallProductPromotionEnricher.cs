@@ -29,7 +29,7 @@ public class MallProductPromotionEnricher
         var now = DateTime.UtcNow;
         var promotions = await _dbContext.MallPromotions
             .AsNoTracking()
-            .WhereEffective(_dbContext, now)
+            .WhereEffective(now)
             .OrderByDescending(promotion => promotion.CreatedAt)
             .ToListAsync(cancellationToken);
 
@@ -155,7 +155,7 @@ public class MallProductPromotionEnricher
         Guid? categoryId,
         IReadOnlyCollection<Guid> categoryAncestors)
     {
-        var inScope = promotion.ScopeType switch
+        return promotion.ScopeType switch
         {
             "Global" => true,
             "Product" => scopes.Any(scope =>
@@ -167,24 +167,6 @@ public class MallProductPromotionEnricher
                 (scope.ScopeTargetId == categoryId || categoryAncestors.Contains(scope.ScopeTargetId))),
             _ => false
         };
-        if (!inScope)
-        {
-            return false;
-        }
-
-        if (promotion.TriggerType != "BuyProduct")
-        {
-            return true;
-        }
-
-        using var triggerConfig = JsonDocument.Parse(promotion.TriggerConfigJson);
-        if (!triggerConfig.RootElement.TryGetProperty("productIds", out var productIds))
-        {
-            return true;
-        }
-
-        return productIds.EnumerateArray()
-            .Any(item => Guid.TryParse(item.GetString(), out var triggerProductId) && triggerProductId == productId);
     }
 
     private static MallProductPromotionDto ToDto(MallPromotion promotion)
@@ -194,8 +176,8 @@ public class MallProductPromotionEnricher
             Id = promotion.Id,
             Name = promotion.Name,
             Description = promotion.Description,
-            TriggerType = promotion.TriggerType,
-            TriggerConfigJson = promotion.TriggerConfigJson,
+            PromotionType = promotion.PromotionType,
+            ThresholdAmount = promotion.ThresholdAmount,
             ActionType = promotion.ActionType,
             ActionConfigJson = promotion.ActionConfigJson,
             ScopeType = promotion.ScopeType,
@@ -207,19 +189,11 @@ public class MallProductPromotionEnricher
 
     private static string BuildRuleText(MallPromotion promotion)
     {
-        using var triggerConfig = JsonDocument.Parse(promotion.TriggerConfigJson);
         using var actionConfig = JsonDocument.Parse(promotion.ActionConfigJson);
-        var trigger = triggerConfig.RootElement;
         var action = actionConfig.RootElement;
-        var condition = promotion.TriggerType switch
-        {
-            "FullAmount" when trigger.TryGetProperty("minAmount", out var amount) && amount.GetDecimal() > 0.01m
-                => $"满 ¥{amount.GetDecimal():0.##}",
-            "BuyProduct" when trigger.TryGetProperty("minQuantity", out var quantity)
-                => $"买满 {quantity.GetInt32()} 件",
-            "BuyProduct" => "购买指定商品",
-            _ => string.Empty
-        };
+        var condition = promotion.ThresholdAmount > 0.01m
+            ? $"满 ¥{promotion.ThresholdAmount:0.##}"
+            : string.Empty;
 
         var benefit = promotion.ActionType switch
         {
@@ -230,12 +204,6 @@ public class MallProductPromotionEnricher
             "Gift" when action.TryGetProperty("quantity", out var giftQuantity)
                 => $"赠 {giftQuantity.GetInt32()} 件",
             "Gift" => "赠送商品",
-            "TradeIn" when action.TryGetProperty("tradeInPrice", out var tip) && action.TryGetProperty("quantity", out var tiQty)
-                => $"加 ¥{tip.GetDecimal():0.##} 换购 {tiQty.GetInt32()} 件",
-            "TradeIn" when action.TryGetProperty("tradeInPrice", out var tip2)
-                => $"加 ¥{tip2.GetDecimal():0.##} 换购",
-            "TradeIn" => "换购商品",
-            "FreightFree" => "免运费",
             _ => promotion.Description
         };
 

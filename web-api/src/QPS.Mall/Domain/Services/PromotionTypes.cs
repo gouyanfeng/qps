@@ -2,32 +2,9 @@ using QPS.Mall.Domain.Entities;
 
 namespace QPS.Mall.Domain.Services;
 
-public interface ITriggerStrategyRegistry
-{
-    ITriggerStrategy Get(string triggerType);
-}
-
 public interface IActionStrategyRegistry
 {
     IActionStrategy Get(string actionType);
-}
-
-public class TriggerStrategyRegistry : ITriggerStrategyRegistry
-{
-    private readonly Dictionary<string, ITriggerStrategy> _map;
-
-    public TriggerStrategyRegistry(IEnumerable<ITriggerStrategy> strategies)
-    {
-        _map = strategies.ToDictionary(s => s.TriggerType, s => s);
-    }
-
-    public ITriggerStrategy Get(string triggerType)
-    {
-        if (_map.TryGetValue(triggerType, out var strategy))
-            return strategy;
-
-        throw new InvalidOperationException($"未注册 Trigger 策略: {triggerType}");
-    }
 }
 
 public class ActionStrategyRegistry : IActionStrategyRegistry
@@ -50,11 +27,7 @@ public class ActionStrategyRegistry : IActionStrategyRegistry
 
 public class OrderContext
 {
-    public decimal GoodsAmount { get; set; }
     public Guid? UserId { get; set; }
-    public bool IsFirstOrder { get; set; }
-    public int UserOrderCount { get; set; }
-    public DateTime Now { get; set; } = DateTime.Now;
     public List<SkuOrderRow> Items { get; set; } = new();
     public Dictionary<Guid, int> PromotionUsageMap { get; set; } = new();
 }

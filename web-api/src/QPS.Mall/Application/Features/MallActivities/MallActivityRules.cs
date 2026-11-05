@@ -98,27 +98,4 @@ internal static class MallActivityRules
             throw new BusinessException(400, "活动结束时间不能早于开始时间");
         }
     }
-
-    /// <summary>
-    /// 确认关联的促销都存在且未删除。
-    /// </summary>
-    public static async Task EnsurePromotionsExistAsync(
-        IMallDbContext dbContext,
-        IReadOnlyCollection<Guid> promotionIds,
-        CancellationToken cancellationToken)
-    {
-        if (promotionIds.Count == 0)
-        {
-            return;
-        }
-
-        var distinctIds = promotionIds.Distinct().ToList();
-        var existingCount = await dbContext.MallPromotions
-            .CountAsync(promotion => distinctIds.Contains(promotion.Id), cancellationToken);
-
-        if (existingCount != distinctIds.Count)
-        {
-            throw new BusinessException(400, "存在无效的促销，请重新选择");
-        }
-    }
 }

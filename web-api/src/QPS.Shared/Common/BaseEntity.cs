@@ -19,6 +19,14 @@ public abstract class BaseEntity
         IsDeleted = false;
     }
 
+    /// <summary>
+    /// 标记实体为软删除。查询侧由全局过滤器统一排除，业务代码不要重复写 IsDeleted 判断。
+    /// </summary>
+    public void SoftDelete()
+    {
+        IsDeleted = true;
+    }
+
     public override bool Equals(object obj)
     {
         if (obj == null || !(obj is BaseEntity))

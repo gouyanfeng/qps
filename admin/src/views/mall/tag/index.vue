@@ -143,14 +143,6 @@ const searchForm = reactive({
 
 const predefineColors = ['#2E7D32', '#C2410C', '#409EFF', '#909399', '#F56C6C', '#E6A23C']
 
-const LEGACY_COLORS: Record<string, string> = {
-  success: '#67C23A',
-  warning: '#E6A23C',
-  primary: '#409EFF',
-  info: '#909399',
-  danger: '#F56C6C'
-}
-
 const form = reactive({
   type: 'Product',
   code: '',
@@ -176,10 +168,7 @@ const typeTagTone = (type: string) => {
 
 const isHexColor = (color: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(color || ''))
 
-const normalizePickerColor = (color: string) => {
-  if (isHexColor(color)) return color
-  return LEGACY_COLORS[String(color || '').toLowerCase()] || ''
-}
+const normalizePickerColor = (color: string) => (isHexColor(color) ? color : '')
 
 const loadTypeOptions = async () => {
   try {

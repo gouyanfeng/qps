@@ -31,6 +31,20 @@ public static class ServiceRegistrationExtensions
                 // 所有 Controller 的返回值统一经过过滤器包装成 ApiResponse，业务代码只返回原始数据。
                 options.Filters.Add<ResponseWrapperFilter>();
             })
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                // DataAnnotations 模型校验失败时与全局异常中间件保持同一响应格式：HTTP 200 + { code, msg }。
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var firstError = context.ModelState.Values
+                        .SelectMany(state => state.Errors)
+                        .Select(error => string.IsNullOrEmpty(error.ErrorMessage) ? "请求参数不合法" : error.ErrorMessage)
+                        .FirstOrDefault() ?? "请求参数不合法";
+
+                    return new Microsoft.AspNetCore.Mvc.OkObjectResult(
+                        QPS.Shared.Common.ApiResponse<object>.Fail(400, firstError));
+                };
+            })
             .AddJsonOptions(options =>
             {
                 // 字段名输出为 camelCase，与前端约定保持一致。

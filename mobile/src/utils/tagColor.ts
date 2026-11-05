@@ -1,18 +1,8 @@
 /**
  * 商品标签颜色解析。
  *
- * 后台历史数据里颜色可能是 Element 色名（success / warning 等），
- * 也可能已经是十六进制；统一转成可直接用于样式的十六进制值。
+ * 标签颜色统一以十六进制存储，这里把 3 位、6 位、8 位十六进制规整为可直接用于样式的值。
  */
-
-const COLOR_ALIAS: Record<string, string> = {
-  primary: '#2E7D32',
-  success: '#4CAF50',
-  warning: '#E6A23C',
-  danger: '#F44336',
-  error: '#F44336',
-  info: '#909399'
-}
 
 const DEFAULT_COLOR = '#2E7D32'
 
@@ -27,17 +17,11 @@ function normalizeHex(value: string): string {
   return DEFAULT_COLOR
 }
 
-/** 解析标签颜色：支持色名与十六进制，空值/未知值回退主题绿。 */
+/** 解析标签颜色：空值或非法值回退主题绿。 */
 export function resolveTagColor(color?: string | null): string {
   const raw = (color || '').trim()
-  if (!raw) return DEFAULT_COLOR
-
-  const alias = COLOR_ALIAS[raw.toLowerCase()]
-  if (alias) return alias
-
-  if (raw.startsWith('#')) return normalizeHex(raw)
-
-  return DEFAULT_COLOR
+  if (!raw.startsWith('#')) return DEFAULT_COLOR
+  return normalizeHex(raw)
 }
 
 /**

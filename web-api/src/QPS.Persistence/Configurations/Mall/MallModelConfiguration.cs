@@ -316,8 +316,6 @@ public static class MallModelConfiguration
             entity.ToTable("MallPromotions");
             entity.Property(p => p.Name).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Description).HasMaxLength(500);
-            entity.Property(p => p.TriggerType).HasMaxLength(32).IsRequired();
-            entity.Property(p => p.TriggerConfigJson).HasColumnType("nvarchar(max)");
             entity.Property(p => p.ActionType).HasMaxLength(32).IsRequired();
             entity.Property(p => p.ActionConfigJson).HasColumnType("nvarchar(max)");
             entity.Property(p => p.ScopeType).HasMaxLength(20).IsRequired();
@@ -346,15 +344,6 @@ public static class MallModelConfiguration
             entity.Property(a => a.Description).HasMaxLength(500);
             entity.Property(a => a.DetailHtml).HasColumnType("nvarchar(max)");
             entity.HasIndex(a => a.IsActive);
-        });
-
-        modelBuilder.Entity<MallActivityPromotion>(entity =>
-        {
-            entity.ToTable("MallActivityPromotions");
-            entity.HasIndex(link => link.PromotionId);
-            entity.HasIndex(link => new { link.ActivityId, link.PromotionId })
-                .IsUnique()
-                .HasFilter("[IsDeleted] = 0");
         });
 
         modelBuilder.Entity<MallCart>(entity =>

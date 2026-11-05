@@ -1,7 +1,7 @@
 namespace QPS.Mall.Contracts.DTOs;
 
 /// <summary>
-/// 活动列表项，包含关联促销的精简信息。
+/// 活动列表项。
 /// </summary>
 public class MallActivityListItemDto
 {
@@ -22,8 +22,6 @@ public class MallActivityListItemDto
     public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }
-
-    public List<MallActivityPromotionDto> Promotions { get; set; } = new();
 }
 
 /// <summary>
@@ -54,32 +52,6 @@ public class MallActivityDto
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
-
-    public List<MallActivityPromotionDto> Promotions { get; set; } = new();
-}
-
-/// <summary>
-/// 活动关联的促销摘要。
-/// </summary>
-public class MallActivityPromotionDto
-{
-    public Guid Id { get; set; }
-
-    public Guid PromotionId { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-
-    public string Description { get; set; } = string.Empty;
-
-    public string TriggerType { get; set; } = string.Empty;
-
-    public string ActionType { get; set; } = string.Empty;
-
-    public DateTime? StartDate { get; set; }
-
-    public DateTime? EndDate { get; set; }
-
-    public bool IsActive { get; set; }
 }
 
 public class MallActivityCreateRequest
@@ -101,8 +73,6 @@ public class MallActivityCreateRequest
     public int SortOrder { get; set; }
 
     public bool IsActive { get; set; } = true;
-
-    public List<Guid> PromotionIds { get; set; } = new();
 }
 
 public class MallActivityUpdateRequest
@@ -122,8 +92,6 @@ public class MallActivityUpdateRequest
     public DateTime? EndDate { get; set; }
 
     public int SortOrder { get; set; }
-
-    public List<Guid> PromotionIds { get; set; } = new();
 }
 
 public class MallActivityStatusRequest

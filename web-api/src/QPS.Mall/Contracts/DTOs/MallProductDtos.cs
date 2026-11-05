@@ -101,9 +101,11 @@ public class MallProductPromotionDto
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    /// <summary>促销类型：0 满减 / 1 折扣 / 2 买赠。</summary>
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = "{}";
+    /// <summary>订单门槛金额（单位：元）。</summary>
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 

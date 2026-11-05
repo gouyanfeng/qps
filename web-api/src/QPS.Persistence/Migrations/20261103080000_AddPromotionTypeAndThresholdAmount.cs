@@ -40,7 +40,6 @@ namespace QPS.Persistence.Migrations
                         WHEN N''DiscountAmount'' THEN 0
                         WHEN N''DiscountRate'' THEN 1
                         WHEN N''Gift'' THEN 2
-                        WHEN N''TradeIn'' THEN 3
                         ELSE 0
                     END;
                     SET @thresholdAmount = 0;

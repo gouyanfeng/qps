@@ -26,6 +26,8 @@ public class MallPromotionEngineTests
             null,
             0,
             0,
+            null,
+            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -33,11 +35,9 @@ public class MallPromotionEngineTests
         };
 
         var engine = new MallPromotionEngine(
-            new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
             new ActionStrategyRegistry(new IActionStrategy[] { new DiscountAmountAction() }));
         var context = new OrderContext
         {
-            GoodsAmount = 50,
             Items =
             [
                 new SkuOrderRow
@@ -71,7 +71,7 @@ public class MallPromotionEngineTests
     }
 
     [Fact]
-    public void Match_FullAmountTriggerUsesOnlyItemsWithinPromotionScope()
+    public void Match_ComparesScopedAmountAgainstThreshold()
     {
         var targetCategoryId = Guid.NewGuid();
         var otherCategoryId = Guid.NewGuid();
@@ -86,6 +86,8 @@ public class MallPromotionEngineTests
             null,
             0,
             0,
+            null,
+            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -93,11 +95,9 @@ public class MallPromotionEngineTests
         };
 
         var engine = new MallPromotionEngine(
-            new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
             new ActionStrategyRegistry(new IActionStrategy[] { new DiscountAmountAction() }));
         var context = new OrderContext
         {
-            GoodsAmount = 100,
             Items =
             [
                 new SkuOrderRow
@@ -120,6 +120,9 @@ public class MallPromotionEngineTests
         };
 
         Assert.Empty(engine.Match([promotion], scopeMap, context));
+
+        context.Items[0].Quantity = 3;
+        Assert.Single(engine.Match([promotion], scopeMap, context));
     }
 
     [Fact]
@@ -138,6 +141,8 @@ public class MallPromotionEngineTests
             null,
             0,
             0,
+            null,
+            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -145,11 +150,9 @@ public class MallPromotionEngineTests
         };
 
         var engine = new MallPromotionEngine(
-            new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
             new ActionStrategyRegistry(new IActionStrategy[] { new DiscountRateAction() }));
         var context = new OrderContext
         {
-            GoodsAmount = 20,
             Items =
             [
                 new SkuOrderRow
@@ -171,9 +174,8 @@ public class MallPromotionEngineTests
     }
 
     [Fact]
-    public void BuyGiftPromotion_UsesPurchaseProductAsTriggerAndIndependentScope()
+    public void GiftPromotion_UsesScopeAsPurchaseCondition()
     {
-        var buyProductId = Guid.NewGuid();
         var scopeProductId = Guid.NewGuid();
         var otherProductId = Guid.NewGuid();
         var giftSkuId = Guid.NewGuid();
@@ -188,6 +190,8 @@ public class MallPromotionEngineTests
             null,
             0,
             0,
+            null,
+            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -195,13 +199,11 @@ public class MallPromotionEngineTests
         };
 
         var engine = new MallPromotionEngine(
-            new TriggerStrategyRegistry(new ITriggerStrategy[] { new BuyProductTrigger() }),
             new ActionStrategyRegistry(new IActionStrategy[] { new GiftAction() }));
         var context = new OrderContext
         {
             Items =
             [
-                new SkuOrderRow { ProductId = buyProductId, Quantity = 2 },
                 new SkuOrderRow { ProductId = scopeProductId, Quantity = 1 },
                 new SkuOrderRow { ProductId = otherProductId, Quantity = 10 }
             ]
@@ -219,28 +221,7 @@ public class MallPromotionEngineTests
     }
 
     [Fact]
-    public void BuyProductTrigger_RequiresConfiguredMinimumQuantity()
-    {
-        var productId = Guid.NewGuid();
-        var trigger = new BuyProductTrigger();
-        using var config = global::System.Text.Json.JsonDocument.Parse(
-            $$"""{"productIds":["{{productId}}"],"minQuantity":2}""");
-        var context = new OrderContext
-        {
-            Items =
-            [
-                new SkuOrderRow { ProductId = productId, Quantity = 1 },
-                new SkuOrderRow { ProductId = productId, Quantity = 1 }
-            ]
-        };
-
-        Assert.True(trigger.IsMatch(context, config.RootElement));
-        context.Items[1].ProductId = Guid.NewGuid();
-        Assert.False(trigger.IsMatch(context, config.RootElement));
-    }
-
-    [Fact]
-    public void BuyGiftPromotion_UsesApplicableScopeAsPurchaseCondition()
+    public void GiftPromotion_RequiresScopedAmountToReachThreshold()
     {
         var targetProductId = Guid.NewGuid();
         var otherProductId = Guid.NewGuid();
@@ -256,6 +237,8 @@ public class MallPromotionEngineTests
             null,
             0,
             0,
+            null,
+            null,
             true);
         var scopeMap = new Dictionary<Guid, List<MallPromotionScope>>
         {
@@ -263,7 +246,6 @@ public class MallPromotionEngineTests
         };
 
         var engine = new MallPromotionEngine(
-            new TriggerStrategyRegistry(new ITriggerStrategy[] { new FullAmountTrigger() }),
             new ActionStrategyRegistry(new IActionStrategy[] { new GiftAction() }));
         var context = new OrderContext
         {

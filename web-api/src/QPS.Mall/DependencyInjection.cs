@@ -19,16 +19,11 @@ public static class DependencyInjection
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
         services.AddTransient<GetMallCartHandler>();
 
-        services.AddScoped<ITriggerStrategy, FullAmountTrigger>();
-        services.AddScoped<ITriggerStrategy, BuyProductTrigger>();
-
-        services.AddScoped<IActionStrategy, GiftAction>();
         services.AddScoped<IActionStrategy, DiscountAmountAction>();
         services.AddScoped<IActionStrategy, DiscountRateAction>();
+        services.AddScoped<IActionStrategy, GiftAction>();
         services.AddScoped<IActionStrategy, FreightFreeAction>();
-        services.AddScoped<IActionStrategy, TradeInAction>();
 
-        services.AddScoped<ITriggerStrategyRegistry, TriggerStrategyRegistry>();
         services.AddScoped<IActionStrategyRegistry, ActionStrategyRegistry>();
         services.AddScoped<MallPromotionEngine>();
         services.AddScoped<MallProductPromotionEnricher>();

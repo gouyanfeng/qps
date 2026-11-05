@@ -5,13 +5,7 @@
     <view class="page-subbar">
       <view class="search-bar" @click="goToSearch">
         <q-icon name="search" size="24" color="#707A6C" />
-        <input
-          class="search-input"
-          type="text"
-          placeholder="搜索道地人参、正品黄芪、新会陈皮"
-          placeholder-class="search-placeholder"
-          disabled
-        />
+        <text class="search-placeholder">搜索道地人参、正品黄芪、滋补阿胶</text>
         <q-icon name="microphone" size="24" color="#9E9E9E" />
       </view>
       <view class="verify-btn" @click="handleVerify">
@@ -348,15 +342,14 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   border-radius: 38rpx;
 }
 
-.search-input {
-  flex: 1;
-  font-size: 24rpx;
-  color: $text-primary;
-}
-
 .search-placeholder {
+  flex: 1;
+  min-width: 0;
   color: #8D8D8D;
   font-size: 24rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .verify-btn {

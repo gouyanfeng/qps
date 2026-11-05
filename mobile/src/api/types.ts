@@ -86,16 +86,6 @@ export enum BannerLinkType {
   InternalRegistrationActivity = 5
 }
 
-export interface MallActivityPromotion {
-  id: string
-  promotionId: string
-  name: string
-  description: string
-  promotionType: number
-  actionType: string
-  isActive: boolean
-}
-
 export interface MallActivity {
   id: string
   name: string
@@ -105,7 +95,6 @@ export interface MallActivity {
   detailHtml: string
   startDate: string | null
   endDate: string | null
-  promotions: MallActivityPromotion[]
 }
 
 export interface CartItem {

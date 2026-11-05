@@ -164,6 +164,16 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="运费模板" required>
+          <el-select v-model="productForm.freightTemplateId" filterable placeholder="请选择运费模板" style="width: 100%">
+            <el-option
+              v-for="tpl in freightTemplateOptions"
+              :key="tpl.id"
+              :label="tpl.isDefault ? `${tpl.name}（默认）` : tpl.name"
+              :value="tpl.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="商品标签">
           <el-select v-model="productForm.tagIds" multiple clearable filterable placeholder="请选择商品标签" style="width: 100%">
             <el-option v-for="tag in activeTagOptions" :key="tag.id" :label="tag.name" :value="tag.id" />
@@ -524,6 +534,7 @@ import { mallProductApi } from '@/api/modules/mallProduct'
 import { mallTagApi } from '@/api/modules/mallTag'
 import { mallCategoryApi } from '@/api/modules/mallCategory'
 import { mallStoreApi } from '@/api/modules/mallStore'
+import { mallFreightTemplateApi } from '@/api/modules/mallFreightTemplate'
 import { uploadImg } from '@/api/modules/upload'
 import UploadImg from '@/components/Upload/Img.vue'
 import UploadImgs from '@/components/Upload/Imgs.vue'
@@ -586,21 +597,11 @@ const queryPageRef = ref()
 const categoryOptions = ref<any[]>([])
 const leafCategoryOptions = computed(() => categoryOptions.value.filter(item => !item.hasChildren && item.isActive))
 const storeOptions = ref<any[]>([])
+const freightTemplateOptions = ref<any[]>([])
 const tagOptions = ref<any[]>([])
 const activeTagOptions = computed(() => tagOptions.value.filter(tag => tag.isActive))
 const tagPredefineColors = ['#2E7D32', '#C2410C', '#409EFF', '#909399', '#F56C6C', '#E6A23C']
-const LEGACY_TAG_COLORS: Record<string, string> = {
-  success: '#67C23A',
-  warning: '#E6A23C',
-  primary: '#409EFF',
-  info: '#909399',
-  danger: '#F56C6C'
-}
 const isHexColor = (color: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(color || ''))
-const normalizeTagColor = (color: string) => {
-  if (isHexColor(color)) return color
-  return LEGACY_TAG_COLORS[String(color || '').toLowerCase()] || ''
-}
 
 const loadCategories = async () => {
   try {
@@ -626,8 +627,19 @@ const loadStoreOptions = async () => {
   }
 }
 
+const loadFreightTemplateOptions = async () => {
+  try {
+    const result = await mallFreightTemplateApi.getList({})
+    const list = result.data || []
+    freightTemplateOptions.value = list.filter((tpl: any) => tpl.isActive)
+  } catch {
+    ElMessage.error('加载运费模板失败')
+  }
+}
+
 onMounted(loadCategories)
 onMounted(loadStoreOptions)
+onMounted(loadFreightTemplateOptions)
 
 // ---------------- 商品 ----------------
 const productDialogVisible = ref(false)
@@ -665,6 +677,7 @@ const productForm = reactive({
   detailHtml: '',
   sortOrder: 0,
   isActive: true,
+  freightTemplateId: '',
   tagIds: [] as string[]
 })
 
@@ -1026,7 +1039,7 @@ const openTagForm = (tag?: any) => {
     ? {
         code: tag.code,
         name: tag.name,
-        color: normalizeTagColor(tag.color),
+        color: tag.color,
         sortOrder: tag.sortOrder,
         isActive: tag.isActive
       }
@@ -1092,6 +1105,7 @@ const resetProductForm = () => {
     detailHtml: '',
     sortOrder: 0,
     isActive: true,
+    freightTemplateId: '',
     tagIds: []
   })
   albumFileList.value = []
@@ -1120,6 +1134,7 @@ const openProductDialog = (type: string, row?: any) => {
       detailHtml: resolveDetailImageUrls(row.detailHtml || ''),
       sortOrder: row.sortOrder || 0,
       isActive: row.isActive,
+      freightTemplateId: row.freightTemplateId || '',
       tagIds: (row.tags || []).map((tag: any) => tag.id)
     })
     currentProductId.value = row.id
@@ -1149,6 +1164,10 @@ const validateProductForm = () => {
     ElMessage.warning('请选择商品所属门店')
     return false
   }
+  if (!productForm.freightTemplateId) {
+    ElMessage.warning('请选择运费模板')
+    return false
+  }
   return true
 }
 
@@ -1171,6 +1190,7 @@ const submitProduct = async () => {
       albumImages: productForm.albumImages,
       detailHtml: normalizeDetailImageUrls(productForm.detailHtml),
       sortOrder: productForm.sortOrder,
+      freightTemplateId: productForm.freightTemplateId || null,
       tagIds: productForm.tagIds
     }
 

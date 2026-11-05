@@ -47,8 +47,6 @@ public interface IMallDbContext
 
     DbSet<MallActivity> MallActivities { get; }
 
-    DbSet<MallActivityPromotion> MallActivityPromotions { get; }
-
     DbSet<MallCart> MallCarts { get; }
 
     DbSet<MallCartItem> MallCartItems { get; }

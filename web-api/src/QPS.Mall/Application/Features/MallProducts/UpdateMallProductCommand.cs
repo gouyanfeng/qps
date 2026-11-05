@@ -44,6 +44,10 @@ public class UpdateMallProductHandler : IRequestHandler<UpdateMallProductCommand
         await MallProductRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, request.Id, cancellationToken);
         await MallProductRules.EnsureStoreValidAsync(_dbContext, request.Request.StoreId, cancellationToken);
         await MallProductRules.EnsureCategoryValidAsync(_dbContext, request.Request.CategoryId, cancellationToken);
+        await MallProductRules.EnsureFreightTemplateValidAsync(
+            _dbContext,
+            request.Request.FreightTemplateId,
+            cancellationToken);
         var tags = await MallProductRules.GetActiveTagsAsync(
             _dbContext,
             request.Request.TagIds,

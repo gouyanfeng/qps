@@ -31,19 +31,6 @@ public class GetMallActivityHandler : IRequestHandler<GetMallActivityQuery, Mall
             throw new BusinessException(404, "活动不存在");
         }
 
-        var links = await _dbContext.MallActivityPromotions
-            .AsNoTracking()
-            .Where(link => link.ActivityId == activity.Id && !link.IsDeleted)
-            .ToListAsync(cancellationToken);
-
-        var promotionIds = links.Select(link => link.PromotionId).Distinct().ToList();
-        var promotions = promotionIds.Count == 0
-            ? new Dictionary<Guid, QPS.Mall.Domain.Entities.MallPromotion>()
-            : await _dbContext.MallPromotions
-                .AsNoTracking()
-                .Where(promotion => promotionIds.Contains(promotion.Id))
-                .ToDictionaryAsync(promotion => promotion.Id, cancellationToken);
-
-        return MallActivityMapper.ToDetail(activity, links, promotions);
+        return MallActivityMapper.ToDetail(activity);
     }
 }
