@@ -1,8 +1,6 @@
-# Build outputs
-bin/
-obj/
-*/bin/*
-*/obj/*
+# 构建产物（src/ 下多级目录也要排除，避免把本机编译结果带进镜像）
+**/bin/
+**/obj/
 
 # IDE / OS files
 .vs/
@@ -27,7 +25,26 @@ Thumbs.db
 # Source control
 .git/
 .gitignore
+.dockerignore
 
-# Docs
+# Secrets 与本地覆盖配置（镜像内通过环境变量注入）
+.env
+.env.*
+**/appsettings.Development.json
+**/appsettings.*.local.json
+**/launchSettings.json
+
+# 前端与工作区产物：兼容从仓库根目录构建时不会被打进镜像
+mobile/
+admin/
+agent-temp/
+ui-tests/
+.trae/
+.trae-html-share-packages/
+node_modules/
+**/node_modules/
+
+# 测试与文档不参与运行时镜像
+tests/
 docs/
 *.md
