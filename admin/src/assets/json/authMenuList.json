@@ -23,6 +23,7 @@
       "meta": {
         "icon": "Connection",
         "title": "CRM管理",
+        "permissionCode": "CRM",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -129,6 +130,7 @@
       "meta": {
         "icon": "Shop",
         "title": "商城管理",
+        "permissionCode": "MALL",
         "isLink": "",
         "isHide": false,
         "isFull": false,

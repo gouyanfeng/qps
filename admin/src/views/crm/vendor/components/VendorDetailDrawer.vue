@@ -17,9 +17,11 @@
           </div>
         </div>
         <div class="head-actions">
-          <el-button v-if="canManageTransfer" :icon="Edit" @click="openTransferDialog(currentVendor.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
-            {{ currentVendor.ownerUserId ? "转交" : "分配" }}
-          </el-button>
+          <Permission code="CRM_TRANSFER">
+            <el-button :icon="Edit" @click="openTransferDialog(currentVendor.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+              {{ currentVendor.ownerUserId ? "转交" : "分配" }}
+            </el-button>
+          </Permission>
           <el-button v-if="canManageTransfer || canReturn(currentVendor)" :icon="Edit" @click="openTransferDialog('RETURN')">退回</el-button>
           <Permission code="CRM_VENDOR_EDIT"><el-button :icon="Edit" @click="openEditDialog">编辑</el-button></Permission>
           <el-button :icon="Refresh" @click="refreshDetail()">刷新</el-button>
@@ -253,7 +255,7 @@ const vendorForm = reactive({
 });
 
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
-const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const canManageTransfer = computed(() => authStore.hasPermissionGet("CRM_TRANSFER"));
 
 const priorityRules: Record<string, string> = {
   高: "高：有电话、有联系人、90天内有采购、品类数 >= 3",

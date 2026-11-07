@@ -25,9 +25,11 @@
           <Permission code="CRM_HERB_BASE_CONTACT_ADD">
             <el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button>
           </Permission>
-          <el-button v-if="canManageTransfer" :icon="Edit" @click="openTransferDialog(currentHerbBase.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
-            {{ currentHerbBase.ownerUserId ? "转交" : "分配" }}
-          </el-button>
+          <Permission code="CRM_TRANSFER">
+            <el-button :icon="Edit" @click="openTransferDialog(currentHerbBase.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+              {{ currentHerbBase.ownerUserId ? "转交" : "分配" }}
+            </el-button>
+          </Permission>
           <el-button v-if="canManageTransfer || canReturn(currentHerbBase)" :icon="Edit" @click="openTransferDialog('RETURN')">退回</el-button>
           <Permission code="CRM_HERB_BASE_EDIT">
             <el-button :icon="Edit" @click="openSubjectDialog">编辑主体</el-button>
@@ -362,7 +364,7 @@ const supplyForm = reactive({
 });
 
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
-const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const canManageTransfer = computed(() => authStore.hasPermissionGet("CRM_TRANSFER"));
 
 const sourcePlatforms = ["百度地图", "政府网站", "手工录入", "Excel导入", "其他"];
 

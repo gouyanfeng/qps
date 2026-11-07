@@ -64,7 +64,15 @@ router.beforeEach(async (to, from, next) => {
     return next({ ...to, replace: true });
   }
 
-  // 7.正常访问页面
+  // 7.校验当前路由所需的权限码（含父级模块码），无权限直接拦截
+  const requiredCodes = authStore.routePermissionMapGet[to.path];
+  if (requiredCodes) {
+    const visiblePaths = authStore.visibleRoutePathsGet;
+    const lacksPermission = requiredCodes.some(code => !authStore.userPermissions.includes(code));
+    if (!visiblePaths.includes(to.path) || lacksPermission) return next({ path: "/403", replace: true });
+  }
+
+  // 8.正常访问页面
   next();
 });
 
