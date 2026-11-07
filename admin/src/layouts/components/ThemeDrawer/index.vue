@@ -79,6 +79,24 @@
       <el-color-picker v-model="primary" :predefine="colorList" @change="changePrimary" />
     </div>
     <div class="theme-item">
+      <span>
+        按钮圆角
+        <el-tooltip effect="dark" content="按钮、输入框及菜单选中块共用此圆角" placement="top">
+          <el-icon><QuestionFilled /></el-icon>
+        </el-tooltip>
+      </span>
+      <el-radio-group v-model="borderRadius" size="small" @change="handleBorderRadiusChange">
+        <el-radio-button :value="0">0</el-radio-button>
+        <el-radio-button :value="8">8</el-radio-button>
+        <el-radio-button :value="16">16</el-radio-button>
+        <el-radio-button :value="32">32</el-radio-button>
+      </el-radio-group>
+    </div>
+    <div class="theme-item">
+      <span>圆角预览（{{ borderRadius }}px）</span>
+      <el-button type="primary">按钮</el-button>
+    </div>
+    <div class="theme-item">
       <span>暗黑模式</span>
       <SwitchDark />
     </div>
@@ -141,12 +159,13 @@ import { DEFAULT_PRIMARY } from "@/config";
 import mittBus from "@/utils/mittBus";
 import SwitchDark from "@/components/SwitchDark/index.vue";
 
-const { changePrimary, changeGreyOrWeak, setAsideTheme, setHeaderTheme } = useTheme();
+const { changePrimary, changeBorderRadius, changeGreyOrWeak, setAsideTheme, setHeaderTheme } = useTheme();
 
 const globalStore = useGlobalStore();
 const {
   layout,
   primary,
+  borderRadius,
   isGrey,
   isWeak,
   asideInverted,
@@ -179,6 +198,11 @@ const colorList = [
 const setLayout = (val: LayoutType) => {
   globalStore.setGlobalState("layout", val);
   setAsideTheme();
+};
+
+// 按钮圆角：写入 --el-border-radius-base，按钮/输入框/菜单选中块同步生效
+const handleBorderRadiusChange = (val: string | number | boolean) => {
+  changeBorderRadius(Number(val));
 };
 
 // 打开主题设置

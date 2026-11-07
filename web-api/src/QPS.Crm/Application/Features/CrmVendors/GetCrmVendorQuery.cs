@@ -31,7 +31,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
     public async Task<CrmVendorDto> Handle(GetCrmVendorQuery request, CancellationToken cancellationToken)
     {
         var vendor = await _dbContext.CrmVendors
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (vendor is null)
         {
@@ -40,7 +40,6 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
 
         var contacts = await _dbContext.CrmContacts
             .Where(contact =>
-                !contact.IsDeleted &&
                 contact.EntityType == VendorEntityType &&
                 contact.EntityId == vendor.Id)
             .OrderByDescending(contact => contact.IsPrimary)
@@ -90,7 +89,7 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             NextFollowAt = vendor.NextFollowAt,
             PrimaryContactName = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.ContactName ?? string.Empty,
             PrimaryContactPhone = contacts.FirstOrDefault(contact => contact.Status != InvalidContactStatus)?.Phone ?? string.Empty,
-            PurchaseDemandCount = await _dbContext.CrmVendorDemands.CountAsync(plan => !plan.IsDeleted && plan.VendorId == vendor.Id, cancellationToken),
+            PurchaseDemandCount = await _dbContext.CrmVendorDemands.CountAsync(plan => plan.VendorId == vendor.Id, cancellationToken),
             ProductCount = products.Count,
             ContactCount = contacts.Count,
             CreatedAt = vendor.CreatedAt,

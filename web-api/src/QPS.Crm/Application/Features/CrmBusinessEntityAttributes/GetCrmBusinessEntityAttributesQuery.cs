@@ -61,7 +61,6 @@ public class GetCrmBusinessEntityAttributesHandler : IRequestHandler<GetCrmBusin
     {
         var query = _dbContext.CrmBusinessEntityAttributes
             .Where(attribute =>
-                !attribute.IsDeleted &&
                 attribute.EntityType == request.EntityType &&
                 attribute.EntityId == request.EntityId);
 

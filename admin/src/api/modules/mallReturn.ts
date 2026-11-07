@@ -7,17 +7,22 @@ export const mallReturnApi = {
   get: (id: string) => {
     return http.get<any>(`/admin/mall/returns/${id}`);
   },
-  approve: (id: string, params: any) => {
-    return http.patch<any>(`/admin/mall/returns/${id}/approve`, params);
+  // 后端以退货单号定位，POST /returns/{returnNo}/approve，body 通过 approve 区分通过与拒绝
+  approve: (returnNo: string, params?: { approve?: boolean; rejectReason?: string }) => {
+    return http.post<any>(`/admin/mall/returns/${returnNo}/approve`, {
+      approve: true,
+      ...params
+    });
   },
-  reject: (id: string, reason: string) => {
-    return http.patch<any>(`/admin/mall/returns/${id}/reject`, { reason });
+  reject: (returnNo: string, reason: string) => {
+    return http.post<any>(`/admin/mall/returns/${returnNo}/approve`, {
+      approve: false,
+      rejectReason: reason
+    });
   },
-  confirmReceive: (id: string) => {
-    return http.patch<any>(`/admin/mall/returns/${id}/confirm-receive`);
-  },
-  refund: (id: string) => {
-    return http.patch<any>(`/admin/mall/returns/${id}/refund`);
+  // 确认收货后后端同步完成退货退款并回补库存，无需再单独调用退款
+  confirmReceive: (returnNo: string) => {
+    return http.post<any>(`/admin/mall/returns/${returnNo}/confirm-receipt`);
   }
 };
 

@@ -37,7 +37,7 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
         GetCrmVendorDemandsQuery request,
         CancellationToken cancellationToken)
     {
-        if (request.VendorId.HasValue && !await _dbContext.CrmVendors.AnyAsync(vendor => vendor.Id == request.VendorId && !vendor.IsDeleted, cancellationToken))
+        if (request.VendorId.HasValue && !await _dbContext.CrmVendors.AnyAsync(vendor => vendor.Id == request.VendorId, cancellationToken))
         {
             throw new BusinessException(404, "厂商不存在");
         }
@@ -45,7 +45,7 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
         var page = Math.Max(request.Page, 1);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        var query = _dbContext.CrmVendorDemands.Where(plan => !plan.IsDeleted);
+        var query = _dbContext.CrmVendorDemands.AsQueryable();
         if (request.Id.HasValue) query = query.Where(plan => plan.Id == request.Id);
         if (request.VendorId.HasValue) query = query.Where(plan => plan.VendorId == request.VendorId);
         if (request.OwnerUserId.HasValue) query = query.Where(plan => plan.Vendor!.OwnerUserId == request.OwnerUserId);

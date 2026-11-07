@@ -40,7 +40,7 @@ public class MallMemberCouponHandlers :
                 select new MallMemberCouponDto
                 {
                     Id = mc.Id, CouponId = mc.CouponId, MemberId = mc.MemberId,
-                    CouponCode = mc.CouponCode, CouponName = c.Name,
+                    CouponCode = mc.CouponCode, CouponName = c.Name, CouponType = c.CouponType,
                     ThresholdAmount = c.ThresholdAmount, DiscountAmount = c.DiscountAmount,
                     Status = mc.Status, ExpireAt = mc.ExpireAt,
                     ClaimedAt = mc.ClaimedAt, UsedAt = mc.UsedAt, UsedOrderNo = mc.UsedOrderNo

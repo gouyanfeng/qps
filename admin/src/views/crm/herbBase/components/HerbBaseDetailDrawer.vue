@@ -25,9 +25,11 @@
           <Permission code="CRM_HERB_BASE_CONTACT_ADD">
             <el-button :icon="Plus" @click="openContactDialog()">新增联系人</el-button>
           </Permission>
-          <el-button v-if="canManageTransfer" :icon="Edit" @click="openTransferDialog(currentHerbBase.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
-            {{ currentHerbBase.ownerUserId ? "转交" : "分配" }}
-          </el-button>
+          <Permission code="CRM_TRANSFER">
+            <el-button :icon="Edit" @click="openTransferDialog(currentHerbBase.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+              {{ currentHerbBase.ownerUserId ? "转交" : "分配" }}
+            </el-button>
+          </Permission>
           <el-button v-if="canManageTransfer || canReturn(currentHerbBase)" :icon="Edit" @click="openTransferDialog('RETURN')">退回</el-button>
           <Permission code="CRM_HERB_BASE_EDIT">
             <el-button :icon="Edit" @click="openSubjectDialog">编辑主体</el-button>
@@ -89,7 +91,7 @@
                   <el-table-column prop="specification" label="规格" min-width="120" />
                   <el-table-column prop="supplyCycle" label="供货周期" min-width="120" />
                   <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
-                  <el-table-column label="状态" width="96">
+                  <el-table-column label="状态" width="100">
                     <template #default="{ row }"><el-tag size="small">{{ row.isExpired ? "已过期" : row.status || "-" }}</el-tag></template>
                   </el-table-column>
                   <el-table-column label="有效期" width="150">
@@ -362,7 +364,7 @@ const supplyForm = reactive({
 });
 
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
-const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const canManageTransfer = computed(() => authStore.hasPermissionGet("CRM_TRANSFER"));
 
 const sourcePlatforms = ["百度地图", "政府网站", "手工录入", "Excel导入", "其他"];
 

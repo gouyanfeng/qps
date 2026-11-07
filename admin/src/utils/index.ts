@@ -108,24 +108,41 @@ export function getFlatMenuList(
 export function getShowMenuList(menuList: Menu.MenuOptions[], userPermissions: string[] = []) {
   let newMenuList: Menu.MenuOptions[] = JSON.parse(JSON.stringify(menuList));
   return newMenuList.filter((item) => {
+    const hadChildren = !!item.children?.length;
+
     // 递归过滤子菜单
-    if (item.children?.length) {
-      item.children = getShowMenuList(item.children, userPermissions);
+    if (hadChildren) {
+      item.children = getShowMenuList(item.children!, userPermissions);
+      // 原本是模块容器，子菜单全部被过滤后不再保留空模块
+      if (!item.children.length) return false;
     }
 
-    // 有子菜单且子菜单有数据 → 保留父菜单
-    if (item.children?.length) {
-      return true;
-    }
+    // 菜单自身（含模块级）声明的 permissionCode 必须命中
+    if (item.meta?.permissionCode && !userPermissions.includes(item.meta.permissionCode)) return false;
 
-    // 叶子菜单：检查 permissionCode
-    if (item.meta?.permissionCode && userPermissions.length > 0) {
-      return userPermissions.includes(item.meta.permissionCode);
-    }
-
-    // 无 permissionCode 或 userPermissions 为空 → 按原有 isHide 逻辑
     return !item.meta?.isHide;
   });
+}
+
+/**
+ * @description 递归收集菜单路径对应的权限码链（含父级模块码），用于路由守卫校验
+ * @param {Array} menuList 完整菜单列表
+ * @param {Array} parentCodes 父级已声明的权限码
+ * @returns {Object} path -> permissionCode[]
+ */
+export function getMenuPermissionMap(
+  menuList: Menu.MenuOptions[],
+  parentCodes: string[] = [],
+): Record<string, string[]> {
+  const map: Record<string, string[]> = {};
+  menuList.forEach((item) => {
+    const codes = item.meta?.permissionCode ? [...parentCodes, item.meta.permissionCode] : [...parentCodes];
+    if (item.path) map[item.path] = [...new Set(codes)];
+    if (item.children?.length) {
+      Object.assign(map, getMenuPermissionMap(item.children, codes));
+    }
+  });
+  return map;
 }
 
 /**

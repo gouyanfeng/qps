@@ -9,7 +9,7 @@
     <div v-if="detail" class="drawer-layout">
       <section class="drawer-head">
         <div>
-          <div class="detail-kicker">商场订单详情</div>
+          <div class="detail-kicker">商城订单详情</div>
           <div class="title-row">
             <h2>{{ detail.orderNo }}</h2>
             <el-tag :type="getOrderStatusType(detail.status)" effect="dark">{{ getOrderStatusText(detail.status) }}</el-tag>
@@ -151,35 +151,22 @@
       </section>
     </div>
 
-    <!-- 发货 -->
-    <el-dialog v-model="shipmentDialogVisible" title="录入运单并发货" width="480px" append-to-body>
-      <el-form :model="shipmentForm" label-width="90px">
-        <el-form-item label="快递公司" required>
-          <el-input v-model="shipmentForm.expressCompany" placeholder="请输入快递公司" maxlength="50" />
-        </el-form-item>
-        <el-form-item label="快递单号" required>
-          <el-input v-model="shipmentForm.trackingNo" placeholder="请输入快递单号" maxlength="64" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="shipmentForm.remark" placeholder="请输入备注" maxlength="200" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="shipmentDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="shipmentSubmitting" @click="submitShipment">确定发货</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <ShipmentDialog
+      v-model="shipmentDialogVisible"
+      :order-id="detail?.id || ''"
+      :order-no="detail?.orderNo || ''"
+      @shipped="refreshAll"
+    />
   </el-drawer>
 </template>
 
 <script setup lang="ts" name="MallOrderDetailDrawer">
-import { ref, reactive, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Close, Refresh, Van, CircleCheck, CircleClose, RefreshLeft } from '@element-plus/icons-vue'
 import { mallOrderApi } from '@/api/modules/mallOrder'
 import { formatDate } from '@/utils'
+import ShipmentDialog from './ShipmentDialog.vue'
 
 const props = defineProps({
   modelValue: {
@@ -196,12 +183,6 @@ const emit = defineEmits(['update:modelValue', 'refreshed'])
 
 const detail = ref<any>(null)
 const shipmentDialogVisible = ref(false)
-const shipmentSubmitting = ref(false)
-const shipmentForm = reactive({
-  expressCompany: '',
-  trackingNo: '',
-  remark: ''
-})
 
 const handleVisibleChange = (visible: boolean) => {
   emit('update:modelValue', visible)
@@ -248,39 +229,7 @@ const cancelOrder = async () => {
 }
 
 const openShipmentDialog = () => {
-  Object.assign(shipmentForm, {
-    expressCompany: '',
-    trackingNo: '',
-    remark: ''
-  })
   shipmentDialogVisible.value = true
-}
-
-const submitShipment = async () => {
-  if (!shipmentForm.expressCompany.trim()) {
-    ElMessage.warning('请输入快递公司')
-    return
-  }
-  if (!shipmentForm.trackingNo.trim()) {
-    ElMessage.warning('请输入快递单号')
-    return
-  }
-
-  shipmentSubmitting.value = true
-  try {
-    await mallOrderApi.createShipment(detail.value.id, {
-      expressCompany: shipmentForm.expressCompany.trim(),
-      trackingNo: shipmentForm.trackingNo.trim(),
-      remark: shipmentForm.remark.trim()
-    })
-    ElMessage.success('发货成功')
-    shipmentDialogVisible.value = false
-    await refreshAll()
-  } catch {
-    // 错误提示已由请求拦截器统一处理
-  } finally {
-    shipmentSubmitting.value = false
-  }
 }
 
 const confirmReceipt = async () => {
@@ -366,6 +315,7 @@ const getPaymentStatusType = (status: string) => {
   const map: Record<string, any> = {
     Pending: 'warning',
     Success: 'success',
+    Refunded: 'info',
     Failed: 'danger',
     Cancelled: 'info'
   }
@@ -376,6 +326,7 @@ const getPaymentStatusText = (status: string) => {
   const map: Record<string, string> = {
     Pending: '待支付',
     Success: '成功',
+    Refunded: '已退款',
     Failed: '失败',
     Cancelled: '已关闭'
   }

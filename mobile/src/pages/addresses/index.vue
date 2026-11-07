@@ -184,7 +184,12 @@ async function submit() {
   if (!form.detailAddress) { uni.showToast({ title: '请填写详细地址', icon: 'none' }); return }
   saving.value = true
   try {
-    await saveAddress({ ...form })
+    const saved = await saveAddress({ ...form })
+    // 从结算页「新增收货地址」进入时回写新地址 ID，返回结算页后可自动选中
+    const savedId = typeof saved === 'string' ? saved : ''
+    if (savedId && uni.getStorageSync('qps_checkout_add_address')) {
+      uni.setStorageSync('qps_checkout_address_id', savedId)
+    }
     Object.assign(form, {
       receiverName: '',
       receiverPhone: '',

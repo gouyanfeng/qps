@@ -1,11 +1,14 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Shared.Common;
 
 namespace QPS.Mall.Controllers;
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall")]
 public class MallPromotionController : ControllerBase
 {
@@ -17,14 +20,20 @@ public class MallPromotionController : ControllerBase
     }
 
     [HttpGet("promotions")]
-    public async Task<ActionResult<List<MallPromotionDto>>> GetPromotions(
+    public async Task<ActionResult<PaginationResponse<MallPromotionDto>>> GetPromotions(
         [FromQuery] string? keyword = null,
-        [FromQuery] bool? isActive = null)
+        [FromQuery] bool? isActive = null,
+        [FromQuery] string? actionType = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         return Ok(await _mediator.Send(new GetMallPromotionsQuery
         {
             Keyword = keyword,
-            IsActive = isActive
+            IsActive = isActive,
+            ActionType = actionType,
+            Page = page,
+            PageSize = pageSize
         }));
     }
 

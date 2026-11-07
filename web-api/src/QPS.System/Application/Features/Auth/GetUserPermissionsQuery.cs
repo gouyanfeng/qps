@@ -32,19 +32,19 @@ public class GetUserPermissionsHandler : IRequestHandler<GetUserPermissionsQuery
         if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var userGuid))
         {
             var user = await _dbContext.SystemUsers
-                .Where(u => u.Id == userGuid && !u.IsDeleted)
+                .Where(u => u.Id == userGuid)
                 .Select(u => new { u.RoleId })
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (user != null)
             {
                 var permIds = await _dbContext.SystemRolePermissions
-                    .Where(rp => rp.RoleId == user.RoleId && !rp.IsDeleted)
+                    .Where(rp => rp.RoleId == user.RoleId)
                     .Select(rp => rp.PermissionId)
                     .ToListAsync(cancellationToken);
 
                 permissions = await _dbContext.SystemPermissions
-                    .Where(p => permIds.Contains(p.Id) && !p.IsDeleted)
+                    .Where(p => permIds.Contains(p.Id))
                     .Select(p => p.Code)
                     .ToListAsync(cancellationToken);
             }

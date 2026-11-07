@@ -5,9 +5,9 @@
         <el-form :model="searchForm" :inline="true">
           <el-form-item label="计费方式">
             <el-select v-model="searchForm.billingType" placeholder="全部" clearable>
-              <el-option label="按重量" :value="0" />
-              <el-option label="按件数" :value="1" />
-              <el-option label="按体积" :value="2" />
+              <el-option label="按重量" :value="1" />
+              <el-option label="按件数" :value="2" />
+              <el-option label="按体积" :value="3" />
             </el-select>
           </el-form-item>
           <el-form-item label="关键字">
@@ -26,19 +26,19 @@
           <el-table-column label="计费方式" width="100" align="center">
             <template #default="{ row }">{{ billingTypeMap[row.billingType] }}</template>
           </el-table-column>
-          <el-table-column prop="regionCount" label="区域数" width="90" align="center" />
-          <el-table-column label="默认" width="80" align="center">
+          <el-table-column prop="regionCount" label="区域数" width="100" align="center" />
+          <el-table-column label="默认" width="100" align="center">
             <template #default="{ row }">
               <el-tag v-if="row.isDefault" type="warning">默认</el-tag>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="200" fixed="right">
+          <el-table-column label="操作" align="center" width="160" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
@@ -57,9 +57,9 @@
           <el-col :span="12">
             <el-form-item label="计费方式">
               <el-select v-model="form.billingType" style="width: 100%">
-                <el-option label="按重量（克）" :value="0" />
-                <el-option label="按件数" :value="1" />
-                <el-option label="按体积（cm³）" :value="2" />
+                <el-option label="按重量（克）" :value="1" />
+                <el-option label="按件数" :value="2" />
+                <el-option label="按体积（cm³）" :value="3" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -116,12 +116,12 @@
             </el-col>
             <el-col :span="6">
               <el-form-item label="续步长" label-width="80px">
-                <el-input-number v-model="region.additionalStep" :min="0.01" :precision="2" style="width: 100%" />
+                <el-input-number v-model="region.stepValue" :min="0.01" :precision="2" style="width: 100%" />
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="续费" label-width="80px">
-                <el-input-number v-model="region.additionalFee" :min="0" :precision="2" style="width: 100%" />
+                <el-input-number v-model="region.stepFee" :min="0" :precision="2" style="width: 100%" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -154,7 +154,7 @@ import { mallFreightTemplateApi } from '@/api/modules/mallFreightTemplate'
 import { regionApi } from '@/api/modules/region'
 import QueryPage from '@/components/QueryPage/index.vue'
 
-const billingTypeMap: Record<number, string> = { 0: '按重量', 1: '按件数', 2: '按体积' }
+const billingTypeMap: Record<number, string> = { 1: '按重量', 2: '按件数', 3: '按体积' }
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
@@ -254,20 +254,21 @@ const syncRegionSelection = (region: any) => {
 
 const createRegion = () => ({
   id: '',
+  regionName: '',
   provinceNames: '',
   cityNames: '',
   selectedRegionCodes: [] as string[],
   isDefaultRegion: false,
   firstValue: 1000,
   firstFee: 10,
-  additionalStep: 1000,
-  additionalFee: 5,
+  stepValue: 1000,
+  stepFee: 5,
   freeShippingAmount: 0
 })
 
 const form = reactive({
   name: '',
-  billingType: 0,
+  billingType: 1,
   isDefault: false,
   isActive: true,
   regions: [createRegion()] as any[]
@@ -281,7 +282,7 @@ onMounted(async () => {
 const handleReset = () => { searchForm.billingType = ''; searchForm.keyword = '' }
 
 const resetForm = () => {
-  form.name = ''; form.billingType = 0; form.isDefault = false; form.isActive = true
+  form.name = ''; form.billingType = 1; form.isDefault = false; form.isActive = true
   form.regions = [createRegion()]
 }
 
@@ -308,14 +309,15 @@ const openDialog = async (type: string, row?: any) => {
         ]
         return {
           id: r.id || '',
+          regionName: r.regionName || '',
           provinceNames: r.provinceNames || '',
           cityNames: r.cityNames || '',
           selectedRegionCodes: selected,
           isDefaultRegion: r.isDefaultRegion,
           firstValue: r.firstValue,
           firstFee: r.firstFee,
-          additionalStep: r.additionalStep,
-          additionalFee: r.additionalFee,
+          stepValue: r.stepValue,
+          stepFee: r.stepFee,
           freeShippingAmount: r.freeShippingAmount || 0
         }
       })
@@ -338,7 +340,7 @@ const validateRegions = () => {
     }
     syncRegionSelection(r)
     if (r.firstValue <= 0) { ElMessage.warning('首值必须大于 0'); return false }
-    if (r.additionalStep <= 0) { ElMessage.warning('续步长必须大于 0'); return false }
+    if (r.stepValue <= 0) { ElMessage.warning('续步长必须大于 0'); return false }
   }
   if (defaultCount > 1) { ElMessage.warning('只能有 1 个兜底区域'); return false }
   return true
@@ -355,18 +357,22 @@ const submitForm = async () => {
       billingType: form.billingType,
       isDefault: form.isDefault,
       isActive: form.isActive,
-      regions: form.regions.map(r => {
+      regions: form.regions.map((r, idx) => {
         syncRegionSelection(r)
+        const regionName = r.isDefaultRegion
+          ? '默认区域'
+          : (r.provinceNames || '').split(',').filter(Boolean).join('、') || `区域${idx + 1}`
         return {
           id: r.id || undefined,
-          provinceNames: r.provinceNames,
-          cityNames: r.cityNames,
+          regionName,
+          provinceNames: r.isDefaultRegion ? '' : r.provinceNames,
+          cityNames: r.isDefaultRegion ? '' : r.cityNames,
           isDefaultRegion: r.isDefaultRegion,
           firstValue: r.firstValue,
           firstFee: r.firstFee,
-          additionalStep: r.additionalStep,
-          additionalFee: r.additionalFee,
-          freeShippingAmount: r.freeShippingAmount
+          stepValue: r.stepValue,
+          stepFee: r.stepFee,
+          freeShippingAmount: r.freeShippingAmount || undefined
         }
       })
     }

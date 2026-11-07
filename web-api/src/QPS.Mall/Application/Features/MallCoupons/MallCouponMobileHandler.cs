@@ -21,7 +21,7 @@ public class GetAvailableMallCouponsHandler : IRequestHandler<GetAvailableMallCo
 
         var query = _db.MallCoupons
             .AsNoTracking()
-            .Where(c => c.IsActive && !c.IsDeleted
+            .Where(c => c.IsActive
                 && (c.StartAt == null || c.StartAt <= now)
                 && (c.EndAt == null || c.EndAt >= now)
                 && c.RemainCount > 0);
@@ -30,7 +30,7 @@ public class GetAvailableMallCouponsHandler : IRequestHandler<GetAvailableMallCo
         {
             var claimedIds = await _db.MallMemberCoupons
                 .AsNoTracking()
-                .Where(mc => mc.MemberId == req.MemberId.Value && !mc.IsDeleted)
+                .Where(mc => mc.MemberId == req.MemberId.Value)
                 .Select(mc => mc.CouponId)
                 .Distinct()
                 .ToListAsync(ct);

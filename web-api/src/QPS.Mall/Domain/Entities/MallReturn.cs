@@ -17,6 +17,15 @@ public class MallReturn : BaseEntity
 
     public string Reason { get; private set; } = string.Empty;
 
+    /// <summary>补充说明，选择「其他」原因时填写。</summary>
+    public string? Description { get; private set; }
+
+    /// <summary>凭证图片相对地址，逗号分隔，最多 6 张。</summary>
+    public string EvidenceImages { get; private set; } = string.Empty;
+
+    /// <summary>审核拒绝原因。</summary>
+    public string? RejectReason { get; private set; }
+
     public string Status { get; private set; } = MallReturnStatus.Pending;
 
     public string? ExpressCompany { get; private set; }
@@ -42,13 +51,17 @@ public class MallReturn : BaseEntity
         Guid orderId,
         Guid paymentId,
         decimal amount,
-        string reason)
+        string reason,
+        string? description,
+        string evidenceImages)
     {
         ReturnNo = returnNo;
         OrderId = orderId;
         PaymentId = paymentId;
         Amount = amount;
         Reason = reason;
+        Description = description;
+        EvidenceImages = evidenceImages;
         Status = MallReturnStatus.Pending;
     }
 
@@ -57,9 +70,18 @@ public class MallReturn : BaseEntity
         Guid orderId,
         Guid paymentId,
         decimal amount,
-        string reason)
+        string reason,
+        string? description = null,
+        string evidenceImages = "")
     {
-        return new MallReturn(returnNo, orderId, paymentId, amount, reason);
+        return new MallReturn(
+            returnNo,
+            orderId,
+            paymentId,
+            amount,
+            reason,
+            description,
+            evidenceImages);
     }
 
     public void Approve()
@@ -71,12 +93,13 @@ public class MallReturn : BaseEntity
         ApprovedAt = DateTime.Now;
     }
 
-    public void Reject()
+    public void Reject(string? rejectReason = null)
     {
         if (Status != MallReturnStatus.Pending)
             throw new BusinessException(400, "当前退货单状态不可审核拒绝");
 
         Status = MallReturnStatus.Rejected;
+        RejectReason = string.IsNullOrWhiteSpace(rejectReason) ? null : rejectReason.Trim();
         RejectedAt = DateTime.Now;
     }
 

@@ -13,6 +13,17 @@ export interface CategoryChild {
 
 export interface ProductTag {
   id: string
+  type: string
+  code: string
+  name: string
+  color: string
+  sortOrder: number
+  isActive: boolean
+}
+
+export interface MallTagItem {
+  id: string
+  type: string
   code: string
   name: string
   color: string
@@ -24,14 +35,12 @@ export interface ProductPromotion {
   id: string
   name: string
   description: string
-  triggerType: string
-  triggerConfigJson: string
+  promotionType: number
+  thresholdAmount: number
   actionType: string
   actionConfigJson: string
   scopeType: string
   ruleText: string
-  startDate: string | null
-  endDate: string | null
 }
 
 export interface Product {
@@ -40,6 +49,7 @@ export interface Product {
   name: string
   categoryId: string | null
   categoryName: string
+  storeName: string
   description: string
   detailHtml: string
   images: string[]
@@ -48,6 +58,8 @@ export interface Product {
   isHot: boolean
   tags: ProductTag[]
   promotions: ProductPromotion[]
+  promotionBadgeText: string
+  promotionBadgeColor: string
 }
 
 export interface Sku {
@@ -57,6 +69,8 @@ export interface Sku {
   marketPrice: number
   stock: number
   weightGram: number
+  discountedPrice: number | null
+  discountLabel: string
 }
 
 export interface Banner {
@@ -72,31 +86,8 @@ export enum BannerLinkType {
   InternalCategory = 1,
   InternalPage = 2,
   ExternalUrl = 3,
-  InternalActivity = 4
-}
-
-export interface MallActivityPromotion {
-  id: string
-  promotionId: string
-  name: string
-  description: string
-  triggerType: string
-  actionType: string
-  startDate: string | null
-  endDate: string | null
-  isActive: boolean
-}
-
-export interface MallActivity {
-  id: string
-  name: string
-  subtitle: string
-  coverImage: string
-  description: string
-  detailHtml: string
-  startDate: string | null
-  endDate: string | null
-  promotions: MallActivityPromotion[]
+  InternalCampaign = 6,
+  InternalPromotion = 7
 }
 
 export interface CartItem {
@@ -106,6 +97,14 @@ export interface CartItem {
   skuId: string
   specName: string
   price: number
+  /** 折后价（后端按最优折扣计算，无折扣时等于 price） */
+  discountedPrice?: number
+  /** 折扣标签，如「8折」；无折扣为空 */
+  discountLabel?: string | null
+  /** 满减促销角标文案（后端判定，与商品列表同一套口径） */
+  promotionBadgeText?: string | null
+  /** 满减促销角标背景色 */
+  promotionBadgeColor?: string | null
   quantity: number
   weightGram: number
   selected: boolean
@@ -119,4 +118,31 @@ export interface CartItem {
   certText?: string
   /** 库存紧张红色提示，如「仅剩最后2件，请尽快结算」 */
   stockTip?: string
+}
+
+export interface ProductReview {
+  id: string
+  memberNickname: string
+  memberLevelName: string
+  rating: number
+  content: string
+  specText: string
+  tags: string[]
+  images: string[]
+  replyContent: string
+  reviewTime: string
+}
+
+export interface ReviewTagStat {
+  tag: string
+  count: number
+}
+
+export interface ProductReviewPage {
+  items: ProductReview[]
+  totalCount: number
+  positiveRate: number
+  allTotalCount: number
+  allPositiveRate: number
+  tagStats: ReviewTagStat[]
 }

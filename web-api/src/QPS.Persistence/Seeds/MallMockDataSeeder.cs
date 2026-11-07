@@ -16,12 +16,11 @@ public static class MallMockDataSeeder
 
         var categoriesPath = Path.Combine(mockRootPath, "categories.json");
         var bannersPath = Path.Combine(mockRootPath, "banners.json");
-        var activitiesPath = Path.Combine(mockRootPath, "activities.json");
         var promotionsPath = Path.Combine(mockRootPath, "promotions.json");
         var productsPath = Path.Combine(mockRootPath, "products.json");
         var tagsPath = Path.Combine(mockRootPath, "tags.json");
         if (!File.Exists(categoriesPath) || !File.Exists(bannersPath) ||
-            !File.Exists(activitiesPath) || !File.Exists(promotionsPath) ||
+            !File.Exists(promotionsPath) ||
             !File.Exists(productsPath) || !File.Exists(tagsPath))
         {
             throw new FileNotFoundException($"商城 mock 数据文件不完整: {mockRootPath}");
@@ -96,10 +95,8 @@ public static class MallMockDataSeeder
             categoryIdsByMockId,
             skuIdsByMockId,
             ct);
-        var activityIdsByMockId = await SyncActivitiesAsync(db, activitiesPath, promotionIdsByMockId, ct);
         var banners = ParseBanners(
             bannersPath,
-            activityIdsByMockId,
             productIdsByMockId,
             categoryIdsByMockId);
         var existingBanners = await db.MallBanners
@@ -130,19 +127,18 @@ public static class MallMockDataSeeder
                 banner.StartDate,
                 banner.EndDate);
             existing.ChangeStatus(true);
-            existing.IsDeleted = false;
+            existing.Restore();
         }
         db.MallBanners.AddRange(newBanners);
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
 
         logger.LogInformation(
-            "✅ 已同步商城 mock 数据：{CategoryCount} 条分类、{ProductCount} 条商品、{SkuCount} 条 SKU、{PromotionCount} 条促销、{ActivityCount} 条活动、{BannerCount} 条轮播",
+            "✅ 已同步商城 mock 数据：{CategoryCount} 条分类、{ProductCount} 条商品、{SkuCount} 条 SKU、{PromotionCount} 条促销、{BannerCount} 条轮播",
             categories.Count,
             products.Count,
             skus.Count,
             promotionIdsByMockId.Count,
-            activityIdsByMockId.Count,
             banners.Count);
         logger.LogInformation("✅ 已同步商城 mock 标签：{TagCount} 个标签、{ProductTagCount} 条商品标签关系",
             tagSync.TagCount,
@@ -228,7 +224,7 @@ public static class MallMockDataSeeder
             // mock 数据未提供图标时保留后台已维护的图标，避免每次启动覆盖上传结果
             existing.Update(code, name, parentId, icon ?? existing.Icon, sortOrder);
             existing.ChangeStatus(true);
-            existing.IsDeleted = false;
+            existing.Restore();
             return existing;
         }
 
@@ -265,27 +261,27 @@ public static class MallMockDataSeeder
             var description = item.TryGetProperty("description", out var descriptionElement)
                 ? descriptionElement.GetString() ?? string.Empty
                 : string.Empty;
-            var triggerType = item.GetProperty("triggerType").GetString()!;
-            var triggerConfigJson = ResolvePromotionConfig(
-                item.GetProperty("triggerConfigJson").GetString()!,
-                productIdsByMockId,
-                skuIdsByMockId);
+            var thresholdAmount = item.TryGetProperty("thresholdAmount", out var thresholdElement)
+                ? thresholdElement.GetDecimal()
+                : 0m;
             var actionType = item.GetProperty("actionType").GetString()!;
             var actionConfigJson = ResolvePromotionConfig(
                 item.GetProperty("actionConfigJson").GetString()!,
                 productIdsByMockId,
                 skuIdsByMockId);
+
+            // 从 actionType 映射 PromotionType 枚举
+            var promotionType = actionType switch
+            {
+                "DiscountAmount" => MallPromotionType.DiscountAmount,
+                "DiscountRate" => MallPromotionType.DiscountRate,
+                "Gift" => MallPromotionType.Gift,
+                _ => MallPromotionType.DiscountAmount
+            };
             var scopeType = item.TryGetProperty("scopeType", out var scopeElement)
                 ? scopeElement.GetString() ?? "Global"
                 : "Global";
-            var maxUsagePerUser = item.TryGetProperty("maxUsagePerUser", out var perUserElement)
-                ? perUserElement.GetInt32()
-                : 0;
-            var maxUsagePerOrder = item.TryGetProperty("maxUsagePerOrder", out var perOrderElement)
-                ? perOrderElement.GetInt32()
-                : 0;
             var isActive = !item.TryGetProperty("isActive", out var activeElement) || activeElement.GetBoolean();
-            var (startDate, endDate) = ResolveTimeWindow(item, now);
             sourcePromotionNames.Add(name);
 
             if (!promotionsByName.TryGetValue(name, out var promotion))
@@ -293,15 +289,14 @@ public static class MallMockDataSeeder
                 promotion = MallPromotion.Create(
                     name,
                     description,
-                    triggerType,
-                    triggerConfigJson,
+                    promotionType,
+                    thresholdAmount,
                     actionType,
                     actionConfigJson,
                     scopeType,
-                    maxUsagePerUser,
-                    maxUsagePerOrder,
-                    startDate,
-                    endDate,
+                    promotionTagId: null,
+                    startDate: null,
+                    endDate: null,
                     isActive: isActive);
                 db.MallPromotions.Add(promotion);
                 promotionsByName.Add(name, promotion);
@@ -311,17 +306,16 @@ public static class MallMockDataSeeder
                 promotion.Update(
                     name,
                     description,
-                    triggerType,
-                    triggerConfigJson,
+                    promotionType,
+                    thresholdAmount,
                     actionType,
                     actionConfigJson,
                     scopeType,
-                    maxUsagePerUser,
-                    maxUsagePerOrder,
-                    startDate,
-                    endDate);
+                    promotion.PromotionTagId,
+                    startDate: null,
+                    endDate: null);
                 promotion.ChangeStatus(isActive);
-                promotion.IsDeleted = false;
+                promotion.Restore();
             }
 
             promotionIdsByMockId.Add(mockId, promotion.Id);
@@ -339,11 +333,12 @@ public static class MallMockDataSeeder
             .IgnoreQueryFilters()
             .Where(scope => managedPromotionIds.Contains(scope.PromotionId))
             .ToListAsync(ct);
-        var existingScopesByKey = existingScopes.ToDictionary(
-            scope => (scope.PromotionId, scope.ScopeTargetType, scope.ScopeTargetId));
+        var existingScopesByKey = existingScopes
+            .GroupBy(scope => (scope.PromotionId, scope.ScopeTargetType, scope.ScopeTargetId))
+            .ToDictionary(group => group.Key, group => group.First());
         foreach (var scope in existingScopes)
         {
-            scope.IsDeleted = true;
+            scope.SoftDelete();
         }
 
         using var scopesDocument = JsonDocument.Parse(File.ReadAllText(path));
@@ -371,7 +366,7 @@ public static class MallMockDataSeeder
                 var key = (promotionId, scopeType, target);
                 if (existingScopesByKey.TryGetValue(key, out var existingScope))
                 {
-                    existingScope.IsDeleted = false;
+                    existingScope.Restore();
                 }
                 else
                 {
@@ -445,141 +440,8 @@ public static class MallMockDataSeeder
         return targetId;
     }
 
-    private static (DateTime? StartDate, DateTime? EndDate) ResolveTimeWindow(
-        JsonElement item,
-        DateTime now)
-    {
-        var timeState = item.TryGetProperty("timeState", out var timeElement)
-            ? timeElement.GetString()
-            : null;
-        return timeState switch
-        {
-            "Upcoming" => (now.AddDays(1), now.AddDays(2)),
-            "Expired" => (now.AddDays(-2), now.AddDays(-1)),
-            _ => (null, null)
-        };
-    }
-
-    private static async Task<Dictionary<string, Guid>> SyncActivitiesAsync(
-        AppDbContext db,
-        string path,
-        IReadOnlyDictionary<string, Guid> promotionIdsByMockId,
-        CancellationToken ct)
-    {
-        var existingActivities = await db.MallActivities
-            .IgnoreQueryFilters()
-            .Where(activity => activity.Name.StartsWith("[测试]Banner链路-"))
-            .ToListAsync(ct);
-        var activitiesByName = existingActivities.ToDictionary(activity => activity.Name, StringComparer.Ordinal);
-        var activityIdsByMockId = new Dictionary<string, Guid>(StringComparer.Ordinal);
-        var sourceActivityNames = new HashSet<string>(StringComparer.Ordinal);
-        var now = DateTime.UtcNow;
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
-
-        foreach (var item in document.RootElement.GetProperty("activities").EnumerateArray())
-        {
-            var mockId = item.GetProperty("id").GetString()
-                ?? throw new InvalidDataException("测试活动缺少 id");
-            var name = item.GetProperty("name").GetString()
-                ?? throw new InvalidDataException($"测试活动 {mockId} 缺少 name");
-            var subtitle = item.TryGetProperty("subtitle", out var subtitleElement)
-                ? subtitleElement.GetString() ?? string.Empty
-                : string.Empty;
-            var coverImage = item.TryGetProperty("coverImage", out var coverElement)
-                ? coverElement.GetString() ?? string.Empty
-                : string.Empty;
-            var description = item.TryGetProperty("description", out var descriptionElement)
-                ? descriptionElement.GetString() ?? string.Empty
-                : string.Empty;
-            var detailHtml = item.TryGetProperty("detailHtml", out var detailElement)
-                ? detailElement.GetString() ?? string.Empty
-                : string.Empty;
-            var sortOrder = item.TryGetProperty("sortOrder", out var sortElement)
-                ? sortElement.GetInt32()
-                : 0;
-            var isActive = !item.TryGetProperty("isActive", out var activeElement) || activeElement.GetBoolean();
-            var (startDate, endDate) = ResolveTimeWindow(item, now);
-            sourceActivityNames.Add(name);
-            if (!activitiesByName.TryGetValue(name, out var activity))
-            {
-                activity = MallActivity.Create(
-                    name,
-                    subtitle,
-                    coverImage,
-                    description,
-                    detailHtml,
-                    startDate,
-                    endDate,
-                    sortOrder: sortOrder,
-                    isActive);
-                db.MallActivities.Add(activity);
-                activitiesByName.Add(name, activity);
-            }
-            else
-            {
-                activity.Update(name, subtitle, coverImage, description, detailHtml, startDate, endDate, sortOrder);
-                activity.ChangeStatus(isActive);
-                activity.IsDeleted = false;
-            }
-
-            activityIdsByMockId.Add(mockId, activity.Id);
-        }
-
-        foreach (var activity in existingActivities.Where(activity => !sourceActivityNames.Contains(activity.Name)))
-        {
-            activity.ChangeStatus(false);
-        }
-
-        await db.SaveChangesAsync(ct);
-
-        var activityIds = activityIdsByMockId.Values.ToArray();
-        var existingLinks = await db.MallActivityPromotions
-            .IgnoreQueryFilters()
-            .Where(link => activityIds.Contains(link.ActivityId))
-            .ToListAsync(ct);
-        var existingLinksByPair = existingLinks.ToDictionary(
-            link => (link.ActivityId, link.PromotionId));
-        foreach (var link in existingLinks)
-        {
-            link.IsDeleted = true;
-        }
-        using var linkDocument = JsonDocument.Parse(File.ReadAllText(path));
-        foreach (var item in linkDocument.RootElement.GetProperty("activities").EnumerateArray())
-        {
-            var mockId = item.GetProperty("id").GetString()!;
-            var activityId = activityIdsByMockId[mockId];
-            if (!item.TryGetProperty("promotionIds", out var promotionElements))
-            {
-                continue;
-            }
-
-            foreach (var promotionMockId in promotionElements.EnumerateArray().Select(element => element.GetString()!).Distinct())
-            {
-                if (!promotionIdsByMockId.TryGetValue(promotionMockId, out var promotionId))
-                {
-                    throw new InvalidDataException($"测试活动 {mockId} 引用了不存在的促销: {promotionMockId}");
-                }
-
-                if (existingLinksByPair.TryGetValue((activityId, promotionId), out var existingLink))
-                {
-                    existingLink.IsDeleted = false;
-                }
-                else
-                {
-                    var link = MallActivityPromotion.Create(activityId, promotionId);
-                    db.MallActivityPromotions.Add(link);
-                    existingLinksByPair.Add((activityId, promotionId), link);
-                }
-            }
-        }
-
-        await db.SaveChangesAsync(ct);
-        return activityIdsByMockId;
-    }
-
     private static List<MallBanner> ParseBanners(
         string path,
-        IReadOnlyDictionary<string, Guid> activityIdsByMockId,
         IReadOnlyDictionary<string, Guid> productIdsByMockId,
         IReadOnlyDictionary<string, Guid> categoryIdsByMockId)
     {
@@ -605,20 +467,7 @@ public static class MallMockDataSeeder
                 }
             }
 
-            if (linkType == MallBannerLinkType.InternalActivity)
-            {
-                var activityMockId = item.TryGetProperty("activityId", out var activityElement)
-                    ? activityElement.GetString()
-                    : null;
-                if (string.IsNullOrWhiteSpace(activityMockId) ||
-                    !activityIdsByMockId.TryGetValue(activityMockId, out var activityId))
-                {
-                    throw new InvalidDataException($"Banner {title} 引用了不存在的测试活动: {activityMockId}");
-                }
-
-                link = activityId.ToString();
-            }
-            else if (linkType == MallBannerLinkType.InternalProduct)
+            if (linkType == MallBannerLinkType.InternalProduct)
             {
                 var productMockId = item.TryGetProperty("productId", out var productElement)
                     ? productElement.GetString()
@@ -733,7 +582,7 @@ public static class MallMockDataSeeder
                     product.IsHot,
                     null);
                 product.ChangeStatus(true);
-                product.IsDeleted = false;
+                product.Restore();
             }
             else
             {
@@ -773,7 +622,7 @@ public static class MallMockDataSeeder
                         // 市场价由后台维护，种子同步时保留已有值
                         existingSku.Update(skuCode, specName, price, weightGram, stock, 5, marketPrice: existingSku.MarketPrice);
                         existingSku.ChangeStatus(true);
-                        existingSku.IsDeleted = false;
+                        existingSku.Restore();
                         skus.Add(existingSku);
                     }
                     else
@@ -825,11 +674,11 @@ public static class MallMockDataSeeder
             {
                 tag.Update(code, name, color, sortOrder);
                 tag.ChangeStatus(true);
-                tag.IsDeleted = false;
+                tag.Restore();
             }
             else
             {
-                tag = MallTag.Create(code, name, color, sortOrder, true);
+                tag = MallTag.Create(code, name, color, sortOrder, true, MallTagType.Product);
                 existingTags.Add(code, tag);
                 newTags.Add(tag);
             }
@@ -871,7 +720,7 @@ public static class MallMockDataSeeder
         {
             if (!link.IsDeleted && tagCodeById.TryGetValue(link.TagId, out var code) && code.StartsWith("MOCK-TAG-", StringComparison.Ordinal))
             {
-                link.IsDeleted = true;
+                link.SoftDelete();
             }
         }
 

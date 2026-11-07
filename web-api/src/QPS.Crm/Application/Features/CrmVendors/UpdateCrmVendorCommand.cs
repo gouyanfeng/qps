@@ -56,7 +56,7 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
     private async Task<CrmVendor> GetVendor(Guid vendorId, CancellationToken cancellationToken)
     {
         var vendor = await _dbContext.CrmVendors
-            .FirstOrDefaultAsync(item => item.Id == vendorId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == vendorId, cancellationToken);
 
         if (vendor is null)
         {
@@ -92,7 +92,6 @@ public class UpdateCrmVendorHandler : IRequestHandler<UpdateCrmVendorCommand, bo
         var duplicated = await _dbContext.CrmVendors
             .AnyAsync(
                 item =>
-                    !item.IsDeleted &&
                     item.Id != vendorId &&
                     item.NormalizedVendorName == normalizedVendorName,
                 cancellationToken);

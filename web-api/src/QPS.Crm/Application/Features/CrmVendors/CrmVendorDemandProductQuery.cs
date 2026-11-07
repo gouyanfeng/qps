@@ -17,8 +17,7 @@ public static class CrmVendorDemandProductQuery
         ICrmDbContext dbContext,
         IReadOnlyCollection<Guid> vendorIds)
     {
-        var demands = dbContext.CrmVendorDemands
-            .Where(demand => !demand.IsDeleted);
+        var demands = dbContext.CrmVendorDemands.AsQueryable();
         if (vendorIds.Count > 0)
         {
             demands = demands.Where(demand => vendorIds.Contains(demand.VendorId));
@@ -26,7 +25,6 @@ public static class CrmVendorDemandProductQuery
 
         return from demand in demands
                join item in dbContext.CrmVendorDemandItems on demand.Id equals item.VendorDemandId
-               where !item.IsDeleted
                select new CrmVendorDemandProductItem(
                    demand.VendorId,
                    item.Id,

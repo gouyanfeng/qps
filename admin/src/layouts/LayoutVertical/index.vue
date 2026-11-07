@@ -3,8 +3,8 @@
   <el-container class="layout">
     <el-aside>
       <div class="aside-box" :style="{ width: isCollapse ? '65px' : '210px' }">
-        <div class="logo flx-center">
-         <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" /> 
+        <div class="logo" :class="{ 'is-collapse': isCollapse }">
+          <span class="logo-mark">Q</span>
           <span v-show="!isCollapse" class="logo-text">{{ title }}</span>
         </div>
         <el-scrollbar>

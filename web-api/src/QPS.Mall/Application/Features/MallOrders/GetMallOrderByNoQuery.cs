@@ -12,6 +12,9 @@ namespace QPS.Mall.Application.Features.MallOrders;
 public class GetMallOrderByNoQuery : IRequest<MallOrderDetailDto>
 {
     public string OrderNo { get; set; } = string.Empty;
+
+    /// <summary>当前会员 ID；移动端必传，管理端/外部系统为空。</summary>
+    public Guid? MemberId { get; set; }
 }
 
 public class GetMallOrderByNoHandler : IRequestHandler<GetMallOrderByNoQuery, MallOrderDetailDto>
@@ -36,7 +39,7 @@ public class GetMallOrderByNoHandler : IRequestHandler<GetMallOrderByNoQuery, Ma
 
         var orderId = await _dbContext.MallOrders
             .AsNoTracking()
-            .Where(order => order.OrderNo == orderNo && !order.IsDeleted)
+            .Where(order => order.OrderNo == orderNo)
             .Select(order => (Guid?)order.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -45,6 +48,13 @@ public class GetMallOrderByNoHandler : IRequestHandler<GetMallOrderByNoQuery, Ma
             throw new BusinessException(404, "订单不存在");
         }
 
-        return await MallOrderDetailLoader.LoadAsync(_dbContext, orderId.Value, cancellationToken);
+        var detail = await MallOrderDetailLoader.LoadAsync(_dbContext, orderId.Value, cancellationToken);
+
+        if (request.MemberId.HasValue && detail.MemberId != request.MemberId.Value)
+        {
+            throw new BusinessException(403, "无权访问该订单");
+        }
+
+        return detail;
     }
 }

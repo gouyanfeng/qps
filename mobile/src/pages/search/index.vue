@@ -1,31 +1,42 @@
 <template>
   <view class="page">
-    <q-page-header-back title="搜索" />
-
-    <view class="search-bar-wrap">
-      <view class="search-input-wrapper qps-search-bar">
-        <q-icon name="search" size="20px" color="#999" />
-        <input
-          v-model="keyword"
-          class="search-input"
-          placeholder="搜索中药材名称或功效"
-          :focus="true"
-          @confirm="handleSearch"
-          @clear="handleClear"
-        />
-        <view v-if="keyword" class="clear-btn" @click="handleClear">
-          <q-icon name="close" size="16px" color="#999" />
+    <q-page-header-back>
+      <template #title>
+        <view class="search-box">
+          <q-icon name="search" size="22" color="#707A6C" />
+          <input
+            v-model="keyword"
+            class="search-input"
+            type="text"
+            placeholder="道地人参、黄芪、陈皮..."
+            placeholder-class="search-placeholder"
+            confirm-type="search"
+            :focus="true"
+            @confirm="handleSearch"
+          />
+          <view v-if="keyword" class="clear-btn" @click="handleClear">
+            <q-icon name="close" size="16" color="#ffffff" />
+          </view>
         </view>
-      </view>
-    </view>
+      </template>
+      <template #right>
+        <view class="search-btn" @click="handleSearch">
+          <text class="search-btn-text">搜索</text>
+        </view>
+      </template>
+    </q-page-header-back>
 
     <scroll-view scroll-y class="page-body" enhanced>
+      <!-- ============ 初始态：热门搜索 + 搜索历史 ============ -->
       <view v-if="!hasSearched" class="search-init">
         <view class="hot-searches">
           <view class="section-header">
-              <q-icon name="star-filled" size="18px" color="#FF9800" />
-              <text class="section-title qps-section-title">热门搜索</text>
+            <view class="section-head-left">
+              <view class="section-dot"></view>
+              <text class="section-title">热门搜索</text>
             </view>
+            <text class="section-hint">道地药材 · 滋补佳品</text>
+          </view>
           <view class="hot-tags">
             <view
               v-for="(tag, index) in hotSearchTags"
@@ -41,10 +52,12 @@
 
         <view v-if="searchHistory.length > 0" class="search-history">
           <view class="section-header">
-            <q-icon name="time" size="18px" color="#757575" />
-            <text class="section-title qps-section-title">搜索历史</text>
+            <view class="section-head-left">
+              <q-icon name="time" size="18" color="#8A8578" />
+              <text class="section-title">搜索历史</text>
+            </view>
             <view class="clear-history" @click="clearHistory">
-              <q-icon name="delete" size="16px" color="#999" />
+              <q-icon name="delete" size="16" color="#9E9E9E" />
               <text class="clear-text">清空</text>
             </view>
           </view>
@@ -59,59 +72,205 @@
             </view>
           </view>
         </view>
+
+        <view class="init-footer">
+          <view class="footer-line"></view>
+          <text class="footer-text">核心产区直采 · 中检院全项质检 · 顺丰冷链直发</text>
+          <view class="footer-line"></view>
+        </view>
       </view>
 
+      <!-- ============ 结果态 ============ -->
       <view v-else class="search-results">
-        <view v-if="searchResults.length === 0" class="empty-results qps-empty-state">
-          <q-icon name="search" size="80px" color="#ddd" />
-          <text class="empty-text">未找到相关商品</text>
-          <text class="empty-hint">换个关键词试试吧</text>
+        <view v-if="loading" class="loading-state">
+          <q-icon name="loading" size="40" color="#BDBDBD" />
+          <text class="loading-text">正在为你甄选道地药材…</text>
         </view>
-        <view v-else class="results-list">
-          <view class="results-header">
-            <text class="results-count qps-section-more">找到 {{ searchResults.length }} 件相关商品</text>
+
+        <view v-else-if="results.length === 0" class="empty-state">
+          <q-icon name="search" size="80" color="#DDDDDD" />
+          <text class="empty-text">未找到相关商品</text>
+          <text class="empty-hint">换个关键词试试，例如「人参」「黄芪」</text>
+        </view>
+
+        <template v-else>
+          <!-- 结果数量与溯源存证提示条 -->
+          <view class="result-meta">
+            <view class="meta-left">
+              <view class="meta-dot"></view>
+              <text class="meta-text">找到 <text class="meta-count">{{ filteredResults.length }}</text> 件道地药材与滋补品</text>
+            </view>
+            <view class="meta-right">
+              <q-icon name="institution-checked" size="14" color="#2E7D32" />
+              <text class="meta-right-text">正品溯源保障</text>
+            </view>
           </view>
-          <view
-            v-for="product in searchResults"
-            :key="product.id"
-            class="result-item qps-card qps-shadow-sm qps-tap"
-            @click="goToProductDetail(product.id)"
-          >
-            <image :src="product.images[0]" mode="aspectFill" class="result-image" />
-            <view class="result-info">
-              <text class="result-name">{{ product.name }}</text>
-              <text class="result-category">{{ product.categoryName }}</text>
-              <view v-if="product.tags.length" class="result-tags">
-                <text v-for="tag in product.tags" :key="tag.id" class="result-tag">{{ tag.name }}</text>
+
+          <!-- 中药材多维快速筛选胶囊 -->
+          <scroll-view scroll-x class="quick-scroll" enhanced show-scrollbar="false">
+            <view class="quick-row">
+              <view
+                v-for="pill in quickFilters"
+                :key="pill.key"
+                :class="['quick-pill', { active: activeQuick === pill.key }]"
+                @click="selectQuick(pill.key)"
+              >
+                <text>{{ pill.name }}</text>
               </view>
-              <text class="result-desc">{{ product.description }}</text>
-              <view class="result-bottom">
-                <view class="price-row">
-                  <text class="price-symbol qps-price-accent qps-price-symbol">¥</text>
-                  <text class="price-value qps-price-accent qps-price-value">{{ product.skus[0].price }}</text>
-                </view>
-                <text class="result-sales">已售 {{ product.sales }}</text>
+            </view>
+          </scroll-view>
+
+          <!-- 综合排序工具栏 -->
+          <view class="sort-bar">
+            <view class="sort-left">
+              <view :class="['sort-item', { active: sortBy === 'default' }]" @click="setSort('default')">
+                <text>综合排序</text>
+                <view v-if="sortBy === 'default'" class="sort-dot"></view>
+              </view>
+              <view :class="['sort-item', { active: sortBy === 'sales' }]" @click="setSort('sales')">
+                <text>销量</text>
+                <view v-if="sortBy === 'sales'" class="sort-dot"></view>
+              </view>
+              <view :class="['sort-item', { active: sortBy === 'price' }]" @click="togglePriceSort">
+                <text>价格</text>
+                <text class="sort-arrow">{{ priceAsc ? '↑' : '↓' }}</text>
+              </view>
+            </view>
+            <view :class="['filter-btn', { active: filterOpen }]" @click="filterOpen = !filterOpen">
+              <text>筛选</text>
+              <q-icon name="setting" size="15" :color="filterOpen ? '#2E7D32' : '#6B6B6B'" />
+            </view>
+          </view>
+
+          <!-- 筛选面板：全部标签 -->
+          <view v-if="filterOpen" class="filter-panel">
+            <view class="filter-panel-head">
+              <text class="filter-panel-title">按标签筛选</text>
+              <text class="filter-reset" @click="selectQuick('all')">重置</text>
+            </view>
+            <view class="filter-tags">
+              <view
+                v-for="pill in quickFilters"
+                :key="`panel-${pill.key}`"
+                :class="['filter-tag', { active: activeQuick === pill.key }]"
+                @click="selectQuick(pill.key)"
+              >
+                <text>{{ pill.name }}</text>
               </view>
             </view>
           </view>
-        </view>
+
+          <!-- 搜索结果商品双列卡片 -->
+          <view class="result-grid">
+            <view
+              v-for="product in filteredResults"
+              :key="product.id"
+              class="result-card qps-tap"
+              @click="goToProductDetail(product.id)"
+            >
+              <view class="card-thumb">
+                <q-cached-image :src="product.images[0]" mode="aspectFill" class="thumb-img" />
+                <view v-if="product.promotionBadgeText" class="thumb-badge" :style="{ backgroundColor: product.promotionBadgeColor || '#C2410C' }">
+                  <text class="thumb-badge-text">{{ product.promotionBadgeText }}</text>
+                </view>
+                <view v-else-if="product.categoryName" class="thumb-badge thumb-badge-plain">
+                  <text class="thumb-badge-text">{{ product.categoryName }}</text>
+                </view>
+              </view>
+
+              <view class="card-body">
+                <view v-if="displayTags(product).length" class="card-tags">
+                  <text
+                    v-for="tag in displayTags(product).slice(0, 2)"
+                    :key="tag.id"
+                    class="card-tag"
+                    :style="tagChipStyle(tag.color)"
+                  >{{ tag.name }}</text>
+                </view>
+                <text class="card-name">{{ product.name }}</text>
+                <text class="card-desc">{{ product.description || product.categoryName }}</text>
+
+                <view class="card-bottom">
+                  <view class="price-col">
+                    <text v-if="originalPriceOf(product) > 0" class="price-origin">¥{{ formatPrice(originalPriceOf(product)) }}</text>
+                    <view class="price-row">
+                      <text class="price-symbol">¥</text>
+                      <text class="price-value">{{ formatPrice(minPriceOf(product)) }}</text>
+                    </view>
+                  </view>
+                  <view class="add-btn" @click.stop="quickAdd(product)">
+                    <q-icon name="add" size="18" color="#ffffff" />
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 关联推荐横滑区 -->
+          <view v-if="relatedProducts.length" class="related">
+            <view class="related-head">
+              <view class="related-head-left">
+                <q-icon name="tea" size="20" color="#2E7D32" />
+                <text class="related-title">常看关联滋补佳品</text>
+              </view>
+              <text class="related-hint">馆内医师审方推荐</text>
+            </view>
+            <scroll-view scroll-x enhanced show-scrollbar="false">
+              <view class="related-row">
+                <view
+                  v-for="item in relatedProducts"
+                  :key="item.id"
+                  class="related-card"
+                  @click="goToProductDetail(item.id)"
+                >
+                  <view class="related-card-top">
+                    <q-cached-image :src="item.images[0]" mode="aspectFill" class="related-img" />
+                    <view class="related-info">
+                      <text class="related-name">{{ item.name }}</text>
+                      <text class="related-desc">{{ item.description || item.categoryName }}</text>
+                    </view>
+                  </view>
+                  <view class="related-bottom">
+                    <text class="related-price">¥{{ formatPrice(minPriceOf(item)) }}</text>
+                    <text class="related-more">搭配加购 ›</text>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <!-- 底部品质背书 -->
+          <view class="result-footer">
+            <view class="footer-line"></view>
+            <text class="footer-text">核心产区直采 · 中检院全项质检 · 顺丰冷链直发</text>
+            <view class="footer-line"></view>
+          </view>
+        </template>
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { searchProducts } from '@/api'
+import { ref, computed, onMounted } from 'vue'
+import { searchProducts, getHotProducts, addToCart } from '@/api'
 import type { Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
+import { tagChipStyle } from '@/utils/tagColor'
 
 const keyword = ref('')
 const hasSearched = ref(false)
-const searchResults = ref<Product[]>([])
+const loading = ref(false)
+const results = ref<Product[]>([])
+const relatedProducts = ref<Product[]>([])
 const searchHistory = ref<string[]>([])
 
-const hotSearchTags = ['人参', '黄芪', '枸杞', '当归', '菊花', '鹿茸', '金银花']
+const sortBy = ref<'default' | 'sales' | 'price'>('default')
+const priceAsc = ref(true)
+const activeQuick = ref('all')
+const filterOpen = ref(false)
+
+const hotSearchTags = ['人参', '黄芪', '枸杞', '当归', '陈皮', '鹿茸', '金银花']
 
 const HISTORY_STORAGE_KEY = 'qps_search_history'
 
@@ -119,24 +278,80 @@ onMounted(() => {
   loadSearchHistory()
 })
 
-async function handleSearch() {
-  if (!keyword.value.trim()) return
+const quickFilters = computed(() => {
+  const map = new Map<string, string>()
+  results.value.forEach(product => {
+    displayTags(product).forEach(tag => {
+      if (tag.code && !map.has(tag.code)) map.set(tag.code, tag.name)
+    })
+  })
+  return [
+    { key: 'all', name: '全部' },
+    ...Array.from(map, ([key, name]) => ({ key, name }))
+  ]
+})
 
+const filteredResults = computed(() => {
+  const list = activeQuick.value === 'all'
+    ? results.value
+    : results.value.filter(product =>
+        displayTags(product).some(tag => tag.code === activeQuick.value)
+      )
+  const copy = [...list]
+  if (sortBy.value === 'sales') {
+    copy.sort((a, b) => b.sales - a.sales)
+  } else if (sortBy.value === 'price') {
+    copy.sort((a, b) => priceAsc.value
+      ? minPriceOf(a) - minPriceOf(b)
+      : minPriceOf(b) - minPriceOf(a)
+    )
+  }
+  return copy
+})
+
+async function handleSearch() {
+  const kw = keyword.value.trim()
+  if (!kw) {
+    uni.showToast({ title: '请输入搜索关键词', icon: 'none' })
+    return
+  }
+  if (loading.value) return
+
+  loading.value = true
+  hasSearched.value = true
   try {
-    searchResults.value = await searchProducts(keyword.value.trim())
-    hasSearched.value = true
-    saveToHistory(keyword.value.trim())
+    results.value = await searchProducts(kw)
+    activeQuick.value = 'all'
+    filterOpen.value = false
+    saveToHistory(kw)
+    loadRelated()
   } catch (error) {
     console.error('搜索商品失败', error)
+    results.value = []
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '搜索失败，请稍后重试', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadRelated() {
+  if (relatedProducts.value.length) return
+  try {
+    const hot = await getHotProducts()
+    const searchedIds = new Set(results.value.map(product => product.id))
+    relatedProducts.value = hot.filter(product => !searchedIds.has(product.id)).slice(0, 5)
+  } catch (error) {
+    console.error('加载关联推荐失败', error)
   }
 }
 
 function handleClear() {
   keyword.value = ''
   hasSearched.value = false
-  searchResults.value = []
+  results.value = []
+  activeQuick.value = 'all'
+  filterOpen.value = false
 }
 
 function searchByTag(tag: string) {
@@ -144,9 +359,27 @@ function searchByTag(tag: string) {
   handleSearch()
 }
 
-function saveToHistory(keyword: string) {
-  const history = searchHistory.value.filter(h => h !== keyword)
-  history.unshift(keyword)
+function setSort(sort: 'default' | 'sales') {
+  if (sortBy.value === sort) return
+  sortBy.value = sort
+}
+
+function togglePriceSort() {
+  if (sortBy.value === 'price') {
+    priceAsc.value = !priceAsc.value
+    return
+  }
+  sortBy.value = 'price'
+  priceAsc.value = true
+}
+
+function selectQuick(key: string) {
+  activeQuick.value = key
+}
+
+function saveToHistory(value: string) {
+  const history = searchHistory.value.filter(item => item !== value)
+  history.unshift(value)
   searchHistory.value = history.slice(0, 10)
   uni.setStorageSync(HISTORY_STORAGE_KEY, JSON.stringify(searchHistory.value))
 }
@@ -173,65 +406,139 @@ function clearHistory() {
   })
 }
 
-function goToProductDetail(productId: string) {
-  uni.navigateTo({ url: `/pages/product-detail/index?id=${productId}` })
+function displayTags(product: Product) {
+  return product.tags.filter(tag => tag.type !== 'Promotion')
 }
 
-function goBack() {
-  uni.navigateBack()
+function lowestSkuOf(product: Product) {
+  if (!product.skus.length) return null
+  return product.skus.reduce((min, item) =>
+    (item.discountedPrice ?? item.price) < (min.discountedPrice ?? min.price) ? item : min)
+}
+
+function minPriceOf(product: Product): number {
+  const sku = lowestSkuOf(product)
+  return sku ? sku.discountedPrice ?? sku.price : 0
+}
+
+function originalPriceOf(product: Product): number {
+  const sku = lowestSkuOf(product)
+  return sku && sku.discountedPrice !== null && sku.discountedPrice < sku.price ? sku.price : 0
+}
+
+function formatPrice(price: number): string {
+  return price % 1 === 0 ? String(price) : price.toFixed(2)
+}
+
+async function quickAdd(product: Product) {
+  const sku = product.skus[0]
+  if (!sku) return
+  try {
+    await addToCart({
+      productId: product.id,
+      productName: product.name,
+      productImage: product.images[0] || '',
+      skuId: sku.id,
+      specName: sku.specName,
+      price: sku.price,
+      quantity: 1,
+      weightGram: sku.weightGram,
+      selected: true
+    })
+    uni.showToast({ title: '已加入购物车', icon: 'none' })
+  } catch (error) {
+    console.error('加入购物车失败', error)
+    if (error instanceof UnauthorizedError) return
+    uni.showToast({ title: '加入购物车失败', icon: 'none' })
+  }
+}
+
+function goToProductDetail(productId: string) {
+  uni.navigateTo({ url: `/pages/product-detail/index?id=${productId}` })
 }
 </script>
 
 <style lang="scss" scoped>
+$on-surface: #1B1C1C;
+$on-surface-variant: #6B6B6B;
+$outline: #8A8578;
+$price: #8B5000;
+
 .page {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding-bottom: 100rpx;
+  background: var(--page-bg);
 }
 
-.search-bar-wrap {
-  padding: 0 24rpx 20rpx;
-}
-
-.search-input-wrapper {
+/* ============ 顶栏搜索框 ============ */
+.search-box {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 10rpx;
+  height: 62rpx;
+  padding: 0 18rpx;
+  background: #F5F3ED;
+  border-radius: 20rpx;
 }
 
 .search-input {
   flex: 1;
-  font-size: 28rpx;
-  color: $theme-text-primary;
+  min-width: 0;
+  font-size: 24rpx;
+  color: $on-surface;
+}
+
+.search-placeholder {
+  color: $outline;
+  font-size: 24rpx;
 }
 
 .clear-btn {
-  width: 40rpx;
-  height: 40rpx;
+  width: 30rpx;
+  height: 30rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #E0E0E0;
+  background: rgba(112, 122, 108, 0.35);
   border-radius: 50%;
-  font-size: 20rpx;
-  color: #fff;
+  flex-shrink: 0;
 }
 
-.search-cancel {
-  color: $theme-text-primary;
-  font-size: 28rpx;
-  font-weight: 500;
+.search-btn {
+  height: 62rpx;
+  padding: 0 24rpx;
+  margin-left: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $theme-primary;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(13, 99, 27, 0.15);
+  flex-shrink: 0;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.search-btn-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .page-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
+/* ============ 初始态 ============ */
 .search-init {
-  padding: 30rpx;
+  padding: 30rpx 24rpx 60rpx;
 }
 
 .section-header {
@@ -241,6 +548,31 @@ function goBack() {
   margin-bottom: 24rpx;
 }
 
+.section-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.section-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: $theme-primary;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: $theme-primary-dark;
+  letter-spacing: 1rpx;
+}
+
+.section-hint {
+  font-size: 20rpx;
+  color: $outline;
+}
+
 .hot-searches {
   margin-bottom: 50rpx;
 }
@@ -248,56 +580,60 @@ function goBack() {
 .hot-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
+  gap: 18rpx;
 }
 
 .hot-tag {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 16rpx 28rpx;
-  background: #fff;
-  border-radius: 40rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  gap: 10rpx;
+  padding: 14rpx 26rpx;
+  background: #ffffff;
+  border-radius: 100rpx;
+  box-shadow: 0 4rpx 12rpx rgba(46, 125, 50, 0.06);
+
+  &:active {
+    transform: scale(0.97);
+  }
 
   &.hot-tag-top {
-    background: linear-gradient(135deg, lighten($theme-accent, 35%) 0%, lighten($theme-accent, 15%) 100%);
-    box-shadow: 0 2rpx 12rpx rgba(255, 152, 0, 0.15);
+    background: #FFF6EC;
+    border: 1rpx solid rgba(255, 152, 0, 0.25);
   }
 }
 
 .hot-badge {
-  width: 32rpx;
-  height: 32rpx;
+  width: 30rpx;
+  height: 30rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 100%);
-  color: #fff;
-  font-size: 20rpx;
-  font-weight: bold;
+  background: $theme-accent;
+  color: #ffffff;
+  font-size: 19rpx;
+  font-weight: 700;
   border-radius: 50%;
 }
 
 .hot-tag-text {
-  font-size: 26rpx;
-  color: $theme-text-primary;
+  font-size: 24rpx;
+  color: $on-surface;
   font-weight: 500;
 }
 
 .search-history {
-  margin-top: 50rpx;
+  margin-top: 10rpx;
 }
 
 .clear-history {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 6rpx;
 }
 
 .clear-text {
-  font-size: 24rpx;
-  color: $theme-text-hint;
+  font-size: 22rpx;
+  color: #9E9E9E;
 }
 
 .history-tags {
@@ -308,116 +644,331 @@ function goBack() {
 
 .history-tag {
   padding: 12rpx 24rpx;
-  background: #fff;
-  border-radius: 30rpx;
-  font-size: 24rpx;
-  color: $theme-text-secondary;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  background: #F5F3ED;
+  border-radius: 100rpx;
+  font-size: 22rpx;
+  color: $on-surface-variant;
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
+/* ============ 结果态 ============ */
 .search-results {
-  padding: 30rpx;
+  padding-bottom: 40rpx;
 }
 
-.empty-results {
+.loading-state,
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 200rpx 0;
+  gap: 16rpx;
+}
+
+.loading-text,
+.empty-hint {
+  font-size: 24rpx;
+  color: #BDBDBD;
 }
 
 .empty-text {
-  font-size: 32rpx;
-  color: $theme-text-primary;
-  font-weight: bold;
-  margin: 16rpx 0;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: $on-surface;
 }
 
-.empty-hint {
-  font-size: 26rpx;
-  color: $theme-text-hint;
-}
-
-.results-list {
+/* 结果数量与溯源提示条 */
+.result-meta {
   display: flex;
-  flex-direction: column;
-  gap: 24rpx;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 24rpx 10rpx;
 }
 
-.results-header {
-  padding: 20rpx 0;
-  border-bottom: 2rpx solid lighten($theme-primary-light, 25%);
-  margin-bottom: 10rpx;
-}
-
-.result-item {
+.meta-left {
   display: flex;
-  gap: 24rpx;
-  padding: 24rpx;
-  border: 2rpx solid $theme-bg;
-  overflow: hidden;
-}
-
-.result-image {
-  width: 180rpx;
-  height: 180rpx;
-  border-radius: 16rpx;
-  flex-shrink: 0;
-}
-
-.result-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 10rpx;
 }
 
-.result-name {
-  font-size: 30rpx;
-  color: $theme-text-primary;
-  font-weight: 600;
+.meta-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: $theme-primary;
 }
 
-.result-category {
+.meta-text {
+  font-size: 21rpx;
+  color: $on-surface-variant;
+}
+
+.meta-count {
   font-size: 22rpx;
-  color: $theme-primary-light;
-  padding: 4rpx 12rpx;
-  background: lighten($theme-primary-light, 25%);
-  border-radius: 12rpx;
-  display: inline-block;
-  width: fit-content;
+  font-weight: 700;
+  color: $theme-primary;
 }
 
-.result-tags {
+.meta-right {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 100rpx;
+  background: #F1F5EF;
+}
+
+.meta-right-text {
+  font-size: 19rpx;
+  color: $theme-primary;
+}
+
+/* 快速筛选胶囊 */
+.quick-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.quick-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 10rpx 24rpx 14rpx;
+}
+
+.quick-pill {
+  flex-shrink: 0;
+  height: 54rpx;
+  padding: 0 22rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 100rpx;
+  background: #F1EFEA;
+  font-size: 21rpx;
+  color: $on-surface-variant;
+
+  &.active {
+    background: $theme-primary;
+    color: #ffffff;
+    font-weight: 600;
+  }
+}
+
+/* 排序工具栏 */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 24rpx;
+  background: rgba(252, 249, 248, 0.92);
+}
+
+.sort-left {
+  display: flex;
+  align-items: center;
+  gap: 34rpx;
+}
+
+.sort-item {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 24rpx;
+  color: $on-surface-variant;
+
+  &.active {
+    color: $theme-primary;
+    font-weight: 700;
+  }
+}
+
+.sort-arrow {
+  font-size: 20rpx;
+  color: #9E9E9E;
+}
+
+.sort-dot {
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: $theme-primary;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 12rpx;
+  background: #F5F3ED;
+  font-size: 20rpx;
+  color: $on-surface-variant;
+
+  &.active {
+    background: #EDF3EB;
+    color: $theme-primary;
+  }
+}
+
+/* 筛选面板 */
+.filter-panel {
+  margin: 0 24rpx 8rpx;
+  padding: 20rpx 22rpx 24rpx;
+  border-radius: 16rpx;
+  background: #F7F5F0;
+}
+
+.filter-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.filter-panel-title {
+  font-size: 21rpx;
+  font-weight: 600;
+  color: $on-surface;
+}
+
+.filter-reset {
+  font-size: 21rpx;
+  color: $theme-primary;
+}
+
+.filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.filter-tag {
+  padding: 10rpx 22rpx;
+  border-radius: 100rpx;
+  background: #ffffff;
+  font-size: 21rpx;
+  color: $on-surface-variant;
+
+  &.active {
+    background: $theme-primary;
+    color: #ffffff;
+    font-weight: 600;
+  }
+}
+
+/* 商品双列卡片 */
+.result-grid {
+  column-count: 2;
+  column-gap: 16rpx;
+  padding: 8rpx 24rpx 24rpx;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 16rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 6rpx 20rpx -6rpx rgba(46, 125, 50, 0.12);
+}
+
+.card-thumb {
+  position: relative;
+  margin: 14rpx 14rpx 0;
+  border-radius: 14rpx;
+  overflow: hidden;
+  background: #F5F3ED;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 300rpx;
+  display: block;
+}
+
+.thumb-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  padding: 4rpx 14rpx;
+  border-radius: 14rpx 0 14rpx 0;
+  background: $theme-primary;
+}
+
+.thumb-badge-plain {
+  background: rgba(46, 125, 50, 0.85);
+}
+
+.thumb-badge-text {
+  font-size: 19rpx;
+  color: #ffffff;
+}
+
+.card-body {
+  flex: 1;
+  padding: 12rpx 16rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8rpx;
 }
 
-.result-tag {
+.card-tag {
   padding: 4rpx 12rpx;
   border: 1rpx solid #d5e3d1;
-  border-radius: 20rpx;
-  color: #52714f;
-  font-size: 19rpx;
+  border-radius: 100rpx;
+  font-size: 18rpx;
 }
 
-.result-desc {
+.card-name {
   font-size: 24rpx;
-  color: $theme-text-secondary;
+  font-weight: 700;
+  line-height: 1.35;
+  color: $on-surface;
   overflow: hidden;
-  text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  line-height: 1.5;
 }
 
-.result-bottom {
+.card-desc {
+  font-size: 19rpx;
+  color: $outline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-bottom {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  margin-top: 10rpx;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6rpx;
+}
+
+.price-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-origin {
+  font-size: 18rpx;
+  color: #B0ACA2;
+  text-decoration: line-through;
 }
 
 .price-row {
@@ -425,8 +976,165 @@ function goBack() {
   align-items: baseline;
 }
 
-.result-sales {
+
+.price-symbol {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: $price;
+  margin-right: 2rpx;
+}
+
+.price-value {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $price;
+  letter-spacing: -1rpx;
+}
+
+.add-btn {
+  width: 52rpx;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: $theme-primary;
+  box-shadow: 0 4rpx 12rpx rgba(46, 125, 50, 0.25);
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+/* 关联推荐 */
+.related {
+  margin: 8rpx 24rpx 30rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 18rpx;
+  background: #F7F5F0;
+}
+
+.related-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.related-head-left {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.related-title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: $on-surface;
+}
+
+.related-hint {
+  font-size: 19rpx;
+  color: $outline;
+}
+
+.related-row {
+  display: flex;
+  gap: 16rpx;
+  padding-bottom: 4rpx;
+}
+
+.related-card {
+  flex-shrink: 0;
+  width: 300rpx;
+  padding: 16rpx;
+  border-radius: 14rpx;
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(46, 125, 50, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.related-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.related-img {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+  background: #F5F3ED;
+}
+
+.related-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.related-name {
   font-size: 22rpx;
-  color: $theme-text-hint;
+  font-weight: 600;
+  color: $on-surface;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.related-desc {
+  font-size: 18rpx;
+  color: $outline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.related-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.related-price {
+  font-size: 21rpx;
+  font-weight: 600;
+  color: $theme-primary;
+}
+
+.related-more {
+  font-size: 19rpx;
+  color: $on-surface-variant;
+}
+
+/* 底部背书 */
+.result-footer,
+.init-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  padding: 24rpx 24rpx 40rpx;
+}
+
+.init-footer {
+  margin-top: 60rpx;
+}
+
+.footer-line {
+  width: 40rpx;
+  height: 1rpx;
+  background: #DCD8CE;
+}
+
+.footer-text {
+  font-size: 19rpx;
+  color: $outline;
 }
 </style>

@@ -48,13 +48,17 @@ public static class MallModelConfiguration
         modelBuilder.Entity<MallTag>(entity =>
         {
             entity.ToTable("MallTags");
+            entity.Property(tag => tag.Type)
+                .HasMaxLength(20)
+                .IsRequired()
+                .HasDefaultValue(MallTagType.Product);
             entity.Property(tag => tag.Code).HasMaxLength(50).IsRequired();
             entity.Property(tag => tag.Name).HasMaxLength(50).IsRequired();
             entity.Property(tag => tag.Color).HasMaxLength(20).IsRequired();
-            entity.HasIndex(tag => tag.Code)
+            entity.HasIndex(tag => new { tag.Type, tag.Code })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
-            entity.HasIndex(tag => tag.Name)
+            entity.HasIndex(tag => new { tag.Type, tag.Name })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
         });
@@ -98,6 +102,27 @@ public static class MallModelConfiguration
             entity.Property(pt => pt.TagId).HasColumnName("TagsId");
         });
 
+        modelBuilder.Entity<MallProductReview>(entity =>
+        {
+            entity.ToTable("MallProductReviews");
+            entity.Property(review => review.MemberNickname).HasMaxLength(50).IsRequired();
+            entity.Property(review => review.MemberLevelName).HasMaxLength(50).IsRequired();
+            entity.Property(review => review.Content).HasMaxLength(500).IsRequired();
+            entity.Property(review => review.SpecText).HasMaxLength(100).IsRequired();
+            entity.Property(review => review.Tags).HasMaxLength(200);
+            entity.Property(review => review.Images).HasMaxLength(1000).IsRequired().HasDefaultValue(string.Empty);
+            entity.Property(review => review.Rating).IsRequired();
+            entity.Property(review => review.IsFeatured).IsRequired().HasDefaultValue(false);
+            entity.Property(review => review.SortOrder).IsRequired().HasDefaultValue(0);
+            entity.Property(review => review.ReviewTime).IsRequired();
+            entity.Property(review => review.AuditStatus).IsRequired().HasDefaultValue(MallProductReview.AuditStatusApproved);
+            entity.Property(review => review.ReplyContent).HasMaxLength(500).IsRequired().HasDefaultValue(string.Empty);
+            entity.HasIndex(review => new { review.ProductId, review.ReviewTime });
+            entity.HasIndex(review => review.OrderItemId)
+                .IsUnique()
+                .HasFilter("[OrderItemId] IS NOT NULL AND [IsDeleted] = 0");
+        });
+
         modelBuilder.Entity<MallSku>(entity =>
         {
             entity.ToTable("MallSkus");
@@ -124,7 +149,11 @@ public static class MallModelConfiguration
             entity.Property(order => order.ReceiverPhone).HasMaxLength(30).IsRequired();
             entity.Property(order => order.ReceiverAddress).HasMaxLength(300).IsRequired();
             entity.Property(order => order.Remark).HasMaxLength(500);
+            entity.Property(order => order.GiftShortageMessage).HasMaxLength(500);
+            entity.Property(order => order.CouponName).HasMaxLength(200);
             entity.Property(order => order.GoodsAmount).HasPrecision(18, 2);
+            entity.Property(order => order.PromotionDiscountAmount).HasPrecision(18, 2);
+            entity.Property(order => order.CouponDiscountAmount).HasPrecision(18, 2);
             entity.Property(order => order.FreightAmount).HasPrecision(18, 2);
             entity.Property(order => order.PayableAmount).HasPrecision(18, 2);
             entity.Property(order => order.PaidAmount).HasPrecision(18, 2);
@@ -138,10 +167,6 @@ public static class MallModelConfiguration
                 .WithMany()
                 .HasForeignKey(order => order.MemberId)
                 .OnDelete(DeleteBehavior.SetNull);
-            entity.HasOne<MallAddress>()
-                .WithMany()
-                .HasForeignKey(order => order.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<MallOrderItem>(entity =>
@@ -150,7 +175,11 @@ public static class MallModelConfiguration
             entity.Property(item => item.ProductName).HasMaxLength(100).IsRequired();
             entity.Property(item => item.SkuCode).HasMaxLength(50).IsRequired();
             entity.Property(item => item.SpecName).HasMaxLength(100).IsRequired();
+            entity.Property(item => item.ProductImage).HasMaxLength(500);
             entity.Property(item => item.UnitPrice).HasPrecision(18, 2);
+            entity.Property(item => item.OriginalUnitPrice).HasPrecision(18, 2);
+            entity.Property(item => item.PromotionDiscountAmount).HasPrecision(18, 2);
+            entity.Property(item => item.PromotionSnapshot).HasColumnType("nvarchar(max)");
             entity.Property(item => item.ItemAmount).HasPrecision(18, 2);
             entity.HasIndex(item => item.OrderId);
             entity.HasOne<MallOrder>()
@@ -185,6 +214,8 @@ public static class MallModelConfiguration
             entity.ToTable("MallRefunds");
             entity.Property(refund => refund.RefundNo).HasMaxLength(50).IsRequired();
             entity.Property(refund => refund.Reason).HasMaxLength(200);
+            entity.Property(refund => refund.Description).HasMaxLength(500);
+            entity.Property(refund => refund.EvidenceImages).HasMaxLength(1000);
             entity.Property(refund => refund.Status).HasMaxLength(32).IsRequired();
             entity.Property(refund => refund.Amount).HasPrecision(18, 2);
             entity.HasIndex(refund => refund.RefundNo)
@@ -207,6 +238,9 @@ public static class MallModelConfiguration
             entity.Property(r => r.ReturnNo).HasMaxLength(50).IsRequired();
             entity.Property(r => r.Status).HasMaxLength(32).IsRequired();
             entity.Property(r => r.Reason).HasMaxLength(200);
+            entity.Property(r => r.Description).HasMaxLength(500);
+            entity.Property(r => r.EvidenceImages).HasMaxLength(1000);
+            entity.Property(r => r.RejectReason).HasMaxLength(200);
             entity.Property(r => r.ExpressCompany).HasMaxLength(50);
             entity.Property(r => r.TrackingNo).HasMaxLength(64);
             entity.Property(r => r.Amount).HasPrecision(18, 2);
@@ -232,13 +266,18 @@ public static class MallModelConfiguration
             entity.Property(shipment => shipment.TrackingNo).HasMaxLength(64).IsRequired();
             entity.Property(shipment => shipment.Status).HasMaxLength(32).IsRequired();
             entity.Property(shipment => shipment.Remark).HasMaxLength(200);
+            entity.Property(shipment => shipment.VoidedBy).HasMaxLength(50);
+            entity.Property(shipment => shipment.VoidReason).HasMaxLength(200);
             entity.HasIndex(shipment => shipment.ShipmentNo)
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
-            entity.HasIndex(shipment => shipment.OrderId).IsUnique();
+            // 订单与快递单号的唯一性只约束未作废运单，作废后允许重新发货 / 复用运单号
+            entity.HasIndex(shipment => shipment.OrderId)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0 AND [IsVoided] = 0");
             entity.HasIndex(shipment => shipment.TrackingNo)
                 .IsUnique()
-                .HasFilter("[IsDeleted] = 0");
+                .HasFilter("[IsDeleted] = 0 AND [IsVoided] = 0");
             entity.HasOne<MallOrder>()
                 .WithMany()
                 .HasForeignKey(shipment => shipment.OrderId)
@@ -291,8 +330,6 @@ public static class MallModelConfiguration
             entity.ToTable("MallPromotions");
             entity.Property(p => p.Name).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Description).HasMaxLength(500);
-            entity.Property(p => p.TriggerType).HasMaxLength(32).IsRequired();
-            entity.Property(p => p.TriggerConfigJson).HasColumnType("nvarchar(max)");
             entity.Property(p => p.ActionType).HasMaxLength(32).IsRequired();
             entity.Property(p => p.ActionConfigJson).HasColumnType("nvarchar(max)");
             entity.Property(p => p.ScopeType).HasMaxLength(20).IsRequired();
@@ -306,42 +343,63 @@ public static class MallModelConfiguration
             entity.HasIndex(s => s.PromotionId);
         });
 
-        modelBuilder.Entity<MallPromotionUsage>(entity =>
+        modelBuilder.Entity<MallCampaign>(entity =>
         {
-            entity.ToTable("MallPromotionUsages");
-            entity.HasIndex(u => new { u.PromotionId, u.UserId }).IsUnique();
-        });
-
-        modelBuilder.Entity<MallActivity>(entity =>
-        {
-            entity.ToTable("MallActivities");
+            entity.ToTable("MallCampaigns");
             entity.Property(a => a.Name).HasMaxLength(100).IsRequired();
-            entity.Property(a => a.Subtitle).HasMaxLength(100);
-            entity.Property(a => a.CoverImage).HasMaxLength(500);
-            entity.Property(a => a.Description).HasMaxLength(500);
-            entity.Property(a => a.DetailHtml).HasColumnType("nvarchar(max)");
-            entity.HasIndex(a => a.IsActive);
+            entity.Property(a => a.CoverImageUrl).HasMaxLength(500);
+            entity.Property(a => a.ContentHtml).HasColumnType("nvarchar(max)");
+            entity.Property(a => a.Type).IsRequired().HasDefaultValue((int)MallCampaignType.ProductShowcase);
+            entity.Property(a => a.StartAt).IsRequired();
+            entity.Property(a => a.EndAt).IsRequired();
+            entity.Property(a => a.IsActive).IsRequired().HasDefaultValue(true);
+            entity.Property(a => a.SortOrder).IsRequired().HasDefaultValue(0);
+            entity.HasIndex(a => new { a.IsActive, a.SortOrder });
         });
 
-        modelBuilder.Entity<MallActivityPromotion>(entity =>
+        modelBuilder.Entity<MallCampaignProduct>(entity =>
         {
-            entity.ToTable("MallActivityPromotions");
-            entity.HasIndex(link => link.PromotionId);
-            entity.HasIndex(link => new { link.ActivityId, link.PromotionId })
+            entity.ToTable("MallCampaignProducts");
+            entity.Property(item => item.GroupName).HasMaxLength(50).IsRequired().HasDefaultValue(string.Empty);
+            entity.Property(item => item.SortOrder).IsRequired().HasDefaultValue(0);
+            entity.HasIndex(item => new { item.CampaignId, item.SortOrder });
+            entity.HasIndex(item => new { item.CampaignId, item.ProductId })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
+            entity.HasOne<MallCampaign>()
+                .WithMany()
+                .HasForeignKey(item => item.CampaignId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<MallProduct>()
+                .WithMany()
+                .HasForeignKey(item => item.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<MallCart>(entity =>
+        modelBuilder.Entity<MallCampaignCoupon>(entity =>
         {
-            entity.ToTable("MallCarts");
-            entity.HasIndex(c => c.UserId).IsUnique();
+            entity.ToTable("MallCampaignCoupons");
+            entity.Property(item => item.SortOrder).IsRequired().HasDefaultValue(0);
+            entity.HasIndex(item => new { item.CampaignId, item.SortOrder });
+            entity.HasIndex(item => new { item.CampaignId, item.CouponId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+            entity.HasOne<MallCampaign>()
+                .WithMany()
+                .HasForeignKey(item => item.CampaignId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<MallCoupon>()
+                .WithMany()
+                .HasForeignKey(item => item.CouponId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<MallCartItem>(entity =>
         {
             entity.ToTable("MallCartItems");
-            entity.HasIndex(i => new { i.CartId, i.SkuId }).IsUnique();
+            entity.HasIndex(i => new { i.UserId, i.SkuId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
         modelBuilder.Entity<MallBanner>(entity =>
@@ -351,7 +409,9 @@ public static class MallModelConfiguration
             entity.Property(b => b.ImageUrl).HasMaxLength(500).IsRequired();
             entity.Property(b => b.LinkValue).HasMaxLength(500).IsRequired();
             entity.Property(b => b.Title).HasMaxLength(100);
-            entity.HasIndex(b => new { b.Position, b.SortOrder }).IsUnique();
+            entity.HasIndex(b => new { b.Position, b.SortOrder })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
         modelBuilder.Entity<MallNotice>(entity =>
@@ -383,7 +443,9 @@ public static class MallModelConfiguration
             entity.Property(p => p.SeoTitle).HasMaxLength(100);
             entity.Property(p => p.SeoKeywords).HasMaxLength(200);
             entity.Property(p => p.SeoDescription).HasMaxLength(300);
-            entity.HasIndex(p => p.PageCode).IsUnique();
+            entity.HasIndex(p => p.PageCode)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
         modelBuilder.Entity<MallMember>(entity =>
@@ -395,7 +457,9 @@ public static class MallModelConfiguration
             entity.Property(m => m.Avatar).HasMaxLength(500);
             entity.Property(m => m.Birthday).HasMaxLength(20);
             entity.Property(m => m.Gender).HasMaxLength(10);
-            entity.HasIndex(m => m.Phone).IsUnique();
+            entity.HasIndex(m => m.Phone)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasIndex(m => m.LevelId);
         });
 
@@ -403,7 +467,9 @@ public static class MallModelConfiguration
         {
             entity.ToTable("MallMemberLevels");
             entity.Property(l => l.Name).HasMaxLength(50).IsRequired();
-            entity.HasIndex(l => l.LevelCode).IsUnique();
+            entity.HasIndex(l => l.LevelCode)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasIndex(l => l.IsActive);
         });
 
@@ -425,7 +491,9 @@ public static class MallModelConfiguration
             entity.Property(c => c.CouponType).HasMaxLength(20).IsRequired();
             entity.Property(c => c.ScopeType).HasMaxLength(20);
             entity.Property(c => c.ScopeValue).HasMaxLength(500);
-            entity.HasIndex(c => c.Code).IsUnique();
+            entity.HasIndex(c => c.Code)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasIndex(c => c.IsActive);
         });
 
@@ -437,7 +505,9 @@ public static class MallModelConfiguration
             entity.Property(mc => mc.UsedOrderNo).HasMaxLength(50);
             entity.HasIndex(mc => new { mc.CouponId, mc.MemberId });
             entity.HasIndex(mc => new { mc.MemberId, mc.Status });
-            entity.HasIndex(mc => mc.CouponCode).IsUnique();
+            entity.HasIndex(mc => mc.CouponCode)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasIndex(mc => mc.ExpireAt);
         });
     }

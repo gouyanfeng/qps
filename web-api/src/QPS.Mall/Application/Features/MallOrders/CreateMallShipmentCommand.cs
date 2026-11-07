@@ -52,7 +52,7 @@ public class CreateMallShipmentHandler : IRequestHandler<CreateMallShipmentComma
         }
 
         var trackingExists = await _dbContext.MallShipments
-            .AnyAsync(shipment => shipment.TrackingNo == trackingNo && !shipment.IsDeleted, cancellationToken);
+            .AnyAsync(shipment => shipment.TrackingNo == trackingNo && !shipment.IsVoided, cancellationToken);
 
         if (trackingExists)
         {
@@ -60,7 +60,7 @@ public class CreateMallShipmentHandler : IRequestHandler<CreateMallShipmentComma
         }
 
         var shipmentExists = await _dbContext.MallShipments
-            .AnyAsync(shipment => shipment.OrderId == order.Id && !shipment.IsDeleted, cancellationToken);
+            .AnyAsync(shipment => shipment.OrderId == order.Id && !shipment.IsVoided, cancellationToken);
 
         if (shipmentExists)
         {

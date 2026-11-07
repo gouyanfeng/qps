@@ -32,6 +32,10 @@ export const mallProductApi = {
   deleteProduct: (id: string) => {
     return http.delete(`/admin/mall/products/${id}`);
   },
+  // 拷贝商品
+  copyProduct: (id: string) => {
+    return http.post<any>(`/admin/mall/products/${id}/copy`);
+  },
 
   // ---- SKU ----
   // 新增单个 SKU

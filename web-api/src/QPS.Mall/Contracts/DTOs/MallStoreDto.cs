@@ -1,7 +1,7 @@
 namespace QPS.Mall.Contracts.DTOs;
 
 /// <summary>
-/// 商场门店展示数据。
+/// 商城门店展示数据。
 /// </summary>
 public class MallStoreDto
 {

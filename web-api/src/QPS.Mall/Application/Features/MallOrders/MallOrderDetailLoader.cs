@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using QPS.Mall.Application.Features.MallReturns;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallOrders;
@@ -16,7 +19,7 @@ internal static class MallOrderDetailLoader
         CancellationToken cancellationToken)
     {
         var dto = await dbContext.MallOrders
-            .Where(order => order.Id == orderId && !order.IsDeleted)
+            .Where(order => order.Id == orderId)
             .Select(order => new MallOrderDetailDto
             {
                     Id = order.Id,
@@ -27,7 +30,12 @@ internal static class MallOrderDetailLoader
                     ReceiverPhone = order.ReceiverPhone,
                     ReceiverAddress = order.ReceiverAddress,
                     Remark = order.Remark,
+                    GiftShortageMessage = order.GiftShortageMessage,
                     GoodsAmount = order.GoodsAmount,
+                    PromotionDiscountAmount = order.PromotionDiscountAmount,
+                    CouponDiscountAmount = order.CouponDiscountAmount,
+                    CouponId = order.CouponId,
+                    CouponName = order.CouponName,
                     FreightAmount = order.FreightAmount,
                     PayableAmount = order.PayableAmount,
                     PaidAmount = order.PaidAmount,
@@ -50,9 +58,7 @@ internal static class MallOrderDetailLoader
 
         dto.Items = await (
             from item in dbContext.MallOrderItems.AsNoTracking()
-            where item.OrderId == orderId && !item.IsDeleted
-            join p in dbContext.MallProducts.AsNoTracking() on item.ProductId equals p.Id into products
-            from p in products.DefaultIfEmpty()
+            where item.OrderId == orderId
             orderby item.CreatedAt
             select new MallOrderItemDto
             {
@@ -60,7 +66,7 @@ internal static class MallOrderDetailLoader
                 SkuId = item.SkuId,
                 ProductId = item.ProductId,
                 ProductName = item.ProductName,
-                ProductImage = p != null ? p.MainImageUrl : string.Empty,
+                ProductImage = item.ProductImage,
                 SkuCode = item.SkuCode,
                 SpecName = item.SpecName,
                 UnitPrice = item.UnitPrice,
@@ -70,17 +76,41 @@ internal static class MallOrderDetailLoader
                 IsGift = item.IsGift,
                 PromotionId = item.PromotionId,
                 PromotionName = item.PromotionName,
+                PromotionSnapshot = item.PromotionSnapshot,
+                PromotionDiscountAmount = item.PromotionDiscountAmount,
                 OriginalUnitPrice = item.OriginalUnitPrice
             }
         ).ToListAsync(cancellationToken);
 
-        dto.PromotionDiscountAmount = dto.Items
-            .Where(item => !item.IsGift && item.OriginalUnitPrice.HasValue)
-            .Sum(item => (item.OriginalUnitPrice!.Value - item.UnitPrice) * item.Quantity);
+        // 金额恒等式校验：商品原价 − 促销优惠 − 券抵扣（封底为 0）+ 运费 = 应付金额
+        MallOrder.EnsureAmountIdentity(
+            dto.OrderNo,
+            dto.GoodsAmount,
+            dto.PromotionDiscountAmount,
+            dto.CouponDiscountAmount,
+            dto.FreightAmount,
+            dto.PayableAmount);
+
+        var itemIds = dto.Items.Select(item => item.Id).ToList();
+        if (itemIds.Count > 0)
+        {
+            var reviewedItemIds = await dbContext.MallProductReviews
+                .AsNoTracking()
+                .Where(review => review.OrderItemId.HasValue && itemIds.Contains(review.OrderItemId.Value))
+                .Select(review => review.OrderItemId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+            var reviewedItemIdSet = reviewedItemIds.ToHashSet();
+
+            foreach (var orderItem in dto.Items)
+            {
+                orderItem.Reviewed = reviewedItemIdSet.Contains(orderItem.Id);
+            }
+        }
 
         dto.Payments = await dbContext.MallPayments
             .AsNoTracking()
-            .Where(payment => payment.OrderId == orderId && !payment.IsDeleted)
+            .Where(payment => payment.OrderId == orderId)
             .OrderBy(payment => payment.CreatedAt)
             .Select(payment => new MallPaymentDto
             {
@@ -96,10 +126,13 @@ internal static class MallOrderDetailLoader
             })
             .ToListAsync(cancellationToken);
 
-        dto.Refunds = await dbContext.MallRefunds
+        var refundEntities = await dbContext.MallRefunds
             .AsNoTracking()
-            .Where(refund => refund.OrderId == orderId && !refund.IsDeleted)
+            .Where(refund => refund.OrderId == orderId)
             .OrderBy(refund => refund.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        dto.Refunds = refundEntities
             .Select(refund => new MallRefundDto
             {
                 Id = refund.Id,
@@ -107,15 +140,25 @@ internal static class MallOrderDetailLoader
                 PaymentId = refund.PaymentId,
                 Amount = refund.Amount,
                 Reason = refund.Reason,
+                Description = refund.Description,
+                EvidenceImages = MallAfterSaleRules.SplitEvidence(refund.EvidenceImages),
                 Status = refund.Status,
                 RefundedAt = refund.RefundedAt,
                 CreatedAt = refund.CreatedAt
             })
+            .ToList();
+
+        var returnEntities = await dbContext.MallReturns
+            .AsNoTracking()
+            .Where(returnEntity => returnEntity.OrderId == orderId)
+            .OrderBy(returnEntity => returnEntity.CreatedAt)
             .ToListAsync(cancellationToken);
+
+        dto.Returns = returnEntities.Select(MallReturnMapper.ToDto).ToList();
 
         dto.Shipment = await dbContext.MallShipments
             .AsNoTracking()
-            .Where(shipment => shipment.OrderId == orderId && !shipment.IsDeleted)
+            .Where(shipment => shipment.OrderId == orderId && !shipment.IsVoided)
             .Select(shipment => new MallShipmentDto
             {
                 Id = shipment.Id,

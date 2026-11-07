@@ -49,12 +49,12 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="260" fixed="right">
+          <el-table-column label="操作" align="center" width="240" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button
@@ -95,19 +95,19 @@
             <el-option label="分类页" :value="1" />
             <el-option label="静态页" :value="2" />
             <el-option label="外链" :value="3" />
-            <el-option label="活动详情" :value="4" />
+            <el-option label="专题活动" :value="6" />
           </el-select>
         </el-form-item>
         <el-form-item label="跳转值" required>
           <el-select
-            v-if="form.linkType === 4"
+            v-if="form.linkType === 6"
             v-model="form.linkValue"
             filterable
             clearable
             style="width: 100%"
-            placeholder="请选择活动"
+            placeholder="请选择专题活动"
           >
-            <el-option v-for="activity in activityOptions" :key="activity.id" :label="activity.name" :value="activity.id" />
+            <el-option v-for="item in campaignOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
           <el-input
             v-else
@@ -154,12 +154,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete, Sort } from '@element-plus/icons-vue'
 import { mallBannerApi } from '@/api/modules/mallBanner'
 import { mallStoreApi } from '@/api/modules/mallStore'
-import { mallActivityApi } from '@/api/modules/mallActivity'
+import { mallCampaignApi } from '@/api/modules/mallCampaign'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
 
-const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 4: '活动' }
+const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 6: '专题活动' }
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
@@ -168,7 +168,7 @@ const dialogTitle = ref('')
 const dialogType = ref('')
 const currentId = ref('')
 const storeOptions = ref<any[]>([])
-const activityOptions = ref<any[]>([])
+const campaignOptions = ref<any[]>([])
 
 const sortDialogVisible = ref(false)
 const sortSubmitting = ref(false)
@@ -201,19 +201,19 @@ const imageUrlModel = computed({
 
 onMounted(async () => {
   try {
-    const [storesResponse, activitiesResponse] = await Promise.all([
+    const [storesResponse, campaignsResponse] = await Promise.all([
       mallStoreApi.getStoreList({ page: 1, pageSize: 200, isActive: true }),
-      mallActivityApi.getActivityList({})
+      mallCampaignApi.getCampaignList({ page: 1, pageSize: 200 })
     ])
     storeOptions.value = storesResponse?.data?.list || storesResponse?.data?.records || []
-    activityOptions.value = activitiesResponse?.data || []
+    campaignOptions.value = campaignsResponse?.data?.list || []
     if (storeOptions.value.length) {
       searchForm.storeId = storeOptions.value[0].id
       form.storeId = storeOptions.value[0].id
     }
   } catch (error) {
     console.error('加载 Banner 配置选项失败', error)
-    ElMessage.error('加载门店或活动列表失败')
+    ElMessage.error('加载门店、专题活动或促销活动失败')
   }
 })
 
@@ -242,7 +242,7 @@ const openDialog = (type: string, row?: any) => {
     if (storeOptions.value.length) form.storeId = storeOptions.value[0].id
   } else if (row) {
     Object.assign(form, {
-      storeId: row.storeId,
+      storeId: searchForm.storeId || (storeOptions.value[0]?.id ?? ''),
       position: row.position,
       imageUrl: row.imageUrl,
       title: row.title,
@@ -261,7 +261,9 @@ const submitForm = async () => {
   if (!form.storeId) { ElMessage.warning('请选择门店'); return }
   if (!form.position.trim()) { ElMessage.warning('请输入展示位置'); return }
   if (!form.imageUrl.trim()) { ElMessage.warning('请上传 Banner 图片'); return }
-  if (form.linkType === 4 && !form.linkValue.trim()) { ElMessage.warning('请选择活动'); return }
+  if (form.linkType === 4 || form.linkType === 5) {
+    if (!form.linkValue.trim()) { ElMessage.warning(form.linkType === 4 ? '请选择促销活动' : '请选择报名活动'); return }
+  }
 
   submitting.value = true
   try {

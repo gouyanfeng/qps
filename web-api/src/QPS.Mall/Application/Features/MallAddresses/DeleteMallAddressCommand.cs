@@ -8,6 +8,8 @@ namespace QPS.Mall.Application.Features.MallAddresses;
 public class DeleteMallAddressCommand : IRequest<bool>
 {
     public Guid AddressId { get; set; }
+
+    public Guid UserId { get; set; }
 }
 
 public class DeleteMallAddressHandler : IRequestHandler<DeleteMallAddressCommand, bool>
@@ -22,7 +24,7 @@ public class DeleteMallAddressHandler : IRequestHandler<DeleteMallAddressCommand
     public async Task<bool> Handle(DeleteMallAddressCommand command, CancellationToken cancellationToken)
     {
         var address = await _dbContext.MallAddresses
-            .FirstOrDefaultAsync(a => a.Id == command.AddressId && !a.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == command.AddressId && a.UserId == command.UserId, cancellationToken);
 
         if (address is null)
         {

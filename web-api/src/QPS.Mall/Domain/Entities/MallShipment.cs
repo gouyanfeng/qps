@@ -48,6 +48,26 @@ public class MallShipment : BaseEntity
     /// </summary>
     public string Remark { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// 是否已作废：作废后运单号释放，可被其他订单使用，记录保留可查。
+    /// </summary>
+    public bool IsVoided { get; private set; }
+
+    /// <summary>
+    /// 作废时间。
+    /// </summary>
+    public DateTime? VoidedAt { get; private set; }
+
+    /// <summary>
+    /// 作废操作人。
+    /// </summary>
+    public string VoidedBy { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 作废原因。
+    /// </summary>
+    public string VoidReason { get; private set; } = string.Empty;
+
     private MallShipment()
     {
     }
@@ -83,6 +103,11 @@ public class MallShipment : BaseEntity
     /// </summary>
     public void MarkDelivered()
     {
+        if (IsVoided)
+        {
+            throw new BusinessException(400, "运单已作废，不可签收");
+        }
+
         if (Status != MallShipmentStatus.Shipped)
         {
             throw new BusinessException(400, "当前运单状态不可签收");
@@ -90,5 +115,27 @@ public class MallShipment : BaseEntity
 
         Status = MallShipmentStatus.Delivered;
         DeliveredAt = DateTime.Now;
+    }
+
+    /// <summary>
+    /// 作废运单：保留记录用于追溯，运单号随作废释放。
+    /// </summary>
+    public void Void(string reason, string operatorName)
+    {
+        if (IsVoided)
+        {
+            throw new BusinessException(400, "该运单已作废");
+        }
+
+        var normalizedReason = reason?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            throw new BusinessException(400, "请填写作废原因");
+        }
+
+        IsVoided = true;
+        VoidedAt = DateTime.Now;
+        VoidedBy = operatorName?.Trim() ?? string.Empty;
+        VoidReason = normalizedReason;
     }
 }

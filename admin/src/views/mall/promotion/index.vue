@@ -3,6 +3,13 @@
     <QueryPage api="/admin/mall/promotions" :searchParam="searchForm" @reset="handleReset" ref="queryPageRef">
       <template #searchConditions>
         <el-form :model="searchForm" :inline="true">
+          <el-form-item label="促销类型">
+            <el-select v-model="searchForm.actionType" placeholder="全部" clearable>
+              <el-option label="满减" value="DiscountAmount" />
+              <el-option label="折扣" value="DiscountRate" />
+              <el-option label="买赠" value="Gift" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.isActive" placeholder="全部">
               <el-option label="全部" value="" />
@@ -41,12 +48,12 @@
           <el-table-column label="范围" width="120" align="center">
             <template #default="{ row }">{{ scopeMap[row.scopeType] || row.scopeType }}</template>
           </el-table-column>
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="200" fixed="right">
+          <el-table-column label="操作" align="center" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button :type="row.isActive ? 'warning' : 'success'" link @click="changeStatus(row)">
@@ -62,7 +69,7 @@
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="860px" top="3vh" class="promotion-dialog">
       <el-form :model="form" label-width="110px" class="promotion-form">
         <section class="form-section">
-          <div class="section-title">活动信息与适用范围</div>
+          <div class="section-title">促销信息与适用范围</div>
         <el-row :gutter="16">
           <el-col :span="24">
             <el-form-item label="促销名称" required>
@@ -70,7 +77,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="活动说明">
+        <el-form-item label="促销说明">
           <el-input v-model="form.description" maxlength="200" show-word-limit />
         </el-form-item>
         <el-row :gutter="16">
@@ -84,9 +91,9 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item :label="form.promotionType === 2 ? '买赠范围' : '适用范围'">
+            <el-form-item label="适用商品范围" required>
               <el-select v-model="form.scopeType" style="width: 100%" @change="handleScopeTypeChange">
-                <el-option label="全场商品" value="Global" />
+                <el-option label="全场商品（全订单累计）" value="Global" />
                 <el-option label="指定分类" value="Category" />
                 <el-option label="指定商品" value="Product" />
                 <el-option label="指定规格" value="Sku" />
@@ -94,32 +101,42 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item v-if="form.scopeType !== 'Global'" :label="form.promotionType === 2 ? '购买对象' : '适用对象'" required>
+        <el-form-item v-if="form.scopeType !== 'Global'" label="适用对象" required>
           <el-select v-model="form.scopeTargetIds" multiple filterable clearable style="width: 100%" placeholder="请选择适用对象">
             <el-option v-for="item in scopeTargetOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
-        <div v-if="form.promotionType === 2" class="promotion-scope-hint">
-          买赠数量按所选范围内的商品累计计算；全场范围表示任意商品均可计入。
+        <div class="promotion-scope-hint">
+          订单门槛按所选范围内商品的金额累计计算；选全场时按全订单金额计算。
         </div>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="订单门槛" required>
+              <el-input-number v-model="form.thresholdAmount" :min="0.01" :precision="2" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="促销标签">
+              <el-select v-model="form.promotionTagId" filterable clearable style="width: 100%" placeholder="参与商品展示时打上该标签">
+                <el-option
+                  v-for="tag in tagOptions"
+                  :key="tag.id"
+                  :label="tag.name"
+                  :value="tag.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
         </section>
 
         <section class="form-section">
         <div class="section-title">促销规则</div>
 
         <template v-if="form.promotionType === 0">
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="满额门槛" required>
-                <el-input-number v-model="form.thresholdAmount" :min="0.01" :precision="2" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="减免金额" required>
-                <el-input-number v-model="form.discountAmount" :min="0.01" :precision="2" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-          </el-row>
+          <el-form-item label="减免金额" required>
+            <el-input-number v-model="form.discountAmount" :min="0.01" :precision="2" style="width: 100%" />
+          </el-form-item>
         </template>
         <template v-if="form.promotionType === 1">
           <el-form-item label="折扣比例" required>
@@ -128,13 +145,6 @@
           </el-form-item>
         </template>
         <template v-if="form.promotionType === 2">
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="购买数量" required>
-                <el-input-number v-model="form.buyQuantity" :min="1" :max="99" style="width: 100%" />
-              </el-form-item>
-            </el-col>
-          </el-row>
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="赠送规格" required>
@@ -153,38 +163,23 @@
         </section>
 
         <section class="form-section">
-        <div class="section-title">活动时间与其他设置</div>
+        <div class="section-title">促销时间与其他设置</div>
+        <div class="section-tip">促销时间可不填（长期有效）；填写后在该时间窗口内自动生效</div>
+
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="开始时间">
-              <el-date-picker v-model="form.startDate" type="datetime" placeholder="开始时间" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ssZ" />
+              <el-date-picker v-model="form.startDate" type="datetime" placeholder="可选，留空则不限" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ssZ" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="结束时间">
-              <el-date-picker v-model="form.endDate" type="datetime" placeholder="结束时间" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ssZ" />
+              <el-date-picker v-model="form.endDate" type="datetime" placeholder="可选，留空则不限" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ssZ" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="优先级">
-              <el-input-number v-model="form.priority" :min="0" :max="999" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="每人限用">
-              <el-input-number v-model="form.maxUsagePerUser" :min="0" :max="99999" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="允许叠加">
-              <el-switch v-model="form.combinable" />
-            </el-form-item>
-          </el-col>
           <el-col :span="12">
             <el-form-item label="启用状态">
               <el-switch v-model="form.isActive" active-text="启用" inactive-text="停用" />
@@ -210,8 +205,10 @@ import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
 import { mallPromotionApi } from '@/api/modules/mallPromotion'
 import { mallProductApi } from '@/api/modules/mallProduct'
 import { mallCategoryApi } from '@/api/modules/mallCategory'
-import QueryPage from '@/components/QueryPage/index.vue'
+import { mallTagApi } from '@/api/modules/mallTag'
 import { formatDate } from '@/utils'
+import QueryPage from '@/components/QueryPage/index.vue'
+
 
 const scopeMap: Record<string, string> = {
   Global: '全场',
@@ -229,8 +226,10 @@ const currentId = ref('')
 const productOptions = ref<any[]>([])
 const categoryOptions = ref<any[]>([])
 const skuOptions = ref<any[]>([])
+const tagOptions = ref<any[]>([])
 
 const searchForm = reactive({
+  actionType: '' as string,
   isActive: '' as boolean | '',
   keyword: ''
 })
@@ -239,20 +238,16 @@ const form = reactive({
   name: '',
   description: '',
   promotionType: 0,
-  scopeType: 'Global',
+  scopeType: 'Product',
   scopeTargetIds: [] as string[],
   thresholdAmount: 100,
   discountAmount: 20,
   discountPercent: 0.8,
-  buyQuantity: 2,
   giftQuantity: 1,
   giftSkuId: '',
+  promotionTagId: '',
   startDate: '',
   endDate: '',
-  priority: 0,
-  combinable: false,
-  maxUsagePerUser: 0,
-  maxUsagePerOrder: 0,
   isActive: true
 })
 
@@ -286,29 +281,31 @@ const getPromotionTypeName = (promotion: any) => {
 }
 
 const getPromotionRule = (promotion: any) => {
-  const trigger = parseJson(promotion.triggerConfigJson)
+  const threshold = Number(promotion.thresholdAmount || 0)
   const action = parseJson(promotion.actionConfigJson)
-  if (!trigger || !action) return '促销规则配置异常'
+  if (!action) return '促销规则配置异常'
   if (promotion.actionType === 'DiscountAmount') {
-    return `满 ¥${Number(trigger.minAmount || 0).toFixed(2)} 减 ¥${Number(action.amount || 0).toFixed(2)}`
+    return `满 ¥${threshold.toFixed(2)} 减 ¥${Number(action.amount || 0).toFixed(2)}`
   }
   if (promotion.actionType === 'DiscountRate') {
-    return `满 ¥${Number(trigger.minAmount || 0).toFixed(2)} 打 ${(Number(action.rate || 1) * 10).toFixed(1)} 折`
+    return `满 ¥${threshold.toFixed(2)} 打 ${(Number(action.rate || 1) * 10).toFixed(1)} 折`
   }
   if (promotion.actionType === 'Gift') {
-    return `买指定商品送 ${Number(action.quantity || 1)} 件赠品`
+    return `满 ¥${threshold.toFixed(2)} 赠 ${Number(action.quantity || 1)} 件赠品`
   }
   return promotion.description || '-'
 }
 
 const loadOptions = async () => {
   try {
-    const [products, categories] = await Promise.all([
+    const [products, categories, tags] = await Promise.all([
       mallProductApi.getProductList({ page: 1, pageSize: 1000, isActive: true }),
-      mallCategoryApi.getCategoryList({ page: 1, pageSize: 1000, isActive: true })
+      mallCategoryApi.getCategoryList({ page: 1, pageSize: 1000, isActive: true }),
+      mallTagApi.getTags({ page: 1, pageSize: 1000, type: 'Promotion', isActive: true })
     ])
     productOptions.value = products.data?.list || products.data?.items || []
     categoryOptions.value = categories.data?.list || categories.data?.items || []
+    tagOptions.value = Array.isArray(tags.data) ? tags.data : tags.data?.list || tags.data?.items || []
     skuOptions.value = productOptions.value.flatMap((product: any) =>
       (product.skus || []).map((sku: any) => ({ ...sku, productName: product.name }))
     )
@@ -321,23 +318,25 @@ const loadOptions = async () => {
 onMounted(loadOptions)
 
 const handleReset = () => {
-  searchForm.isActive = ''; searchForm.keyword = ''
+  searchForm.actionType = ''; searchForm.isActive = ''; searchForm.keyword = ''
 }
 
 const resetForm = () => {
-  form.name = ''; form.description = ''; form.promotionType = 0; form.scopeType = 'Global'
+  form.name = ''; form.description = ''; form.promotionType = 0; form.scopeType = 'Product'
   form.scopeTargetIds = []
   form.thresholdAmount = 100; form.discountAmount = 20
-  form.discountPercent = 0.8; form.buyQuantity = 2; form.giftQuantity = 1
+  form.discountPercent = 0.8; form.giftQuantity = 1
   form.giftSkuId = ''
-  form.startDate = ''; form.endDate = ''; form.priority = 0
-  form.combinable = false; form.maxUsagePerUser = 0; form.maxUsagePerOrder = 0; form.isActive = true
+  form.promotionTagId = ''
+  form.startDate = ''; form.endDate = ''
+  form.isActive = true
 }
 
 const handleTypeChange = () => {
-  if (form.promotionType === 0) { form.thresholdAmount = 100; form.discountAmount = 20 }
+  form.thresholdAmount = 100
+  if (form.promotionType === 0) { form.discountAmount = 20 }
   if (form.promotionType === 1) { form.discountPercent = 0.8 }
-  if (form.promotionType === 2) { form.buyQuantity = 2; form.giftQuantity = 1 }
+  if (form.promotionType === 2) { form.giftQuantity = 1 }
 }
 
 const handleScopeTypeChange = () => {
@@ -349,31 +348,24 @@ const openDialog = (type: string, row?: any) => {
   if (type === '新增') {
     resetForm(); currentId.value = ''
   } else if (row) {
-    const trigger = parseJson(row.triggerConfigJson)
     const action = parseJson(row.actionConfigJson)
-    if (!trigger || !action) {
+    if (!action) {
       ElMessage.error('该促销规则配置异常，无法编辑')
       return
     }
-    const promotionType = row.actionType === 'DiscountAmount' ? 0
-      : row.actionType === 'DiscountRate' ? 1 : row.actionType === 'Gift' ? 2 : 0
     Object.assign(form, {
       name: row.name,
       description: row.description || '',
-      promotionType,
+      promotionType: row.promotionType ?? (row.actionType === 'DiscountAmount' ? 0 : row.actionType === 'DiscountRate' ? 1 : 2),
       scopeType: row.scopeType || 'Global',
       scopeTargetIds: (row.scopes || []).map((scope: any) => scope.scopeTargetId),
-      thresholdAmount: trigger.minAmount || 100,
+      thresholdAmount: Number(row.thresholdAmount) || 0,
       discountAmount: action.amount || 20,
       discountPercent: action.rate || 0.8,
-      buyQuantity: trigger.minQuantity || 1,
       giftQuantity: action.quantity || 1,
       giftSkuId: action.skuId || '',
+      promotionTagId: row.promotionTagId || '',
       startDate: row.startDate, endDate: row.endDate,
-      priority: row.priority || 0,
-      combinable: row.combinable || false,
-      maxUsagePerUser: row.maxUsagePerUser || 0,
-      maxUsagePerOrder: row.maxUsagePerOrder || 0,
       isActive: row.isActive
     })
     currentId.value = row.id
@@ -384,11 +376,14 @@ const openDialog = (type: string, row?: any) => {
 const submitForm = async () => {
   if (!form.name.trim()) { ElMessage.warning('请输入促销名称'); return }
   if (form.scopeType !== 'Global' && !form.scopeTargetIds.length) {
-    ElMessage.warning('请选择促销适用对象')
+    ElMessage.warning('请选择适用对象'); return
+  }
+  if (!(form.thresholdAmount > 0)) {
+    ElMessage.warning('请输入订单门槛')
     return
   }
   if (form.promotionType === 0 && form.discountAmount > form.thresholdAmount) {
-    ElMessage.warning('减免金额不能大于满额门槛')
+    ElMessage.warning('减免金额不能大于订单门槛')
     return
   }
   if (form.promotionType === 2 && !form.giftSkuId) {
@@ -398,32 +393,28 @@ const submitForm = async () => {
 
   submitting.value = true
   try {
-    const promotionConfig = {
-      triggerType: form.promotionType === 2 ? 'BuyProduct' : 'FullAmount',
-      triggerConfigJson: JSON.stringify(form.promotionType === 2
-        ? { minQuantity: form.buyQuantity }
-        : { minAmount: form.promotionType === 0 ? form.thresholdAmount : 0.01 }),
-      actionType: form.promotionType === 0 ? 'DiscountAmount' : form.promotionType === 1 ? 'DiscountRate' : 'Gift',
-      actionConfigJson: JSON.stringify(form.promotionType === 0
-        ? { amount: form.discountAmount }
-        : form.promotionType === 1
-          ? { rate: form.discountPercent }
-          : { skuId: form.giftSkuId, quantity: form.giftQuantity })
-    }
+    const actionType = form.promotionType === 0 ? 'DiscountAmount'
+      : form.promotionType === 1 ? 'DiscountRate'
+      : 'Gift'
+    const actionConfigJson = JSON.stringify(form.promotionType === 0
+      ? { amount: form.discountAmount }
+      : form.promotionType === 1
+        ? { rate: form.discountPercent }
+        : { skuId: form.giftSkuId, quantity: form.giftQuantity })
     const scopeType = form.scopeType
     const scopeTargetType = scopeType
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
-      ...promotionConfig,
+      promotionType: form.promotionType,
+      thresholdAmount: form.thresholdAmount,
+      actionType,
+      actionConfigJson,
+      promotionTagId: form.promotionTagId || null,
       scopeType,
       scopes: scopeType === 'Global'
         ? []
         : form.scopeTargetIds.map(scopeTargetId => ({ scopeTargetType, scopeTargetId })),
-      priority: form.priority,
-      combinable: form.combinable,
-      maxUsagePerUser: form.maxUsagePerUser,
-      maxUsagePerOrder: form.maxUsagePerOrder,
       startDate: form.startDate || null,
       endDate: form.endDate || null,
       isActive: form.isActive
@@ -487,6 +478,12 @@ const remove = async (row: any) => {
     font-size: 15px;
     font-weight: 600;
     line-height: 20px;
+  }
+
+  .section-tip {
+    margin: -8px 0 14px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
   }
 }
 

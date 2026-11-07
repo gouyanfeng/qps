@@ -19,6 +19,11 @@ public static class SystemModelConfiguration
             entity.Property(region => region.CityCode).HasMaxLength(20);
         });
 
+        modelBuilder.Entity<SystemPermission>(entity =>
+        {
+            entity.Property(permission => permission.PermissionType).HasMaxLength(20);
+        });
+
         modelBuilder.Entity<SystemOperationLog>(entity =>
         {
             entity.Property(log => log.ActionType).HasMaxLength(64);

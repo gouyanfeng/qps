@@ -25,14 +25,14 @@ public class DeleteMallStoreHandler : IRequestHandler<DeleteMallStoreCommand, bo
     public async Task<bool> Handle(DeleteMallStoreCommand request, CancellationToken cancellationToken)
     {
         var store = await _dbContext.MallStores
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (store is null)
         {
             throw new BusinessException(404, "门店不存在");
         }
 
-        store.IsDeleted = true;
+        store.SoftDelete();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

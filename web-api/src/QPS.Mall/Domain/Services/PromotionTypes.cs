@@ -2,32 +2,9 @@ using QPS.Mall.Domain.Entities;
 
 namespace QPS.Mall.Domain.Services;
 
-public interface ITriggerStrategyRegistry
-{
-    ITriggerStrategy Get(string triggerType);
-}
-
 public interface IActionStrategyRegistry
 {
     IActionStrategy Get(string actionType);
-}
-
-public class TriggerStrategyRegistry : ITriggerStrategyRegistry
-{
-    private readonly Dictionary<string, ITriggerStrategy> _map;
-
-    public TriggerStrategyRegistry(IEnumerable<ITriggerStrategy> strategies)
-    {
-        _map = strategies.ToDictionary(s => s.TriggerType, s => s);
-    }
-
-    public ITriggerStrategy Get(string triggerType)
-    {
-        if (_map.TryGetValue(triggerType, out var strategy))
-            return strategy;
-
-        throw new InvalidOperationException($"未注册 Trigger 策略: {triggerType}");
-    }
 }
 
 public class ActionStrategyRegistry : IActionStrategyRegistry
@@ -50,13 +27,8 @@ public class ActionStrategyRegistry : IActionStrategyRegistry
 
 public class OrderContext
 {
-    public decimal GoodsAmount { get; set; }
     public Guid? UserId { get; set; }
-    public bool IsFirstOrder { get; set; }
-    public int UserOrderCount { get; set; }
-    public DateTime Now { get; set; } = DateTime.Now;
     public List<SkuOrderRow> Items { get; set; } = new();
-    public Dictionary<Guid, int> PromotionUsageMap { get; set; } = new();
 }
 
 public class SkuOrderRow
@@ -70,7 +42,17 @@ public class SkuOrderRow
     public int Quantity { get; set; }
     public int WeightGram { get; set; }
     public bool IsDiscounted { get; set; }
-    public Guid? AppliedPromotionId { get; set; }
+    /// <summary>本行实际命中的促销明细（可同时记录折扣、满减等多条）。</summary>
+    public List<AppliedPromotionRecord> AppliedPromotions { get; set; } = new();
+}
+
+/// <summary>订单行命中的单条促销快照：记录促销来源与该行实际分摊到的优惠额。</summary>
+public class AppliedPromotionRecord
+{
+    public Guid PromotionId { get; set; }
+    public string PromotionName { get; set; } = string.Empty;
+    public string ActionType { get; set; } = string.Empty;
+    public decimal DiscountAmount { get; set; }
 }
 
 public class MatchedPromotion
@@ -99,4 +81,19 @@ public class ApplyResult
     public List<SkuOrderRow> Items { get; set; } = new();
     public List<GiftSkuRow> GiftSkus { get; set; } = new();
     public bool IsFreightFree { get; set; }
+
+    /// <summary>折后优惠（DiscountRate 类促销）合计。</summary>
+    public decimal RateDiscountAmount => AppliedAmount("DiscountRate");
+
+    /// <summary>满减优惠（DiscountAmount 类促销）合计。</summary>
+    public decimal AmountDiscountAmount => AppliedAmount("DiscountAmount");
+
+    /// <summary>促销优惠合计，与分项之和一致；买赠不产生金额。</summary>
+    public decimal PromotionDiscountAmount => RateDiscountAmount + AmountDiscountAmount;
+
+    private decimal AppliedAmount(string actionType)
+        => Items
+            .SelectMany(item => item.AppliedPromotions)
+            .Where(record => record.ActionType == actionType)
+            .Sum(record => record.DiscountAmount);
 }

@@ -22,7 +22,7 @@ public class DeleteMallPromotionHandler : IRequestHandler<DeleteMallPromotionCom
     public async Task<bool> Handle(DeleteMallPromotionCommand command, CancellationToken cancellationToken)
     {
         var promotion = await _dbContext.MallPromotions
-            .FirstOrDefaultAsync(p => p.Id == command.PromotionId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == command.PromotionId, cancellationToken);
 
         if (promotion is null)
         {
@@ -30,14 +30,14 @@ public class DeleteMallPromotionHandler : IRequestHandler<DeleteMallPromotionCom
         }
 
         promotion.ChangeStatus(false);
-        promotion.IsDeleted = true;
+        promotion.SoftDelete();
 
         var scopes = await _dbContext.MallPromotionScopes
             .Where(s => s.PromotionId == command.PromotionId)
             .ToListAsync(cancellationToken);
         foreach (var scope in scopes)
         {
-            scope.IsDeleted = true;
+            scope.SoftDelete();
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

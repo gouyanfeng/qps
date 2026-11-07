@@ -42,7 +42,6 @@ public class GetMallSkusHandler : IRequestHandler<GetMallSkusQuery, PaginationRe
     {
         var query = from sku in _dbContext.MallSkus
                     join product in _dbContext.MallProducts on sku.ProductId equals product.Id
-                    where !sku.IsDeleted && !product.IsDeleted
                     select new { Sku = sku, Product = product };
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))

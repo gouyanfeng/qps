@@ -96,7 +96,9 @@ public static class CrmModelConfiguration
             entity.Property(vendor => vendor.NormalizedVendorName).HasMaxLength(200);
             entity.Property(vendor => vendor.PriorityLevel).HasMaxLength(20);
             entity.Property(vendor => vendor.LastFollowResult).HasMaxLength(32);
-            entity.HasIndex(vendor => vendor.NormalizedVendorName).IsUnique();
+            entity.HasIndex(vendor => vendor.NormalizedVendorName)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasIndex(vendor => vendor.PriorityLevel);
             entity.HasIndex(vendor => vendor.LatestPurchaseTime);
             entity.HasIndex(vendor => new { vendor.OwnerUserId, vendor.NextFollowAt });
@@ -110,7 +112,9 @@ public static class CrmModelConfiguration
             entity.Property(demand => demand.Status).HasMaxLength(32);
             entity.Property(demand => demand.SourceType).HasMaxLength(32);
             entity.Property(demand => demand.SourceUrl).HasMaxLength(500);
-            entity.HasIndex(demand => demand.DemandNo).IsUnique();
+            entity.HasIndex(demand => demand.DemandNo)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasIndex(demand => new { demand.VendorId, demand.Status, demand.DemandAt });
             entity.HasIndex(demand => demand.ContactId);
             entity.HasOne(demand => demand.Vendor).WithMany(vendor => vendor.VendorDemands).HasForeignKey(demand => demand.VendorId).OnDelete(DeleteBehavior.Restrict);
@@ -166,7 +170,9 @@ public static class CrmModelConfiguration
             entity.Property(candidate => candidate.SupplyCycle).HasMaxLength(100);
             entity.Property(candidate => candidate.Status).HasMaxLength(32);
             entity.Property(candidate => candidate.EliminationReason).HasMaxLength(500);
-            entity.HasIndex(candidate => new { candidate.MatchOpportunityId, candidate.HerbBaseSupplyId }).IsUnique();
+            entity.HasIndex(candidate => new { candidate.MatchOpportunityId, candidate.HerbBaseSupplyId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
             entity.HasOne<CrmMatchOpportunity>()
                 .WithMany()
                 .HasForeignKey(candidate => candidate.MatchOpportunityId)

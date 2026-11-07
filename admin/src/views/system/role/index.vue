@@ -23,7 +23,7 @@
                 <el-table :data="tableData" :fit="true" style="width: 100% " border>
                     <el-table-column prop="name" label="角色名称" min-width="180" show-overflow-tooltip />
                     <el-table-column prop="code" label="角色值" min-width="160" show-overflow-tooltip />
-                    <el-table-column label="操作" align="center" width="180" fixed="right">
+                    <el-table-column label="操作" align="center" width="160" fixed="right" class-name="actions-column" header-class-name="actions-column">
                         <template #default="{ row }">
                             <Permission code="SYSTEM_ROLE_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
                             <Permission code="SYSTEM_ROLE_DELETE"><el-button type="danger" link :icon="Delete" @click="deleteRole(row)">删除</el-button></Permission>
@@ -159,13 +159,3 @@ const deleteRole = async (row: any) => {
 </script>
 
 <style scoped lang="scss"></style>
-
-
-
-
-
-
-
-
-
-

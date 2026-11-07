@@ -50,7 +50,7 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center" width="180" fixed="right">
+                    <el-table-column label="操作" align="center" width="160" fixed="right" class-name="actions-column" header-class-name="actions-column">
                         <template #default="{ row }">
                             <Permission code="SYSTEM_DATA_DICTIONARY_EDIT"><el-button type="primary" link :icon="EditPen"
                                 @click="openDialog('编辑', row)">编辑</el-button></Permission>
@@ -299,13 +299,3 @@ onMounted(() => {
     loadTreeData()
 })
 </script>
-
-
-
-
-
-
-
-
-
-

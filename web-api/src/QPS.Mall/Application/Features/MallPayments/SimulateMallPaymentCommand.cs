@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using QPS.Mall.Application.Features.MallOrders;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
@@ -20,25 +21,49 @@ public class SimulateMallPaymentCommand : IRequest<bool>
     /// <summary>外部支付单号。</summary>
     public string? PaymentNo { get; set; }
 
+    /// <summary>当前会员 ID；移动端必传，管理端为空。</summary>
+    public Guid? MemberId { get; set; }
+
     public SimulateMallPaymentRequest Request { get; set; } = new();
 }
 
 public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCommand, bool>
 {
     private const int FailureReasonMaxLength = 200;
+    private const string SimulationEnabledConfigKey = "Mall:Payment:SimulationEnabled";
 
     private readonly IMallDbContext _dbContext;
+    private readonly IConfiguration _configuration;
 
-    public SimulateMallPaymentHandler(IMallDbContext dbContext)
+    public SimulateMallPaymentHandler(
+        IMallDbContext dbContext,
+        IConfiguration configuration)
     {
         _dbContext = dbContext;
+        _configuration = configuration;
     }
 
     public async Task<bool> Handle(
         SimulateMallPaymentCommand command,
         CancellationToken cancellationToken)
     {
+        // 模拟支付只在显式开启时可用；生产部署把 Mall:Payment:SimulationEnabled 设为 false 即关闭。
+        if (!_configuration.GetValue(SimulationEnabledConfigKey, false))
+        {
+            throw new BusinessException(403, "模拟支付未开启");
+        }
+
         var payment = await ResolvePaymentAsync(command, cancellationToken);
+
+        var order = await _dbContext.MallOrders
+            .FirstOrDefaultAsync(item => item.Id == payment.OrderId, cancellationToken);
+
+        if (order is null)
+        {
+            throw new BusinessException(404, "订单不存在");
+        }
+
+        MallOrderResolver.EnsureOwnership(order, command.MemberId);
 
         if (payment.Status != MallPaymentStatus.Pending)
         {
@@ -67,21 +92,12 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
             item =>
                 item.OrderId == payment.OrderId &&
                 item.Status == MallPaymentStatus.Success &&
-                item.Id != payment.Id &&
-                !item.IsDeleted,
+                item.Id != payment.Id,
             cancellationToken);
 
         if (alreadyPaid)
         {
             throw new BusinessException(400, "订单已支付，不能重复支付");
-        }
-
-        var order = await _dbContext.MallOrders
-            .FirstOrDefaultAsync(item => item.Id == payment.OrderId && !item.IsDeleted, cancellationToken);
-
-        if (order is null)
-        {
-            throw new BusinessException(404, "订单不存在");
         }
 
         payment.MarkSuccess(MallNumberGenerator.GenerateTransactionNo());
@@ -102,7 +118,7 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
         {
             payment = await _dbContext.MallPayments
                 .FirstOrDefaultAsync(
-                    item => item.Id == command.PaymentId.Value && !item.IsDeleted,
+                    item => item.Id == command.PaymentId.Value,
                     cancellationToken);
         }
         else if (!string.IsNullOrWhiteSpace(command.PaymentNo))
@@ -110,7 +126,7 @@ public class SimulateMallPaymentHandler : IRequestHandler<SimulateMallPaymentCom
             var paymentNo = command.PaymentNo.Trim();
             payment = await _dbContext.MallPayments
                 .FirstOrDefaultAsync(
-                    item => item.PaymentNo == paymentNo && !item.IsDeleted,
+                    item => item.PaymentNo == paymentNo,
                     cancellationToken);
         }
         else

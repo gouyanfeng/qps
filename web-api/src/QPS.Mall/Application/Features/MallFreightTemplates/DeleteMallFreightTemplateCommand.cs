@@ -23,7 +23,7 @@ public class DeleteMallFreightTemplateHandler : IRequestHandler<DeleteMallFreigh
     public async Task<bool> Handle(DeleteMallFreightTemplateCommand command, CancellationToken cancellationToken)
     {
         var template = await _dbContext.MallFreightTemplates
-            .FirstOrDefaultAsync(t => t.Id == command.TemplateId && !t.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == command.TemplateId, cancellationToken);
 
         if (template is null)
         {
@@ -31,7 +31,7 @@ public class DeleteMallFreightTemplateHandler : IRequestHandler<DeleteMallFreigh
         }
 
         var productCount = await _dbContext.MallProducts.CountAsync(
-            p => p.FreightTemplateId == template.Id && !p.IsDeleted,
+            p => p.FreightTemplateId == template.Id,
             cancellationToken);
 
         if (productCount > 0)

@@ -28,50 +28,109 @@ public class GetDataDictionariesQueryHandler : IRequestHandler<GetDataDictionari
 
     public async Task<PaginationResponse<DataDictionaryDto>> Handle(GetDataDictionariesQuery request, CancellationToken cancellationToken)
     {
-        var allDictionaries = await _dbContext.SystemDataDictionaries
-            .OrderBy(d => d.SortOrder)
-            .ToListAsync(cancellationToken);
-
-        var filteredDictionaries = allDictionaries.AsQueryable();
-
-        if (!string.IsNullOrEmpty(request.Code))
+        if (request.ParentId.HasValue)
         {
-            filteredDictionaries = filteredDictionaries.Where(d => d.Code.Contains(request.Code));
+            return await HandleWithTreeFilter(request, cancellationToken);
         }
 
-        if (!string.IsNullOrEmpty(request.Name))
+        var query = _dbContext.SystemDataDictionaries.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(request.Code))
         {
-            filteredDictionaries = filteredDictionaries.Where(d => d.Name.Contains(request.Name));
+            var code = request.Code.Trim();
+            query = query.Where(d => d.Code.Contains(code));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            var name = request.Name.Trim();
+            query = query.Where(d => d.Name.Contains(name));
         }
 
         if (request.IsActive.HasValue)
         {
-            filteredDictionaries = filteredDictionaries.Where(d => d.IsActive == request.IsActive.Value);
+            query = query.Where(d => d.IsActive == request.IsActive.Value);
         }
 
-        if (request.ParentId.HasValue)
+        var paged = await query
+            .OrderBy(d => d.SortOrder)
+            .ToPaginationResponseAsync(request, cancellationToken);
+
+        var parentIds = paged.List
+            .Where(d => d.ParentId.HasValue)
+            .Select(d => d.ParentId!.Value)
+            .Distinct()
+            .ToList();
+
+        var parentNames = parentIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _dbContext.SystemDataDictionaries
+                .AsNoTracking()
+                .Where(d => parentIds.Contains(d.Id))
+                .ToDictionaryAsync(d => d.Id, d => d.Name, cancellationToken);
+
+        var data = paged.List.Select(d => new DataDictionaryDto
         {
-            filteredDictionaries = filteredDictionaries.Where(d =>
-                IsDescendantOf(d.Id, request.ParentId.Value, allDictionaries));
+            Id = d.Id,
+            ParentId = d.ParentId,
+            ParentName = d.ParentId.HasValue && parentNames.TryGetValue(d.ParentId.Value, out var pn) ? pn : null,
+            Code = d.Code,
+            Name = d.Name,
+            Value = d.Value,
+            Description = d.Description,
+            SortOrder = d.SortOrder,
+            IsActive = d.IsActive
+        }).ToList();
+
+        return new PaginationResponse<DataDictionaryDto>(data, paged.TotalCount, paged.CurrentPage, paged.PageSize);
+    }
+
+    private async Task<PaginationResponse<DataDictionaryDto>> HandleWithTreeFilter(
+        GetDataDictionariesQuery request, CancellationToken cancellationToken)
+    {
+        var allDictionaries = await _dbContext.SystemDataDictionaries
+            .AsNoTracking()
+            .OrderBy(d => d.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        IEnumerable<SystemDataDictionary> filtered = allDictionaries;
+
+        if (!string.IsNullOrWhiteSpace(request.Code))
+        {
+            var code = request.Code.Trim();
+            filtered = filtered.Where(d => d.Code.Contains(code));
         }
 
-        var dtoQuery = filteredDictionaries
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            var name = request.Name.Trim();
+            filtered = filtered.Where(d => d.Name.Contains(name));
+        }
+
+        if (request.IsActive.HasValue)
+        {
+            var isActive = request.IsActive.Value;
+            filtered = filtered.Where(d => d.IsActive == isActive);
+        }
+
+        var parentId = request.ParentId!.Value;
+        filtered = filtered.Where(d => IsDescendantOf(d.Id, parentId, allDictionaries));
+
+        return filtered
             .Select(d => new DataDictionaryDto
             {
                 Id = d.Id,
                 ParentId = d.ParentId,
                 ParentName = d.ParentId.HasValue
-                    ? GetParentName(allDictionaries, d.ParentId.Value)
-                    : null,
+                    ? GetParentName(allDictionaries, d.ParentId.Value) : null,
                 Code = d.Code,
                 Name = d.Name,
                 Value = d.Value,
                 Description = d.Description,
                 SortOrder = d.SortOrder,
                 IsActive = d.IsActive
-            });
-
-        return await dtoQuery.ToPaginationResponseAsync(request);
+            })
+            .ToPaginationResponse(request);
     }
 
     private static bool IsDescendantOf(Guid nodeId, Guid parentId, IReadOnlyList<SystemDataDictionary> dictionaries)
@@ -81,16 +140,8 @@ public class GetDataDictionariesQueryHandler : IRequestHandler<GetDataDictionari
 
         while (current != null)
         {
-            if (current.ParentId == parentId)
-            {
-                return true;
-            }
-
-            if (!current.ParentId.HasValue)
-            {
-                return false;
-            }
-
+            if (current.ParentId == parentId) return true;
+            if (!current.ParentId.HasValue) return false;
             current = dictionaryById.GetValueOrDefault(current.ParentId.Value);
         }
 
@@ -99,9 +150,6 @@ public class GetDataDictionariesQueryHandler : IRequestHandler<GetDataDictionari
 
     private static string? GetParentName(IReadOnlyList<SystemDataDictionary> dictionaries, Guid parentId)
     {
-        var parent = dictionaries.FirstOrDefault(x => x.Id == parentId);
-        return parent?.Name;
+        return dictionaries.FirstOrDefault(x => x.Id == parentId)?.Name;
     }
 }
-
-

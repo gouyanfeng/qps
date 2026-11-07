@@ -49,7 +49,7 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
 
     private async Task<CrmHerbBase> GetCustomer(Guid customerId, CancellationToken cancellationToken)
     {
-        var customer = await _dbContext.CrmHerbBases.FirstOrDefaultAsync(c => c.Id == customerId && !c.IsDeleted, cancellationToken);
+        var customer = await _dbContext.CrmHerbBases.FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
         if (customer == null)
         {
             throw new BusinessException(404, "药材基地不存在");

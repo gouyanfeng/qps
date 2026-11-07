@@ -111,19 +111,18 @@ public class MallPromotionDto
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = string.Empty;
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 
     public string ActionConfigJson { get; set; } = string.Empty;
 
+    /// <summary>促销标签（关联 MallTags），参与该促销的商品展示时带上。</summary>
+    public Guid? PromotionTagId { get; set; }
+
     public string ScopeType { get; set; } = string.Empty;
-
-    public int MaxUsagePerUser { get; set; }
-
-    public int MaxUsagePerOrder { get; set; }
 
     public DateTime? StartDate { get; set; }
 
@@ -155,19 +154,20 @@ public class MallPromotionCreateRequest
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    /// <summary>促销类型：0 满减 / 1 折扣 / 2 买赠。</summary>
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = "{}";
+    /// <summary>订单门槛金额。</summary>
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 
     public string ActionConfigJson { get; set; } = "{}";
 
+    /// <summary>促销标签（关联 MallTags，可选）。</summary>
+    public Guid? PromotionTagId { get; set; }
+
     public string ScopeType { get; set; } = "Global";
-
-    public int MaxUsagePerUser { get; set; }
-
-    public int MaxUsagePerOrder { get; set; }
 
     public DateTime? StartDate { get; set; }
 
@@ -184,19 +184,18 @@ public class MallPromotionUpdateRequest
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = "{}";
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 
     public string ActionConfigJson { get; set; } = "{}";
 
+    /// <summary>促销标签（关联 MallTags，可选）。</summary>
+    public Guid? PromotionTagId { get; set; }
+
     public string ScopeType { get; set; } = "Global";
-
-    public int MaxUsagePerUser { get; set; }
-
-    public int MaxUsagePerOrder { get; set; }
 
     public DateTime? StartDate { get; set; }
 

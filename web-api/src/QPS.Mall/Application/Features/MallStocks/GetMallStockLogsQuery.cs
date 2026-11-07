@@ -47,7 +47,7 @@ public class GetMallStockLogsHandler : IRequestHandler<GetMallStockLogsQuery, Pa
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallStockLogs
-            .Where(log => !log.IsDeleted)
+            
             .AsQueryable();
 
         if (request.SkuId.HasValue)

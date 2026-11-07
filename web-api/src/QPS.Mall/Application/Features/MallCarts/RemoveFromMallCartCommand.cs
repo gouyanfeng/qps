@@ -29,29 +29,18 @@ public class RemoveFromMallCartHandler : IRequestHandler<RemoveFromMallCartComma
         RemoveFromMallCartCommand command,
         CancellationToken cancellationToken)
     {
-        var cart = await _dbContext.MallCarts
-            .FirstOrDefaultAsync(
-                c => c.UserId == command.UserId && !c.IsDeleted,
-                cancellationToken);
+        var cartItems = await _dbContext.MallCartItems
+            .Where(i => i.UserId == command.UserId)
+            .ToListAsync(cancellationToken);
 
-        if (cart is null) throw new BusinessException(404, "购物车不存在");
+        if (cartItems.Count == 0) throw new BusinessException(404, "购物车不存在");
 
-        var item = await _dbContext.MallCartItems
-            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == command.SkuId && !i.IsDeleted, cancellationToken);
+        var item = cartItems.FirstOrDefault(i => i.SkuId == command.SkuId);
+        var remainingCount = cartItems.Count - (item is null ? 0 : 1);
 
         if (item is not null)
         {
             _dbContext.MallCartItems.Remove(item);
-        }
-
-        cart.Touch();
-
-        var remainingCount = await _dbContext.MallCartItems
-            .CountAsync(i => i.CartId == cart.Id && !i.IsDeleted, cancellationToken);
-
-        if (remainingCount == 0)
-        {
-            _dbContext.MallCarts.Remove(cart);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -60,7 +49,6 @@ public class RemoveFromMallCartHandler : IRequestHandler<RemoveFromMallCartComma
         {
             return new MallCartDto
             {
-                UserId = command.UserId,
                 TotalQuantity = 0,
                 TotalAmount = 0,
                 Items = new List<MallCartItemDto>()

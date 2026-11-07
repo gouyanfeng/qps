@@ -157,7 +157,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="88">
+          <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag>{{ row.status || "-" }}</el-tag>
             </template>
@@ -183,13 +183,15 @@
           <el-table-column prop="createdAt" label="创建时间" width="146" sortable="custom">
             <template #default="{ row }">{{ formatNullableDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="320" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="340" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <div class="table-actions">
                 <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
-                <el-button v-if="canManageTransfer" type="primary" link :icon="Edit" @click="openTransferDialog([row], row.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
-                  {{ row.ownerUserId ? "转交" : "分配" }}
-                </el-button>
+                <Permission code="CRM_TRANSFER">
+                  <el-button type="primary" link :icon="Edit" @click="openTransferDialog([row], row.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+                    {{ row.ownerUserId ? "转交" : "分配" }}
+                  </el-button>
+                </Permission>
                 <el-button v-if="canManageTransfer || canReturn(row)" type="primary" link :icon="Edit" @click="openTransferDialog([row], 'RETURN')">退回</el-button>
                 <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               </div>
@@ -344,7 +346,7 @@ const form = reactive({
 });
 
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
-const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const canManageTransfer = computed(() => authStore.hasPermissionGet("CRM_TRANSFER"));
 
 // 下拉选项
 const sourcePlatforms = ["百度地图", "政府网站", "手工录入", "Excel导入", "其他"];

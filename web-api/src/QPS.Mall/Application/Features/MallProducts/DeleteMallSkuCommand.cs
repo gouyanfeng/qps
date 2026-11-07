@@ -25,14 +25,14 @@ public class DeleteMallSkuHandler : IRequestHandler<DeleteMallSkuCommand, bool>
     public async Task<bool> Handle(DeleteMallSkuCommand request, CancellationToken cancellationToken)
     {
         var sku = await _dbContext.MallSkus
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (sku is null)
         {
             throw new BusinessException(404, "规格不存在");
         }
 
-        sku.IsDeleted = true;
+        sku.SoftDelete();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

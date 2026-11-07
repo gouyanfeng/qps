@@ -40,6 +40,13 @@ dotnet test "E:\Code\QPS\web-api\QPS.sln" --no-build --logger "console;verbosity
 - 迁移前后必须对受影响数据执行数量和唯一性对账；有属性表关联时，还必须检查 `EntityId` 指向的新实体记录是否存在。任何旧编码残留都必须明确标注为 EF 历史迁移或历史数据，不能默认为可忽略。
 - 新增或调整属性表筛选索引时，索引名和 `HasFilter` 中的 `EntityType/AttributeCode` 必须与迁移的数据更新同步修改；更新后的运行时代码只允许写入新编码。
 
+## 参数校验
+
+- 请求 DTO 的基础校验（非空、长度、数值范围）统一使用 `System.ComponentModel.DataAnnotations` 特性声明（`[Required]`、`[MaxLength]`、`[Range]`、`[MinLength]` 等），错误消息用面向用户的中文。
+- Host 已全局配置 `InvalidModelStateResponseFactory`（见 `QPS.Host/Registration/ServiceRegistrationExtensions.cs`）：模型校验失败统一返回 `HTTP 200 + { code: 400, msg: 首条错误 }`，与 `BusinessException` 的响应格式一致，前端无需区分处理。新增 Controller 不需要手写 ModelState 判断。
+- 跨字段、跨行（如"同一规格不能重复提交"）以及需要查库才能判定的规则（存在性、归属、状态流转），仍在 Handler 或 Rules 类中手写 `BusinessException(400, ...)`，不要试图用特性表达。
+- 参考：`QPS.Mall.Contracts.DTOs.MallOrderDtos.CreateMallOrderRequest`（特性校验）与 `CreateMallOrderHandler`（跨行规则兜底）。
+
 ## 代码风格
 
 - Application 层按业务功能分目录：`Features/{领域}/{功能}`；文件命名空间必须与其目录一致，例如 `Features.Crm.CrmTransfers`。

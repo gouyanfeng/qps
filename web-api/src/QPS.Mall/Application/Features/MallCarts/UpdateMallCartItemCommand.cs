@@ -29,21 +29,22 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
     {
         var req = command.Request;
 
-        var cart = await _dbContext.MallCarts
-            .FirstOrDefaultAsync(
-                c => c.UserId == req.UserId && !c.IsDeleted,
-                cancellationToken);
+        var cartItems = await _dbContext.MallCartItems
+            .Where(i => i.UserId == req.UserId)
+            .ToListAsync(cancellationToken);
 
-        if (cart is null) throw new BusinessException(404, "购物车不存在");
+        if (cartItems.Count == 0) throw new BusinessException(404, "购物车不存在");
 
-        var item = await _dbContext.MallCartItems
-            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == req.SkuId && !i.IsDeleted, cancellationToken);
+        var item = cartItems.FirstOrDefault(i => i.SkuId == req.SkuId);
         if (item is null) throw new BusinessException(400, "购物车中没有该商品");
 
-        if (req.Quantity > 0)
+        var isRemoving = req.Quantity <= 0;
+        var remainingCount = cartItems.Count - (isRemoving ? 1 : 0);
+
+        if (!isRemoving)
         {
             var sku = await _dbContext.MallSkus
-                .FirstOrDefaultAsync(s => s.Id == req.SkuId && !s.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(s => s.Id == req.SkuId, cancellationToken);
             if (sku is null) throw new BusinessException(404, "商品规格不存在");
             if (sku.Stock < req.Quantity)
                 throw new BusinessException(400, $"库存不足，仅剩 {sku.Stock}");
@@ -55,23 +56,12 @@ public class UpdateMallCartItemHandler : IRequestHandler<UpdateMallCartItemComma
             _dbContext.MallCartItems.Remove(item);
         }
 
-        cart.Touch();
-
-        var remainingCount = await _dbContext.MallCartItems
-            .CountAsync(i => i.CartId == cart.Id && !i.IsDeleted, cancellationToken);
-
-        if (remainingCount == 0)
-        {
-            _dbContext.MallCarts.Remove(cart);
-        }
-
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         if (remainingCount == 0)
         {
             return new MallCartDto
             {
-                UserId = req.UserId,
                 TotalQuantity = 0,
                 TotalAmount = 0,
                 Items = new List<MallCartItemDto>()

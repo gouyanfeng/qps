@@ -20,13 +20,33 @@
       }
       .logo {
         box-sizing: border-box;
+        display: flex;
+        align-items: center;
         height: 55px;
-        .logo-img {
-          width: 28px;
-          object-fit: contain;
+        padding-left: 28px;
+
+        /* 展开态与一级菜单图标左对齐；折叠态回到居中 */
+        &.is-collapse {
+          justify-content: center;
+          padding-left: 0;
+        }
+        .logo-mark {
+          display: flex;
+          flex-shrink: 0;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          font-size: 18px;
+          font-weight: 600;
+          line-height: 1;
+          color: var(--el-color-white);
+          background-color: var(--el-color-primary);
+          border-radius: 8px;
+          user-select: none;
         }
         .logo-text {
-          margin-left: 6px;
+          margin-left: 12px;
           font-size: 21.5px;
           font-weight: bold;
           color: var(--el-aside-logo-text-color);

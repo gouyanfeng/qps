@@ -62,14 +62,14 @@ public class MallPageHandlers :
     public async Task<List<MallPageDto>> Handle(GetMallPagesQuery query, CancellationToken ct)
     {
         return await _dbContext.MallPages.AsNoTracking()
-            .Where(p => !p.IsDeleted)
+            
             .OrderBy(p => p.PageCode)
             .Select(p => Map(p)).ToListAsync(ct);
     }
 
     public async Task<MallPageDto> Handle(GetMallPageQuery query, CancellationToken ct)
     {
-        var p = await _dbContext.MallPages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id && !x.IsDeleted, ct);
+        var p = await _dbContext.MallPages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id, ct);
         if (p is null) throw new BusinessException(404, "页面不存在");
 
         return Map(p);
@@ -78,7 +78,7 @@ public class MallPageHandlers :
     public async Task<MallPageDto> Handle(GetMallPageByCodeQuery query, CancellationToken ct)
     {
         var p = await _dbContext.MallPages.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.PageCode == query.PageCode && !x.IsDeleted && x.IsActive, ct);
+            .FirstOrDefaultAsync(x => x.PageCode == query.PageCode && x.IsActive, ct);
         if (p is null) throw new BusinessException(404, "页面不存在");
 
         return Map(p);
@@ -97,7 +97,7 @@ public class MallPageHandlers :
 
     public async Task<MallPageDto> Handle(UpdateMallPageCommand command, CancellationToken ct)
     {
-        var page = await _dbContext.MallPages.FirstOrDefaultAsync(p => p.Id == command.Id && !p.IsDeleted, ct);
+        var page = await _dbContext.MallPages.FirstOrDefaultAsync(p => p.Id == command.Id, ct);
         if (page is null) throw new BusinessException(404, "页面不存在");
 
         var r = command.Request;
@@ -109,7 +109,7 @@ public class MallPageHandlers :
 
     public async Task<bool> Handle(DeleteMallPageCommand command, CancellationToken ct)
     {
-        var page = await _dbContext.MallPages.FirstOrDefaultAsync(p => p.Id == command.Id && !p.IsDeleted, ct);
+        var page = await _dbContext.MallPages.FirstOrDefaultAsync(p => p.Id == command.Id, ct);
         if (page is null) throw new BusinessException(404, "页面不存在");
 
         _dbContext.MallPages.Remove(page);
@@ -119,7 +119,7 @@ public class MallPageHandlers :
 
     public async Task<bool> Handle(ChangeMallPageStatusCommand command, CancellationToken ct)
     {
-        var page = await _dbContext.MallPages.FirstOrDefaultAsync(p => p.Id == command.Id && !p.IsDeleted, ct);
+        var page = await _dbContext.MallPages.FirstOrDefaultAsync(p => p.Id == command.Id, ct);
         if (page is null) throw new BusinessException(404, "页面不存在");
 
         page.ChangeStatus(command.IsActive);

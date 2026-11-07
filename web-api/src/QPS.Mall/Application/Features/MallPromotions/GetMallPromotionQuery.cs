@@ -26,7 +26,7 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
     {
         var p = await _dbContext.MallPromotions
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.PromotionId && !x.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == request.PromotionId, cancellationToken);
 
         if (p is null)
         {
@@ -34,7 +34,7 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
         }
 
         var scopes = await _dbContext.MallPromotionScopes
-            .Where(s => s.PromotionId == p.Id && !s.IsDeleted)
+            .Where(s => s.PromotionId == p.Id)
             .ToListAsync(cancellationToken);
 
         return new MallPromotionDto
@@ -42,13 +42,12 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
             Id = p.Id,
             Name = p.Name,
             Description = p.Description,
-            TriggerType = p.TriggerType,
-            TriggerConfigJson = p.TriggerConfigJson,
+            PromotionType = p.PromotionType,
+            ThresholdAmount = p.ThresholdAmount,
             ActionType = p.ActionType,
             ActionConfigJson = p.ActionConfigJson,
+            PromotionTagId = p.PromotionTagId,
             ScopeType = p.ScopeType,
-            MaxUsagePerUser = p.MaxUsagePerUser,
-            MaxUsagePerOrder = p.MaxUsagePerOrder,
             StartDate = p.StartDate,
             EndDate = p.EndDate,
             IsActive = p.IsActive,

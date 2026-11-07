@@ -3,7 +3,7 @@ using QPS.Shared.Common;
 namespace QPS.Mall.Domain.Entities;
 
 /// <summary>
-/// 商场门店。
+/// 商城门店。
 /// </summary>
 public class MallStore : BaseEntity
 {

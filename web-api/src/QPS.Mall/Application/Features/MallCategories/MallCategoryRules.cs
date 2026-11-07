@@ -67,7 +67,6 @@ internal static class MallCategoryRules
     {
         var duplicated = await dbContext.MallCategories.AnyAsync(
             category =>
-                !category.IsDeleted &&
                 category.Code == code &&
                 (!excludeId.HasValue || category.Id != excludeId.Value),
             cancellationToken);
@@ -89,7 +88,7 @@ internal static class MallCategoryRules
             if (excludeId.HasValue)
             {
                 var hasChildren = await dbContext.MallCategories.AnyAsync(
-                    category => category.ParentId == excludeId.Value && !category.IsDeleted,
+                    category => category.ParentId == excludeId.Value,
                     cancellationToken);
                 if (hasChildren)
                 {
@@ -110,7 +109,7 @@ internal static class MallCategoryRules
             .FirstOrDefaultAsync(
                 category => category.Id == parentId.Value,
                 cancellationToken);
-        if (parent is null || !parent.IsActive || parent.IsDeleted)
+        if (parent is null || !parent.IsActive)
         {
             throw new BusinessException(400, "请选择已启用的父级分类");
         }
@@ -123,7 +122,7 @@ internal static class MallCategoryRules
         if (excludeId.HasValue)
         {
             var hasChildren = await dbContext.MallCategories.AnyAsync(
-                category => category.ParentId == excludeId.Value && !category.IsDeleted,
+                category => category.ParentId == excludeId.Value,
                 cancellationToken);
             if (hasChildren)
             {

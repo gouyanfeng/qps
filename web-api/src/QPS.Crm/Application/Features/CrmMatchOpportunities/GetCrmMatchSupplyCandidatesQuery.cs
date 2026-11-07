@@ -114,8 +114,8 @@ internal static class CrmMatchOpportunitySource
     {
         var demandItem = await dbContext.CrmVendorDemandItems
             .Include(item => item.VendorDemand)
-            .FirstOrDefaultAsync(item => item.Id == demandItemId && !item.IsDeleted, cancellationToken);
-        if (demandItem?.VendorDemand == null || demandItem.VendorDemand.IsDeleted)
+            .FirstOrDefaultAsync(item => item.Id == demandItemId, cancellationToken);
+        if (demandItem?.VendorDemand == null)
         {
             throw new BusinessException(404, "采购需求明细不存在");
         }

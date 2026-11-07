@@ -1,3 +1,9 @@
+/* 表格列最小宽度 */
+.el-table td,
+.el-table th {
+  min-width: 100px;
+}
+
 /* el-alert */
 .el-alert {
   border: 1px solid;

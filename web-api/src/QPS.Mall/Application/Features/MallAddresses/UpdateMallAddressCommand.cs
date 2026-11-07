@@ -11,6 +11,8 @@ public class UpdateMallAddressCommand : IRequest<bool>
 {
     public Guid AddressId { get; set; }
 
+    public Guid UserId { get; set; }
+
     public MallAddressUpdateRequest Request { get; set; } = null!;
 }
 
@@ -29,7 +31,7 @@ public class UpdateMallAddressHandler : IRequestHandler<UpdateMallAddressCommand
         MallAddressRules.ValidateUpdate(req);
 
         var address = await _dbContext.MallAddresses
-            .FirstOrDefaultAsync(a => a.Id == command.AddressId && !a.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == command.AddressId && a.UserId == command.UserId, cancellationToken);
 
         if (address is null)
         {
@@ -39,7 +41,7 @@ public class UpdateMallAddressHandler : IRequestHandler<UpdateMallAddressCommand
         if (req.IsDefault && address.UserId.HasValue)
         {
             var existingDefaults = await _dbContext.MallAddresses
-                .Where(a => a.UserId == address.UserId.Value && a.IsDefault && !a.IsDeleted && a.Id != address.Id)
+                .Where(a => a.UserId == address.UserId.Value && a.IsDefault && a.Id != address.Id)
                 .ToListAsync(cancellationToken);
 
             foreach (var a in existingDefaults) a.SetDefault(false);

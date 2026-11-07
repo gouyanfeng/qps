@@ -44,7 +44,7 @@ public class GetMallCategoriesHandler : IRequestHandler<GetMallCategoriesQuery, 
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallCategories
-            .Where(category => !category.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))

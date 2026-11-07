@@ -1,9 +1,38 @@
 using QPS.Shared.Common;
+using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Domain.Entities;
 
+/// <summary>
+/// 商城标签类型（内置常用值，不做枚举限制，允许自由扩展）。
+/// </summary>
+public static class MallTagType
+{
+    /// <summary>
+    /// 商品标签。
+    /// </summary>
+    public const string Product = "Product";
+
+    /// <summary>
+    /// 评价标签。
+    /// </summary>
+    public const string Review = "Review";
+
+    /// <summary>
+    /// 促销标签：由促销活动配置，参与促销的商品展示时自动打上。
+    /// </summary>
+    public const string Promotion = "Promotion";
+
+    /// <summary>
+    /// 内置常用类型，供前端下拉预置。
+    /// </summary>
+    public static readonly string[] Common = { Product, Review, Promotion };
+}
+
 public class MallTag : BaseEntity
 {
+    public string Type { get; private set; } = MallTagType.Product;
+
     public string Code { get; private set; } = string.Empty;
 
     public string Name { get; private set; } = string.Empty;
@@ -18,15 +47,30 @@ public class MallTag : BaseEntity
     {
     }
 
-    public static MallTag Create(string code, string name, string color, int sortOrder, bool isActive) =>
-        new()
+    public static MallTag Create(
+        string code,
+        string name,
+        string color,
+        int sortOrder,
+        bool isActive,
+        string? type = null)
+    {
+        var normalizedType = string.IsNullOrWhiteSpace(type) ? MallTagType.Product : type.Trim();
+        if (normalizedType.Length > 20)
         {
+            throw new BusinessException(400, "标签类型不能超过 20 个字符");
+        }
+
+        return new MallTag
+        {
+            Type = normalizedType,
             Code = code,
             Name = name,
             Color = color,
             SortOrder = sortOrder,
             IsActive = isActive
         };
+    }
 
     public void Update(string code, string name, string color, int sortOrder)
     {

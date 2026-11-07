@@ -1,7 +1,7 @@
 namespace QPS.Mall.Contracts.DTOs;
 
 /// <summary>
-/// 商场商品展示数据。
+/// 商城商品展示数据。
 /// </summary>
 public class MallProductDto
 {
@@ -45,6 +45,12 @@ public class MallProductDto
 
     public List<MallProductPromotionDto> Promotions { get; set; } = new();
 
+    /// <summary>商品图角标文案：命中满减促销时取促销标签名，无标签取促销名；为空表示不打角标。</summary>
+    public string PromotionBadgeText { get; set; } = string.Empty;
+
+    /// <summary>商品图角标颜色：取促销标签颜色，未配置时前端使用默认色。</summary>
+    public string PromotionBadgeColor { get; set; } = string.Empty;
+
     public List<string> Images
     {
         get
@@ -60,7 +66,7 @@ public class MallProductDto
 }
 
 /// <summary>
-/// 商场商品规格展示数据。
+/// 商城商品规格展示数据。
 /// </summary>
 public class MallSkuDto
 {
@@ -72,6 +78,7 @@ public class MallSkuDto
 
     public string SpecName { get; set; } = string.Empty;
 
+    /// <summary>售价。</summary>
     public decimal Price { get; set; }
 
     public decimal MarketPrice { get; set; }
@@ -91,6 +98,12 @@ public class MallSkuDto
     public DateTime UpdatedAt { get; set; }
 
     public List<MallProductPromotionDto> Promotions { get; set; } = new();
+
+    /// <summary>折后单价：命中折扣促销时为按最优折扣计算的价格，未命中为 null。</summary>
+    public decimal? DiscountedPrice { get; set; }
+
+    /// <summary>折扣标签文案，如「8折」；未命中折扣促销时为空。</summary>
+    public string DiscountLabel { get; set; } = string.Empty;
 }
 
 public class MallProductPromotionDto
@@ -101,9 +114,11 @@ public class MallProductPromotionDto
 
     public string Description { get; set; } = string.Empty;
 
-    public string TriggerType { get; set; } = string.Empty;
+    /// <summary>促销类型：0 满减 / 1 折扣 / 2 买赠。</summary>
+    public int PromotionType { get; set; }
 
-    public string TriggerConfigJson { get; set; } = "{}";
+    /// <summary>订单门槛金额（单位：元）。</summary>
+    public decimal ThresholdAmount { get; set; }
 
     public string ActionType { get; set; } = string.Empty;
 

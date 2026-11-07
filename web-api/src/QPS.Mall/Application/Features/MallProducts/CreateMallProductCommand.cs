@@ -35,6 +35,10 @@ public class CreateMallProductHandler : IRequestHandler<CreateMallProductCommand
         await MallProductRules.EnsureCodeNotDuplicatedAsync(_dbContext, code, null, cancellationToken);
         await MallProductRules.EnsureStoreValidAsync(_dbContext, request.Request.StoreId, cancellationToken);
         await MallProductRules.EnsureCategoryValidAsync(_dbContext, request.Request.CategoryId, cancellationToken);
+        await MallProductRules.EnsureFreightTemplateValidAsync(
+            _dbContext,
+            request.Request.FreightTemplateId,
+            cancellationToken);
         var tags = await MallProductRules.GetActiveTagsAsync(
             _dbContext,
             request.Request.TagIds,
@@ -51,7 +55,8 @@ public class CreateMallProductHandler : IRequestHandler<CreateMallProductCommand
             detailHtml,
             request.Request.SortOrder,
             request.Request.IsActive,
-            request.Request.IsHot);
+            request.Request.IsHot,
+            request.Request.FreightTemplateId);
         _dbContext.MallProducts.Add(product);
 
         foreach (var tag in tags)

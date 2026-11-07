@@ -25,7 +25,7 @@ public class DeleteMallCategoryHandler : IRequestHandler<DeleteMallCategoryComma
     public async Task<bool> Handle(DeleteMallCategoryCommand request, CancellationToken cancellationToken)
     {
         var category = await _dbContext.MallCategories
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (category is null)
         {
@@ -33,7 +33,7 @@ public class DeleteMallCategoryHandler : IRequestHandler<DeleteMallCategoryComma
         }
 
         var hasProducts = await _dbContext.MallProducts
-            .AnyAsync(product => product.CategoryId == request.Id && !product.IsDeleted, cancellationToken);
+            .AnyAsync(product => product.CategoryId == request.Id, cancellationToken);
 
         if (hasProducts)
         {
@@ -41,13 +41,13 @@ public class DeleteMallCategoryHandler : IRequestHandler<DeleteMallCategoryComma
         }
 
         var hasChildren = await _dbContext.MallCategories
-            .AnyAsync(item => item.ParentId == request.Id && !item.IsDeleted, cancellationToken);
+            .AnyAsync(item => item.ParentId == request.Id, cancellationToken);
         if (hasChildren)
         {
             throw new BusinessException(400, "分类下存在子分类，无法删除");
         }
 
-        category.IsDeleted = true;
+        category.SoftDelete();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

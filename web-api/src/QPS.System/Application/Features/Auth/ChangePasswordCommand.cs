@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using QPS.System.Contracts;
 using MediatR;
 using QPS.Shared.Contracts;
@@ -28,8 +29,9 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, bool
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
             throw new BusinessException(401, "用户未登录");
 
-        var user = await _dbContext.SystemUsers.FindAsync(new object[] { userGuid }, cancellationToken);
-        if (user == null || user.IsDeleted)
+        var user = await _dbContext.SystemUsers
+            .FirstOrDefaultAsync(user => user.Id == userGuid, cancellationToken);
+        if (user == null)
             throw new BusinessException(404, "用户不存在");
 
         // 验证旧密码
@@ -43,4 +45,3 @@ public class ChangePasswordHandler : IRequestHandler<ChangePasswordCommand, bool
         return true;
     }
 }
-

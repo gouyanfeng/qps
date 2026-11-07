@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallMembers;
 using QPS.Mall.Contracts.DTOs.MallMembers;
@@ -6,6 +7,7 @@ using QPS.Mall.Contracts.DTOs.MallMembers;
 namespace QPS.Mall.Controllers.Admin;
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall/members")]
 public class MallMemberController : ControllerBase
 {

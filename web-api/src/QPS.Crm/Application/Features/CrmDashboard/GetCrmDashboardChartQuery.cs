@@ -52,7 +52,7 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
     private async Task<List<CrmDashboardChartItemDto>> GetFollowFunnelAsync(CancellationToken cancellationToken)
     {
         var counts = await _dbContext.CrmHerbBaseSubjects
-            .Where(subject => !subject.IsDeleted && !string.IsNullOrWhiteSpace(subject.Status))
+            .Where(subject => !string.IsNullOrWhiteSpace(subject.Status))
             .GroupBy(subject => subject.Status)
             .Select(group => new CrmDashboardChartItemDto
             {
@@ -77,9 +77,6 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
         var counts = await (from supply in _dbContext.CrmHerbBaseSupplies
                             join herbBase in _dbContext.CrmHerbBases on supply.HerbBaseId equals herbBase.Id
                             join subject in _dbContext.CrmHerbBaseSubjects on herbBase.HerbBaseSubjectId equals subject.Id
-                            where !supply.IsDeleted &&
-                                  !herbBase.IsDeleted &&
-                                  !subject.IsDeleted
                             group subject by supply.ProductName into productGroup
                             select new
                             {
@@ -95,7 +92,7 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
         var today = DateTime.Today;
         var trendStart = today.AddDays(-6);
         var entityType = vendorChart ? CrmCodes.VendorEntityType : CrmCodes.HerbBaseSubjectEntityType;
-        var records = await _dbContext.CrmFollowRecords.Where(record => !record.IsDeleted && record.EntityType == entityType && record.CreatedAt >= trendStart && record.CreatedAt < today.AddDays(1)).Select(record => new { record.CreatedAt, record.FollowResult }).ToListAsync(cancellationToken);
+        var records = await _dbContext.CrmFollowRecords.Where(record => record.EntityType == entityType && record.CreatedAt >= trendStart && record.CreatedAt < today.AddDays(1)).Select(record => new { record.CreatedAt, record.FollowResult }).ToListAsync(cancellationToken);
         return Enumerable.Range(0, 7).Select(offset => trendStart.AddDays(offset)).Select(date =>
         {
             var nextDate = date.AddDays(1);
@@ -108,14 +105,14 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
     {
         var today = DateTime.Today;
         var trendStart = today.AddDays(-6);
-        var dates = await _dbContext.CrmHerbBases.Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && !herbBase.IsDeleted && _dbContext.CrmHerbBaseSubjects.Any(subject => subject.Id == herbBase.HerbBaseSubjectId.Value && !subject.IsDeleted) && herbBase.CreatedAt >= trendStart && herbBase.CreatedAt < today.AddDays(1)).Select(herbBase => herbBase.CreatedAt).ToListAsync(cancellationToken);
+        var dates = await _dbContext.CrmHerbBases.Where(herbBase => herbBase.HerbBaseSubjectId.HasValue && _dbContext.CrmHerbBaseSubjects.Any(subject => subject.Id == herbBase.HerbBaseSubjectId.Value) && herbBase.CreatedAt >= trendStart && herbBase.CreatedAt < today.AddDays(1)).Select(herbBase => herbBase.CreatedAt).ToListAsync(cancellationToken);
         return Enumerable.Range(0, 7).Select(offset => trendStart.AddDays(offset)).Select(date => new CrmDashboardNewBaseTrendItemDto { Date = date, NewBaseCount = dates.Count(createdAt => createdAt >= date && createdAt < date.AddDays(1)) }).ToList();
     }
 
     private async Task<List<CrmDashboardChartItemDto>> GetVendorPriorityDistributionAsync(CancellationToken cancellationToken)
     {
         var priorityLevels = await _dbContext.CrmVendors
-            .Where(vendor => !vendor.IsDeleted && !string.IsNullOrWhiteSpace(vendor.PriorityLevel))
+            .Where(vendor => !string.IsNullOrWhiteSpace(vendor.PriorityLevel))
             .Select(vendor => vendor.PriorityLevel)
             .ToListAsync(cancellationToken);
 
@@ -138,13 +135,13 @@ public class GetCrmDashboardChartHandler : IRequestHandler<GetCrmDashboardChartQ
     {
         var today = DateTime.Today;
         var trendStart = today.AddDays(-6);
-        var dates = await (from demand in _dbContext.CrmVendorDemands join vendor in _dbContext.CrmVendors on demand.VendorId equals vendor.Id where !demand.IsDeleted && !vendor.IsDeleted && demand.CreatedAt >= trendStart && demand.CreatedAt < today.AddDays(1) select demand.CreatedAt).ToListAsync(cancellationToken);
+        var dates = await (from demand in _dbContext.CrmVendorDemands join vendor in _dbContext.CrmVendors on demand.VendorId equals vendor.Id where demand.CreatedAt >= trendStart && demand.CreatedAt < today.AddDays(1) select demand.CreatedAt).ToListAsync(cancellationToken);
         return Enumerable.Range(0, 7).Select(offset => trendStart.AddDays(offset)).Select(date => new CrmDashboardNewPurchaseDemandTrendItemDto { Date = date, NewPurchaseDemandCount = dates.Count(createdAt => createdAt >= date && createdAt < date.AddDays(1)) }).ToList();
     }
 
     private async Task<List<CrmDashboardChartItemDto>> GetVendorPurchaseProductDistributionAsync(CancellationToken cancellationToken)
     {
-        var coverage = await (from demand in _dbContext.CrmVendorDemands join item in _dbContext.CrmVendorDemandItems on demand.Id equals item.VendorDemandId join vendor in _dbContext.CrmVendors on demand.VendorId equals vendor.Id where !demand.IsDeleted && !item.IsDeleted && !vendor.IsDeleted group demand by item.ProductName into productGroup select new { ProductName = productGroup.Key, VendorCount = productGroup.Select(demand => demand.VendorId).Distinct().Count() }).ToListAsync(cancellationToken);
+        var coverage = await (from demand in _dbContext.CrmVendorDemands join item in _dbContext.CrmVendorDemandItems on demand.Id equals item.VendorDemandId join vendor in _dbContext.CrmVendors on demand.VendorId equals vendor.Id group demand by item.ProductName into productGroup select new { ProductName = productGroup.Key, VendorCount = productGroup.Select(demand => demand.VendorId).Distinct().Count() }).ToListAsync(cancellationToken);
         return coverage.Where(item => !string.IsNullOrWhiteSpace(item.ProductName)).Select(item => new CrmDashboardChartItemDto { Code = item.ProductName, Name = item.ProductName, Value = item.VendorCount }).OrderByDescending(item => item.Value).ThenBy(item => item.Name).ToList();
     }
 }

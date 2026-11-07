@@ -56,7 +56,7 @@
           <el-table-column label="发布时间" width="170" align="center">
             <template #default="{ row }">{{ formatDate(row.publishedAt) || '-' }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="340" fixed="right">
+          <el-table-column label="操作" align="center" width="360" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button :type="row.isActive ? 'warning' : 'success'" link @click="togglePublish(row)">

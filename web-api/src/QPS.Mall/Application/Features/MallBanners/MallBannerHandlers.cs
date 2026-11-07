@@ -69,7 +69,7 @@ public class MallBannerHandlers :
 
     public async Task<List<MallBannerDto>> Handle(GetMallBannersQuery query, CancellationToken ct)
     {
-        var q = _dbContext.MallBanners.AsNoTracking().Where(b => !b.IsDeleted);
+        var q = _dbContext.MallBanners.AsNoTracking();
         if (!string.IsNullOrEmpty(query.Position)) q = q.Where(b => b.Position == query.Position);
         if (query.IsActive.HasValue) q = q.Where(b => b.IsActive == query.IsActive.Value);
 
@@ -85,7 +85,7 @@ public class MallBannerHandlers :
 
     public async Task<MallBannerDto> Handle(GetMallBannerQuery query, CancellationToken ct)
     {
-        var b = await _dbContext.MallBanners.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id && !x.IsDeleted, ct);
+        var b = await _dbContext.MallBanners.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id, ct);
         if (b is null) throw new BusinessException(404, "Banner不存在");
 
         return new MallBannerDto
@@ -101,7 +101,7 @@ public class MallBannerHandlers :
     {
         var now = DateTime.UtcNow;
         var q = _dbContext.MallBanners.AsNoTracking()
-            .Where(b => !b.IsDeleted && b.IsActive
+            .Where(b => b.IsActive
                 && (b.StartDate == null || b.StartDate <= now)
                 && (b.EndDate == null || b.EndDate >= now));
         if (!string.IsNullOrEmpty(query.Position)) q = q.Where(b => b.Position == query.Position);
@@ -136,7 +136,7 @@ public class MallBannerHandlers :
 
     public async Task<MallBannerDto> Handle(UpdateMallBannerCommand command, CancellationToken ct)
     {
-        var banner = await _dbContext.MallBanners.FirstOrDefaultAsync(b => b.Id == command.Id && !b.IsDeleted, ct);
+        var banner = await _dbContext.MallBanners.FirstOrDefaultAsync(b => b.Id == command.Id, ct);
         if (banner is null) throw new BusinessException(404, "Banner不存在");
 
         var r = command.Request;
@@ -155,7 +155,7 @@ public class MallBannerHandlers :
 
     public async Task<bool> Handle(DeleteMallBannerCommand command, CancellationToken ct)
     {
-        var banner = await _dbContext.MallBanners.FirstOrDefaultAsync(b => b.Id == command.Id && !b.IsDeleted, ct);
+        var banner = await _dbContext.MallBanners.FirstOrDefaultAsync(b => b.Id == command.Id, ct);
         if (banner is null) throw new BusinessException(404, "Banner不存在");
 
         _dbContext.MallBanners.Remove(banner);
@@ -165,7 +165,7 @@ public class MallBannerHandlers :
 
     public async Task<bool> Handle(ChangeMallBannerStatusCommand command, CancellationToken ct)
     {
-        var banner = await _dbContext.MallBanners.FirstOrDefaultAsync(b => b.Id == command.Id && !b.IsDeleted, ct);
+        var banner = await _dbContext.MallBanners.FirstOrDefaultAsync(b => b.Id == command.Id, ct);
         if (banner is null) throw new BusinessException(404, "Banner不存在");
 
         banner.ChangeStatus(command.IsActive);
@@ -176,7 +176,7 @@ public class MallBannerHandlers :
     public async Task<bool> Handle(BatchSortMallBannerCommand command, CancellationToken ct)
     {
         var ids = command.Request.Items.Select(i => i.Id).ToList();
-        var banners = await _dbContext.MallBanners.Where(b => ids.Contains(b.Id) && !b.IsDeleted).ToListAsync(ct);
+        var banners = await _dbContext.MallBanners.Where(b => ids.Contains(b.Id)).ToListAsync(ct);
 
         foreach (var item in command.Request.Items)
         {
@@ -195,11 +195,18 @@ public class MallBannerHandlers :
             throw new BusinessException(400, "Banner跳转类型无效");
         }
 
-        if (linkType == MallBannerLinkType.InternalActivity &&
-            (!Guid.TryParse(linkValue, out var activityId) ||
-             !await _dbContext.MallActivities.AnyAsync(activity => activity.Id == activityId && !activity.IsDeleted, ct)))
+        if (linkType == MallBannerLinkType.InternalCampaign &&
+            (!Guid.TryParse(linkValue, out var campaignId) ||
+             !await _dbContext.MallCampaigns.AnyAsync(campaign => campaign.Id == campaignId, ct)))
         {
-            throw new BusinessException(400, "请填写有效的活动ID");
+            throw new BusinessException(400, "请选择有效的专题活动");
+        }
+
+        if (linkType == MallBannerLinkType.InternalPromotion &&
+            (!Guid.TryParse(linkValue, out var promotionId) ||
+             !await _dbContext.MallPromotions.AnyAsync(promotion => promotion.Id == promotionId, ct)))
+        {
+            throw new BusinessException(400, "请选择有效的促销活动");
         }
     }
 }

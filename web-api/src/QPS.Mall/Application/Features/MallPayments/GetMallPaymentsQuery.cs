@@ -37,7 +37,7 @@ public class GetMallPaymentsHandler : IRequestHandler<GetMallPaymentsQuery, Pagi
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallPayments
-            .Where(p => !p.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Status))

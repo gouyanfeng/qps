@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using QPS.Mall.Contracts;
 using QPS.Mall.Domain.Entities;
 
 namespace QPS.Mall.Application.Features.MallFreightRules;
@@ -48,6 +50,89 @@ public class FreightCalcResult
 
 internal static class MallFreightCalculator
 {
+    /// <summary>
+    /// 统一运费入口：预览与下单共用同一套模板解析、区域匹配、满额/免邮判定。
+    /// 无地址、无默认/商品模板、模板停用或无区域规则时返回 0，供预览与下单保持一致且不报错。
+    /// </summary>
+    public static async Task<decimal> CalculateAsync(
+        IMallDbContext dbContext,
+        FreightAddressInfo? address,
+        IEnumerable<FreightItemRow> items,
+        bool isFreightFree,
+        CancellationToken cancellationToken)
+    {
+        if (isFreightFree || address is null)
+        {
+            return 0m;
+        }
+
+        var itemList = items.ToList();
+        if (itemList.Count == 0)
+        {
+            return 0m;
+        }
+
+        var defaultTemplate = await dbContext.MallFreightTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, cancellationToken);
+        if (defaultTemplate is null &&
+            !itemList.Any(item => item.FreightTemplateId.HasValue))
+        {
+            return 0m;
+        }
+
+        var templateIds = new HashSet<Guid>();
+        if (defaultTemplate is not null)
+        {
+            templateIds.Add(defaultTemplate.Id);
+        }
+
+        foreach (var item in itemList.Where(item => item.FreightTemplateId.HasValue))
+        {
+            templateIds.Add(item.FreightTemplateId!.Value);
+        }
+
+        if (templateIds.Count == 0)
+        {
+            return 0m;
+        }
+
+        var templates = await dbContext.MallFreightTemplates
+            .AsNoTracking()
+            .Where(template => templateIds.Contains(template.Id))
+            .ToListAsync(cancellationToken);
+        var templateMap = templates.ToDictionary(template => template.Id);
+
+        var regions = await dbContext.MallFreightRegions
+            .AsNoTracking()
+            .Where(region => templateIds.Contains(region.TemplateId))
+            .ToListAsync(cancellationToken);
+        var regionMap = regions
+            .GroupBy(region => region.TemplateId)
+            .ToDictionary(group => group.Key, group => group.OrderBy(region => region.IsDefaultRegion).ToList());
+
+        // 模板缺失、停用或没有区域规则时按 0 运费处理，避免预览/下单在这个边界上报错
+        foreach (var item in itemList)
+        {
+            var templateId = item.FreightTemplateId ?? defaultTemplate?.Id;
+            if (!templateId.HasValue ||
+                !templateMap.TryGetValue(templateId.Value, out var template) ||
+                !template.IsActive ||
+                !regionMap.TryGetValue(templateId.Value, out var templateRegions) ||
+                templateRegions.Count == 0)
+            {
+                return 0m;
+            }
+        }
+
+        return Calculate(
+            itemList,
+            defaultTemplate?.Id ?? Guid.Empty,
+            templateMap,
+            regionMap,
+            address).TotalFreight;
+    }
+
     public static FreightCalcResult Calculate(
         IEnumerable<FreightItemRow> items,
         Guid storeDefaultFreightTemplateId,

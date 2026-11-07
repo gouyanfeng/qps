@@ -1,109 +1,206 @@
 <template>
     <div class="permission-page">
-        <!-- 左栏：角色列表 -->
-        <div class="role-panel">
-            <div class="panel-header">角色列表</div>
-            <div class="role-list">
-                <div v-for="role in roleList" :key="role.code" class="role-item"
-                    :class="{ active: selectedRole === role.code }" @click="selectRole(role.code)">
-                    <span>{{ role.name }}</span>
-                </div>
+        <!-- 顶部：当前配置角色 + 全局动作 -->
+        <section class="role-banner">
+            <div class="banner-left">
+                <span class="banner-label">当前配置角色:</span>
+                <el-select v-model="selectedRole" class="role-select" placeholder="请选择角色">
+                    <el-option v-for="role in roleList" :key="role.code"
+                        :label="`${role.name} (${role.code})`" :value="role.code" />
+                </el-select>
+                <span class="banner-badge">
+                    <span class="badge-dot" />
+                    已授权 {{ currentLeafCodes.length }} 项
+                </span>
             </div>
-        </div>
+            <div class="banner-actions">
+                <el-button :icon="Refresh" @click="resetPerm">重置</el-button>
+                <Permission code="SYSTEM_PERMISSION_EDIT">
+                    <el-button type="primary" :icon="Check" :loading="saving" @click="savePerm">保存权限</el-button>
+                </Permission>
+            </div>
+        </section>
 
-        <!-- 中栏：权限树 -->
-        <div class="perm-panel">
-            <div v-if="selectedRole" class="panel-header">{{ currentRoleName }} - 权限配置</div>
-            <div v-else class="panel-header">权限配置</div>
-            <div v-if="!selectedRole" class="empty-tip">
-                <p>请从左侧选择一个角色进行权限设置</p>
-            </div>
-            <div v-else class="perm-body">
-                <el-tree ref="permTreeRef" :data="permTreeData" node-key="id"
-                    :props="{ label: 'name', children: 'children' }" default-expand-all>
-                    <template #default="{ data }">
-                        <div class="custom-node" :class="{ 'is-root': data.code === 'root' }">
-                            <template v-if="data.code === 'root'">
-                                <span class="root-label">{{ data.name }}</span>
-                            </template>
-                            <template v-else>
-                                <el-checkbox v-model="data.checked"
-                                    @change="(val: boolean) => onCheck(data, val)" @click.stop>
-                                    <el-tooltip :content="data.code" placement="right" :show-after="300">
-                                        <span class="node-label">{{ data.name }}</span>
-                                    </el-tooltip>
-                                </el-checkbox>
-                            </template>
-                        </div>
-                    </template>
-                </el-tree>
-            </div>
-        </div>
+        <div class="workspace">
+            <!-- 矩阵区 -->
+            <section class="matrix-panel">
+                <div class="matrix-toolbar">
+                    <div class="module-chips">
+                        <span class="toolbar-label">模块分类:</span>
+                        <button class="chip" :class="{ active: moduleFilter === 'ALL' }"
+                            @click="moduleFilter = 'ALL'">全部模块</button>
+                        <button v-for="group in matrixGroups" :key="group.code" class="chip"
+                            :class="{ active: moduleFilter === group.code }"
+                            @click="moduleFilter = group.code">{{ group.name }}</button>
+                    </div>
+                    <div class="toolbar-tools">
+                        <el-input v-model="keyword" class="row-search" size="small"
+                            placeholder="搜索页面或操作按钮..." :prefix-icon="Search" clearable />
+                        <el-button size="small" :icon="Sort" @click="toggleAllGroups">
+                            {{ allCollapsed ? '全部展开' : '全部收起' }}
+                        </el-button>
+                        <el-button size="small" :icon="Finished" @click="selectAllVisible">全选访问</el-button>
+                    </div>
+                </div>
 
-        <!-- 右栏：修改记录 -->
-        <div class="changes-panel">
-            <div class="panel-header">修改记录</div>
-            <template v-if="!selectedRole">
-                <div class="empty-tip">
-                    <p>暂无修改</p>
+                <div class="matrix-scroll">
+                    <table class="perm-matrix">
+                        <colgroup>
+                            <col />
+                            <col style="width: 180px" />
+                            <col />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>功能模块 / 页面路由</th>
+                                <th class="col-access">页面访问权限</th>
+                                <th>操作按钮授权</th>
+                            </tr>
+                        </thead>
+                        <tbody v-if="visibleGroups.length">
+                            <template v-for="group in visibleGroups" :key="group.code">
+                                <tr v-if="!group.leaf" class="group-row" @click="toggleCollapse(group.code)">
+                                    <td colspan="3">
+                                        <div class="group-inner">
+                                            <el-icon class="group-caret"
+                                                :class="{ collapsed: collapsedGroups.has(group.code) }">
+                                                <ArrowRight />
+                                            </el-icon>
+                                            <el-icon class="folder-icon"><FolderOpened /></el-icon>
+                                            <span class="group-name">{{ group.name }}</span>
+                                            <span class="code">{{ group.code }}</span>
+                                            <span class="group-count">{{ group.pages.length }} 个页面</span>
+                                            <span class="spacer" />
+                                            <span class="group-all" @click.stop>
+                                                <el-checkbox :model-value="groupAllChecked(group)"
+                                                    :indeterminate="groupIndeterminate(group)"
+                                                    @change="(val: any) => toggleGroupAll(group, val)" />
+                                                <span class="group-all-label">全选访问</span>
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <template v-if="!collapsedGroups.has(group.code)">
+                                    <tr v-for="page in group.pages" :key="page.code" class="page-row"
+                                        :class="{ 'top-page': group.leaf, 'is-off': !isChecked(page.code) }">
+                                        <td class="page-cell">
+                                            <div class="page-inner">
+                                                <el-icon v-if="group.leaf" class="folder-icon">
+                                                    <FolderOpened />
+                                                </el-icon>
+                                                <span v-else class="page-dot" />
+                                                <span class="page-name">{{ page.name }}</span>
+                                                <span class="code">{{ page.code }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="access-cell">
+                                            <div class="access-inner">
+                                                <el-switch :model-value="isChecked(page.code)"
+                                                    @change="(val: any) => togglePage(page, val)" />
+                                                <span class="access-label" :class="{ on: isChecked(page.code) }">
+                                                    {{ isChecked(page.code) ? '允许访问' : '已禁用' }}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="buttons-cell">
+                                            <div v-if="page.buttons.length" class="btn-chips">
+                                                <el-checkbox v-for="btn in page.buttons" :key="btn.code"
+                                                    class="btn-chip" :model-value="isChecked(btn.code)"
+                                                    :disabled="!isChecked(page.code)" :title="btn.code"
+                                                    @change="(val: any) => toggleButton(page, btn, val)">
+                                                    <span class="btn-name">{{ btn.name }}</span>
+                                                    <el-tag v-if="btn.highRisk" type="danger" size="small"
+                                                        effect="plain" class="risk-tag">高危</el-tag>
+                                                </el-checkbox>
+                                            </div>
+                                            <span v-else class="no-btn">无操作按钮</span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </template>
+                        </tbody>
+                        <tbody v-else>
+                            <tr>
+                                <td colspan="3" class="matrix-empty">没有匹配的权限</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </template>
-            <template v-else-if="!hasChanges">
-                <div class="empty-tip">
-                    <p>暂无修改</p>
+            </section>
+
+            <!-- 右栏：修改记录 -->
+            <aside class="changes-panel">
+                <div class="panel-head">
+                    <span>修改记录</span>
+                    <span v-if="diffTotal" class="panel-count">{{ diffTotal }}</span>
                 </div>
-            </template>
-            <template v-else>
                 <div class="changes-summary">
-                    <el-tag size="small" type="success">+{{ changes.added.length }}</el-tag>
-                    <el-tag size="small" type="danger">-{{ changes.removed.length }}</el-tag>
-                    <span class="changes-spacer" />
-                    <el-button size="small" :icon="Refresh" @click="resetPerm">重置</el-button>
-                    <Permission code="SYSTEM_PERMISSION_EDIT"><el-button size="small" type="primary" :icon="Check" :loading="saving"
-                        @click="savePerm">保存</el-button></Permission>
+                    <span>待保存变更 ({{ diffTotal }}项)</span>
+                    <el-button link type="primary" size="small" :disabled="!diffTotal"
+                        @click="resetPerm">撤销所有</el-button>
                 </div>
                 <div class="changes-scroll">
-                    <div v-for="item in changes.added" :key="item.code" class="change-item added">
-                        <el-icon>
-                            <Plus />
-                        </el-icon>
-                        <span class="change-path">{{ item.path }}</span>
-                        <span class="change-code">{{ item.code }}</span>
+                    <div v-if="!diffTotal" class="panel-empty">暂无修改</div>
+                    <div v-for="item in diffAdded" :key="`a-${item.code}`" class="change-card">
+                        <div class="change-head">
+                            <span class="change-tag added">新增授权</span>
+                            <span class="change-code">{{ item.code }}</span>
+                        </div>
+                        <div class="change-title">{{ item.path }}</div>
                     </div>
-                    <div v-for="item in changes.removed" :key="item.code" class="change-item removed">
-                        <el-icon>
-                            <Minus />
-                        </el-icon>
-                        <span class="change-path">{{ item.path }}</span>
-                        <span class="change-code">{{ item.code }}</span>
+                    <div v-for="item in diffRemoved" :key="`r-${item.code}`" class="change-card">
+                        <div class="change-head">
+                            <span class="change-tag removed">取消授权</span>
+                            <span class="change-code">{{ item.code }}</span>
+                        </div>
+                        <div class="change-title">{{ item.path }}</div>
                     </div>
                 </div>
-            </template>
+            </aside>
         </div>
     </div>
 </template>
 
 <script setup lang="ts" name="permission">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, Check, Plus, Minus } from '@element-plus/icons-vue'
+import { Refresh, Check, Search, Sort, Finished, FolderOpened, ArrowRight } from '@element-plus/icons-vue'
 import { permissionApi } from '@/api/modules/permission'
 import { roleApi } from '@/api/modules/role'
 import Permission from '@/components/Permission/index.vue'
 
-
-
 // ── 类型 ──
 
-interface PermNode {
+interface TreeNode {
     id: string
     code: string
     name: string
-    checked: boolean
-    children?: PermNode[]
+    type: string
+    children?: TreeNode[]
 }
 
-// ── 角色 ──
+interface MatrixButton {
+    id: string
+    code: string
+    name: string
+    highRisk: boolean
+}
+
+interface MatrixPage {
+    id: string
+    code: string
+    name: string
+    buttons: MatrixButton[]
+    groupCode: string
+}
+
+interface MatrixGroup {
+    id: string
+    code: string
+    name: string
+    pages: MatrixPage[]
+    leaf: boolean
+}
 
 interface RoleItem {
     id: string
@@ -111,127 +208,213 @@ interface RoleItem {
     code: string
 }
 
+// ── 角色 ──
+
 const roleList = ref<RoleItem[]>([])
 const selectedRole = ref('')
-const currentRoleName = computed(() =>
-    roleList.value.find(r => r.code === selectedRole.value)?.name || ''
-)
 
-// ── 树 ──
+// ── 矩阵数据 ──
 
-const permTreeData = ref<PermNode[]>([])
+const matrixGroups = ref<MatrixGroup[]>([])
+const nodeByCode = new Map<string, TreeNode>()
+const parentByCode = new Map<string, string>()
+const leafCodeSet = ref<Set<string>>(new Set())
+const checked = reactive(new Set<string>())
+const rootChecked = ref(false)
 
-// 缓存角色权限（扁平 code 数组）
-const rolePerms = reactive<Record<string, string[]>>({})
+const moduleFilter = ref('ALL')
+const keyword = ref('')
+const collapsedGroups = reactive(new Set<string>())
 
-const hasChanges = ref(false)
-const saving = ref(false)
-let snapshot = ''
-let savedCodes: string[] = []
+const isChecked = (code: string) => checked.has(code)
 
-// 根据 code 从树中查找层级路径（如 "商户管理 / 新增"）
-const getPathByCode = (code: string): string => {
-    const segs: string[] = []
-    const find = (nodes: PermNode[]): boolean => {
-        for (const n of nodes) {
-            if (n.code === code) { segs.unshift(n.name); return true }
-            if (n.children && find(n.children)) {
-                if (n.code !== 'root') segs.unshift(n.name)
-                return true
-            }
-        }
-        return false
+const visibleGroups = computed(() => {
+    let groups = matrixGroups.value
+    if (moduleFilter.value !== 'ALL') {
+        groups = groups.filter(g => g.code === moduleFilter.value)
     }
-    find(permTreeData.value)
-    return segs.join(' / ')
-}
-
-const changes = computed(() => {
-    if (!hasChanges.value) return { added: [], removed: [], total: 0 }
-    const current = collectCodes()
-    const curSet = new Set(current)
-    const savSet = new Set(savedCodes)
-    const added = current
-        .filter(c => !savSet.has(c))
-        .map(c => ({ code: c, path: getPathByCode(c) }))
-    const removed = savedCodes
-        .filter(c => !curSet.has(c))
-        .map(c => ({ code: c, path: getPathByCode(c) }))
-    return { added, removed, total: added.length + removed.length }
+    const kw = keyword.value.trim().toLowerCase()
+    if (!kw) return groups
+    return groups
+        .map(group => {
+            if (group.name.toLowerCase().includes(kw) || group.code.toLowerCase().includes(kw)) {
+                return group
+            }
+            const pages = group.pages.filter(page =>
+                page.name.toLowerCase().includes(kw)
+                || page.code.toLowerCase().includes(kw)
+                || page.buttons.some(btn => btn.name.toLowerCase().includes(kw) || btn.code.toLowerCase().includes(kw))
+            )
+            return { ...group, pages }
+        })
+        .filter(group => group.pages.length > 0)
 })
 
-const walk = (nodes: PermNode[], fn: (n: PermNode) => void) => {
-    for (const n of nodes) { fn(n); if (n.children) walk(n.children, fn) }
+const allCollapsed = computed(() =>
+    visibleGroups.value.length > 0
+    && visibleGroups.value.every(group => group.leaf || collapsedGroups.has(group.code))
+)
+
+const groupAllChecked = (group: MatrixGroup) =>
+    group.pages.length > 0 && group.pages.every(page => checked.has(page.code))
+
+const groupIndeterminate = (group: MatrixGroup) => {
+    const count = group.pages.filter(page => checked.has(page.code)).length
+    return count > 0 && count < group.pages.length
 }
 
-// 采集勾选的 code（扁平化）
-const collectCodes = (): string[] => {
-    const codes: string[] = []
-    const scan = (nodes: PermNode[]) => {
-        for (const n of nodes) {
-            if (n.code === 'root') { scan(n.children || []); continue }
-            if (n.checked) codes.push(n.code)
-            if (n.children) scan(n.children)
-        }
+// ── 变更 ──
+
+const savedLeafCodes = ref<string[]>([])
+
+const currentLeafCodes = computed(() => [...checked])
+
+const pathOf = (code: string) => {
+    const names: string[] = []
+    let current = code
+    while (current && current !== 'ROOT') {
+        const node = nodeByCode.get(current)
+        if (!node) break
+        names.unshift(node.name)
+        current = parentByCode.get(current) || ''
     }
-    scan(permTreeData.value)
-    return codes
+    return names.join(' / ')
 }
 
-const checkChanged = () => {
-    const cur = JSON.stringify([...collectCodes()].sort())
-    hasChanges.value = cur !== snapshot
-}
+const diffAdded = computed(() => {
+    const savedSet = new Set(savedLeafCodes.value)
+    return currentLeafCodes.value
+        .filter(code => !savedSet.has(code))
+        .map(code => ({ code, path: pathOf(code) }))
+})
 
-// ============================================================
-//  勾选
-// ============================================================
+const diffRemoved = computed(() => {
+    const currentSet = new Set(currentLeafCodes.value)
+    return savedLeafCodes.value
+        .filter(code => !currentSet.has(code))
+        .map(code => ({ code, path: pathOf(code) }))
+})
 
-const onCheck = (data: PermNode, val: boolean) => {
-    checkChanged()
-}
+const diffTotal = computed(() => diffAdded.value.length + diffRemoved.value.length)
 
-// ============================================================
-//  角色切换
-// ============================================================
+// ── 角色权限 ──
 
-const selectRole = (role: string) => {
-    selectedRole.value = role
-    nextTick(() => applyPerm(role))
-}
+const rolePerms = reactive<Record<string, string[]>>({})
 
-const applyPerm = (role: string) => {
-    walk(permTreeData.value, n => { n.checked = false })
-    const codes = new Set(rolePerms[role] || [])
-    const scan = (nodes: PermNode[]) => {
-        for (const n of nodes) {
-            if (n.code !== 'root' && codes.has(n.code)) n.checked = true
-            if (n.children) scan(n.children)
-        }
+// ── 勾选交互 ──
+
+const togglePage = (page: MatrixPage, value: any) => {
+    if (Boolean(value)) {
+        checked.add(page.code)
+        return
     }
-    scan(permTreeData.value)
-
-    snapshot = JSON.stringify([...collectCodes()].sort())
-    savedCodes = [...collectCodes()].sort()
-    hasChanges.value = false
+    // 页面访问关闭后，该页按钮自动取消并进入只读态
+    checked.delete(page.code)
+    page.buttons.forEach(btn => checked.delete(btn.code))
 }
 
-// ============================================================
-//  保存 & 重置
-// ============================================================
+const toggleButton = (page: MatrixPage, btn: MatrixButton, value: any) => {
+    if (!checked.has(page.code)) return
+    if (Boolean(value)) checked.add(btn.code)
+    else checked.delete(btn.code)
+}
+
+const toggleGroupAll = (group: MatrixGroup, value: any) => {
+    if (Boolean(value)) {
+        group.pages.forEach(page => checked.add(page.code))
+        return
+    }
+    group.pages.forEach(page => {
+        checked.delete(page.code)
+        page.buttons.forEach(btn => checked.delete(btn.code))
+    })
+}
+
+const selectAllVisible = () => {
+    visibleGroups.value.forEach(group => {
+        group.pages.forEach(page => checked.add(page.code))
+    })
+}
+
+const toggleCollapse = (groupCode: string) => {
+    if (collapsedGroups.has(groupCode)) collapsedGroups.delete(groupCode)
+    else collapsedGroups.add(groupCode)
+}
+
+const toggleAllGroups = () => {
+    if (allCollapsed.value) {
+        collapsedGroups.clear()
+        return
+    }
+    visibleGroups.value.forEach(group => {
+        if (!group.leaf) collapsedGroups.add(group.code)
+    })
+}
+
+// ── 角色切换 / 重置 ──
+
+const applyPerm = (roleCode: string) => {
+    const codes = rolePerms[roleCode] || []
+    const leaves = codes.filter(code => leafCodeSet.value.has(code))
+    savedLeafCodes.value = leaves
+    rootChecked.value = codes.includes('ROOT')
+
+    checked.clear()
+    leaves.forEach(code => checked.add(code))
+
+    // 页面未授权时，其按钮一律不保留勾选，保持与页面访问联动一致
+    matrixGroups.value.forEach(group => group.pages.forEach(page => {
+        if (!checked.has(page.code)) page.buttons.forEach(btn => checked.delete(btn.code))
+    }))
+
+    collapsedGroups.clear()
+    moduleFilter.value = 'ALL'
+    keyword.value = ''
+}
+
+watch(selectedRole, roleCode => {
+    if (!roleCode || !nodeByCode.size) return
+    applyPerm(roleCode)
+})
+
+const resetPerm = () => {
+    applyPerm(selectedRole.value)
+    ElMessage.info('已重置为已保存的权限')
+}
+
+// ── 保存 ──
+
+const collectAncestors = (code: string, target: Set<string>) => {
+    let parent = parentByCode.get(code)
+    while (parent && parent !== 'ROOT') {
+        target.add(parent)
+        parent = parentByCode.get(parent)
+    }
+}
+
+const buildSaveCodes = () => {
+    const result = new Set<string>()
+    currentLeafCodes.value.forEach(code => {
+        result.add(code)
+        collectAncestors(code, result)
+    })
+    if (rootChecked.value) result.add('ROOT')
+    return [...result]
+}
+
+const saving = ref(false)
 
 const savePerm = async () => {
+    if (!selectedRole.value) {
+        ElMessage.warning('请先选择角色')
+        return
+    }
     saving.value = true
     try {
-        const permissions = collectCodes()
-        await permissionApi.updateRolePermission({
-            role: selectedRole.value,
-            permissions
-        })
-        rolePerms[selectedRole.value] = [...permissions]
-        savedCodes = [...permissions].sort()
-        snapshot = JSON.stringify(savedCodes)
-        hasChanges.value = false
+        const permissions = buildSaveCodes()
+        await permissionApi.updateRolePermission({ role: selectedRole.value, permissions })
+        rolePerms[selectedRole.value] = permissions
+        applyPerm(selectedRole.value)
         ElMessage.success('保存成功')
     } catch {
         ElMessage.error('保存失败')
@@ -240,246 +423,566 @@ const savePerm = async () => {
     }
 }
 
-const resetPerm = () => {
-    applyPerm(selectedRole.value)
-    ElMessage.info('已重置')
+// ── 树构建 ──
+
+const indexTree = (nodes: TreeNode[], parentCode: string) => {
+    nodes.forEach(node => {
+        nodeByCode.set(node.code, node)
+        parentByCode.set(node.code, parentCode)
+        if (node.children?.length) indexTree(node.children, node.code)
+    })
 }
 
-// ============================================================
-//  初始化
-// ============================================================
-
-const loadTree = async () => {
-    try {
-        // 从数据库加载角色列表
-        const roleRes = await roleApi.getRoleList({ page: 1, pageSize: 100 })
-        const roles = (roleRes as any).data?.list || []
-        roleList.value = roles.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            code: r.code
+const collectButtons = (node: TreeNode): MatrixButton[] =>
+    (node.children || [])
+        .filter(child => child.type === 'Button')
+        .map(child => ({
+            id: child.id,
+            code: child.code,
+            name: child.name,
+            highRisk: child.code.endsWith('_DELETE')
         }))
 
-        // 加载权限树
-        const res = await permissionApi.getPermissionTree()
-        const inject = (nodes: any[]): PermNode[] =>
-            nodes.map(n => ({
-                id: n.id, code: n.code, name: n.name,
-                checked: false,
-                children: n.children ? inject(n.children) : undefined
-            }))
-        permTreeData.value = inject((res as any).data || [])
+const buildMatrix = (roots: TreeNode[]): MatrixGroup[] => {
+    const root = roots.find(node => node.code === 'ROOT')
+    if (!root) return []
+    const groups: MatrixGroup[] = []
+    const leafCodes = new Set<string>()
 
-        // 加载角色权限
+    ;(root.children || []).forEach(top => {
+        if (top.type !== 'Menu') return
+        const pages: MatrixPage[] = []
+        const addPage = (node: TreeNode) => {
+            const page: MatrixPage = {
+                id: node.id,
+                code: node.code,
+                name: node.name,
+                buttons: collectButtons(node),
+                groupCode: top.code
+            }
+            pages.push(page)
+            leafCodes.add(page.code)
+            page.buttons.forEach(btn => leafCodes.add(btn.code))
+        }
+        const menuChildren = (top.children || []).filter(child => child.type === 'Menu')
+        const addPageTree = (node: TreeNode) => {
+            addPage(node)
+            ;(node.children || [])
+                .filter(child => child.type === 'Menu')
+                .forEach(addPageTree)
+        }
+        if (menuChildren.length) {
+            menuChildren.forEach(addPageTree)
+        } else {
+            addPage(top)
+        }
+        groups.push({
+            id: top.id,
+            code: top.code,
+            name: top.name,
+            pages,
+            leaf: menuChildren.length === 0
+        })
+    })
+
+    leafCodeSet.value = leafCodes
+    return groups
+}
+
+// ── 初始化 ──
+
+const loadData = async () => {
+    try {
+        const roleRes = await roleApi.getRoleList({ page: 1, pageSize: 100 })
+        const roles = (roleRes as any).data?.list || []
+        roleList.value = roles.map((role: any) => ({
+            id: role.id,
+            name: role.name,
+            code: role.code
+        }))
+
+        const treeRes = await permissionApi.getPermissionTree()
+        const roots = ((treeRes as any).data || []) as TreeNode[]
+        indexTree(roots, '')
+        matrixGroups.value = buildMatrix(roots)
+
         const permRes = await permissionApi.getPermissionList()
         const data = (permRes as any).data || {}
-        for (const [role, p] of Object.entries(data)) {
-            rolePerms[role] = (p as any).permissions || []
-        }
+        Object.entries(data).forEach(([roleCode, value]) => {
+            rolePerms[roleCode] = (value as any).permissions || []
+        })
 
-        if (roleList.value.length > 0 && !selectedRole.value) {
-            selectedRole.value = roleList.value[0].code
-        }
-        if (selectedRole.value) {
-            nextTick(() => applyPerm(selectedRole.value))
-        }
+        selectedRole.value = roleList.value[0]?.code || ''
+        if (selectedRole.value) applyPerm(selectedRole.value)
     } catch (error) {
         console.error('加载权限数据失败:', error)
         ElMessage.error('加载权限数据失败')
     }
 }
 
-onMounted(loadTree)
+onMounted(loadData)
 </script>
 
 <style scoped lang="scss">
 .permission-page {
     display: flex;
+    flex-direction: column;
     height: 100%;
-    gap: 16px;
+    gap: 12px;
 }
 
-// 左栏
-.role-panel {
-    width: 200px;
-    min-width: 200px;
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid var(--el-border-color-light);
+// 顶部角色栏
+.role-banner {
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: #fff;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 
-    .panel-header {
-        padding: 16px;
-        font-size: 15px;
-        font-weight: 600;
-        border-bottom: 1px solid var(--el-border-color-light);
-        background: var(--el-fill-color-light);
+    .banner-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
     }
 
-    .role-list {
-        flex: 1;
-        padding: 8px 0;
-    }
-
-    .role-item {
-        padding: 12px 16px;
-        cursor: pointer;
+    .banner-label {
         font-size: 14px;
-        border-left: 3px solid transparent;
-
-        &:hover {
-            background: var(--el-fill-color-light);
-        }
-
-        &.active {
-            background: var(--el-color-primary-light-9);
-            color: var(--el-color-primary);
-            border-left-color: var(--el-color-primary);
-            font-weight: 600;
-        }
-    }
-}
-
-// 中栏：权限树
-.perm-panel {
-    flex: 1;
-    min-width: 0;
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid var(--el-border-color-light);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-
-    .panel-header {
-        padding: 16px;
-        font-size: 15px;
         font-weight: 600;
-        border-bottom: 1px solid var(--el-border-color-light);
-        background: var(--el-fill-color-light);
+        white-space: nowrap;
     }
 
-    .perm-body {
-        flex: 1;
-        overflow-y: auto;
-        padding: 16px 24px;
+    .role-select {
+        width: 220px;
+    }
+
+    .banner-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: rgba(0, 150, 136, 0.1);
+        color: var(--el-color-primary);
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--el-color-primary);
+        }
+    }
+
+    .banner-actions {
+        display: flex;
+        gap: 8px;
     }
 }
 
-// 右栏：修改记录
+// 三栏工作区
+.workspace {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    gap: 12px;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: #f5f7fa;
+
+    .panel-count {
+        min-width: 20px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--el-color-primary);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 500;
+        text-align: center;
+    }
+}
+
+.matrix-panel,
 .changes-panel {
-    flex: 1;
-    min-width: 0;
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid var(--el-border-color-light);
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
 
-    .panel-header {
-        padding: 16px;
-        font-size: 15px;
+.matrix-panel {
+    flex: 1;
+    min-width: 0;
+}
+
+.changes-panel {
+    width: 320px;
+    flex-shrink: 0;
+}
+
+// 修改记录空态
+.panel-empty {
+    padding: 32px 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+}
+
+// 工具栏
+.matrix-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.module-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+
+    .toolbar-label {
+        margin-right: 2px;
+        font-size: 12px;
+        color: var(--el-text-color-secondary);
+    }
+}
+
+.chip {
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-regular);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover {
+        background: var(--el-fill-color);
+    }
+
+    &.active {
+        background: var(--el-color-primary);
+        border-color: var(--el-color-primary);
+        color: #fff;
+    }
+}
+
+.toolbar-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .row-search {
+        width: 200px;
+    }
+}
+
+// 矩阵表格
+.matrix-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.perm-matrix {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 8px 12px;
+        background: #f5f7fa;
+        border-bottom: 1px solid var(--el-border-color-lighter);
+        color: var(--el-text-color-secondary);
+        font-size: 11px;
         font-weight: 600;
-        border-bottom: 1px solid var(--el-border-color-light);
-        background: var(--el-fill-color-light);
-    }
+        letter-spacing: 0.04em;
+        text-align: left;
+        text-transform: uppercase;
 
-    .changes-summary {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--el-border-color-light);
-
-        .changes-spacer {
-            flex: 1;
+        &.col-access {
+            text-align: center;
         }
     }
 
-    .changes-scroll {
-        flex: 1;
-        overflow-y: auto;
-        padding: 8px 0;
+    td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--el-border-color-lighter);
+        vertical-align: middle;
     }
 
-    .change-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 16px;
+    .group-row td {
+        padding: 6px 12px;
+        background: rgba(245, 247, 250, 0.75);
+        cursor: pointer;
+    }
+
+    .page-row {
+        &:hover td {
+            background: rgba(0, 150, 136, 0.03);
+        }
+
+        &.is-off {
+            .page-name,
+            .code {
+                color: var(--el-text-color-secondary);
+            }
+        }
+    }
+}
+
+.group-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+
+    .group-caret {
         font-size: 13px;
-        line-height: 1.4;
+        color: var(--el-text-color-secondary);
+        transform: rotate(90deg);
+        transition: transform 0.15s;
 
-        .el-icon {
-            font-size: 13px;
-            flex-shrink: 0;
+        &.collapsed {
+            transform: rotate(0);
         }
+    }
 
-        .change-path {
-            word-break: break-all;
-        }
+    .folder-icon {
+        color: var(--el-color-primary);
+        font-size: 16px;
+    }
 
-        .change-code {
-            margin-left: auto;
-            font-size: 11px;
-            color: var(--el-text-color-placeholder);
-            font-family: monospace;
-            flex-shrink: 0;
-        }
+    .group-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--el-text-color-primary);
+    }
+
+    .group-count {
+        flex-shrink: 0;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--el-fill-color-light);
+        color: var(--el-text-color-secondary);
+        font-size: 11px;
+    }
+
+    .spacer {
+        flex: 1;
+    }
+
+    .group-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+    }
+
+    .group-all-label {
+        font-size: 11px;
+        color: var(--el-text-color-secondary);
+    }
+}
+
+.page-cell .page-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding-left: 26px;
+}
+
+.top-page .page-inner {
+    padding-left: 0;
+}
+
+.page-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--el-text-color-placeholder);
+    flex-shrink: 0;
+}
+
+.page-name {
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+}
+
+.code {
+    overflow: hidden;
+    color: var(--el-text-color-placeholder);
+    font-family: monospace;
+    font-size: 11px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.access-cell .access-inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.access-label {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    white-space: nowrap;
+
+    &.on {
+        color: var(--el-color-primary);
+        font-weight: 500;
+    }
+}
+
+.btn-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 14px;
+}
+
+.btn-chip {
+    margin-right: 0;
+
+    :deep(.el-checkbox__label) {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding-left: 6px;
+        font-size: 13px;
+    }
+
+    &:has(.risk-tag) :deep(.el-checkbox__label) {
+        color: var(--el-color-danger);
+    }
+}
+
+.risk-tag {
+    flex-shrink: 0;
+}
+
+.no-btn {
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+}
+
+.matrix-empty {
+    padding: 48px 12px !important;
+    text-align: center;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+}
+
+// 右栏
+.changes-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+}
+
+.changes-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.change-card {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+    background: #fff;
+
+    .change-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .change-tag {
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
 
         &.added {
+            background: rgba(103, 194, 58, 0.12);
             color: var(--el-color-success);
         }
 
         &.removed {
+            background: rgba(245, 108, 108, 0.12);
             color: var(--el-color-danger);
         }
     }
-}
 
-.empty-tip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    color: var(--el-text-color-secondary);
-    font-size: 14px;
-}
-
-
-// 树节点样式
-.custom-node {
-    display: flex;
-    align-items: center;
-    padding: 4px 0;
-
-    .el-checkbox {
-        margin-right: 4px;
+    .change-code {
+        overflow: hidden;
+        color: var(--el-text-color-placeholder);
+        font-family: monospace;
+        font-size: 11px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
-    .node-label {
-        font-size: 14px;
-    }
-}
-
-.is-root {
-    font-weight: 600;
-    font-size: 15px;
-    padding: 6px 0 2px 0;
-
-    .root-label {
+    .change-title {
+        margin-top: 4px;
+        font-size: 13px;
         color: var(--el-text-color-primary);
-        padding: 4px 0;
+        word-break: break-all;
+    }
+}
+
+// 窄屏纵向堆叠
+@media (max-width: 1360px) {
+    .workspace {
+        flex-direction: column;
+    }
+
+    .changes-panel {
+        width: auto;
+        max-height: 260px;
     }
 }
 </style>
-
-
-
-
-
-
-

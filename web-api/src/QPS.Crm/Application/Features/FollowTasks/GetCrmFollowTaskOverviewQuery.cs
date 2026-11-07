@@ -34,17 +34,17 @@ public class GetCrmFollowTaskOverviewHandler : IRequestHandler<GetCrmFollowTaskO
         var tomorrow = today.AddDays(1);
 
         var subjects = await _dbContext.CrmHerbBaseSubjects
-            .Where(x => !x.IsDeleted && x.OwnerUserId == ownerId)
+            .Where(x => x.OwnerUserId == ownerId)
             .Select(x => (DateTime?)x.NextFollowAt)
             .ToListAsync(cancellationToken);
 
         var vendors = await _dbContext.CrmVendors
-            .Where(x => !x.IsDeleted && x.OwnerUserId == ownerId)
+            .Where(x => x.OwnerUserId == ownerId)
             .Select(x => (DateTime?)x.NextFollowAt)
             .ToListAsync(cancellationToken);
 
         var opportunities = await _dbContext.CrmMatchOpportunities
-            .Where(x => !x.IsDeleted && x.OwnerUserId == ownerId && x.Status == CrmMatchOpportunity.InProgress)
+            .Where(x => x.OwnerUserId == ownerId && x.Status == CrmMatchOpportunity.InProgress)
             .Select(x => x.NextActionAt)
             .ToListAsync(cancellationToken);
 
@@ -54,7 +54,7 @@ public class GetCrmFollowTaskOverviewHandler : IRequestHandler<GetCrmFollowTaskO
         var noPlanCount = nextFollowAts.Count(x => !x.HasValue);
 
         var completedLast7DaysCount = await _dbContext.CrmFollowRecords.CountAsync(
-            x => !x.IsDeleted && x.OperatorUserId == ownerId && x.CreatedAt >= today.AddDays(-6) && x.CreatedAt < tomorrow,
+            x => x.OperatorUserId == ownerId && x.CreatedAt >= today.AddDays(-6) && x.CreatedAt < tomorrow,
             cancellationToken);
 
         return new CrmFollowTaskOverviewDto

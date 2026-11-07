@@ -78,7 +78,6 @@ internal static class MallProductRules
     {
         var duplicated = await dbContext.MallProducts.AnyAsync(
             product =>
-                !product.IsDeleted &&
                 product.Code == code &&
                 (!excludeId.HasValue || product.Id != excludeId.Value),
             cancellationToken);
@@ -250,7 +249,7 @@ internal static class MallProductRules
 
         var category = await dbContext.MallCategories
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == categoryId.Value && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == categoryId.Value, cancellationToken);
 
         if (category is null)
         {
@@ -266,8 +265,7 @@ internal static class MallProductRules
         {
             var parentIsActive = await dbContext.MallCategories.AnyAsync(
                 item => item.Id == category.ParentId.Value &&
-                        item.IsActive &&
-                        !item.IsDeleted,
+                        item.IsActive,
                 cancellationToken);
             if (!parentIsActive)
             {
@@ -276,7 +274,7 @@ internal static class MallProductRules
         }
 
         var hasChildren = await dbContext.MallCategories
-            .AnyAsync(item => item.ParentId == categoryId.Value && !item.IsDeleted, cancellationToken);
+            .AnyAsync(item => item.ParentId == categoryId.Value, cancellationToken);
         if (hasChildren)
         {
             throw new BusinessException(400, "商品必须归属末级分类");
@@ -298,7 +296,7 @@ internal static class MallProductRules
 
         var store = await dbContext.MallStores
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == storeId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == storeId, cancellationToken);
 
         if (store is null)
         {
@@ -311,6 +309,31 @@ internal static class MallProductRules
         }
     }
 
+    public static async Task EnsureFreightTemplateValidAsync(
+        IMallDbContext dbContext,
+        Guid? freightTemplateId,
+        CancellationToken cancellationToken)
+    {
+        if (!freightTemplateId.HasValue || freightTemplateId.Value == Guid.Empty)
+        {
+            throw new BusinessException(400, "请选择运费模板");
+        }
+
+        var template = await dbContext.MallFreightTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == freightTemplateId.Value, cancellationToken);
+
+        if (template is null)
+        {
+            throw new BusinessException(404, "运费模板不存在");
+        }
+
+        if (!template.IsActive)
+        {
+            throw new BusinessException(400, "运费模板已停用");
+        }
+    }
+
     public static async Task<List<MallTag>> GetActiveTagsAsync(
         IMallDbContext dbContext,
         IEnumerable<Guid>? tagIds,
@@ -320,7 +343,9 @@ internal static class MallProductRules
         if (ids.Length == 0) return new List<MallTag>();
 
         var tags = await dbContext.MallTags
-            .Where(tag => ids.Contains(tag.Id) && tag.IsActive && !tag.IsDeleted)
+            .Where(tag => ids.Contains(tag.Id) &&
+                          tag.Type == MallTagType.Product &&
+                          tag.IsActive)
             .ToListAsync(cancellationToken);
         if (tags.Count != ids.Length)
         {
@@ -367,7 +392,6 @@ internal static class MallProductRules
     {
         var duplicated = await dbContext.MallSkus.AnyAsync(
             sku =>
-                !sku.IsDeleted &&
                 sku.SkuCode == skuCode &&
                 (!excludeId.HasValue || sku.Id != excludeId.Value),
             cancellationToken);

@@ -68,7 +68,7 @@ public class MallNoticeHandlers :
 
     public async Task<List<MallNoticeDto>> Handle(GetMallNoticesQuery query, CancellationToken ct)
     {
-        var q = _dbContext.MallNotices.AsNoTracking().Where(n => !n.IsDeleted);
+        var q = _dbContext.MallNotices.AsNoTracking();
         if (query.IsActive.HasValue) q = q.Where(n => n.IsActive == query.IsActive.Value);
 
         return await q.OrderByDescending(n => n.IsTop).ThenBy(n => n.SortOrder).ThenByDescending(n => n.CreatedAt)
@@ -82,7 +82,7 @@ public class MallNoticeHandlers :
 
     public async Task<MallNoticeDto> Handle(GetMallNoticeQuery query, CancellationToken ct)
     {
-        var n = await _dbContext.MallNotices.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id && !x.IsDeleted, ct);
+        var n = await _dbContext.MallNotices.AsNoTracking().FirstOrDefaultAsync(x => x.Id == query.Id, ct);
         if (n is null) throw new BusinessException(404, "公告不存在");
 
         return new MallNoticeDto
@@ -97,7 +97,7 @@ public class MallNoticeHandlers :
     {
         var now = DateTime.UtcNow;
         return await _dbContext.MallNotices.AsNoTracking()
-            .Where(n => !n.IsDeleted && n.IsActive
+            .Where(n => n.IsActive
                 && (n.StartDate == null || n.StartDate <= now)
                 && (n.EndDate == null || n.EndDate >= now))
             .OrderByDescending(n => n.IsTop).ThenBy(n => n.SortOrder)
@@ -127,7 +127,7 @@ public class MallNoticeHandlers :
 
     public async Task<MallNoticeDto> Handle(UpdateMallNoticeCommand command, CancellationToken ct)
     {
-        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id && !n.IsDeleted, ct);
+        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id, ct);
         if (notice is null) throw new BusinessException(404, "公告不存在");
 
         var r = command.Request;
@@ -144,7 +144,7 @@ public class MallNoticeHandlers :
 
     public async Task<bool> Handle(DeleteMallNoticeCommand command, CancellationToken ct)
     {
-        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id && !n.IsDeleted, ct);
+        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id, ct);
         if (notice is null) throw new BusinessException(404, "公告不存在");
 
         _dbContext.MallNotices.Remove(notice);
@@ -154,7 +154,7 @@ public class MallNoticeHandlers :
 
     public async Task<bool> Handle(ChangeMallNoticeStatusCommand command, CancellationToken ct)
     {
-        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id && !n.IsDeleted, ct);
+        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id, ct);
         if (notice is null) throw new BusinessException(404, "公告不存在");
 
         notice.ChangeStatus(command.IsActive);
@@ -164,7 +164,7 @@ public class MallNoticeHandlers :
 
     public async Task<bool> Handle(SetMallNoticeTopCommand command, CancellationToken ct)
     {
-        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id && !n.IsDeleted, ct);
+        var notice = await _dbContext.MallNotices.FirstOrDefaultAsync(n => n.Id == command.Id, ct);
         if (notice is null) throw new BusinessException(404, "公告不存在");
 
         notice.SetTop(command.IsTop);

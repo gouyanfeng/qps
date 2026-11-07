@@ -1,12 +1,15 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallCoupons;
 using QPS.Mall.Application.Features.MallMemberCoupons;
 using QPS.Mall.Contracts.DTOs.MallCoupons;
+using QPS.Shared.Common;
 
 namespace QPS.Mall.Controllers;
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall/coupons")]
 public class MallCouponController : ControllerBase
 {
@@ -15,9 +18,25 @@ public class MallCouponController : ControllerBase
     public MallCouponController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
-    public async Task<ActionResult<(List<MallCouponDto> Items, int Total)>> Query([FromQuery] MallCouponQueryRequest request)
+    public async Task<ActionResult<PaginationResponse<MallCouponDto>>> Query(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? couponType = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] string? keyword = null)
     {
-        return Ok(await _mediator.Send(new QueryMallCouponsCommand { Request = request }));
+        var (items, total) = await _mediator.Send(new QueryMallCouponsCommand
+        {
+            Request = new MallCouponQueryRequest
+            {
+                PageIndex = page,
+                PageSize = pageSize,
+                CouponType = couponType,
+                IsActive = isActive,
+                Keyword = keyword
+            }
+        });
+        return Ok(new PaginationResponse<MallCouponDto>(items, total, page, pageSize));
     }
 
     [HttpGet("{id}")]
@@ -58,6 +77,7 @@ public class MallCouponController : ControllerBase
 }
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall/member-coupons")]
 public class MallMemberCouponController : ControllerBase
 {

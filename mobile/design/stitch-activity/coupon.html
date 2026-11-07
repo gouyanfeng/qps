@@ -1,0 +1,331 @@
+﻿<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_stack" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed-dim": "#ffb1c7", "on-primary-container": "#cbffc2", "secondary": "#8b5000", "on-surface": "#1b1c1c", "on-error": "#ffffff", "tertiary": "#923357", "outline-variant": "#bfcaba", "inverse-primary": "#88d982", "secondary-fixed-dim": "#ffb870", "secondary-fixed": "#ffdcbe", "secondary-container": "#ff9800", "on-primary": "#ffffff", "inverse-on-surface": "#f3f0ef", "surface": "#fcf9f8", "on-secondary-container": "#653900", "on-secondary": "#ffffff", "on-error-container": "#93000a", "on-primary-fixed-variant": "#005312", "surface-variant": "#e5e2e1", "on-tertiary": "#ffffff", "surface-tint": "#1b6d24", "primary-container": "#2e7d32", "surface-container-low": "#f6f3f2", "surface-container-lowest": "#ffffff", "on-primary-fixed": "#002204", "primary-fixed-dim": "#88d982", "on-surface-variant": "#40493d", "error": "#ba1a1a", "primary-fixed": "#a3f69c", "on-secondary-fixed": "#2c1600", "outline": "#707a6c", "surface-container": "#f0eded", "surface-container-highest": "#e5e2e1", "tertiary-fixed": "#ffd9e2", "surface-bright": "#fcf9f8", "on-background": "#1b1c1c", "on-secondary-fixed-variant": "#693c00", "surface-container-high": "#eae7e7", "on-tertiary-fixed": "#3f001c", "on-tertiary-fixed-variant": "#7f2448", "on-tertiary-container": "#ffedf0", "inverse-surface": "#303030", "primary": "#0d631b", "tertiary-container": "#b14b6f", "surface-dim": "#dcd9d9", "error-container": "#ffdad6", "background": "#fcf9f8" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin": "1rem", "space-md": "0.75rem", "space-xl": "1.5rem", "gutter": "0.75rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-lg": "1rem" }, fontFamily: { "headline-lg-mobile": ["Noto Serif", "Noto Serif SC", "serif"], "headline-md": ["Noto Serif", "Noto Serif SC", "serif"], "body-sm": ["Plus Jakarta Sans", "sans-serif"], "headline-lg": ["Noto Serif", "Noto Serif SC", "serif"], "label-lg": ["Plus Jakarta Sans", "sans-serif"], "body-lg": ["Plus Jakarta Sans", "sans-serif"], "label-sm": ["Plus Jakarta Sans", "sans-serif"], "display": ["Noto Serif", "Noto Serif SC", "serif"], "body-md": ["Plus Jakarta Sans", "sans-serif"], "label-md": ["Plus Jakarta Sans", "sans-serif"] }, fontSize: { "headline-lg-mobile": ["1.25rem", { lineHeight: "1.75rem", fontWeight: "600" }], "headline-md": ["1.125rem", { lineHeight: "1.6rem", fontWeight: "600" }], "body-sm": ["0.75rem", { lineHeight: "1.125rem", fontWeight: "400" }], "headline-lg": ["1.5rem", { lineHeight: "2rem", fontWeight: "600" }], "label-lg": ["0.875rem", { lineHeight: "1.25rem", fontWeight: "600" }], "body-lg": ["1rem", { lineHeight: "1.5rem", fontWeight: "400" }], "label-sm": ["0.6875rem", { lineHeight: "0.875rem", fontWeight: "500" }], "display": ["2rem", { lineHeight: "2.5rem", fontWeight: "600" }], "body-md": ["0.875rem", { lineHeight: "1.375rem", fontWeight: "400" }], "label-md": ["0.75rem", { lineHeight: "1rem", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin flex items-center justify-between max-w-[480px] mx-auto"><button aria-label="返回" class="w-11 h-11 -ml-space-xs flex items-center justify-center text-on-surface hover:text-primary transition-colors active:scale-95" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="flex-1 text-center font-headline-md text-headline-md text-on-surface tracking-tight truncate px-space-xs">Seasonal Herb Special</h1><div class="flex items-center gap-space-xs -mr-space-xs"><button aria-label="分享专场" class="w-11 h-11 flex items-center justify-center text-on-surface hover:text-primary transition-colors active:scale-95" type="button"><span class="material-symbols-outlined text-[22px]">share</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-safe bg-surface max-w-[480px] mx-auto min-h-screen"><div class="flex flex-col w-full">
+<!-- Editorial Article Wrapper -->
+<article class="flex flex-col w-full px-margin pb-80 pt-space-md">
+<!-- Meta Header & Badges -->
+<div class="flex items-center justify-between gap-space-xs mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm">
+          VOL.09 · 霜降特刊
+        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container/15 text-on-secondary-container font-label-sm text-label-sm">
+          寻药手记礼遇
+        </span>
+</div>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px] text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="">执业中药师联合审校</span>
+</div>
+</div>
+<!-- Editorial Title -->
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight leading-snug mb-space-xs">
+      霜降藏精，以券为信：四时草木里的厚意与省心之道
+    </h1>
+<!-- Author & Reading Stats -->
+<div class="flex items-center gap-space-sm text-on-surface-variant font-body-sm text-body-sm mb-space-lg">
+<span class="">文 / 青木居士 · 手记专栏作家</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="">阅读约 4 分钟</span>
+</div>
+<!-- Hero Editorial Media & Poetic Block -->
+<div class="flex flex-col w-full mb-space-xl">
+<div class="w-full aspect-[16/9] rounded-xl overflow-hidden bg-surface-container shadow-sm">
+<img alt="秋令草本手记" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UdK3mvuqksPZN7249XvP_4QxuEYtt9TdJOmBOxzbn7YMdSGm3lbnp2kVioPfk8siRXR3ebAILim59uNmazfsCmlFWyUP5ZOYrtXIpfBL3Zwzba1Az9veoxlPK_TPogOQZFwjF4rtXjG-30UQ0zSYvsJOLeOUkIhw9lMSIoJAE7uqedABpwXKE2JqvNE2LvpOGjQkMB5cjH2-kJBaFOAPXz8in0wqBphG_a9xgyLo2a5IOlnlLF28H15z8">
+</div>
+<p class="mt-space-xs px-space-xs text-on-surface-variant font-body-sm text-body-sm italic tracking-wide text-center">
+        「时序至霜降，天地敛精气。国医以券赠友，佐四时温润调补。」
+      </p>
+</div>
+<!-- Chapter 1 -->
+<section class="flex flex-col w-full mb-space-xl">
+<div class="flex items-center gap-2 mb-space-md">
+<span class="w-1 h-4 rounded-full bg-primary-container"></span>
+<h2 class="font-headline-md text-headline-md text-on-surface">草木有信，四时之馈</h2>
+</div>
+<div class="space-y-space-md text-on-surface font-body-md text-body-md leading-relaxed">
+<p class="">
+          秋风吹过长白山麓，山林尽染霜色。古人以「霜降」为秋冬气交之枢纽，阳气潜伏、阴精始藏。此时人身如草木，津液易燥，气脉易虚，亟需遵依四时造化，予身心以温和而坚韧的托举。
+        </p>
+<p class="">
+          然而，寻得真道地、守住好火候，往往是繁琐而高昂的修行。长白十五年林下生晒山参、新会梅江十年陈皮、宁夏中宁头茬红枸杞——这些沉淀山川灵韵的草木灵质，不当被高门所独占。我们深信，真正安神健魄的东方本草，应当洗尽铅华，从容落在千家万户的晨暮茶席与温火砂锅中。
+        </p>
+</div>
+<!-- Secondary Photo: Ginseng -->
+<div class="flex flex-col w-full mt-space-md">
+<div class="w-full aspect-square rounded-xl overflow-hidden bg-surface-container shadow-sm">
+<img alt="长白山林下生晒参" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1U2F-tPQzTppuPTkiDEaUXRjskwjnafwKHb5JOk6M9l_KU1gW37LF_sSVIM8mTg8x390F7CMvgzGWQ-1DcSzV3NJT0AgVz9mHyRb4PURFgcxg2Fyts3bd_1L-6dc8HxfLv-5auta9J3qxG9BASH0GaGYyCGzhXESe2Kv34SPsQYxw7qsczARf6VxYXgQ92uZpcX8BNVb_z9FEdrMfEXvP__JBZjpzwD11IlNa8UV66peJlaQ18EvoQto7g">
+</div>
+<span class="mt-space-xs text-on-surface-variant font-label-sm text-label-sm text-center">
+          吉林抚松核心采挖点 · 纯正十五年林下生晒
+        </span>
+</div>
+</section>
+<!-- Chapter 2 -->
+<section class="flex flex-col w-full mb-space-xl">
+<div class="flex items-center gap-2 mb-space-md">
+<span class="w-1 h-4 rounded-full bg-primary-container"></span>
+<h2 class="font-headline-md text-headline-md text-on-surface">一券一诺：从道地深山到君安案头</h2>
+</div>
+<div class="space-y-space-md text-on-surface font-body-md text-body-md leading-relaxed">
+<p class="">
+          为了守住这份信任，我们与国家中药材基地直接对接，全程实施 GAP 规范种植及药典级冷链直发。本期《时令草本手记》特别联合执业中药师团队，梳理出四组阶梯配伍礼券。
+        </p>
+<p class="">
+          这一纸券包不仅是一份心意折扣，更是对药食同源品质的郑重背书。无需费心比价计算，以券定方，让每位懂得顺时调养的生活家，都能无负担开启深秋首场滋补之旅。
+        </p>
+</div>
+<!-- Side-by-side Botanical Images -->
+<div class="grid grid-cols-2 gap-gutter mt-space-md">
+<div class="flex flex-col">
+<div class="w-full aspect-square rounded-xl overflow-hidden bg-surface-container shadow-sm">
+<img alt="宁夏纯正红枸杞" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VH45uN7iCreIPPCxQf9EuTxNR_GisNd3cgqHLiHDdLFFaheuR3ZOuDSe3RioaXCRHAjpwor4VCT6ytWlNFysHpAtJ3WUeN5e0RLJ1XdJHxmiQKNHm6HZGKlJA6vZqlISU_EFv5TrO1KeiXvauslVHzExp0WYnXOsz0sVNDGufXSUTuI7VFbBt5kpmZ9v3vUuehtoENBeRNz-LQsqZg541i7p2wShHZrxM1YRrJZLrMjt9JHFrPbPHtugU">
+</div>
+<span class="mt-space-xs text-on-surface-variant font-label-sm text-label-sm text-center truncate">
+            中宁头茬纯正红枸杞
+          </span>
+</div>
+<div class="flex flex-col">
+<div class="w-full aspect-square rounded-xl overflow-hidden bg-surface-container shadow-sm">
+<img alt="甘肃岷县当归切片" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UPsrE_Jka8F9viFLB55eYnKoXTNafFhg_ntrVE90klUBnzwc5SPctaznLaZOZcxDdmFcM574sSTw8gxiA7z07XQZPmbJD6CRFYVuSNz9-wYoVz4X2iwlslbMvqvPGQyJqpeWBAqcwCBVQmpvfz_Eu6DwHlHZ-76ru-CcvOCivdcjANpJzLZoZWUwkbxD3TacIL3Ot19LzcTcwgADAkd8h-zFCRWrU5V7z0gmFOeGLpItXhtgGiZ7xtrQ">
+</div>
+<span class="mt-space-xs text-on-surface-variant font-label-sm text-label-sm text-center truncate">
+            甘肃岷县头采原生态当归片
+          </span>
+</div>
+</div>
+</section>
+<!-- Special Tips Box -->
+<section class="flex flex-col w-full rounded-xl bg-surface-container-low p-space-md space-y-space-sm mb-space-lg">
+<div class="flex items-center gap-space-xs text-primary">
+<span class="material-symbols-outlined text-[20px]">lightbulb</span>
+<h3 class="font-headline-md text-headline-md text-primary">执业药师 · 领券调配三法指南</h3>
+</div>
+<ul class="space-y-space-xs font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+<li class="flex items-start gap-2">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>
+<span class=""><strong class="text-on-surface">满减券搭配建议：</strong>建议搭配参茸贵细与日常花茶饮片合并结算，享阶梯满减，效益最优；</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>
+<span class=""><strong class="text-on-surface">冷链免邮券用法：</strong>鲜参及特级膏滋专享，顺丰医药级温控仓直达案头；</span>
+</li>
+<li class="flex items-start gap-2">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>
+<span class=""><strong class="text-on-surface">规则透明无门槛：</strong>新客尝鲜券可与会员积点并用，全场道地保真。</span>
+</li>
+</ul>
+</section>
+</article>
+<!-- Bottom Fixed Dock Panel -->
+<aside class="fixed bottom-0 left-0 right-0 z-40 max-w-[480px] mx-auto bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-safe"><!-- Dock Top Strip -->
+<div class="flex items-center justify-between px-margin py-2.5 bg-surface-container-low">
+  <div class="flex items-center gap-2">
+    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+    <span class="font-label-md text-label-md text-on-surface">本期手记推荐 · 润燥固元厚礼券包</span>
+  </div>
+  <span class="px-2 py-0.5 rounded-full bg-secondary-container/15 text-on-secondary-container font-label-sm text-label-sm font-semibold">
+    4张专享券 · 全套立省¥215
+  </span>
+</div>
+<!-- Scrollable Coupon Selection List without Checkboxes -->
+<div class="px-margin py-space-sm space-y-space-xs max-h-56 overflow-y-auto" id="coupon-list">
+  <!-- Voucher 1 -->
+  <div class="coupon-item flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low transition-all" data-amount="50" data-id="c1">
+    <div class="flex items-center gap-space-sm min-w-0 flex-1">
+      <div class="flex flex-col shrink-0 min-w-[62px]">
+        <span class="font-headline-md text-headline-md text-primary leading-tight font-semibold">¥50</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant">满300可用</span>
+      </div>
+      <div class="flex flex-col min-w-0 ml-1">
+        <span class="font-label-md text-label-md text-on-surface truncate">全场道地药材通用券</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant truncate">人参饮片/阿胶/全场滋补</span>
+      </div>
+    </div>
+    <button class="single-claim-btn px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container active:scale-95 transition-all shrink-0 ml-2" data-id="c1" onclick="this.textContent='已领取';this.classList.remove('bg-primary','text-on-primary','hover:bg-primary-container','active:scale-95');this.classList.add('bg-surface-container-high','text-on-surface-variant','cursor-default');this.disabled=true;" type="button">
+      立即领取
+    </button>
+  </div>
+  <!-- Voucher 2 -->
+  <div class="coupon-item flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low transition-all" data-amount="100" data-id="c2">
+    <div class="flex items-center gap-space-sm min-w-0 flex-1">
+      <div class="flex flex-col shrink-0 min-w-[62px]">
+        <span class="font-headline-md text-headline-md text-primary leading-tight font-semibold">¥100</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant">满500可用</span>
+      </div>
+      <div class="flex flex-col min-w-0 ml-1">
+        <span class="font-label-md text-label-md text-on-surface truncate">参茸贵细专场抵扣券</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant truncate">一木一盒道地溯源/生晒野山参</span>
+      </div>
+    </div>
+    <button class="single-claim-btn px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container active:scale-95 transition-all shrink-0 ml-2" data-id="c2" onclick="this.textContent='已领取';this.classList.remove('bg-primary','text-on-primary','hover:bg-primary-container','active:scale-95');this.classList.add('bg-surface-container-high','text-on-surface-variant','cursor-default');this.disabled=true;" type="button">
+      立即领取
+    </button>
+  </div>
+  <!-- Voucher 3 -->
+  <div class="coupon-item flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low transition-all" data-amount="20" data-id="c3">
+    <div class="flex items-center gap-space-sm min-w-0 flex-1">
+      <div class="flex flex-col shrink-0 min-w-[62px]">
+        <span class="font-headline-md text-headline-md text-primary leading-tight font-semibold">¥20</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant">无门槛立减</span>
+      </div>
+      <div class="flex flex-col min-w-0 ml-1">
+        <span class="font-label-md text-label-md text-on-surface truncate">新人滋补尝鲜券</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant truncate">草本花茶/轻养膏滋通用</span>
+      </div>
+    </div>
+    <button class="single-claim-btn px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container active:scale-95 transition-all shrink-0 ml-2" data-id="c3" onclick="this.textContent='已领取';this.classList.remove('bg-primary','text-on-primary','hover:bg-primary-container','active:scale-95');this.classList.add('bg-surface-container-high','text-on-surface-variant','cursor-default');this.disabled=true;" type="button">
+      立即领取
+    </button>
+  </div>
+  <!-- Voucher 4 -->
+  <div class="coupon-item flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low transition-all" data-amount="15" data-id="c4">
+    <div class="flex items-center gap-space-sm min-w-0 flex-1">
+      <div class="flex flex-col shrink-0 min-w-[62px]">
+        <span class="font-headline-md text-headline-md text-primary leading-tight font-semibold">¥15</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant">运费立抵</span>
+      </div>
+      <div class="flex flex-col min-w-0 ml-1">
+        <span class="font-label-md text-label-md text-on-surface truncate">顺丰恒温冷链免邮券</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant truncate">实付满¥69抵扣</span>
+      </div>
+    </div>
+    <button class="single-claim-btn px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container active:scale-95 transition-all shrink-0 ml-2" data-id="c4" onclick="this.textContent='已领取';this.classList.remove('bg-primary','text-on-primary','hover:bg-primary-container','active:scale-95');this.classList.add('bg-surface-container-high','text-on-surface-variant','cursor-default');this.disabled=true;" type="button">
+      立即领取
+    </button>
+  </div>
+</div>
+<!-- Streamlined Dock Action Bar -->
+<div class="px-margin pt-space-xs pb-space-sm flex items-center justify-between gap-space-md">
+  <div class="flex flex-col">
+    <span class="text-on-surface-variant font-label-sm text-label-sm">券包合计价值</span>
+    <div class="flex items-baseline gap-1">
+      <span class="text-primary font-headline-lg-mobile text-headline-lg-mobile font-semibold">¥215</span>
+      <span class="text-on-surface-variant font-body-sm text-body-sm">全套立减</span>
+    </div>
+  </div>
+  <button class="flex-1 h-11 rounded-xl bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center justify-center shadow-sm active:scale-95 transition-transform" id="claim-all-btn" onclick="document.querySelectorAll('.single-claim-btn').forEach(btn =&gt; { btn.textContent='已领取'; btn.classList.remove('bg-primary','text-on-primary','hover:bg-primary-container','active:scale-95'); btn.classList.add('bg-surface-container-high','text-on-surface-variant','cursor-default'); btn.disabled=true; }); this.textContent='全套已领 · 随单即享'; this.classList.replace('bg-primary-container','bg-surface-container-high'); this.classList.replace('text-on-primary','text-on-surface-variant'); this.disabled=true;" type="button">
+    一键全领券包 (立省¥215)
+  </button>
+</div></aside>
+<!-- Interactive Logic -->
+<script>
+    (function () {
+      const state = {
+        c1: { checked: true, amount: 50, claimed: false },
+        c2: { checked: true, amount: 100, claimed: false },
+        c3: { checked: true, amount: 20, claimed: false },
+        c4: { checked: true, amount: 15, claimed: false },
+      };
+
+      const selectedCountEl = document.getElementById('selected-count');
+      const selectedSavingEl = document.getElementById('selected-saving');
+      const claimCountBtnEl = document.getElementById('claim-count-btn');
+      const claimSelectedBtn = document.getElementById('claim-selected-btn');
+      const claimAllBtn = document.getElementById('claim-all-btn');
+
+      function updateSummary() {
+        let count = 0;
+        let total = 0;
+        Object.keys(state).forEach((key) => {
+          if (state[key].checked) {
+            count++;
+            total += state[key].amount;
+          }
+        });
+        selectedCountEl.textContent = count;
+        claimCountBtnEl.textContent = count;
+        selectedSavingEl.textContent = '¥' + total.toFixed(2);
+      }
+
+      // Checkbox click
+      document.querySelectorAll('.coupon-check').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          state[id].checked = !state[id].checked;
+          if (state[id].checked) {
+            btn.classList.remove('bg-surface-container-highest', 'text-on-surface-variant');
+            btn.classList.add('bg-primary', 'text-on-primary');
+            btn.innerHTML = '<span class="material-symbols-outlined text-[15px]">check</span>';
+          } else {
+            btn.classList.remove('bg-primary', 'text-on-primary');
+            btn.classList.add('bg-surface-container-highest', 'text-on-surface-variant');
+            btn.innerHTML = '';
+          }
+          updateSummary();
+        });
+      });
+
+      // Individual Claim Button
+      document.querySelectorAll('.single-claim-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          state[id].claimed = true;
+          btn.textContent = '已入券包';
+          btn.classList.remove('bg-primary/10', 'text-primary', 'hover:bg-primary/20');
+          btn.classList.add('bg-surface-container-highest', 'text-on-surface-variant', 'cursor-default');
+          btn.disabled = true;
+        });
+      });
+
+      // Claim Selected Action
+      claimSelectedBtn.addEventListener('click', () => {
+        let claimedAny = false;
+        Object.keys(state).forEach((id) => {
+          if (state[id].checked && !state[id].claimed) {
+            state[id].claimed = true;
+            claimedAny = true;
+            const singleBtn = document.querySelector(`.single-claim-btn[data-id="${id}"]`);
+            if (singleBtn) {
+              singleBtn.textContent = '已入券包';
+              singleBtn.classList.remove('bg-primary/10', 'text-primary');
+              singleBtn.classList.add('bg-surface-container-highest', 'text-on-surface-variant', 'cursor-default');
+              singleBtn.disabled = true;
+            }
+          }
+        });
+        if (claimedAny) {
+          claimSelectedBtn.textContent = '领取成功';
+          setTimeout(() => {
+            claimSelectedBtn.innerHTML = '领取已选 (<span id="claim-count-btn">' + selectedCountEl.textContent + '</span>)';
+          }, 1500);
+        }
+      });
+
+      // Claim All Action
+      claimAllBtn.addEventListener('click', () => {
+        Object.keys(state).forEach((id) => {
+          state[id].checked = true;
+          state[id].claimed = true;
+          const checkBtn = document.querySelector(`.coupon-check[data-id="${id}"]`);
+          if (checkBtn) {
+            checkBtn.classList.remove('bg-surface-container-highest', 'text-on-surface-variant');
+            checkBtn.classList.add('bg-primary', 'text-on-primary');
+            checkBtn.innerHTML = '<span class="material-symbols-outlined text-[15px]">check</span>';
+          }
+          const singleBtn = document.querySelector(`.single-claim-btn[data-id="${id}"]`);
+          if (singleBtn) {
+            singleBtn.textContent = '已入券包';
+            singleBtn.classList.remove('bg-primary/10', 'text-primary');
+            singleBtn.classList.add('bg-surface-container-highest', 'text-on-surface-variant', 'cursor-default');
+            singleBtn.disabled = true;
+          }
+        });
+        updateSummary();
+        claimAllBtn.textContent = '全套已领 · 随单即享';
+        claimAllBtn.classList.replace('bg-primary-container', 'bg-surface-container-highest');
+        claimAllBtn.classList.replace('text-on-primary', 'text-on-surface-variant');
+        claimAllBtn.disabled = true;
+      });
+    })();
+  </script>
+</div></main>
+
+</body></html>

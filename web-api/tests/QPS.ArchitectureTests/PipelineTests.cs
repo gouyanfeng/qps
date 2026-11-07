@@ -14,6 +14,7 @@ public class PipelineTests
     {
         AssertNoPipelineBehaviours(typeof(QPS.System.DependencyInjection).Assembly);
         AssertNoPipelineBehaviours(typeof(QPS.Crm.DependencyInjection).Assembly);
+        AssertNoPipelineBehaviours(typeof(QPS.Mall.DependencyInjection).Assembly);
         AssertNoPipelineBehaviours(typeof(QPS.Persistence.DependencyInjection).Assembly);
     }
 

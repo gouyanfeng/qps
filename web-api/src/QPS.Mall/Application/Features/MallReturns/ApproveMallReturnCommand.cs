@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Mall.Application.Features.MallOrders;
 using QPS.Mall.Contracts;
+using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain;
 using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
@@ -14,6 +16,9 @@ public class ApproveMallReturnCommand : IRequest<MallReturnDto>
     public string? ReturnNo { get; set; }
 
     public bool Approve { get; set; }
+
+    /// <summary>审核拒绝时填写的原因。</summary>
+    public string? RejectReason { get; set; }
 }
 
 public class ApproveMallReturnHandler : IRequestHandler<ApproveMallReturnCommand, MallReturnDto>
@@ -29,7 +34,11 @@ public class ApproveMallReturnHandler : IRequestHandler<ApproveMallReturnCommand
         ApproveMallReturnCommand command,
         CancellationToken cancellationToken)
     {
-        var returnEntity = await ResolveReturnAsync(command, cancellationToken);
+        var returnEntity = await MallReturnMapper.ResolveAsync(
+            _dbContext,
+            command.ReturnId,
+            command.ReturnNo,
+            cancellationToken);
 
         if (returnEntity.Status != MallReturnStatus.Pending)
         {
@@ -53,69 +62,15 @@ public class ApproveMallReturnHandler : IRequestHandler<ApproveMallReturnCommand
         }
         else
         {
-            var previousStatus = order.Status == MallOrderStatus.Returning
-                ? MallOrderStatus.Shipped
-                : MallOrderStatus.Shipped;
+            // 拒绝退货时回到退货前真实状态：已退款待入库 → Refunded，已签收 → Completed，否则 → Shipped
+            var previousStatus = MallOrderResolver.StatusBeforeReturn(order);
 
             order.FailReturn(previousStatus);
-            returnEntity.Reject();
+            returnEntity.Reject(command.RejectReason);
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ToDto(returnEntity);
-    }
-
-    private async Task<MallReturn> ResolveReturnAsync(
-        ApproveMallReturnCommand command,
-        CancellationToken cancellationToken)
-    {
-        MallReturn? r;
-
-        if (command.ReturnId.HasValue)
-        {
-            r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.Id == command.ReturnId.Value && !x.IsDeleted, cancellationToken);
-        }
-        else if (!string.IsNullOrWhiteSpace(command.ReturnNo))
-        {
-            var normalized = command.ReturnNo.Trim();
-            r = await _dbContext.MallReturns
-                .FirstOrDefaultAsync(x => x.ReturnNo == normalized && !x.IsDeleted, cancellationToken);
-        }
-        else
-        {
-            throw new BusinessException(400, "退货单标识不能为空");
-        }
-
-        if (r is null)
-        {
-            throw new BusinessException(404, "退货单不存在");
-        }
-
-        return r;
-    }
-
-    private static MallReturnDto ToDto(MallReturn r)
-    {
-        return new MallReturnDto
-        {
-            Id = r.Id,
-            ReturnNo = r.ReturnNo,
-            OrderId = r.OrderId,
-            PaymentId = r.PaymentId,
-            RefundId = r.RefundId,
-            Amount = r.Amount,
-            Reason = r.Reason,
-            Status = r.Status,
-            ExpressCompany = r.ExpressCompany,
-            TrackingNo = r.TrackingNo,
-            ApprovedAt = r.ApprovedAt,
-            RejectedAt = r.RejectedAt,
-            ShippedAt = r.ShippedAt,
-            ReceivedAt = r.ReceivedAt,
-            CompletedAt = r.CompletedAt,
-            CreatedAt = r.CreatedAt
-        };
+        return MallReturnMapper.ToDto(returnEntity);
     }
 }

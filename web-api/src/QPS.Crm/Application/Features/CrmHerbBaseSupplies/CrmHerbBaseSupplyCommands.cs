@@ -56,7 +56,7 @@ public class DeleteCrmHerbBaseSupplyHandler(ICrmDbContext dbContext, IDomainEven
     {
         var supply = await dbContext.CrmHerbBaseSupplies.FirstOrDefaultAsync(item => item.Id == command.Id, cancellationToken) ?? throw new BusinessException(404, "供应信息不存在");
         if (supply.Status != CrmHerbBaseSupply.Pending) throw new BusinessException(400, "只有待确认供应信息可以删除");
-        supply.IsDeleted = true;
+        supply.SoftDelete();
         await dbContext.SaveChangesAsync(cancellationToken);
         await CrmHerbBaseSupplyScoreNotifier.PublishAsync(dispatcher, supply.HerbBaseSubjectId, cancellationToken);
         return true;

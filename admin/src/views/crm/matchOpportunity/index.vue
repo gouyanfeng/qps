@@ -61,7 +61,7 @@
             </template>
           </el-table-column>
           <el-table-column label="更新时间" width="180"><template #default="{ row }">{{ formatDate(row.updatedAt) }}</template></el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column label="操作" width="150" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="row.status !== '已关闭'" link type="primary" @click="openProgress(row)">推进</el-button></Permission>
               <Permission code="CRM_MATCH_OPPORTUNITY_VIEW"><el-button link type="primary" @click="openDetail(row.id)">详情</el-button></Permission>

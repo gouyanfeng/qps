@@ -32,9 +32,13 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             req.ScopeType,
             req.Scopes,
             cancellationToken);
+        await MallPromotionRules.ValidatePromotionTagAsync(
+            _dbContext,
+            req.PromotionTagId,
+            cancellationToken);
 
         var promotion = await _dbContext.MallPromotions
-            .FirstOrDefaultAsync(p => p.Id == command.PromotionId && !p.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == command.PromotionId, cancellationToken);
 
         if (promotion is null)
         {
@@ -44,13 +48,12 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
         promotion.Update(
             req.Name.Trim(),
             req.Description?.Trim() ?? string.Empty,
-            req.TriggerType,
-            req.TriggerConfigJson,
+            (MallPromotionType)req.PromotionType,
+            req.ThresholdAmount,
             req.ActionType,
             req.ActionConfigJson,
             req.ScopeType,
-            req.MaxUsagePerUser,
-            req.MaxUsagePerOrder,
+            req.PromotionTagId,
             req.StartDate,
             req.EndDate);
 
@@ -62,7 +65,7 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
 
         foreach (var scope in existingScopes)
         {
-            scope.IsDeleted = true;
+            scope.SoftDelete();
         }
 
         foreach (var scopeReq in req.Scopes.Where(_ => req.ScopeType != "Global"))

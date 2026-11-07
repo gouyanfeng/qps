@@ -17,6 +17,8 @@ public interface IMallDbContext
 
     DbSet<MallProductTag> MallProductTags { get; }
 
+    DbSet<MallProductReview> MallProductReviews { get; }
+
     DbSet<MallSku> MallSkus { get; }
 
     DbSet<MallOrder> MallOrders { get; }
@@ -41,13 +43,11 @@ public interface IMallDbContext
 
     DbSet<MallPromotionScope> MallPromotionScopes { get; }
 
-    DbSet<MallPromotionUsage> MallPromotionUsages { get; }
+    DbSet<MallCampaign> MallCampaigns { get; }
 
-    DbSet<MallActivity> MallActivities { get; }
+    DbSet<MallCampaignProduct> MallCampaignProducts { get; }
 
-    DbSet<MallActivityPromotion> MallActivityPromotions { get; }
-
-    DbSet<MallCart> MallCarts { get; }
+    DbSet<MallCampaignCoupon> MallCampaignCoupons { get; }
 
     DbSet<MallCartItem> MallCartItems { get; }
 

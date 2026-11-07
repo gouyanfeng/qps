@@ -53,7 +53,7 @@
               <span v-else>{{ matchProgressLabel(row) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="110" fixed="right">
+          <el-table-column label="操作" width="110" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canStartMatch(row)" link type="primary" @click="startMatch(row)">开始撮合</el-button></Permission>
             </template>
@@ -67,10 +67,12 @@
 <script setup lang="ts">
 import { reactive } from "vue";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/modules/auth";
 import Permission from "@/components/Permission/index.vue";
 import QueryPage from "@/components/QueryPage/index.vue";
 
 const router = useRouter();
+const authStore = useAuthStore();
 const statuses = ["待确认", "有效", "已完成", "已关闭"];
 const searchForm = reactive({ keyword: "", status: "" });
 
@@ -92,7 +94,7 @@ const handleReset = () => {
   searchForm.status = "";
 };
 
-const canStartMatch = (row: any) => row.status === "有效";
+const canStartMatch = (row: any) => row.status === "有效" && authStore.hasPermissionGet("CRM_MATCH_OPPORTUNITY_MANAGE");
 const startMatch = (row: any) => router.push({ path: "/crm/match-opportunity", query: { demandId: row.id } });
 const matchProgressLabel = (row: any) => {
   const progress = row.matchProgress;

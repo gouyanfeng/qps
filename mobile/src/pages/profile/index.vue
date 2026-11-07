@@ -198,6 +198,31 @@
         </view>
       </view>
 
+      <!-- ============ 设置 ============ -->
+      <view class="setting-card">
+        <view class="setting-cell" @tap="openAccount">
+          <view class="setting-icon">
+            <q-icon name="edit" size="18" color="#40493D" />
+          </view>
+          <view class="setting-info">
+            <text class="setting-label">编辑个人信息</text>
+            <text class="setting-sub">头像、昵称与联系方式</text>
+          </view>
+          <q-icon name="chevron-right" size="15" color="#6B6B6B" />
+        </view>
+        <view class="setting-divider"></view>
+        <view class="setting-cell" @tap="clearImageCache">
+          <view class="setting-icon">
+            <q-icon name="delete" size="18" color="#40493D" />
+          </view>
+          <view class="setting-info">
+            <text class="setting-label">清除图片缓存</text>
+            <text class="setting-sub">释放本地图片占用的存储空间</text>
+          </view>
+          <q-icon name="chevron-right" size="15" color="#6B6B6B" />
+        </view>
+      </view>
+
       <!-- ============ 底部品质认证 ============ -->
       <view class="footer-card">
         <view class="footer-item">
@@ -235,6 +260,9 @@ import { onShow } from '@dcloudio/uni-app'
 import { getMemberProfile, getMemberOrderBadge, getMyCouponCount } from '@/api'
 import type { MallMemberOrderBadge, MemberProfile } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
+// #ifndef H5
+import { clearLocalImageCache } from '@/utils/imageCache'
+// #endif
 
 interface ServiceItem {
   key: string
@@ -303,6 +331,19 @@ function goService(key: string) {
     return
   }
   uni.showToast({ title: `${key}功能暂未开放`, icon: 'none' })
+}
+
+function clearImageCache() {
+  // #ifdef H5
+  uni.showToast({ title: 'H5 端缓存由浏览器自动管理', icon: 'none' })
+  // #endif
+  // #ifndef H5
+  const count = clearLocalImageCache()
+  uni.showToast({
+    title: count > 0 ? `已清除 ${count} 张图片缓存` : '暂无图片缓存',
+    icon: 'none'
+  })
+  // #endif
 }
 </script>
 
@@ -842,6 +883,51 @@ $outline: #6B6B6B;
 .service-sub.sub-green {
   color: $theme-primary;
   font-weight: 700;
+}
+
+// ===== 设置操作 =====
+.setting-card {
+  margin: 20rpx 24rpx 0;
+  padding: 6rpx 24rpx;
+  background: #ffffff;
+  border: 1rpx solid #ECE7E1;
+  border-radius: 16rpx;
+}
+.setting-cell {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 24rpx 0;
+}
+.setting-icon {
+  width: 64rpx;
+  height: 64rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F1F0EE;
+  border-radius: 14rpx;
+}
+.setting-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.setting-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $on-surface;
+}
+.setting-sub {
+  font-size: 20rpx;
+  color: #9A958F;
+}
+.setting-divider {
+  height: 1rpx;
+  background: #F0EDE8;
 }
 
 // ===== 底部认证 =====

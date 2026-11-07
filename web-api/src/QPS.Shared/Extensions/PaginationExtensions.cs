@@ -100,5 +100,22 @@ public static class PaginationExtensions
 
         return new PaginationResponse<T>(data, totalCount, request.Page, request.PageSize);
     }
-}
 
+    /// <summary>
+    /// 对内存集合执行分页（同步，适用于已加载到内存的数据）。
+    /// </summary>
+    public static PaginationResponse<T> ToPaginationResponse<T>(
+        this IEnumerable<T> source,
+        PaginationRequest request)
+    {
+        var list = source as IList<T> ?? source.ToList();
+        var totalCount = list.Count;
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1 ? 10 : request.PageSize;
+        var data = list
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+        return new PaginationResponse<T>(data, totalCount, page, pageSize);
+    }
+}

@@ -48,7 +48,7 @@
                             {{ formatDate(row.createdAt) }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center" width="120" fixed="right">
+                    <el-table-column label="操作" align="center" width="100" fixed="right" class-name="actions-column" header-class-name="actions-column">
                         <template #default="{ row }">
                             <Permission code="SYSTEM_USER_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
                         </template>
@@ -202,12 +202,3 @@ const submitForm = async () => {
 </script>
 
 <style scoped lang="scss"></style>
-
-
-
-
-
-
-
-
-

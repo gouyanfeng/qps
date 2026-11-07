@@ -29,7 +29,7 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
     {
         var row = await _dbContext.MallProducts
             .AsNoTracking()
-            .Where(product => product.Id == request.Id && !product.IsDeleted)
+            .Where(product => product.Id == request.Id)
             .Select(product => new
             {
                 Product = product,
@@ -49,11 +49,11 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
             throw new BusinessException(404, "商品不存在");
         }
 
-        var dto = GetMallProductsHandler.Map(row.Product, row.StoreName ?? string.Empty, row.CategoryName ?? string.Empty);
+        var dto = MallProductMapper.Map(row.Product, row.StoreName ?? string.Empty, row.CategoryName ?? string.Empty);
 
         dto.Skus = await _dbContext.MallSkus
             .AsNoTracking()
-            .Where(sku => sku.ProductId == request.Id && !sku.IsDeleted)
+            .Where(sku => sku.ProductId == request.Id)
             .OrderBy(sku => sku.CreatedAt)
             .Select(sku => new MallSkuDto
             {
@@ -74,11 +74,12 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
 
         dto.Tags = await (from link in _dbContext.MallProductTags
                           join tag in _dbContext.MallTags on link.TagId equals tag.Id
-                          where link.ProductId == request.Id && !link.IsDeleted && tag.IsActive && !tag.IsDeleted
+                          where link.ProductId == request.Id && tag.IsActive
                           orderby tag.SortOrder
                           select new MallTagDto
                           {
                               Id = tag.Id,
+                              Type = tag.Type,
                               Code = tag.Code,
                               Name = tag.Name,
                               Color = tag.Color,

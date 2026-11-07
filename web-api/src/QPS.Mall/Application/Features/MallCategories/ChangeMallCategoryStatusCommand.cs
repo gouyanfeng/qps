@@ -30,7 +30,7 @@ public class ChangeMallCategoryStatusHandler : IRequestHandler<ChangeMallCategor
         CancellationToken cancellationToken)
     {
         var category = await _dbContext.MallCategories
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (category is null)
         {
@@ -40,7 +40,7 @@ public class ChangeMallCategoryStatusHandler : IRequestHandler<ChangeMallCategor
         if (!request.Request.IsActive && !category.ParentId.HasValue)
         {
             var hasActiveChildren = await _dbContext.MallCategories.AnyAsync(
-                item => item.ParentId == category.Id && item.IsActive && !item.IsDeleted,
+                item => item.ParentId == category.Id && item.IsActive,
                 cancellationToken);
             if (hasActiveChildren)
             {
@@ -52,8 +52,7 @@ public class ChangeMallCategoryStatusHandler : IRequestHandler<ChangeMallCategor
         {
             var parentIsActive = await _dbContext.MallCategories.AnyAsync(
                 item => item.Id == category.ParentId.Value &&
-                        item.IsActive &&
-                        !item.IsDeleted,
+                        item.IsActive,
                 cancellationToken);
             if (!parentIsActive)
             {

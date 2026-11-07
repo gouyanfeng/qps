@@ -11,6 +11,11 @@ test-results/
 # Stitch MCP design cache
 .stitch-designs/
 
+# Python bytecode cache
+__pycache__/
+*.pyc
+*.pyo
+
 # ComfyUI scripts & workflows
 tools/comfyui/
 scripts/

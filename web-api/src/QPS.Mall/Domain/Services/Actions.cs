@@ -34,14 +34,29 @@ public class DiscountAmountAction : IActionStrategy
         var total = ctx.Items.Sum(i => i.CurrentPrice * i.Quantity);
         if (total <= 0) return;
 
-        foreach (var item in ctx.Items)
+        var remaining = Math.Min(discount, total);
+        var remainingAmount = total;
+
+        for (var index = 0; index < ctx.Items.Count; index++)
         {
-            var proportion = item.CurrentPrice * item.Quantity / total;
-            var itemDiscount = discount * proportion;
-            var newPrice = Math.Max(0, item.CurrentPrice - itemDiscount / item.Quantity);
-            item.CurrentPrice = Math.Round(newPrice, 2);
+            var item = ctx.Items[index];
+            var itemAmount = item.CurrentPrice * item.Quantity;
+            if (itemAmount <= 0) continue;
+            if (remaining <= 0) break;
+
+            // 前 N-1 行按金额占比四舍五入到分；最后一行吃掉全部尾差，保证 Σ行优惠 == 订单总优惠。
+            var share = index == ctx.Items.Count - 1
+                ? remaining
+                : Math.Round(remaining * itemAmount / remainingAmount, 2);
+            share = Math.Max(0, Math.Min(share, itemAmount));
+
+            var newPrice = Math.Max(0, Math.Round((itemAmount - share) / item.Quantity, 2));
+            item.CurrentPrice = newPrice;
             item.IsDiscounted = true;
-            item.AppliedPromotionId = matchedPromotion.Promotion.Id;
+
+            // 按最终单价回算本行实际优惠，尾差在后续行（最后一行）补齐。
+            remaining = Math.Max(0, remaining - (itemAmount - newPrice * item.Quantity));
+            remainingAmount -= itemAmount;
         }
     }
 }
@@ -59,7 +74,6 @@ public class DiscountRateAction : IActionStrategy
         {
             item.CurrentPrice = Math.Round(item.CurrentPrice * rate, 2);
             item.IsDiscounted = true;
-            item.AppliedPromotionId = matchedPromotion.Promotion.Id;
         }
     }
 }

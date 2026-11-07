@@ -51,7 +51,7 @@
           <el-table-column label="创建时间" width="180" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="150" fixed="right">
+          <el-table-column label="操作" align="center" width="190" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <template v-if="row.status === 'Pending'">
                 <el-button type="success" link @click="simulatePayment(row, true)">支付成功</el-button>
@@ -80,6 +80,7 @@ const dateRange = ref<string[]>([])
 const statusOptions = [
   { label: '待支付', value: 'Pending' },
   { label: '成功', value: 'Success' },
+  { label: '已退款', value: 'Refunded' },
   { label: '失败', value: 'Failed' },
   { label: '已关闭', value: 'Cancelled' }
 ]
@@ -116,12 +117,12 @@ const simulatePayment = async (row: any, success: boolean) => {
 }
 
 const getStatusType = (status: string) => {
-  const map: Record<string, any> = { Pending: 'warning', Success: 'success', Failed: 'danger', Cancelled: 'info' }
+  const map: Record<string, any> = { Pending: 'warning', Success: 'success', Refunded: 'info', Failed: 'danger', Cancelled: 'info' }
   return map[status] || 'info'
 }
 
 const getStatusText = (status: string) => {
-  const map: Record<string, string> = { Pending: '待支付', Success: '成功', Failed: '失败', Cancelled: '已关闭' }
+  const map: Record<string, string> = { Pending: '待支付', Success: '成功', Refunded: '已退款', Failed: '失败', Cancelled: '已关闭' }
   return map[status] || status
 }
 </script>

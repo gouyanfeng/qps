@@ -24,7 +24,7 @@ public class GetMallFreightTemplatesHandler : IRequestHandler<GetMallFreightTemp
         CancellationToken cancellationToken)
     {
         var templates = await _dbContext.MallFreightTemplates
-            .Where(t => !t.IsDeleted)
+            
             .ToListAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -37,7 +37,7 @@ public class GetMallFreightTemplatesHandler : IRequestHandler<GetMallFreightTemp
         var templateIds = templates.Select(x => x.Id).ToList();
 
         var regionCounts = await _dbContext.MallFreightRegions
-            .Where(r => templateIds.Contains(r.TemplateId) && !r.IsDeleted)
+            .Where(r => templateIds.Contains(r.TemplateId))
             .GroupBy(r => r.TemplateId)
             .Select(g => new { TemplateId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.TemplateId, x => x.Count, cancellationToken);

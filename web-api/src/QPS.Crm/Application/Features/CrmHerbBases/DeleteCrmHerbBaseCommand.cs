@@ -28,7 +28,7 @@ public class DeleteCrmHerbBaseHandler : IRequestHandler<DeleteCrmHerbBaseCommand
     {
         var customer = await GetCustomer(request.Id, cancellationToken);
 
-        customer.IsDeleted = true;
+        customer.SoftDelete();
         await SyncSubjectScaleAsync(customer, cancellationToken);
         
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -43,7 +43,7 @@ public class DeleteCrmHerbBaseHandler : IRequestHandler<DeleteCrmHerbBaseCommand
     private async Task<CrmHerbBase> GetCustomer(Guid customerId, CancellationToken cancellationToken)
     {
         var customer = await _dbContext.CrmHerbBases
-            .FirstOrDefaultAsync(c => c.Id == customerId && !c.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
 
         if (customer == null)
         {

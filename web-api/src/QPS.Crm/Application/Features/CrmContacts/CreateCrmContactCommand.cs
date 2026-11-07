@@ -74,7 +74,7 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
     private async Task<CrmHerbBaseSubject> GetSubject(Guid subjectId, CancellationToken cancellationToken)
     {
         var subject = await _dbContext.CrmHerbBaseSubjects
-            .FirstOrDefaultAsync(item => item.Id == subjectId && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == subjectId, cancellationToken);
 
         return subject ?? throw new BusinessException(404, "药材基地主体不存在");
     }
@@ -82,7 +82,7 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
     private async Task EnsureVendorExists(Guid vendorId, CancellationToken cancellationToken)
     {
         var exists = await _dbContext.CrmVendors
-            .AnyAsync(item => item.Id == vendorId && !item.IsDeleted, cancellationToken);
+            .AnyAsync(item => item.Id == vendorId, cancellationToken);
 
         if (!exists)
         {
@@ -104,7 +104,6 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
 
         var exists = await _dbContext.CrmContacts.AnyAsync(
             contact =>
-                !contact.IsDeleted &&
                 contact.EntityType == target.EntityType &&
                 contact.EntityId == target.EntityId &&
                 contact.Id != excludedContactId &&
@@ -136,7 +135,6 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
 
         return !await _dbContext.CrmContacts.AnyAsync(
             contact =>
-                !contact.IsDeleted &&
                 contact.EntityType == target.EntityType &&
                 contact.EntityId == target.EntityId &&
                 contact.Status != InvalidStatus,
@@ -150,7 +148,6 @@ public class CreateCrmContactHandler : IRequestHandler<CreateCrmContactCommand, 
     {
         var siblings = await _dbContext.CrmContacts
             .Where(contact =>
-                !contact.IsDeleted &&
                 contact.EntityType == target.EntityType &&
                 contact.EntityId == target.EntityId &&
                 contact.Id != contactId &&

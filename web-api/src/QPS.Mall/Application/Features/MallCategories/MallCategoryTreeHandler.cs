@@ -29,7 +29,7 @@ public class GetMallCategoryTreeHandler : IRequestHandler<GetMallCategoryTreeQue
     {
         var list = await _db.MallCategories
             .AsNoTracking()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .Where(x => x.IsActive)
             .OrderBy(x => x.ParentId)
             .ThenBy(x => x.SortOrder)
             .Select(x => new

@@ -25,22 +25,22 @@ public class DeleteMallProductHandler : IRequestHandler<DeleteMallProductCommand
     public async Task<bool> Handle(DeleteMallProductCommand request, CancellationToken cancellationToken)
     {
         var product = await _dbContext.MallProducts
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (product is null)
         {
             throw new BusinessException(404, "商品不存在");
         }
 
-        product.IsDeleted = true;
+        product.SoftDelete();
 
         var skus = await _dbContext.MallSkus
-            .Where(sku => sku.ProductId == request.Id && !sku.IsDeleted)
+            .Where(sku => sku.ProductId == request.Id)
             .ToListAsync(cancellationToken);
 
         foreach (var sku in skus)
         {
-            sku.IsDeleted = true;
+            sku.SoftDelete();
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

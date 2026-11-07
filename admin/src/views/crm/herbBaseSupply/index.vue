@@ -31,7 +31,7 @@
           <el-table-column prop="candidateCount" label="候选次数" width="96" align="center" />
           <el-table-column label="占用状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="row.selectedCount ? 'danger' : 'success'">{{ row.selectedCount ? "已中选" : "未中选" }}</el-tag></template></el-table-column>
           <el-table-column prop="occupiedDemandSummary" label="占用需求" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ row.occupiedDemandSummary || "-" }}</template></el-table-column>
-          <el-table-column label="操作" width="100" fixed="right"><template #default="{ row }"><el-button link type="primary" :disabled="!row.herbBaseSubjectId" @click="openHerbBase(row)">查看基地</el-button></template></el-table-column>
+          <el-table-column label="操作" width="100" fixed="right" class-name="actions-column" header-class-name="actions-column"><template #default="{ row }"><el-button link type="primary" :disabled="!row.herbBaseSubjectId" @click="openHerbBase(row)">查看基地</el-button></template></el-table-column>
         </el-table>
       </template>
     </QueryPage>

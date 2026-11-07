@@ -20,7 +20,7 @@
           <el-table-column prop="pageCode" label="页面编码" width="150" />
           <el-table-column prop="pageName" label="页面名称" width="150" />
           <el-table-column prop="title" label="浏览器标题" min-width="180" show-overflow-tooltip />
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '停用' }}</el-tag>
             </template>
@@ -28,7 +28,7 @@
           <el-table-column label="创建时间" width="170" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="260" fixed="right">
+          <el-table-column label="操作" align="center" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
               <el-button :type="row.isActive ? 'warning' : 'success'" link @click="changeStatus(row)">

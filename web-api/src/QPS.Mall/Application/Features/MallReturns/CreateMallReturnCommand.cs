@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Application.Features.MallOrders;
 using QPS.Mall.Contracts;
+using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain;
 using QPS.Mall.Domain.Entities;
 using QPS.Shared.Exceptions;
@@ -14,13 +15,20 @@ public class CreateMallReturnCommand : IRequest<MallReturnDto>
 
     public string? OrderNo { get; set; }
 
+    /// <summary>移动端传当前会员；管理端代客操作时传 null，跳过归属校验。</summary>
+    public Guid? MemberId { get; set; }
+
     public string Reason { get; set; } = string.Empty;
+
+    /// <summary>补充说明，选择「其他」原因时填写。</summary>
+    public string? Description { get; set; }
+
+    /// <summary>凭证图片相对地址，最多 6 张。</summary>
+    public string[]? EvidenceImages { get; set; }
 }
 
 public class CreateMallReturnHandler : IRequestHandler<CreateMallReturnCommand, MallReturnDto>
 {
-    private const int ReasonMaxLength = 200;
-
     private readonly IMallDbContext _dbContext;
 
     public CreateMallReturnHandler(IMallDbContext dbContext)
@@ -38,14 +46,27 @@ public class CreateMallReturnHandler : IRequestHandler<CreateMallReturnCommand, 
             command.OrderNo,
             cancellationToken);
 
-        if (order.Status != MallOrderStatus.Shipped && order.Status != MallOrderStatus.Completed)
+        MallOrderResolver.EnsureOwnership(order, command.MemberId);
+
+        // 已签收订单需在签收后 7 天内申请售后
+        MallAfterSaleRules.EnsureWithinAfterSaleWindow(order, DateTime.Now);
+
+        // 已退款但库存尚未回补（已发货/已签收后退款）的订单，允许发起退货，等入库确认后回补
+        var refundedPendingRestore =
+            order.Status == MallOrderStatus.Refunded &&
+            MallOrderResolver.WasShipped(order) &&
+            !await MallOrderResolver.HasRestoredStockAsync(_dbContext, order, cancellationToken);
+
+        if (order.Status != MallOrderStatus.Shipped &&
+            order.Status != MallOrderStatus.Completed &&
+            !refundedPendingRestore)
         {
-            throw new BusinessException(400, "仅已发货或已完成订单可以申请退货");
+            throw new BusinessException(400, "仅已发货、已完成或已退款待入库订单可以申请退货");
         }
 
         var existingReturn = await _dbContext.MallReturns
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.OrderId == order.Id && !r.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(r => r.OrderId == order.Id, cancellationToken);
 
         if (existingReturn != null && existingReturn.Status != MallReturnStatus.Rejected)
         {
@@ -54,8 +75,13 @@ public class CreateMallReturnHandler : IRequestHandler<CreateMallReturnCommand, 
 
         var payment = await _dbContext.MallPayments
             .AsNoTracking()
-            .Where(p => p.OrderId == order.Id && p.Status == MallPaymentStatus.Success && !p.IsDeleted)
-            .Select(p => new { p.Id, p.Amount })
+            // 已退款订单的支付单已转为 Refunded，仍需取到原支付单用于退货单关联
+            .Where(p => p.OrderId == order.Id &&
+                        (p.Status == MallPaymentStatus.Success ||
+                         p.Status == MallPaymentStatus.Refunded))
+            .OrderByDescending(p => p.PaidAt)
+            .ThenByDescending(p => p.CreatedAt)
+            .Select(p => new { p.Id })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (payment is null)
@@ -63,69 +89,31 @@ public class CreateMallReturnHandler : IRequestHandler<CreateMallReturnCommand, 
             throw new BusinessException(400, "未找到成功支付单，无法申请退货");
         }
 
-        var reason = command.Reason?.Trim() ?? string.Empty;
-
-        if (reason.Length > ReasonMaxLength)
+        if (order.PaidAmount <= 0)
         {
-            throw new BusinessException(400, $"退货原因不能超过 {ReasonMaxLength} 个字符");
+            throw new BusinessException(400, "订单实付金额异常，无法申请退货");
         }
+
+        var reason = MallAfterSaleRules.RequireReason(command.Reason);
+        var description = MallAfterSaleRules.NormalizeDescription(command.Description);
+        var evidenceImages = MallAfterSaleRules.NormalizeEvidence(command.EvidenceImages);
 
         order.BeginReturn();
 
+        // 退货同样是整单退：退款金额按订单实付金额（含运费）计算，不支持部分退款
         var returnEntity = MallReturn.Create(
             MallNumberGenerator.Generate("RET"),
             order.Id,
             payment.Id,
-            payment.Amount,
-            reason);
+            order.PaidAmount,
+            reason,
+            description,
+            evidenceImages);
 
         _dbContext.MallReturns.Add(returnEntity);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ToDto(returnEntity);
+        return MallReturnMapper.ToDto(returnEntity);
     }
-
-    private static MallReturnDto ToDto(MallReturn r)
-    {
-        return new MallReturnDto
-        {
-            Id = r.Id,
-            ReturnNo = r.ReturnNo,
-            OrderId = r.OrderId,
-            PaymentId = r.PaymentId,
-            RefundId = r.RefundId,
-            Amount = r.Amount,
-            Reason = r.Reason,
-            Status = r.Status,
-            ExpressCompany = r.ExpressCompany,
-            TrackingNo = r.TrackingNo,
-            ApprovedAt = r.ApprovedAt,
-            RejectedAt = r.RejectedAt,
-            ShippedAt = r.ShippedAt,
-            ReceivedAt = r.ReceivedAt,
-            CompletedAt = r.CompletedAt,
-            CreatedAt = r.CreatedAt
-        };
-    }
-}
-
-public class MallReturnDto
-{
-    public Guid Id { get; set; }
-    public string ReturnNo { get; set; } = string.Empty;
-    public Guid OrderId { get; set; }
-    public Guid PaymentId { get; set; }
-    public Guid? RefundId { get; set; }
-    public decimal Amount { get; set; }
-    public string Reason { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public string? ExpressCompany { get; set; }
-    public string? TrackingNo { get; set; }
-    public DateTime? ApprovedAt { get; set; }
-    public DateTime? RejectedAt { get; set; }
-    public DateTime? ShippedAt { get; set; }
-    public DateTime? ReceivedAt { get; set; }
-    public DateTime? CompletedAt { get; set; }
-    public DateTime CreatedAt { get; set; }
 }

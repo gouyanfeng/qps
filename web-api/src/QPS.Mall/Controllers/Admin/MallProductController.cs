@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallProducts;
 using QPS.Mall.Contracts.DTOs;
@@ -10,6 +11,7 @@ namespace QPS.Mall.Controllers;
 /// 管理端商品与规格维护。
 /// </summary>
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall")]
 public class MallProductController : ControllerBase
 {
@@ -103,6 +105,15 @@ public class MallProductController : ControllerBase
     public async Task<ActionResult<bool>> DeleteProduct(Guid id)
     {
         return Ok(await _mediator.Send(new DeleteMallProductCommand { Id = id }));
+    }
+
+    /// <summary>
+    /// 拷贝商品（含规格与标签，新商品名称追加"拷贝"）。
+    /// </summary>
+    [HttpPost("products/{id:guid}/copy")]
+    public async Task<ActionResult<bool>> CopyProduct(Guid id)
+    {
+        return Ok(await _mediator.Send(new CopyMallProductCommand { Id = id }));
     }
 
     /// <summary>

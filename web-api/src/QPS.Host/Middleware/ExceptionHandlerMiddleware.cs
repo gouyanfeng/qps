@@ -83,7 +83,9 @@ public class ExceptionHandlerMiddleware
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
 
-            var response = QPS.Shared.Common.ApiResponse<object>.Fail(httpStatusCode, exception.Message);
+            var response = QPS.Shared.Common.ApiResponse<object>.Fail(
+                httpStatusCode,
+                exception is BusinessException ? exception.Message : "服务器内部错误，请稍后重试");
             await context.Response.WriteAsJsonAsync(response, JsonOptions);
         }
         catch (Exception handlerException)

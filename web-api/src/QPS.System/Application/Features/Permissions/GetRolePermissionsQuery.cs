@@ -9,6 +9,7 @@ namespace QPS.System.Application.Features.Permissions;
 /// <summary>
 /// 获取所有角色的权限映射
 /// </summary>
+[Permission("SYSTEM_PERMISSION")]
 public class GetRolePermissionsQuery : IRequest<Dictionary<string, RolePermissionsDto>>
 {
     /// <summary>
@@ -29,7 +30,7 @@ public class GetRolePermissionsHandler : IRequestHandler<GetRolePermissionsQuery
     public async Task<Dictionary<string, RolePermissionsDto>> Handle(GetRolePermissionsQuery request, CancellationToken cancellationToken)
     {
         var rolesQuery = _dbContext.SystemRoles
-            .Where(r => !r.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(request.RoleCode))
@@ -41,11 +42,11 @@ public class GetRolePermissionsHandler : IRequestHandler<GetRolePermissionsQuery
 
         // 获取所有角色的权限映射和权限字典
         var rolePermissions = await _dbContext.SystemRolePermissions
-            .Where(rp => !rp.IsDeleted)
+            
             .ToListAsync(cancellationToken);
 
         var permissionMap = await _dbContext.SystemPermissions
-            .Where(p => !p.IsDeleted)
+            
             .ToDictionaryAsync(p => p.Id, p => p.Code, cancellationToken);
 
         var result = new Dictionary<string, RolePermissionsDto>();

@@ -114,14 +114,16 @@
           <el-table-column prop="updatedAt" label="更新时间" width="150" sortable="custom">
             <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="360" fixed="right" class-name="actions-column" header-class-name="actions-column">
+          <el-table-column label="操作" width="390" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
               <Permission code="CRM_FOLLOW"><el-button type="primary" link :icon="Phone" @click="openFollowDialog(row)">记录沟通</el-button></Permission>
               <Permission code="CRM_VENDOR_EDIT"><el-button type="primary" link :icon="Edit" @click="openEditDialog(row)">编辑</el-button></Permission>
-              <el-button v-if="canManageTransfer" type="primary" link :icon="Edit" @click="openTransferDialog([row], row.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
-                {{ row.ownerUserId ? "转交" : "分配" }}
-              </el-button>
+              <Permission code="CRM_TRANSFER">
+                <el-button type="primary" link :icon="Edit" @click="openTransferDialog([row], row.ownerUserId ? 'TRANSFER' : 'ASSIGN')">
+                  {{ row.ownerUserId ? "转交" : "分配" }}
+                </el-button>
+              </Permission>
               <el-button v-if="canManageTransfer || canReturn(row)" type="primary" link :icon="Edit" @click="openTransferDialog([row], 'RETURN')">退回</el-button>
             </template>
           </el-table-column>
@@ -242,7 +244,7 @@ const vendorForm = reactive({
 });
 
 const transferMode = ref<"ASSIGN" | "TRANSFER" | "RETURN">("TRANSFER");
-const canManageTransfer = computed(() => authStore.userPermissions.includes("CRM_TRANSFER"));
+const canManageTransfer = computed(() => authStore.hasPermissionGet("CRM_TRANSFER"));
 
 const priorityRules: Record<string, string> = {
   高: "高：有电话、有联系人、90天内有采购、品类数 >= 3",
@@ -772,11 +774,3 @@ const formatDate = (value?: string | null) => {
   }
 }
 </style>
-
-
-
-
-
-
-
-

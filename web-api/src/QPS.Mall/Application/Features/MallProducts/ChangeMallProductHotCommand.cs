@@ -31,7 +31,7 @@ public class ChangeMallProductHotHandler : IRequestHandler<ChangeMallProductHotC
     public async Task<bool> Handle(ChangeMallProductHotCommand request, CancellationToken cancellationToken)
     {
         var product = await _dbContext.MallProducts
-            .FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (product is null)
         {

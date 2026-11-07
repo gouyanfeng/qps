@@ -8,7 +8,7 @@ using QPS.Shared.Extensions;
 namespace QPS.Mall.Application.Features.MallStores;
 
 /// <summary>
-/// 分页查询商场门店。
+/// 分页查询商城门店。
 /// </summary>
 public class GetMallStoresQuery : PaginationRequest, IRequest<PaginationResponse<MallStoreDto>>
 {
@@ -43,7 +43,7 @@ public class GetMallStoresHandler : IRequestHandler<GetMallStoresQuery, Paginati
         CancellationToken cancellationToken)
     {
         var query = _dbContext.MallStores
-            .Where(store => !store.IsDeleted)
+            
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))

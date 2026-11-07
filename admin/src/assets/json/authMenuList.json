@@ -23,6 +23,7 @@
       "meta": {
         "icon": "Connection",
         "title": "CRM管理",
+        "permissionCode": "CRM",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -128,7 +129,8 @@
       "redirect": "/mall/store",
       "meta": {
         "icon": "Shop",
-        "title": "商场管理",
+        "title": "商城管理",
+        "permissionCode": "MALL",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -137,68 +139,12 @@
       },
       "children": [
         {
-          "path": "/mall/store",
-          "name": "mallStore",
-          "component": "/mall/store/index",
-          "meta": {
-            "icon": "OfficeBuilding",
-            "title": "商场门店",
-            "isLink": "",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": true
-          }
-        },
-        {
           "path": "/mall/product",
           "name": "mallProduct",
           "component": "/mall/product/index",
           "meta": {
             "icon": "Goods",
             "title": "商品管理",
-            "isLink": "",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": true
-          }
-        },
-        {
-          "path": "/mall/promotion",
-          "name": "mallPromotion",
-          "component": "/mall/promotion/index",
-          "meta": {
-            "icon": "Discount",
-            "title": "促销管理",
-            "isLink": "",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": true
-          }
-        },
-        {
-          "path": "/mall/activity",
-          "name": "mallActivity",
-          "component": "/mall/activity/index",
-          "meta": {
-            "icon": "Tickets",
-            "title": "活动管理",
-            "isLink": "",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": true
-          }
-        },
-        {
-          "path": "/mall/banner",
-          "name": "mallBanner",
-          "component": "/mall/banner/index",
-          "meta": {
-            "icon": "Picture",
-            "title": "Banner管理",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -221,6 +167,34 @@
           }
         },
         {
+          "path": "/mall/tag",
+          "name": "mallTag",
+          "component": "/mall/tag/index",
+          "meta": {
+            "icon": "CollectionTag",
+            "title": "标签管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/review",
+          "name": "mallReview",
+          "component": "/mall/review/index",
+          "meta": {
+            "icon": "ChatDotRound",
+            "title": "评价管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
           "path": "/mall/stock",
           "name": "mallStock",
           "component": "/mall/stock/index",
@@ -235,12 +209,110 @@
           }
         },
         {
+          "path": "/mall/promotion",
+          "name": "mallPromotion",
+          "component": "/mall/promotion/index",
+          "meta": {
+            "icon": "Discount",
+            "title": "促销活动",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/campaign",
+          "name": "mallCampaign",
+          "component": "/mall/campaign/index",
+          "meta": {
+            "icon": "Tickets",
+            "title": "专题活动",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/coupon",
+          "name": "mallCoupon",
+          "component": "/mall/coupon/index",
+          "meta": {
+            "icon": "Ticket",
+            "title": "优惠券管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/banner",
+          "name": "mallBanner",
+          "component": "/mall/banner/index",
+          "meta": {
+            "icon": "Picture",
+            "title": "Banner管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
           "path": "/mall/order",
           "name": "mallOrder",
           "component": "/mall/order/index",
           "meta": {
             "icon": "Tickets",
             "title": "订单管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/shipment",
+          "name": "mallShipment",
+          "component": "/mall/shipment/index",
+          "meta": {
+            "icon": "Box",
+            "title": "发货管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/returnOrder",
+          "name": "mallReturnOrder",
+          "component": "/mall/returnOrder/index",
+          "meta": {
+            "icon": "RefreshLeft",
+            "title": "退货管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/store",
+          "name": "mallStore",
+          "component": "/mall/store/index",
+          "meta": {
+            "icon": "OfficeBuilding",
+            "title": "商城门店",
             "isLink": "",
             "isHide": false,
             "isFull": false,

@@ -33,7 +33,7 @@ public class AddToMallCartHandler : IRequestHandler<AddToMallCartCommand, MallCa
         var skuRow = await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
-                where sku.Id == req.SkuId && !sku.IsDeleted && !product.IsDeleted
+                where sku.Id == req.SkuId
                 select new { Sku = sku, Product = product })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -43,30 +43,19 @@ public class AddToMallCartHandler : IRequestHandler<AddToMallCartCommand, MallCa
         if (skuRow.Sku.Stock < req.Quantity)
             throw new BusinessException(400, $"库存不足，仅剩 {skuRow.Sku.Stock}");
 
-        var cart = await _dbContext.MallCarts
-            .FirstOrDefaultAsync(
-                c => c.UserId == req.UserId && !c.IsDeleted,
-                cancellationToken);
-
-        if (cart is null)
-        {
-            cart = MallCart.Create(req.UserId);
-            _dbContext.MallCarts.Add(cart);
-        }
-
         var existingItem = await _dbContext.MallCartItems
-            .FirstOrDefaultAsync(i => i.CartId == cart.Id && i.SkuId == req.SkuId, cancellationToken);
+            .FirstOrDefaultAsync(
+                i => i.UserId == req.UserId && i.SkuId == req.SkuId,
+                cancellationToken);
         if (existingItem is not null)
         {
             existingItem.AddQuantity(req.Quantity);
         }
         else
         {
-            var newItem = MallCartItem.Create(cart.Id, req.SkuId, skuRow.Product.Id, req.Quantity);
+            var newItem = MallCartItem.Create(req.UserId, req.SkuId, skuRow.Product.Id, req.Quantity);
             _dbContext.MallCartItems.Add(newItem);
         }
-
-        cart.Touch();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

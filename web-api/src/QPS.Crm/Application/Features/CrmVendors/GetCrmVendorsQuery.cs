@@ -42,7 +42,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
     public async Task<PaginationResponse<CrmVendorDto>> Handle(GetCrmVendorsQuery request, CancellationToken cancellationToken)
     {
         var query = _dbContext.CrmVendors
-            .Where(vendor => !vendor.IsDeleted)
+            
             .AsQueryable();
         var vendorIdsWithProducts = CrmVendorDemandProductQuery.GetVendorIdsWithProducts(_dbContext);
 
@@ -51,7 +51,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
             var keyword = request.Keyword!;
             var productVendorIds = from demand in _dbContext.CrmVendorDemands
                                    join item in _dbContext.CrmVendorDemandItems on demand.Id equals item.VendorDemandId
-                                   where !demand.IsDeleted && !item.IsDeleted && item.ProductName.Contains(keyword)
+                                   where item.ProductName.Contains(keyword)
                                    select demand.VendorId;
 
             query = query.Where(vendor =>
@@ -59,13 +59,11 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
                 vendor.NormalizedVendorName.Contains(keyword) ||
                 vendor.LatestPurchaseDemandName.Contains(keyword) ||
                 _dbContext.CrmContacts.Any(contact =>
-                    !contact.IsDeleted &&
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     (contact.ContactName.Contains(keyword) || contact.Phone.Contains(keyword))) ||
                 productVendorIds.Contains(vendor.Id) ||
                 _dbContext.CrmVendorDemands.Any(plan =>
-                    !plan.IsDeleted &&
                     plan.VendorId == vendor.Id &&
                     plan.DemandName.Contains(keyword)));
         }
@@ -79,12 +77,10 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         {
             query = request.HasPhone.Value
                 ? query.Where(vendor => _dbContext.CrmContacts.Any(contact =>
-                    !contact.IsDeleted &&
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     contact.Phone != string.Empty))
                 : query.Where(vendor => !_dbContext.CrmContacts.Any(contact =>
-                    !contact.IsDeleted &&
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     contact.Phone != string.Empty));
@@ -112,7 +108,6 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
             NextFollowAt = vendor.NextFollowAt,
             PrimaryContactName = _dbContext.CrmContacts
                 .Where(contact =>
-                    !contact.IsDeleted &&
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     contact.Status != InvalidContactStatus)
@@ -122,7 +117,6 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
                 .FirstOrDefault() ?? string.Empty,
             PrimaryContactPhone = _dbContext.CrmContacts
                 .Where(contact =>
-                    !contact.IsDeleted &&
                     contact.EntityType == VendorEntityType &&
                     contact.EntityId == vendor.Id &&
                     contact.Status != InvalidContactStatus)
@@ -130,9 +124,8 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
                 .ThenBy(contact => contact.CreatedAt)
                 .Select(contact => contact.Phone)
                 .FirstOrDefault() ?? string.Empty,
-            PurchaseDemandCount = _dbContext.CrmVendorDemands.Count(plan => !plan.IsDeleted && plan.VendorId == vendor.Id),
+            PurchaseDemandCount = _dbContext.CrmVendorDemands.Count(plan => plan.VendorId == vendor.Id),
             ContactCount = _dbContext.CrmContacts.Count(contact =>
-                !contact.IsDeleted &&
                 contact.EntityType == VendorEntityType &&
                 contact.EntityId == vendor.Id),
             CreatedAt = vendor.CreatedAt,
@@ -164,7 +157,7 @@ public class GetCrmVendorsHandler : IRequestHandler<GetCrmVendorsQuery, Paginati
         }
 
         var latestDemandIds = await _dbContext.CrmVendorDemands
-            .Where(demand => !demand.IsDeleted && vendorIds.Contains(demand.VendorId))
+            .Where(demand => vendorIds.Contains(demand.VendorId))
             .GroupBy(demand => demand.VendorId)
             .Select(group => group
                 .OrderByDescending(demand => demand.DemandAt)
