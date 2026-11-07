@@ -45,6 +45,14 @@
           </view>
         </view>
 
+        <!-- 促销标签：文案与类型均取后端促销字段，按作用域从小到大排列 -->
+        <view v-if="promotionTags.length" class="promo-tags">
+          <view v-for="tag in promotionTags" :key="tag.id" class="promo-tag">
+            <text v-if="tag.kind" class="promo-tag-kind">{{ tag.kind }}</text>
+            <text class="promo-tag-text">{{ tag.text }}</text>
+          </view>
+        </view>
+
         <view class="name-row">
           <text class="product-name">{{ product.name }}</text>
           <view v-if="productTags.length" class="pill-row">
@@ -285,7 +293,7 @@
 import { ref, computed, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getProductById, getProductReviews, addToCart as addCart } from '@/api'
-import type { Product, Sku, ProductReview, ProductReviewPage } from '@/api/types'
+import type { Product, Sku, ProductPromotion, ProductReview, ProductReviewPage } from '@/api/types'
 import { resolveFileUrl, UnauthorizedError } from '@/utils/http'
 import { resolveTagColor, tagChipStyle } from '@/utils/tagColor'
 
@@ -350,6 +358,40 @@ async function loadFeaturedReviews(productId: string) {
 const productTags = computed(() =>
   (product.value?.tags ?? []).filter(tag => tag.type === 'Product')
 )
+
+// 促销标签：只展示后端返回的促销（ruleText 为后端规则文案，缺失时回退促销名）
+const PROMOTION_KIND_LABEL: Record<number, string> = { 0: '满减', 1: '折扣', 2: '买赠' }
+// 作用域从小到大：SKU → 商品 → 分类 → 全场
+const PROMOTION_SCOPE_ORDER: Record<string, number> = { Sku: 0, Product: 1, Category: 2, Global: 3 }
+
+// 优惠力度：满减取减免金额，折扣取折扣力度，买赠不参与比价
+function promotionStrength(promotion: ProductPromotion): number {
+  try {
+    const config = JSON.parse(promotion.actionConfigJson || '{}') as { amount?: number; rate?: number }
+    if (typeof config.amount === 'number') return config.amount
+    if (typeof config.rate === 'number') return 1 - config.rate
+  } catch {
+    // 配置缺失或格式异常时按无力度处理，不影响标签展示
+  }
+  return 0
+}
+
+const promotionTags = computed(() => {
+  const source = product.value?.promotions ?? []
+  return [...source]
+    .filter(promotion => Boolean(promotion.ruleText || promotion.name))
+    .sort((a, b) =>
+      (PROMOTION_SCOPE_ORDER[a.scopeType] ?? 4) - (PROMOTION_SCOPE_ORDER[b.scopeType] ?? 4)
+      || a.promotionType - b.promotionType
+      || promotionStrength(b) - promotionStrength(a)
+      || a.thresholdAmount - b.thresholdAmount
+      || a.id.localeCompare(b.id))
+    .map(promotion => ({
+      id: promotion.id,
+      kind: PROMOTION_KIND_LABEL[promotion.promotionType] ?? '',
+      text: promotion.ruleText || promotion.name
+    }))
+})
 
 const currentSku = computed(() => {
   const skus = product.value?.skus ?? []
@@ -588,6 +630,43 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
   border-radius: 8rpx;
 }
 .price-off text { font-size: 20rpx; font-weight: 600; color: #C2410C; }
+
+/* 促销标签：纵向排列，单行省略，避免多条换行错乱 */
+.promo-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-top: 16rpx;
+}
+.promo-tag {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+  padding: 8rpx 14rpx;
+  background: #FFF7EC;
+  border: 1rpx solid rgba(194, 65, 12, 0.16);
+  border-radius: 8rpx;
+}
+.promo-tag-kind {
+  flex-shrink: 0;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  background: #C2410C;
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+.promo-tag-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #8B5000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .name-row {
   display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx;
