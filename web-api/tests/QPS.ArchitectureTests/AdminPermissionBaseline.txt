@@ -1,0 +1,253 @@
+﻿# QPS 架构测试基线：管理端功能权限（规则 4）
+# 用途：记录引入护栏时尚未声明 [Permission] 的管理端端点，测试只拦截“新增且不在基线”的权限回退。
+# 判定：端点有 [Permission]（Controller / 方法 / 实际派发的 Command/Query 任一）→ 通过；否则必须命中本文件 → 通过；未命中 → 失败。
+# 条目总数：205
+# 生成日期：2026-11-07
+# 维护约定：只允许缩小（补齐权限后从基线删除）；改大需在 PR 说明理由，否则视为绕过护栏。
+# 格式：每行一个唯一键 Controller.Method；# 开头为注释，空行忽略。
+
+# ===== QPS.System（16 条）=====
+# --- DataDictionaryController（6 条）
+DataDictionaryController.CreateDataDictionary
+DataDictionaryController.DeleteDataDictionary
+DataDictionaryController.GetDataDictionaries
+DataDictionaryController.GetDataDictionary
+DataDictionaryController.GetDataDictionaryTree
+DataDictionaryController.UpdateDataDictionary
+# --- ErrorLogController（1 条）
+ErrorLogController.GetErrorLogs
+# --- OperationLogController（1 条）
+OperationLogController.GetOperationLogs
+# --- RoleController（4 条）
+RoleController.CreateRole
+RoleController.GetRole
+RoleController.GetRoles
+RoleController.UpdateRole
+# --- UserController（4 条）
+UserController.CreateUser
+UserController.GetUser
+UserController.GetUsers
+UserController.UpdateUser
+
+# ===== QPS.Crm（60 条）=====
+# --- CrmBusinessEntityAttributeController（2 条）
+CrmBusinessEntityAttributeController.GetAttributes
+CrmBusinessEntityAttributeController.SaveAttributes
+# --- CrmFollowTaskController（2 条）
+CrmFollowTaskController.Get
+CrmFollowTaskController.GetOverview
+# --- CrmHerbBaseController（23 条）
+CrmHerbBaseController.ChangeHerbBaseSubjectOwner
+CrmHerbBaseController.ChangeSupplyStatus
+CrmHerbBaseController.CreateCustomer
+CrmHerbBaseController.CreateSubjectContact
+CrmHerbBaseController.CreateSubjectFollowRecord
+CrmHerbBaseController.CreateSupply
+CrmHerbBaseController.DeleteCustomer
+CrmHerbBaseController.DeleteSupply
+CrmHerbBaseController.GetCustomer
+CrmHerbBaseController.GetCustomers
+CrmHerbBaseController.GetHerbBaseSubject
+CrmHerbBaseController.GetHerbBaseSubjects
+CrmHerbBaseController.GetSubjectContacts
+CrmHerbBaseController.GetSubjectFollowRecords
+CrmHerbBaseController.GetSubjectTransferRecords
+CrmHerbBaseController.GetSupplies
+CrmHerbBaseController.GetSupplyList
+CrmHerbBaseController.SetSubjectPrimaryContact
+CrmHerbBaseController.UpdateCustomer
+CrmHerbBaseController.UpdateHerbBaseSubject
+CrmHerbBaseController.UpdateSubjectContact
+CrmHerbBaseController.UpdateSubjectContactStatus
+CrmHerbBaseController.UpdateSupply
+# --- CrmMatchOpportunityController（4 条）
+CrmMatchOpportunityController.GetActivities
+CrmMatchOpportunityController.GetCandidates
+CrmMatchOpportunityController.GetDetail
+CrmMatchOpportunityController.GetProgressOptions
+# --- CrmVendorController（15 条）
+CrmVendorController.ChangeOwner
+CrmVendorController.CreateContact
+CrmVendorController.CreateVendor
+CrmVendorController.CreateVendorFollowRecord
+CrmVendorController.GetContacts
+CrmVendorController.GetHerbProductOptions
+CrmVendorController.GetTransferRecords
+CrmVendorController.GetVendor
+CrmVendorController.GetVendorFollowRecords
+CrmVendorController.GetVendorPurchaseDemands
+CrmVendorController.GetVendors
+CrmVendorController.SetPrimaryContact
+CrmVendorController.UpdateContact
+CrmVendorController.UpdateContactStatus
+CrmVendorController.UpdateVendor
+# --- CrmVendorDemandController（6 条）
+CrmVendorDemandController.ChangeStatus
+CrmVendorDemandController.Create
+CrmVendorDemandController.Delete
+CrmVendorDemandController.Get
+CrmVendorDemandController.GetList
+CrmVendorDemandController.Update
+# --- DashboardController（8 条）
+DashboardController.GetFollowFunnel
+DashboardController.GetFollowTrend
+DashboardController.GetNewBaseTrend
+DashboardController.GetNewPurchaseDemandTrend
+DashboardController.GetSupplyProductDistribution
+DashboardController.GetVendorFollowTrend
+DashboardController.GetVendorPriorityDistribution
+DashboardController.GetVendorPurchaseProductDistribution
+
+# ===== QPS.Mall（128 条）=====
+# --- MallArticleController（8 条）
+MallArticleController.Create
+MallArticleController.Delete
+MallArticleController.Get
+MallArticleController.GetList
+MallArticleController.Publish
+MallArticleController.SetTop
+MallArticleController.Unpublish
+MallArticleController.Update
+# --- MallBannerController（7 条）
+MallBannerController.BatchSort
+MallBannerController.ChangeStatus
+MallBannerController.Create
+MallBannerController.Delete
+MallBannerController.Get
+MallBannerController.GetList
+MallBannerController.Update
+# --- MallCampaignController（7 条）
+MallCampaignController.ChangeCampaignStatus
+MallCampaignController.CreateCampaign
+MallCampaignController.DeleteCampaign
+MallCampaignController.GetCampaign
+MallCampaignController.GetCampaigns
+MallCampaignController.GetCouponOptions
+MallCampaignController.UpdateCampaign
+# --- MallCategoryController（6 条）
+MallCategoryController.ChangeCategoryStatus
+MallCategoryController.CreateCategory
+MallCategoryController.DeleteCategory
+MallCategoryController.GetCategories
+MallCategoryController.GetCategory
+MallCategoryController.UpdateCategory
+# --- MallController（7 条）
+MallController.ChangeStoreStatus
+MallController.CreateStore
+MallController.DeleteStore
+MallController.GetStore
+MallController.GetStores
+MallController.Ping
+MallController.UpdateStore
+# --- MallCouponController（7 条）
+MallCouponController.ChangeStatus
+MallCouponController.Create
+MallCouponController.Delete
+MallCouponController.Get
+MallCouponController.Query
+MallCouponController.Replenish
+MallCouponController.Update
+# --- MallFreightTemplateController（5 条）
+MallFreightTemplateController.CreateTemplate
+MallFreightTemplateController.DeleteTemplate
+MallFreightTemplateController.GetTemplate
+MallFreightTemplateController.GetTemplates
+MallFreightTemplateController.UpdateTemplate
+# --- MallMemberController（8 条）
+MallMemberController.AdjustPoints
+MallMemberController.ChangeStatus
+MallMemberController.Create
+MallMemberController.Delete
+MallMemberController.Get
+MallMemberController.GetByPhone
+MallMemberController.Query
+MallMemberController.Update
+# --- MallMemberCouponController（3 条）
+MallMemberCouponController.Claim
+MallMemberCouponController.GetByMember
+MallMemberCouponController.Use
+# --- MallMemberLevelController（7 条）
+MallMemberLevelController.ChangeStatus
+MallMemberLevelController.Create
+MallMemberLevelController.Delete
+MallMemberLevelController.Get
+MallMemberLevelController.GetAll
+MallMemberLevelController.SetDefault
+MallMemberLevelController.Update
+# --- MallNoticeController（7 条）
+MallNoticeController.ChangeStatus
+MallNoticeController.Create
+MallNoticeController.Delete
+MallNoticeController.Get
+MallNoticeController.GetList
+MallNoticeController.SetTop
+MallNoticeController.Update
+# --- MallOrderController（10 条）
+MallOrderController.CancelOrder
+MallOrderController.ConfirmReceipt
+MallOrderController.CreateRefund
+MallOrderController.CreateShipment
+MallOrderController.GetOrder
+MallOrderController.GetOrders
+MallOrderController.GetPayments
+MallOrderController.GetRefunds
+MallOrderController.SimulatePayment
+MallOrderController.SimulateRefund
+# --- MallPageController（6 条）
+MallPageController.ChangeStatus
+MallPageController.Create
+MallPageController.Delete
+MallPageController.Get
+MallPageController.GetList
+MallPageController.Update
+# --- MallProductController（12 条）
+MallProductController.ChangeProductHot
+MallProductController.ChangeProductStatus
+MallProductController.ChangeSkuStatus
+MallProductController.CopyProduct
+MallProductController.CreateProduct
+MallProductController.CreateSku
+MallProductController.DeleteProduct
+MallProductController.DeleteSku
+MallProductController.GetProduct
+MallProductController.GetProducts
+MallProductController.UpdateProduct
+MallProductController.UpdateSku
+# --- MallProductReviewController（5 条）
+MallProductReviewController.ChangeFeatured
+MallProductReviewController.ChangeStatus
+MallProductReviewController.Delete
+MallProductReviewController.GetList
+MallProductReviewController.Reply
+# --- MallPromotionController（6 条）
+MallPromotionController.ChangePromotionStatus
+MallPromotionController.CreatePromotion
+MallPromotionController.DeletePromotion
+MallPromotionController.GetPromotion
+MallPromotionController.GetPromotions
+MallPromotionController.UpdatePromotion
+# --- MallReturnAdminController（4 条）
+MallReturnAdminController.ApproveReturn
+MallReturnAdminController.ConfirmReturnReceipt
+MallReturnAdminController.GetReturn
+MallReturnAdminController.GetReturns
+# --- MallShipmentController（3 条）
+MallShipmentController.GetShipment
+MallShipmentController.GetShipments
+MallShipmentController.VoidShipment
+# --- MallStockController（4 条）
+MallStockController.AdjustStock
+MallStockController.BatchAdjust
+MallStockController.GetSkus
+MallStockController.GetStockLogs
+# --- MallTagController（6 条）
+MallTagController.ChangeStatus
+MallTagController.Create
+MallTagController.Delete
+MallTagController.GetPage
+MallTagController.GetTags
+MallTagController.Update
+
+# ===== QPS.Host（ 条）=====
+# --- FileUploadController（1 条）
+FileUploadController.UploadImage
