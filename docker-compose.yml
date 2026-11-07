@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     image: qps-api:local
     container_name: qps-api
-    # 不对外发布端口，只供 admin 容器通过服务名访问。
-    expose:
-      - "5000"
+    # 管理端经 admin 内的 nginx 反代；移动端 H5/手机与局域网设备直连宿主 5000。
+    ports:
+      - "5000:5000"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       TZ: Asia/Shanghai
