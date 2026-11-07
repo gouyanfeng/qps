@@ -2,6 +2,10 @@
 **/bin/
 **/obj/
 
+# 本机上传文件（约 1.45 GB）：属于运行时数据，不应打进镜像；
+# 容器内由 /app/wwwroot 命名卷承载。
+src/QPS.Host/wwwroot/uploads/
+
 # IDE / OS files
 .vs/
 .vscode/

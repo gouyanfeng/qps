@@ -15,8 +15,10 @@ COPY src/QPS.Host/QPS.Host.csproj src/QPS.Host/
 RUN dotnet restore src/QPS.Host/QPS.Host.csproj
 
 # 2) 再拷贝剩余源码。publish 自带 build，不再单独 build，避免重复编译。
+#    发布后删除 pdb：调试符号只用于本地调试，进镜像纯属额外体积。
 COPY . .
-RUN dotnet publish src/QPS.Host --configuration Release --output /app/publish --no-restore
+RUN dotnet publish src/QPS.Host --configuration Release --output /app/publish --no-restore \
+    && find /app/publish -name '*.pdb' -delete
 
 # --- 运行阶段 ---
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime

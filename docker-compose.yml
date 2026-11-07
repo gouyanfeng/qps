@@ -1,0 +1,54 @@
+services:
+  qps-api:
+    build:
+      context: ./web-api
+      dockerfile: Dockerfile
+    image: qps-api:local
+    container_name: qps-api
+    # 不对外发布端口，只供 admin 容器通过服务名访问。
+    expose:
+      - "5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      TZ: Asia/Shanghai
+      # 数据库沿用主机上现有的 SQL Server；值取自 web-api/src/QPS.Host/appsettings.json。
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=QPS_CRM;User Id=sa;Password=123456;TrustServerCertificate=True;Encrypt=False;"
+      Jwt__SecretKey: "ThisIsASecretKeyThatIsAtLeast32CharactersLong"
+      Jwt__Issuer: "QPS.API"
+      Jwt__Audience: "QPS.Client"
+    # Linux 容器访问宿主机服务需要显式声明 host.docker.internal。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - qps-uploads:/app/wwwroot
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5000/swagger/v1/swagger.json || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    image: qps-admin:local
+    container_name: qps-admin
+    environment:
+      TZ: Asia/Shanghai
+    # 宿主 8080 已被其他项目的容器占用，统一使用 8090，避免影响既有服务。
+    ports:
+      - "8090:80"
+    depends_on:
+      qps-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  qps-uploads:
