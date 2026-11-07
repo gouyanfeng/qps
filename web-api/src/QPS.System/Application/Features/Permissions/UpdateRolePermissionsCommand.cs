@@ -10,6 +10,7 @@ namespace QPS.System.Application.Features.Permissions;
 /// <summary>
 /// 更新角色权限
 /// </summary>
+[Permission("SYSTEM_PERMISSION_EDIT")]
 public class UpdateRolePermissionsCommand : IRequest<bool>
 {
     /// <summary>

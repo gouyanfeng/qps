@@ -9,6 +9,7 @@ namespace QPS.System.Application.Features.Permissions;
 /// <summary>
 /// 获取所有角色的权限映射
 /// </summary>
+[Permission("SYSTEM_PERMISSION")]
 public class GetRolePermissionsQuery : IRequest<Dictionary<string, RolePermissionsDto>>
 {
     /// <summary>

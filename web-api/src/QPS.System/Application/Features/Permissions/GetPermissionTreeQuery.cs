@@ -10,6 +10,7 @@ namespace QPS.System.Application.Features.Permissions;
 /// <summary>
 /// 获取权限树
 /// </summary>
+[Permission("SYSTEM_PERMISSION")]
 public class GetPermissionTreeQuery : IRequest<List<PermissionTreeNodeDto>>
 {
     /// <summary>
