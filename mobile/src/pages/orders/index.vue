@@ -177,7 +177,7 @@ const tabs = ref<TabItem[]>([
   { label: '待发货', value: 'Paid' },
   { label: '待收货', value: 'Shipped' },
   { label: '已完成', value: 'Completed' },
-  { label: '退款/售后', value: 'Refunding' }
+  { label: '退款/售后', value: 'Refunding,Refunded,Returning,Returned' }
 ])
 
 onLoad(options => {
@@ -236,7 +236,9 @@ function orderStatusText(value: string) {
     Completed: '交易已完成',
     Cancelled: '已取消',
     Refunding: '退款中',
-    Refunded: '已退款'
+    Refunded: '已退款',
+    Returning: '售后处理中',
+    Returned: '售后完成'
   }
   return labels[value] || value
 }

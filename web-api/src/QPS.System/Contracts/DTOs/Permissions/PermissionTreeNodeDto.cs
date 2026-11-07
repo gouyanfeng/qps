@@ -21,6 +21,11 @@ public class PermissionTreeNodeDto
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// 权限类型：Menu（菜单）/ Button（按钮）
+    /// </summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
     /// 子节点
     /// </summary>
     public List<PermissionTreeNodeDto>? Children { get; set; }

@@ -9,6 +9,8 @@ namespace QPS.Mall.Application.Features.MallAddresses;
 public class GetMallAddressQuery : IRequest<MallAddressDto>
 {
     public Guid AddressId { get; set; }
+
+    public Guid UserId { get; set; }
 }
 
 public class GetMallAddressHandler : IRequestHandler<GetMallAddressQuery, MallAddressDto>
@@ -26,7 +28,7 @@ public class GetMallAddressHandler : IRequestHandler<GetMallAddressQuery, MallAd
     {
         var a = await _dbContext.MallAddresses
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.AddressId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == request.AddressId && x.UserId == request.UserId, cancellationToken);
 
         if (a is null)
         {

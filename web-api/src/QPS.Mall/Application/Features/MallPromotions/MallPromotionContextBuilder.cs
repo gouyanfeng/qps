@@ -102,21 +102,24 @@ public class MallPromotionContextBuilder
             }
         }
 
-        return products.ToDictionary(
-            product => product.Id,
-            product =>
-            {
-                var ancestors = new List<Guid>();
-                var currentId = product.CategoryId;
-                var visited = new HashSet<Guid>();
-                while (currentId.HasValue && visited.Add(currentId.Value))
+        // 购物车中同一商品的多个规格会带出多个相同 Id 的商品实例，去重后再建索引
+        return products
+            .DistinctBy(product => product.Id)
+            .ToDictionary(
+                product => product.Id,
+                product =>
                 {
-                    ancestors.Add(currentId.Value);
-                    currentId = parentById.GetValueOrDefault(currentId.Value);
-                }
+                    var ancestors = new List<Guid>();
+                    var currentId = product.CategoryId;
+                    var visited = new HashSet<Guid>();
+                    while (currentId.HasValue && visited.Add(currentId.Value))
+                    {
+                        ancestors.Add(currentId.Value);
+                        currentId = parentById.GetValueOrDefault(currentId.Value);
+                    }
 
-                return ancestors.ToArray();
-            });
+                    return ancestors.ToArray();
+                });
     }
 
     private static SkuOrderRow BuildSkuOrderRow(

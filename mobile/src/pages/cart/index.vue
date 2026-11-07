@@ -340,6 +340,8 @@ function checkout() {
     uni.showToast({ title: '请先处理不可购买的商品', icon: 'none' })
     return
   }
+  // 购物车结算必须使用购物车上下文，清除可能残留的立即购买标记
+  uni.removeStorageSync('qps_buy_now_item')
   uni.navigateTo({ url: '/pages/checkout/index' })
 }
 /** 管理态批量删除选中的行：复用后端按 SKU 批量移除接口 */

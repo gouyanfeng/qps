@@ -33,6 +33,10 @@
                                         <span class="node-label">{{ data.name }}</span>
                                     </el-tooltip>
                                 </el-checkbox>
+                                <el-tag size="small" class="type-tag"
+                                    :type="data.type === 'Button' ? 'info' : 'primary'">
+                                    {{ data.type === 'Button' ? '按钮' : '菜单' }}
+                                </el-tag>
                             </template>
                         </div>
                     </template>
@@ -99,6 +103,7 @@ interface PermNode {
     id: string
     code: string
     name: string
+    type: string
     checked: boolean
     children?: PermNode[]
 }
@@ -264,7 +269,7 @@ const loadTree = async () => {
         const res = await permissionApi.getPermissionTree()
         const inject = (nodes: any[]): PermNode[] =>
             nodes.map(n => ({
-                id: n.id, code: n.code, name: n.name,
+                id: n.id, code: n.code, name: n.name, type: n.type,
                 checked: false,
                 children: n.children ? inject(n.children) : undefined
             }))
@@ -462,6 +467,11 @@ onMounted(loadTree)
 
     .node-label {
         font-size: 14px;
+    }
+
+    .type-tag {
+        margin-left: 6px;
+        flex-shrink: 0;
     }
 }
 

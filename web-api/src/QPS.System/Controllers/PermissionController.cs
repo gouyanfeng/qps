@@ -19,10 +19,11 @@ public class PermissionController : ControllerBase
     /// <summary>
     /// 获取权限树
     /// </summary>
+    /// <param name="type">按权限类型筛选：Menu（菜单）/ Button（按钮），不传返回全部</param>
     [HttpGet("tree")]
-    public async Task<ActionResult<List<PermissionTreeNodeDto>>> GetPermissionTree()
+    public async Task<ActionResult<List<PermissionTreeNodeDto>>> GetPermissionTree([FromQuery] string? type = null)
     {
-        var query = new GetPermissionTreeQuery();
+        var query = new GetPermissionTreeQuery { Type = type };
         var result = await _mediator.Send(query);
         return Ok(result);
     }

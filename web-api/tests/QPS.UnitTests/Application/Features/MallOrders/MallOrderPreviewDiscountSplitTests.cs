@@ -129,6 +129,48 @@ public class MallOrderPreviewDiscountSplitTests
             preview.PayableAmount);
     }
 
+    [Fact]
+    public async Task Preview_TwoSkusOfSameProduct_DoesNotThrowAndKeepsBothLines()
+    {
+        await using var factory = await TestSqliteDbContextFactory.CreateAsync();
+        var db = factory.Context;
+        var (sku, address, memberId, productId) = await SeedAsync(db, price: 200m);
+        // 同一商品的第二个规格：购物车同时持有两个规格时，促销上下文不能因商品 Id 重复而异常
+        var secondSku = MallSku.Create(
+            productId,
+            $"HC-SPLIT-SKU2-{Guid.NewGuid():N}",
+            "规格二",
+            100m,
+            500,
+            100,
+            5,
+            true);
+        db.MallSkus.Add(secondSku);
+        AddPromotion(db, CreateAmount(productId, threshold: 300m, amount: 30m), "Product", productId);
+        await db.SaveChangesAsync();
+
+        var handler = CreateHandler(db);
+        var preview = await handler.Handle(
+            new PreviewMallOrderQuery
+            {
+                MemberId = memberId,
+                Request = new PreviewMallOrderRequest
+                {
+                    AddressId = address.Id,
+                    Items =
+                    {
+                        new PreviewMallOrderItem { SkuId = sku.Id, Quantity = 1 },
+                        new PreviewMallOrderItem { SkuId = secondSku.Id, Quantity = 1 }
+                    }
+                }
+            },
+            CancellationToken.None);
+
+        Assert.Equal(300m, preview.GoodsAmount);
+        Assert.Equal(30m, preview.AmountDiscountAmount);
+        Assert.Equal(270m, preview.PayableAmount);
+    }
+
     private static MallPromotion CreateRate(Guid productId, decimal rate)
     {
         return MallPromotion.Create(

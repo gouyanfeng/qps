@@ -1000,10 +1000,11 @@ export interface ChinaRegionNode {
 let _chinaRegions: ChinaRegionNode[] | null = null
 export async function getChinaRegions(): Promise<ChinaRegionNode[]> {
   if (_chinaRegions) return _chinaRegions
-  const data = await request<Array<{ code: string; name: string; level: number; parentCode: string }>>(
-    '/api/admin/china-regions?activeOnly=true'
+  // 该接口返回分页结构；pageSize=0 表示一次性返回全部层级，会员选地址时需要完整地区树
+  const data = await request<{ list?: Array<{ code: string; name: string; level: number; parentCode: string }> }>(
+    '/api/admin/china-regions?isActive=true&pageSize=0'
   )
-  _chinaRegions = (data || []).map(r => ({ code: r.code, name: r.name, level: r.level, parentCode: r.parentCode }))
+  _chinaRegions = (data?.list || []).map(r => ({ code: r.code, name: r.name, level: r.level, parentCode: r.parentCode }))
   return _chinaRegions
 }
 

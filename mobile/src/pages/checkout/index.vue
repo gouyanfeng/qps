@@ -274,12 +274,52 @@
         </view>
       </view>
     </view>
+    <!-- 收货地址选择弹窗：结算页原地切换，避免页面跳转影响立即购买上下文 -->
+    <view v-if="showAddressPicker" class="coupon-picker-mask" @tap="showAddressPicker = false">
+      <view class="coupon-picker address-picker" @tap.stop>
+        <view class="picker-header">
+          <text class="picker-title">选择收货地址</text>
+          <view class="picker-close" @tap="showAddressPicker = false">
+            <q-icon name="close" size="22" color="#707A6C" />
+          </view>
+        </view>
+        <scroll-view scroll-y class="picker-body address-picker-body">
+          <view
+            v-for="item in addressOptions"
+            :key="item.id"
+            class="address-option"
+            :class="{ selected: address?.id === item.id }"
+            @tap="pickAddress(item)"
+          >
+            <view class="address-option-main">
+              <view class="address-option-head">
+                <text class="address-option-name">{{ item.receiverName }}</text>
+                <text class="address-option-phone">{{ item.receiverPhone }}</text>
+                <view v-if="item.isDefault" class="tag-default tag-sm">默认</view>
+              </view>
+              <text class="address-option-detail">{{ item.fullAddress }}</text>
+            </view>
+            <view v-if="address?.id === item.id" class="picker-check">
+              <q-icon name="check" size="18" color="#ffffff" />
+            </view>
+          </view>
+          <view v-if="!addressOptions.length" class="picker-empty">
+            <text class="picker-empty-text">还没有收货地址，请先新增</text>
+          </view>
+        </scroll-view>
+        <view class="picker-footer">
+          <view class="picker-clear-btn address-add-btn" @tap="addAddressFromPicker">
+            <text class="picker-clear-text">＋ 新增收货地址</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onUnload } from '@dcloudio/uni-app'
 import { getCartItems, removeCartItems, getAddresses, createOrder, getCheckoutCoupons, previewOrder } from '@/api'
 import { couponDiscountRateText, isPercentCoupon } from '@/utils/coupon'
 import type { CheckoutCoupon, MallAddress, OrderPreview } from '@/api'
@@ -293,6 +333,8 @@ const remark = ref('')
 const availableCoupons = ref<CheckoutCoupon[]>([])
 const selectedCoupon = ref<CheckoutCoupon | null>(null)
 const showCouponPicker = ref(false)
+const showAddressPicker = ref(false)
+const addressOptions = ref<MallAddress[]>([])
 const promotionPreview = ref<OrderPreview | null>(null)
 // 立即购买不经过购物车，下单成功后不能改动购物车
 const isBuyNow = ref(false)
@@ -348,6 +390,10 @@ onShow(async () => {
   try {
     // 先确定收货地址，预览的运费才知道按哪个地区计算
     const addresses = await getAddresses()
+    addressOptions.value = addresses
+    // 从新增地址页返回时重新打开弹层；地址页会把新地址 ID 回写到 selectedAddressId
+    const reopenAddressPicker = Boolean(uni.getStorageSync('qps_checkout_add_address'))
+    if (reopenAddressPicker) uni.removeStorageSync('qps_checkout_add_address')
     const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
     address.value = addresses.find(item => item.id === selectedAddressId)
       ?? addresses.find(item => item.isDefault)
@@ -368,7 +414,7 @@ onShow(async () => {
         weightGram: buyNow.weightGram ?? 0,
         selected: true
       }]
-      uni.removeStorageSync('qps_buy_now_item')
+      // 立即购买上下文要保留到结算流程结束：去地址页/优惠券页再返回仍按原商品结算
     } else {
       isBuyNow.value = false
       items.value = (await getCartItems()).filter(item => item.selected)
@@ -388,6 +434,7 @@ onShow(async () => {
       }
       await refreshPreview()
     }
+    if (reopenAddressPicker) showAddressPicker.value = true
   } catch (error) {
     console.error('加载结算数据失败', error)
     if (error instanceof UnauthorizedError) return
@@ -395,7 +442,25 @@ onShow(async () => {
   }
 })
 
-function editAddress() { uni.navigateTo({ url: '/pages/addresses/index' }) }
+// 离开结算页（返回或切换页面）时清理立即购买上下文，避免下次购物车结算串单
+onUnload(() => {
+  uni.removeStorageSync('qps_buy_now_item')
+})
+
+function editAddress() { showAddressPicker.value = true }
+/** 弹层内选中地址：只重算运费与应付，商品明细保持不变 */
+async function pickAddress(item: MallAddress) {
+  address.value = item
+  uni.setStorageSync('qps_checkout_address_id', item.id)
+  showAddressPicker.value = false
+  await refreshPreview()
+}
+/** 跳现有新增地址页，保存后返回结算页自动选中新地址 */
+function addAddressFromPicker() {
+  showAddressPicker.value = false
+  uni.setStorageSync('qps_checkout_add_address', '1')
+  uni.navigateTo({ url: '/pages/addresses/index' })
+}
 function selectCoupon() {
   if (!availableCoupons.value.length) {
     uni.showToast({ title: '暂无优惠券', icon: 'none' })
@@ -451,6 +516,8 @@ function submitOrder() {
           memberCouponId: selectedCoupon.value?.id
         })
         const buyNowOrder = isBuyNow.value
+        // 下单成功即为结算流程结束，立即购买上下文可以清理
+        if (buyNowOrder) uni.removeStorageSync('qps_buy_now_item')
         try {
           // 只移除本次下单的规格明细，保留购物车中未购买的商品；立即购买不改动购物车
           if (!buyNowOrder) {
@@ -979,6 +1046,70 @@ $page-padding: 24rpx;
 .submit-count {
   font-size: 23rpx;
   opacity: 0.9;
+}
+
+/* ===== 收货地址选择弹窗 ===== */
+.address-picker {
+  max-height: 62vh;
+}
+
+.address-picker-body {
+  max-height: 46vh;
+}
+
+.address-option {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  border-radius: 16rpx;
+  background: #F6F3F2;
+  border: 2rpx solid transparent;
+}
+
+.address-option.selected {
+  border-color: $theme-primary;
+  background: #F4F9EF;
+}
+
+.address-option-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.address-option-head {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.address-option-name {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: #1B1C1C;
+}
+
+.address-option-phone {
+  font-size: 23rpx;
+  color: #6B6B6B;
+}
+
+.address-option-detail {
+  font-size: 22rpx;
+  color: #40493D;
+  line-height: 1.5;
+}
+
+.address-add-btn {
+  background: #F4F9EF;
+}
+
+.address-add-btn .picker-clear-text {
+  color: $theme-primary;
 }
 
 /* ===== 优惠券选择弹窗 ===== */

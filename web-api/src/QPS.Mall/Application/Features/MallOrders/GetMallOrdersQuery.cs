@@ -62,8 +62,10 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
 
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
-            var status = request.Status.Trim();
-            query = query.Where(order => order.Status == status);
+            // 支持逗号分隔的状态组，如「退款/售后」tab 一次筛出多个售后状态
+            var statuses = request.Status
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            query = query.Where(order => statuses.Contains(order.Status));
         }
 
         if (request.MemberId.HasValue)
