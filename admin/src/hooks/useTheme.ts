@@ -13,7 +13,7 @@ import { headerTheme } from "@/styles/theme/header";
  * */
 export const useTheme = () => {
   const globalStore = useGlobalStore();
-  const { primary, isDark, isGrey, isWeak, layout, asideInverted, headerInverted } = storeToRefs(globalStore);
+  const { primary, isDark, isGrey, isWeak, layout, asideInverted, headerInverted, borderRadius } = storeToRefs(globalStore);
 
   // 切换暗黑模式 ==> 同时修改主题颜色、侧边栏、头部颜色
   const switchDark = () => {
@@ -42,6 +42,13 @@ export const useTheme = () => {
       document.documentElement.style.setProperty(`--el-color-primary-light-${i}`, primaryColor);
     }
     globalStore.setGlobalState("primary", val);
+  };
+
+  // 修改按钮等基础组件圆角（菜单选中块引用同一变量，会同步变化）
+  const changeBorderRadius = (val: number) => {
+    const radius = Number.isFinite(Number(val)) ? Math.max(0, Number(val)) : 4;
+    document.documentElement.style.setProperty("--el-border-radius-base", `${radius}px`);
+    globalStore.setGlobalState("borderRadius", radius);
   };
 
   // 灰色和弱色切换
@@ -96,6 +103,7 @@ export const useTheme = () => {
   // init theme
   const initTheme = () => {
     switchDark();
+    changeBorderRadius(borderRadius.value);
     if (isGrey.value) changeGreyOrWeak("grey", true);
     if (isWeak.value) changeGreyOrWeak("weak", true);
   };
@@ -104,6 +112,7 @@ export const useTheme = () => {
     initTheme,
     switchDark,
     changePrimary,
+    changeBorderRadius,
     changeGreyOrWeak,
     setAsideTheme,
     setHeaderTheme

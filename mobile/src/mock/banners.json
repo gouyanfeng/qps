@@ -1,27 +1,6 @@
 {
     "banners":  [
                     {
-                        "id":  "banner-001",
-                        "image":  "/uploads/banner/202610/411a11d1ce08a9adfb7f84c5483d3bdc.png",
-                        "title":  "中药材精品推荐",
-                        "linkType":  "InternalActivity",
-                        "activityId":  "herb-selection"
-                    },
-                    {
-                        "id":  "banner-002",
-                        "image":  "/uploads/banner/202610/66301c4d2ef3b72c5f30b5e0cff82ecf.png",
-                        "title":  "新人专享优惠",
-                        "linkType":  "InternalActivity",
-                        "activityId":  "new-member"
-                    },
-                    {
-                        "id":  "banner-003",
-                        "image":  "/uploads/banner/202610/9ba9d0ac09961bf1be045e74b29133fe.png",
-                        "title":  "限时特惠活动",
-                        "linkType":  "InternalActivity",
-                        "activityId":  "limited-time"
-                    },
-                    {
                         "id":  "banner-004",
                         "image":  "/uploads/banner/202610/b0a230796d9fea32b9cd6b9998db342d.png",
                         "title":  "商品详情跳转测试",

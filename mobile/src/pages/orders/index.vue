@@ -59,10 +59,19 @@
             </view>
           </view>
 
-          <!-- Cold-chain Tag (Shipped only) -->
-          <view v-if="order.status === 'Shipped'" class="cold-tag">
+          <!-- Order No -->
+          <view class="order-no-row">
+            <text class="order-no-text">订单号: {{ order.orderNo }}</text>
+            <view class="order-no-copy" @tap.stop="copyOrderNo(order.orderNo)">
+              <view class="copy-icon"></view>
+              <text class="copy-text">复制</text>
+            </view>
+          </view>
+
+          <!-- 运单摘要（已发货且有真实运单时展示） -->
+          <view v-if="order.status === 'Shipped' && order.shipment" class="cold-tag">
             <q-icon name="snowflake" size="13" color="#2E7D32" />
-            <text class="cold-tag-text">顺丰冷链运输中 · 恒温达标</text>
+            <text class="cold-tag-text">{{ order.shipment.expressCompany }} {{ order.shipment.trackingNo }}</text>
           </view>
 
           <!-- Order Items -->
@@ -90,9 +99,16 @@
               <text class="item-name">{{ item.productName }}</text>
               <text class="item-spec">{{ item.specName }}</text>
               <view class="item-price-row">
-                <text class="item-price">¥{{ item.unitPrice.toFixed(2) }}</text>
+                <view class="item-price-left">
+                  <text class="item-price">¥{{ item.unitPrice.toFixed(2) }}</text>
+                  <text
+                    v-if="item.originalUnitPrice > item.unitPrice"
+                    class="item-price-origin"
+                  >¥{{ item.originalUnitPrice.toFixed(2) }}</text>
+                </view>
                 <text class="item-qty">x{{ item.quantity }}</text>
               </view>
+              <text v-if="promotionText(item)" class="item-promo">{{ promotionText(item) }}</text>
             </view>
           </view>
 
@@ -101,7 +117,7 @@
             <text class="summary-count">共{{ totalQuantity(order) }}件商品</text>
             <text class="summary-label">{{ order.status === 'PendingPayment' ? '应付' : '实付' }}</text>
             <text class="summary-amount" :class="{ 'amount-accent': order.status === 'PendingPayment' }">
-              ¥{{ order.payableAmount.toFixed(2) }}
+              ¥{{ (order.paidAmount > 0 ? order.paidAmount : order.payableAmount).toFixed(2) }}
             </text>
           </view>
 
@@ -139,7 +155,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getMyOrders, cancelOrder as apiCancelOrder, createPayment, simulatePayment, confirmReceipt as apiConfirmReceipt } from '@/api'
-import type { MallOrder } from '@/api'
+import type { MallOrder, MallOrderItem } from '@/api'
 import { UnauthorizedError, resolveFileUrl } from '@/utils/http'
 
 const orders = ref<MallOrder[]>([])
@@ -227,6 +243,36 @@ function orderStatusText(value: string) {
 
 function totalQuantity(order: MallOrder) {
   return order.items.reduce((sum, item) => sum + item.quantity, 0)
+}
+
+interface PromotionSnapshotEntry {
+  id: string
+  name: string
+  actionType: string
+  amount: number
+}
+
+/** 促销文案由前端按结构化快照拼装，数据侧只存促销名称与金额 */
+function promotionText(item: MallOrderItem) {
+  let entries: PromotionSnapshotEntry[] = []
+  try {
+    entries = JSON.parse(item.promotionSnapshot || '[]') as PromotionSnapshotEntry[]
+  } catch {
+    entries = []
+  }
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return item.promotionName || ''
+  }
+  return entries
+    .map(entry => (entry.amount > 0 ? `${entry.name} -¥${entry.amount.toFixed(2)}` : entry.name))
+    .join('；')
+}
+
+function copyOrderNo(value: string) {
+  uni.setClipboardData({
+    data: value,
+    success: () => uni.showToast({ title: '订单号已复制', icon: 'none' })
+  })
 }
 
 interface OrderAction {
@@ -410,7 +456,7 @@ function confirmReceive(orderNo: string) {
   box-sizing: border-box;
   width: 100%;
   min-width: 100%;
-  padding: 12rpx 24rpx;
+  padding: 12rpx 35rpx;
 }
 
 .tab-item {
@@ -550,6 +596,66 @@ function confirmReceive(orderNo: string) {
   color: #707A6C;
 }
 
+/* Order No */
+.order-no-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.order-no-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #707A6C;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-no-copy {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 0;
+}
+
+.copy-icon {
+  position: relative;
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.copy-icon::before,
+.copy-icon::after {
+  content: '';
+  position: absolute;
+  width: 15rpx;
+  height: 15rpx;
+  border: 2rpx solid #2E7D32;
+  border-radius: 3rpx;
+  box-sizing: border-box;
+}
+
+.copy-icon::before {
+  left: 0;
+  bottom: 0;
+}
+
+.copy-icon::after {
+  right: 0;
+  top: 0;
+  background: #ffffff;
+}
+
+.copy-text {
+  font-size: 22rpx;
+  color: #2E7D32;
+  font-weight: 500;
+}
+
 /* Cold-chain Tag */
 .cold-tag {
   display: flex;
@@ -650,6 +756,28 @@ function confirmReceive(orderNo: string) {
   font-size: 24rpx;
   font-weight: 600;
   color: #1B1C1C;
+}
+
+.item-price-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.item-price-origin {
+  font-size: 20rpx;
+  color: #B0ACA2;
+  text-decoration: line-through;
+}
+
+.item-promo {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: #8A8578;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-qty {

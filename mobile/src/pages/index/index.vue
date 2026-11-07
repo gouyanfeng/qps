@@ -63,18 +63,8 @@
       </view>
 
       <!-- ===== 节气养生卡 ===== -->
-      <view class="solar-card" @click="goToCategory">
-        <view class="solar-icon-wrap">
-          <q-icon name="sunny" size="40" color="#F57C00" />
-        </view>
-        <view class="solar-text">
-          <view class="solar-title-row">
-            <view class="solar-tag">当季精选</view>
-            <text class="solar-title">节气养生 · 润秋燥</text>
-          </view>
-          <text class="solar-desc">百合、麦冬、新会陈皮搭配调理，益肺润津</text>
-        </view>
-        <q-icon name="chevron-right" size="30" color="#8B5E1F" />
+      <view v-if="solarBanner" class="solar-card" @click="handleSolarClick">
+        <image :src="solarBanner.image" mode="widthFix" class="solar-banner-image" />
       </view>
 
       <!-- ===== 道地精选商品网格 ===== -->
@@ -117,7 +107,7 @@
                   <view class="price-row">
                     <text class="price-symbol">¥</text>
                     <text class="price-value">{{ p.price }}</text>
-                    <text v-if="p.marketPrice > 0" class="price-original">¥{{ p.marketPrice }}</text>
+                    <text v-if="p.originalPrice > 0" class="price-original">¥{{ p.originalPrice }}</text>
                   </view>
                   <text class="sales-text">已售 {{ p.sales }}+</text>
                 </view>
@@ -152,7 +142,7 @@ interface FeaturedItem {
   name: string
   image: string
   price: string
-  marketPrice: number
+  originalPrice: number
   spec: string
   skuSpecName: string
   weightGram: number
@@ -166,15 +156,17 @@ interface FeaturedItem {
 
 const categoryItems = ref<Array<{ id: string; name: string; icon: string }>>([])
 const banners = ref<Banner[]>([])
+const solarBanner = ref<Banner | null>(null)
 
 const featured = ref<FeaturedItem[]>([])
 
 onMounted(async () => {
   try {
-    const [categories, products, loadedBanners] = await Promise.all([
+    const [categories, products, loadedBanners, solarList] = await Promise.all([
       getCategories(),
       getHotProducts(),
-      getBanners()
+      getBanners(),
+      getBanners('home-solar')
     ])
     const childCategories = categories.flatMap((category: Category) => category.children)
     categoryItems.value = childCategories.slice(0, 6).map((category) => ({
@@ -183,11 +175,17 @@ onMounted(async () => {
       icon: category.icon
     }))
     banners.value = loadedBanners
+    solarBanner.value = solarList[0] ?? null
     featured.value = products.filter(product => product.skus.length > 0).slice(0, 6).map((product: Product) => {
-      // 列表价取所有规格中的最低促销价
-      const sku = product.skus.reduce((min, item) => (item.price < min.price ? item : min))
+      // 列表价取所有规格中折后价最低的一条，折后价由后端计算
+      const sku = product.skus.reduce((min, item) => {
+        const current = item.discountedPrice ?? item.price
+        const minValue = min.discountedPrice ?? min.price
+        return current < minValue ? item : min
+      })
+      const displayPrice = sku.discountedPrice ?? sku.price
+      const hasDiscount = sku.discountedPrice !== null && sku.discountedPrice < sku.price
       const displayTags = product.tags.filter((tag) => tag.type !== 'Promotion')
-      const promoTag = product.tags.find((tag) => tag.type === 'Promotion')
       const firstTag = displayTags[0]
       const secondTag = displayTags[1]
       return {
@@ -195,8 +193,8 @@ onMounted(async () => {
         skuId: sku.id,
         name: product.name,
         image: product.images[0] || '',
-        price: sku.price % 1 === 0 ? String(sku.price) : sku.price.toFixed(1),
-        marketPrice: sku.marketPrice || 0,
+        price: displayPrice % 1 === 0 ? String(displayPrice) : displayPrice.toFixed(2),
+        originalPrice: hasDiscount ? sku.price : 0,
         spec: sku.specName,
         skuSpecName: sku.specName,
         weightGram: sku.weightGram,
@@ -205,8 +203,9 @@ onMounted(async () => {
         certSub: secondTag?.name || '',
         tone: resolveTagColor(firstTag?.color),
         toneSub: resolveTagColor(secondTag?.color),
-        promoBadge: promoTag
-          ? { name: promoTag.name, color: resolveTagColor(promoTag.color) || '#C2410C' }
+        // 角标只看后端满减标识，不在前端重复判断促销类型
+        promoBadge: product.promotionBadgeText
+          ? { name: product.promotionBadgeText, color: product.promotionBadgeColor || '#C2410C' }
           : undefined
       }
     })
@@ -255,9 +254,12 @@ function handleBannerClick(banner: Banner) {
     goToProductDetail(banner.link)
   } else if (banner.linkType === BannerLinkType.InternalCategory) {
     goToCategory(banner.link)
-  } else if (banner.linkType === BannerLinkType.InternalActivity || banner.linkType === BannerLinkType.InternalRegistrationActivity) {
-    uni.navigateTo({ url: `/pages/activity-detail/index?id=${encodeURIComponent(banner.link)}` })
+  } else if (banner.linkType === BannerLinkType.InternalCampaign) {
+    uni.navigateTo({ url: `/pages/campaign/index?id=${encodeURIComponent(banner.link)}` })
   }
+}
+function handleSolarClick() {
+  if (solarBanner.value) handleBannerClick(solarBanner.value)
 }
 function handleVerify() { uni.showToast({ title: '扫码验真功能演示', icon: 'none' }) }
 </script>
@@ -471,59 +473,14 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 
 // ============ 节气养生 ============
 .solar-card {
-  display: flex;
-  align-items: center;
-  gap: 18rpx;
   margin: 22rpx 24rpx 0;
-  padding: 22rpx 20rpx;
-  background: #FCF8E8;
-  border: 2rpx solid #F1E4C3;
-  border-radius: 20rpx;
+  border-radius: 22rpx;
+  overflow: hidden;
 }
 
-.solar-icon-wrap {
-  width: 88rpx;
-  height: 88rpx;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #FFE8C6;
-  border-radius: 18rpx;
-}
-
-.solar-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.solar-title-row {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.solar-tag {
-  padding: 4rpx 12rpx;
-  background: #F59E0B;
-  border-radius: 6rpx;
-  font-size: 17rpx;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.solar-title {
-  font-size: 27rpx;
-  font-weight: 700;
-  color: $text-primary;
-}
-
-.solar-desc {
-  font-size: 21rpx;
-  color: $text-secondary;
+.solar-banner-image {
+  width: 100%;
+  display: block;
 }
 
 // ============ 商品网格 ============
@@ -567,13 +524,17 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 }
 
 .product-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  column-count: 2;
+  column-gap: 16rpx;
 }
 
 .product-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 16rpx;
   background: $card;
   border-radius: 18rpx;
   overflow: hidden;
@@ -604,6 +565,7 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 }
 
 .product-info {
+  flex: 1;
   padding: 16rpx 20rpx 20rpx;
   display: flex;
   flex-direction: column;
@@ -630,6 +592,10 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   font-weight: 700;
   color: $text-primary;
   line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .product-spec {
@@ -642,7 +608,7 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 14rpx;
+  margin-top: auto;
   padding-top: 14rpx;
   border-top: 1rpx solid #EFEEEB;
 }
@@ -677,6 +643,7 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   color: #B0ACA9;
   text-decoration: line-through;
 }
+
 
 .sales-text {
   font-size: 18rpx;

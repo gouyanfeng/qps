@@ -24,13 +24,11 @@ public class MallPromotionContextBuilder
         IReadOnlyCollection<MallPromotionSkuInput> inputs,
         CancellationToken cancellationToken)
     {
-        var quantityBySku = inputs
-            .GroupBy(input => input.Sku.Id)
-            .ToDictionary(group => group.Key, group => group.Sum(input => input.Quantity));
-
         var activePromotions = await _dbContext.MallPromotions
             .AsNoTracking()
             .WhereEffective(DateTime.Now)
+            .OrderBy(promotion => promotion.CreatedAt)
+            .ThenBy(promotion => promotion.Id)
             .ToListAsync(cancellationToken);
 
         var promotionIds = activePromotions.Select(promotion => promotion.Id).ToList();
@@ -44,7 +42,7 @@ public class MallPromotionContextBuilder
                     group => group.ToList(),
                     cancellationToken);
 
-        var categoryParents = await LoadCategoryParentsAsync(
+        var categoryAncestors = await LoadCategoryAncestorsAsync(
             inputs.Select(input => input.Product),
             cancellationToken);
 
@@ -60,21 +58,10 @@ public class MallPromotionContextBuilder
                         input.Sku,
                         input.Product,
                         group.Sum(item => item.Quantity),
-                        categoryParents);
+                        categoryAncestors);
                 })
                 .ToList()
         };
-
-        if (activePromotions.Count > 0)
-        {
-            var usages = await _dbContext.MallPromotionUsages
-                .AsNoTracking()
-                .Where(usage => promotionIds.Contains(usage.PromotionId) && usage.UserId == memberId)
-                .ToListAsync(cancellationToken);
-            orderContext.PromotionUsageMap = usages.ToDictionary(
-                usage => usage.PromotionId,
-                usage => usage.UsageCount);
-        }
 
         return new MallPromotionContextData
         {
@@ -84,45 +71,63 @@ public class MallPromotionContextBuilder
         };
     }
 
-    private async Task<Dictionary<Guid, Guid?>> LoadCategoryParentsAsync(
+    /// <summary>按商品分类逐级加载完整祖先链（含自身），与商品页展示口径一致。</summary>
+    private async Task<Dictionary<Guid, Guid[]>> LoadCategoryAncestorsAsync(
         IEnumerable<MallProduct> products,
         CancellationToken cancellationToken)
     {
-        var categoryIds = products
+        var pendingIds = products
             .Where(product => product.CategoryId.HasValue)
             .Select(product => product.CategoryId!.Value)
             .Distinct()
-            .ToArray();
-        if (categoryIds.Length == 0)
+            .ToHashSet();
+        var parentById = new Dictionary<Guid, Guid?>();
+
+        while (pendingIds.Count > 0)
         {
-            return new Dictionary<Guid, Guid?>();
+            var categories = await _dbContext.MallCategories
+                .AsNoTracking()
+                .Where(category => pendingIds.Contains(category.Id))
+                .Select(category => new { category.Id, category.ParentId })
+                .ToListAsync(cancellationToken);
+            pendingIds.Clear();
+
+            foreach (var category in categories)
+            {
+                parentById[category.Id] = category.ParentId;
+                if (category.ParentId.HasValue && !parentById.ContainsKey(category.ParentId.Value))
+                {
+                    pendingIds.Add(category.ParentId.Value);
+                }
+            }
         }
 
-        return await _dbContext.MallCategories
-            .Where(category => categoryIds.Contains(category.Id))
-            .Select(category => new { category.Id, category.ParentId })
-            .ToDictionaryAsync(
-                category => category.Id,
-                category => category.ParentId,
-                cancellationToken);
+        return products.ToDictionary(
+            product => product.Id,
+            product =>
+            {
+                var ancestors = new List<Guid>();
+                var currentId = product.CategoryId;
+                var visited = new HashSet<Guid>();
+                while (currentId.HasValue && visited.Add(currentId.Value))
+                {
+                    ancestors.Add(currentId.Value);
+                    currentId = parentById.GetValueOrDefault(currentId.Value);
+                }
+
+                return ancestors.ToArray();
+            });
     }
 
     private static SkuOrderRow BuildSkuOrderRow(
         MallSku sku,
         MallProduct product,
         int quantity,
-        IReadOnlyDictionary<Guid, Guid?> categoryParents)
+        IReadOnlyDictionary<Guid, Guid[]> categoryAncestors)
     {
-        var categoryIds = new List<Guid>();
-        if (product.CategoryId.HasValue)
-        {
-            var categoryId = product.CategoryId.Value;
-            categoryIds.Add(categoryId);
-            if (categoryParents.TryGetValue(categoryId, out var parentId) && parentId.HasValue)
-            {
-                categoryIds.Add(parentId.Value);
-            }
-        }
+        var categoryIds = product.CategoryId.HasValue
+            ? categoryAncestors.GetValueOrDefault(product.CategoryId.Value)?.ToList() ?? new List<Guid> { product.CategoryId.Value }
+            : new List<Guid>();
 
         return new SkuOrderRow
         {

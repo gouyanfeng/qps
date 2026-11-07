@@ -14,6 +14,9 @@ public class ConfirmMallOrderReceiptCommand : IRequest<bool>
 
     /// <summary>外部订单号。</summary>
     public string? OrderNo { get; set; }
+
+    /// <summary>当前会员 ID；移动端必传，管理端为空。</summary>
+    public Guid? MemberId { get; set; }
 }
 
 public class ConfirmMallOrderReceiptHandler : IRequestHandler<ConfirmMallOrderReceiptCommand, bool>
@@ -35,10 +38,12 @@ public class ConfirmMallOrderReceiptHandler : IRequestHandler<ConfirmMallOrderRe
             request.OrderNo,
             cancellationToken);
 
+        MallOrderResolver.EnsureOwnership(order, request.MemberId);
+
         order.MarkCompleted();
 
         var shipment = await _dbContext.MallShipments
-            .FirstOrDefaultAsync(item => item.OrderId == order.Id, cancellationToken);
+            .FirstOrDefaultAsync(item => item.OrderId == order.Id && !item.IsVoided, cancellationToken);
 
         shipment?.MarkDelivered();
 

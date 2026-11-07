@@ -47,6 +47,9 @@ public static class MallPaymentStatus
     /// <summary>支付失败。</summary>
     public const string Failed = "Failed";
 
+    /// <summary>已退款（整单退款成功后同步）。</summary>
+    public const string Refunded = "Refunded";
+
     /// <summary>已关闭（订单取消）。</summary>
     public const string Cancelled = "Cancelled";
 }

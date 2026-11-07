@@ -69,8 +69,8 @@
               <!-- 2. 商品图 -->
               <view class="goods-image-wrap">
                 <q-cached-image :src="item.productImage" mode="aspectFill" class="goods-image" />
-                <view v-if="item.badge" class="goods-badge">
-                  <text class="goods-badge-text">{{ item.badge }}</text>
+                <view v-if="item.promotionBadgeText" class="goods-badge" :style="{ backgroundColor: item.promotionBadgeColor || '#C2410C' }">
+                  <text class="goods-badge-text">{{ item.promotionBadgeText }}</text>
                 </view>
               </view>
 
@@ -102,13 +102,22 @@
                   <view class="price-wrap">
                     <view class="price-row">
                       <text class="price-symbol">¥</text>
-                      <text class="price-value">{{ item.price.toFixed(2) }}</text>
+                      <text class="price-value">{{ itemPrice(item).toFixed(2) }}</text>
+                      <text v-if="itemHasDiscount(item)" class="price-origin">¥{{ item.price.toFixed(2) }}</text>
                     </view>
-                    <text class="goods-subtotal">小计 ¥{{ (item.price * item.quantity).toFixed(2) }}</text>
+                    <text class="goods-subtotal">小计 ¥{{ (itemPrice(item) * item.quantity).toFixed(2) }}</text>
+                  </view>
+
+                  <!-- 管理态：单行删除 -->
+                  <view v-if="editMode" class="row-actions">
+                    <view class="row-action-btn" @click="deleteItem(item.skuId)">
+                      <q-icon name="delete" size="16" color="#D32F2F" />
+                      <text class="row-action-text">删除</text>
+                    </view>
                   </view>
 
                   <!-- stepper: 自绘 -/数量/+ -->
-                  <view class="stepper">
+                  <view v-else class="stepper">
                     <view
                       :class="['step-btn', { disabled: item.quantity <= 1 }]"
                       @click="item.quantity > 1 && decreaseQuantity(item.skuId)"
@@ -121,6 +130,29 @@
                     </view>
                   </view>
                 </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 赠品区：0 元计价，不参与金额计算，仅按件数展示 -->
+          <view v-if="gifts.length" class="gift-block">
+            <view class="gift-block-title">
+              <q-icon name="gift" size="16" color="#E2601F" />
+              <text class="gift-block-text">赠品 · 已随选中商品赠送</text>
+            </view>
+            <view v-for="gift in gifts" :key="gift.skuId" class="gift-row">
+              <q-cached-image :src="gift.productImage" mode="aspectFill" class="gift-image" />
+              <view class="gift-info">
+                <view class="gift-name-line">
+                  <text class="gift-name">{{ gift.productName }}</text>
+                  <view class="gift-tag"><text>赠品</text></view>
+                </view>
+                <text class="gift-spec">{{ gift.specName }}</text>
+                <text class="gift-promo">满赠活动：{{ gift.promotionName }}</text>
+              </view>
+              <view class="gift-right">
+                <text class="gift-price">¥0</text>
+                <text class="gift-qty">×{{ gift.quantity }}</text>
               </view>
             </view>
           </view>
@@ -154,43 +186,32 @@
       </view>
     </scroll-view>
 
-    <!-- ============ 底部固定结算栏 ============ -->
-    <view v-if="cartItems.length > 0" class="page-footer">
-      <view class="bb-total">
-        <view class="bb-total-row">
-          <text class="bb-total-label">合计：</text>
-          <text class="bb-total-symbol">¥</text>
-          <text class="bb-total-price">{{ selectedAmount.toFixed(2) }}</text>
-          <text
-            v-if="promotionDetails.length"
-            class="bb-detail-toggle"
-            @click="detailVisible = !detailVisible"
-          >{{ detailVisible ? '收起' : '明细' }}</text>
+    <!-- ============ 底部固定结算栏：应付/合计 + 明细抽屉 + 去结算 ============ -->
+    <q-checkout-bar
+      v-if="cartItems.length > 0"
+      :payable-amount="payableAmount"
+      :goods-amount="selectedAmount"
+      :promotion-discount="promotionDiscount"
+      bottom-offset="var(--window-bottom, 0)"
+    >
+      <template #action>
+        <!-- 管理态：批量删除选中行（复用后端批量移除接口） -->
+        <view
+          v-if="editMode"
+          :class="['checkout-btn', { 'checkout-btn-disabled': selectedLineCount === 0 }]"
+          @click="deleteSelected"
+        >
+          <q-icon name="delete" size="18" color="#ffffff" />
+          <text class="checkout-text">删除选中</text>
+          <text v-if="selectedLineCount > 0" class="checkout-text">({{ selectedLineCount }})</text>
         </view>
-        <text v-if="promotionDiscount > 0" class="bb-fee">
-          已优惠 ¥{{ promotionDiscount.toFixed(2) }} · 预计应付 ¥{{ payableAmount.toFixed(2) }}
-        </text>
-        <text v-else class="bb-fee">暂无可用促销优惠</text>
-      </view>
-
-      <!-- 优惠明细面板 -->
-      <view v-if="detailVisible && promotionDetails.length" class="bb-detail-panel">
-        <view v-for="detail in promotionDetails" :key="detail.promotionId" class="bb-detail-item">
-          <text class="bb-detail-name">{{ detail.name }}</text>
-          <text class="bb-detail-value">-¥{{ detail.discountAmount.toFixed(2) }}</text>
+        <view v-else :class="['checkout-btn', { 'checkout-btn-disabled': selectedLineCount === 0 }]" @click="checkout">
+          <text class="checkout-text">去结算</text>
+          <text v-if="checkoutCount > 0" class="checkout-text">({{ checkoutCount }})</text>
+          <q-icon name="lock-on" size="18" color="#ffffff" />
         </view>
-        <view class="bb-detail-item bb-detail-total">
-          <text class="bb-detail-name">已优惠</text>
-          <text class="bb-detail-value">-¥{{ promotionDiscount.toFixed(2) }}</text>
-        </view>
-      </view>
-
-      <view :class="['checkout-btn', { 'checkout-btn-disabled': selectedCount === 0 }]" @click="checkout">
-        <text class="checkout-text">去结算</text>
-        <text v-if="selectedCount > 0" class="checkout-text">({{ selectedCount }})</text>
-        <q-icon name="lock-on" size="18" color="#ffffff" />
-      </view>
-    </view>
+      </template>
+    </q-checkout-bar>
   </view>
 </template>
 
@@ -201,26 +222,46 @@ import {
   getCartOverview,
   updateCartItemQuantity,
   removeCartItem,
+  removeCartItems,
   toggleCartItemSelection,
   setCartItemsSelection
 } from '@/api'
 import type { CartItem } from '@/api/types'
-import type { CartPromotionDetail } from '@/api'
+import type { CartGiftItem, CartSummary } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
 const cartItems = ref<CartItem[]>([])
+const gifts = ref<CartGiftItem[]>([])
 const selectedAmount = ref(0)
 const promotionDiscount = ref(0)
 const payableAmount = ref(0)
-const promotionDetails = ref<CartPromotionDetail[]>([])
-const detailVisible = ref(false)
 const editMode = ref(false)
 
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
-const selectedCount = computed(() => selectedItems.value.length)
-const isAllSelected = computed(() => cartItems.value.length > 0 && selectedCount.value === cartItems.value.length)
+const selectedLineCount = computed(() => selectedItems.value.length)
+// 件数口径：按商品数量累加；赠品 0 元但计入件数
+const selectedCount = computed(() => selectedItems.value.reduce((sum, item) => sum + item.quantity, 0))
+const giftCount = computed(() => gifts.value.reduce((sum, gift) => sum + gift.quantity, 0))
+const checkoutCount = computed(() => selectedCount.value + giftCount.value)
+const isAllSelected = computed(() => cartItems.value.length > 0 && selectedLineCount.value === cartItems.value.length)
 
 let refreshSeq = 0
+
+function applySummary(summary: CartSummary) {
+  cartItems.value = summary.items
+  gifts.value = summary.gifts || []
+  selectedAmount.value = summary.selectedAmount
+  promotionDiscount.value = summary.promotionDiscountAmount
+  payableAmount.value = summary.payableAmount
+}
+
+function itemPrice(item: CartItem): number {
+  return item.discountedPrice ?? item.price
+}
+
+function itemHasDiscount(item: CartItem): boolean {
+  return itemPrice(item) < item.price
+}
 
 async function refreshCart() {
   const seq = ++refreshSeq
@@ -228,15 +269,9 @@ async function refreshCart() {
   const selectedSkuIds = cartItems.value.length
     ? cartItems.value.filter(item => item.selected).map(item => item.skuId)
     : undefined
-  const overview = await getCartOverview(selectedSkuIds)
+  const summary = await getCartOverview(selectedSkuIds)
   if (seq !== refreshSeq) return
-
-  cartItems.value = overview.items
-  selectedAmount.value = overview.selectedAmount
-  promotionDiscount.value = overview.promotionDiscountAmount
-  payableAmount.value = overview.payableAmount
-  promotionDetails.value = overview.promotionDetails
-  if (!overview.promotionDetails.length) detailVisible.value = false
+  applySummary(summary)
 }
 
 onShow(async () => {
@@ -275,8 +310,8 @@ async function decreaseQuantity(skuId: string) {
 }
 async function updateQuantity(skuId: string, quantity: number) {
   try {
-    await updateCartItemQuantity(skuId, quantity)
-    await refreshCart()
+    // 写接口已返回最新购物车与金额，无需再次拉取整份购物车
+    applySummary(await updateCartItemQuantity(skuId, quantity))
   } catch (error) {
     console.error('更新购物车数量失败', error)
     if (error instanceof UnauthorizedError) return
@@ -290,8 +325,7 @@ function deleteItem(skuId: string) {
     success: async r => {
       if (!r.confirm) return
       try {
-        await removeCartItem(skuId)
-        await refreshCart()
+        applySummary(await removeCartItem(skuId))
       } catch (error) {
         console.error('删除购物车商品失败', error)
         if (error instanceof UnauthorizedError) return
@@ -301,12 +335,31 @@ function deleteItem(skuId: string) {
   })
 }
 function checkout() {
-  if (selectedCount.value === 0) { uni.showToast({ title: '请选择商品', icon: 'none' }); return }
+  if (selectedLineCount.value === 0) { uni.showToast({ title: '请选择商品', icon: 'none' }); return }
   if (selectedItems.value.some(item => item.isValid === false)) {
     uni.showToast({ title: '请先处理不可购买的商品', icon: 'none' })
     return
   }
   uni.navigateTo({ url: '/pages/checkout/index' })
+}
+/** 管理态批量删除选中的行：复用后端按 SKU 批量移除接口 */
+function deleteSelected() {
+  const skuIds = selectedItems.value.map(item => item.skuId)
+  if (skuIds.length === 0) { uni.showToast({ title: '请选择商品', icon: 'none' }); return }
+  uni.showModal({
+    title: '提示',
+    content: `确定删除选中的 ${skuIds.length} 件商品？`,
+    success: async r => {
+      if (!r.confirm) return
+      try {
+        applySummary(await removeCartItems(skuIds))
+      } catch (error) {
+        console.error('删除购物车商品失败', error)
+        if (error instanceof UnauthorizedError) return
+        uni.showToast({ title: '删除失败', icon: 'none' })
+      }
+    }
+  })
 }
 function goToIndex() { uni.switchTab({ url: '/pages/index/index' }) }
 </script>
@@ -439,7 +492,17 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
   border-bottom: 1rpx solid $surface-highest;
   &:last-child { border-bottom: none; }
 }
-.goods-check { padding-top: 4rpx; flex-shrink: 0; }
+.goods-check {
+  // 扩大整行左侧的点击热区，避免只点到 20px 圆点
+  width: 64rpx;
+  flex-shrink: 0;
+  margin-left: -16rpx;
+  padding-left: 16rpx;
+  padding-top: 4rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+}
 
 // 自绘选择框（与设计稿一致的绿色圆形勾选）
 .cb {
@@ -498,6 +561,7 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
 .price-row { display: flex; align-items: baseline; gap: 2rpx; }
 .price-symbol { font-size: 22rpx; font-weight: 700; color: #8B5000; }
 .price-value { font-size: 36rpx; font-weight: 700; color: #8B5000; line-height: 1; }
+.price-origin { margin-left: 6rpx; font-size: 20rpx; color: #B0ACA2; text-decoration: line-through; }
 .goods-subtotal { font-size: 20rpx; color: #8A8F86; font-weight: 500; }
 
 // stepper
@@ -511,6 +575,52 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
   &.disabled { opacity: 0.3; }
 }
 .step-val { width: 54rpx; text-align: center; font-size: 25rpx; font-weight: 600; color: $on-surface; }
+
+// 管理态单行操作
+.row-actions { display: flex; align-items: center; }
+.row-action-btn {
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 12rpx 20rpx;
+  border: 1rpx solid rgba(211, 47, 47, 0.35);
+  border-radius: 100rpx;
+  background: rgba(211, 47, 47, 0.06);
+}
+.row-action-text { font-size: 24rpx; font-weight: 600; color: #D32F2F; }
+
+// ============ 赠品区 ============
+.gift-block {
+  margin: 0 22rpx 22rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 16rpx;
+  background: #FDF6EC;
+  border: 1rpx dashed #E9C9A6;
+}
+.gift-block-title { display: flex; align-items: center; gap: 8rpx; margin-bottom: 12rpx; }
+.gift-block-text { font-size: 22rpx; font-weight: 600; color: #A85A00; }
+.gift-row { display: flex; align-items: center; gap: 14rpx; padding: 10rpx 0; }
+.gift-image {
+  width: 88rpx; height: 88rpx; border-radius: 12rpx; flex-shrink: 0;
+  background: #ffffff;
+}
+.gift-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.gift-name-line { display: flex; align-items: center; gap: 10rpx; }
+.gift-name {
+  font-size: 24rpx; font-weight: 600; color: $on-surface;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gift-tag {
+  flex-shrink: 0; padding: 2rpx 10rpx; border-radius: 6rpx;
+  background: #E2601F;
+}
+.gift-tag text { font-size: 18rpx; font-weight: 600; color: #FFFFFF; }
+.gift-spec { font-size: 21rpx; color: #8A8F86; }
+.gift-promo {
+  font-size: 20rpx; color: #A85A00;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gift-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4rpx; flex-shrink: 0; }
+.gift-price { font-size: 28rpx; font-weight: 700; color: #8B5000; }
+.gift-qty { font-size: 21rpx; color: #8A8F86; }
 
 // ============ section 道地承诺 三栏 ============
 .promise-section {
@@ -537,74 +647,7 @@ $float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
   line-height: 1.3;
 }
 
-// ============ 底部固定结算栏 ============
-.page-footer {
-  position: fixed;
-  bottom: var(--window-bottom, 0);
-  left: 0; right: 0; z-index: 50;
-  display: flex; align-items: center; gap: 14rpx;
-  background: #ffffff;
-  border-top: 1rpx solid rgba(232, 227, 214, 0.9);
-  padding: 14rpx 24rpx;
-  padding-bottom: calc(14rpx + env(safe-area-inset-bottom));
-}
-
-.bb-total { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4rpx; }
-.bb-total-row { display: flex; align-items: baseline; gap: 4rpx; }
-.bb-total-label { font-size: 23rpx; color: $on-surface-variant; font-weight: 500; }
-.bb-total-symbol { font-size: 24rpx; font-weight: 700; color: $theme-primary; }
-.bb-total-price { font-size: 44rpx; font-weight: 800; color: $theme-primary; line-height: 1; letter-spacing: -0.5rpx; }
-.bb-fee { font-size: 19rpx; color: #8A8F86; }
-
-.bb-detail-toggle {
-  margin-left: 8rpx;
-  font-size: 19rpx;
-  color: $theme-primary;
-  text-decoration: underline;
-}
-
-.bb-detail-panel {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  padding: 12rpx 24rpx;
-  background: #ffffff;
-  border-top: 1rpx solid rgba(232, 227, 214, 0.9);
-  box-shadow: 0 -6rpx 18rpx rgba(0, 0, 0, 0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.bb-detail-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16rpx;
-}
-
-.bb-detail-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 21rpx;
-  color: $on-surface-variant;
-}
-
-.bb-detail-value {
-  font-size: 21rpx;
-  font-weight: 700;
-  color: $theme-primary;
-}
-
-.bb-detail-total {
-  padding-top: 8rpx;
-  border-top: 1rpx dashed rgba(232, 227, 214, 0.9);
-}
-
+// ============ 底部结算栏操作按钮（q-checkout-bar 插槽） ============
 .checkout-btn {
   flex-shrink: 0;
   height: 76rpx;

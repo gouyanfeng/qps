@@ -195,11 +195,18 @@ public class MallBannerHandlers :
             throw new BusinessException(400, "Banner跳转类型无效");
         }
 
-        if (linkType is MallBannerLinkType.InternalActivity or MallBannerLinkType.InternalRegistrationActivity &&
-            (!Guid.TryParse(linkValue, out var activityId) ||
-             !await _dbContext.MallActivities.AnyAsync(activity => activity.Id == activityId, ct)))
+        if (linkType == MallBannerLinkType.InternalCampaign &&
+            (!Guid.TryParse(linkValue, out var campaignId) ||
+             !await _dbContext.MallCampaigns.AnyAsync(campaign => campaign.Id == campaignId, ct)))
         {
-            throw new BusinessException(400, "请填写有效的活动ID");
+            throw new BusinessException(400, "请选择有效的专题活动");
+        }
+
+        if (linkType == MallBannerLinkType.InternalPromotion &&
+            (!Guid.TryParse(linkValue, out var promotionId) ||
+             !await _dbContext.MallPromotions.AnyAsync(promotion => promotion.Id == promotionId, ct)))
+        {
+            throw new BusinessException(400, "请选择有效的促销活动");
         }
     }
 }

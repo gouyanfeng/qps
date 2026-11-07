@@ -53,12 +53,17 @@
             <!-- 左侧金额 -->
             <view class="coupon-left">
               <view class="coupon-amount-row">
-                <text class="coupon-yen" :class="amountColorClass(item)">¥</text>
-                <text class="coupon-value" :class="amountColorClass(item)">{{ formatAmount(item.discountAmount) }}</text>
+                <text v-if="isPercentCoupon(item.couponType)" class="coupon-value" :class="amountColorClass(item)">
+                  {{ couponDiscountRateText(item.discountAmount) }}
+                </text>
+                <template v-else>
+                  <text class="coupon-yen" :class="amountColorClass(item)">¥</text>
+                  <text class="coupon-value" :class="amountColorClass(item)">{{ formatAmount(item.discountAmount) }}</text>
+                </template>
               </view>
               <text class="coupon-threshold">{{ thresholdText(item) }}</text>
               <view class="coupon-type-tag" :class="typeTagClass(item)">
-                <text class="coupon-type-text" :class="typeTagTextClass(item)">{{ couponTypeLabel(item) }}</text>
+                <text class="coupon-type-text" :class="typeTagTextClass(item)">{{ couponTypeLabel(item.couponType) }}</text>
               </view>
             </view>
             <!-- 打孔线 -->
@@ -72,8 +77,7 @@
               <view class="coupon-info-top">
                 <text class="coupon-name">{{ item.couponName }}</text>
                 <view class="coupon-scope-tags">
-                  <text v-if="item.couponType === 'Shipping'" class="scope-tag scope-tag-neutral">全品类可用</text>
-                  <text v-else class="scope-tag scope-tag-neutral">全场通用</text>
+                  <text class="scope-tag scope-tag-neutral">全场通用</text>
                 </view>
               </view>
               <view class="coupon-info-bottom">
@@ -113,7 +117,9 @@
         <view v-for="item in claimCoupons" :key="item.id" class="claim-card">
           <view class="claim-card-left">
             <view class="claim-amount-box">
-              <text class="claim-amount" :class="claimAmountClass(item)">¥{{ formatAmount(item.discountAmount) }}</text>
+              <text class="claim-amount" :class="claimAmountClass(item)">
+                {{ isPercentCoupon(item.couponType) ? couponDiscountRateText(item.discountAmount) : `¥${formatAmount(item.discountAmount)}` }}
+              </text>
               <text class="claim-threshold">{{ claimThresholdText(item) }}</text>
             </view>
             <view class="claim-info">
@@ -153,12 +159,17 @@
           <view class="coupon-card-body">
             <view class="coupon-left coupon-left-disabled">
               <view class="coupon-amount-row">
-                <text class="coupon-yen coupon-yen-disabled">¥</text>
-                <text class="coupon-value coupon-value-disabled">{{ formatAmount(item.discountAmount) }}</text>
+                <text v-if="isPercentCoupon(item.couponType)" class="coupon-value coupon-value-disabled">
+                  {{ couponDiscountRateText(item.discountAmount) }}
+                </text>
+                <template v-else>
+                  <text class="coupon-yen coupon-yen-disabled">¥</text>
+                  <text class="coupon-value coupon-value-disabled">{{ formatAmount(item.discountAmount) }}</text>
+                </template>
               </view>
               <text class="coupon-threshold">{{ thresholdText(item) }}</text>
               <view class="coupon-type-tag coupon-type-tag-disabled">
-                <text class="coupon-type-text coupon-type-text-disabled">{{ couponTypeLabel(item) }}</text>
+                <text class="coupon-type-text coupon-type-text-disabled">{{ couponTypeLabel(item.couponType) }}</text>
               </view>
             </view>
             <view class="coupon-perforation">
@@ -213,14 +224,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getMyCoupons, getAvailableCoupons, claimCoupon, getMyCouponCount } from '@/api'
+import { getMyCoupons, getAvailableCoupons, claimCoupon } from '@/api'
 import type { MemberCoupon, AvailableCoupon } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
+import { couponDiscountRateText, couponTypeLabel, isPercentCoupon } from '@/utils/coupon'
 
 const activeTab = ref('available')
 const loading = ref(false)
 const couponCode = ref('')
-const couponCount = ref(0)
 
 const availableCoupons = ref<MemberCoupon[]>([])
 const claimCoupons = ref<AvailableCoupon[]>([])
@@ -245,48 +256,82 @@ function updateTabs() {
 }
 
 onShow(() => {
-  fetchAll()
+  fetchActiveTab()
 })
 
-async function fetchAll() {
+// 每个 tab 独立请求序号，快速切换时只接受最后一次响应，避免旧响应覆盖新数据
+const requestSeq = { available: 0, claim: 0, expired: 0 }
+let pendingCount = 0
+
+function beginLoading() {
+  pendingCount += 1
   loading.value = true
+}
+
+function endLoading() {
+  pendingCount = Math.max(0, pendingCount - 1)
+  if (pendingCount === 0) loading.value = false
+}
+
+async function fetchAvailable() {
+  const seq = (requestSeq.available += 1)
+  beginLoading()
   try {
-    const [available, availableList, usedList, expiredList] = await Promise.all([
-      getMyCouponCount().catch(() => 0),
-      getMyCoupons('claimed').catch(() => [] as MemberCoupon[]),
+    const list = await getMyCoupons('claimed')
+    if (seq !== requestSeq.available) return
+    availableCoupons.value = list
+    updateTabs()
+  } catch (error) {
+    if (error instanceof UnauthorizedError) return
+    console.error('加载可使用优惠券失败', error)
+  } finally {
+    endLoading()
+  }
+}
+
+async function fetchExpired() {
+  const seq = (requestSeq.expired += 1)
+  beginLoading()
+  try {
+    const [usedList, expiredList] = await Promise.all([
       getMyCoupons('used').catch(() => [] as MemberCoupon[]),
       getMyCoupons('expired').catch(() => [] as MemberCoupon[])
     ])
-    couponCount.value = available
-    availableCoupons.value = availableList
+    if (seq !== requestSeq.expired) return
     expiredCoupons.value = [...usedList, ...expiredList]
     updateTabs()
   } catch (error) {
     if (error instanceof UnauthorizedError) return
-    console.error('加载优惠券失败', error)
+    console.error('加载已用/失效优惠券失败', error)
   } finally {
-    loading.value = false
+    endLoading()
   }
 }
 
 async function fetchClaimCoupons() {
-  loading.value = true
+  const seq = (requestSeq.claim += 1)
+  beginLoading()
   try {
     const list = await getAvailableCoupons()
+    if (seq !== requestSeq.claim) return
     claimCoupons.value = list.filter(c => c.isActive && c.remainCount > 0)
   } catch (error) {
     if (error instanceof UnauthorizedError) return
     console.error('加载可领券失败', error)
   } finally {
-    loading.value = false
+    endLoading()
   }
+}
+
+function fetchActiveTab() {
+  if (activeTab.value === 'available') fetchAvailable()
+  else if (activeTab.value === 'claim') fetchClaimCoupons()
+  else fetchExpired()
 }
 
 function switchTab(value: string) {
   activeTab.value = value
-  if (value === 'claim' && !claimCoupons.value.length) {
-    fetchClaimCoupons()
-  }
+  fetchActiveTab()
 }
 
 function formatAmount(amount: number): string {
@@ -299,32 +344,18 @@ function thresholdText(item: MemberCoupon): string {
   return `满${Math.floor(item.thresholdAmount)}元可用`
 }
 
-function couponTypeLabel(item: MemberCoupon): string {
-  const typeMap: Record<string, string> = {
-    FullReduction: '满减券',
-    Cash: '现金券',
-    Discount: '折扣券',
-    Shipping: '物流权益',
-    Service: '中药服务券'
-  }
-  return typeMap[item.couponType] || '优惠券'
-}
-
 function amountColorClass(item: MemberCoupon): string {
-  if (item.couponType === 'Shipping') return 'amount-neutral'
-  if (item.couponType === 'Cash' || item.couponType === 'Discount') return 'amount-secondary'
+  if (isPercentCoupon(item.couponType)) return 'amount-secondary'
   return 'amount-primary'
 }
 
 function typeTagClass(item: MemberCoupon): string {
-  if (item.couponType === 'Shipping') return 'type-tag-neutral'
-  if (item.couponType === 'Cash' || item.couponType === 'Discount') return 'type-tag-secondary'
+  if (isPercentCoupon(item.couponType)) return 'type-tag-secondary'
   return 'type-tag-primary'
 }
 
 function typeTagTextClass(item: MemberCoupon): string {
-  if (item.couponType === 'Shipping') return 'type-tag-text-neutral'
-  if (item.couponType === 'Cash' || item.couponType === 'Discount') return 'type-tag-text-secondary'
+  if (isPercentCoupon(item.couponType)) return 'type-tag-text-secondary'
   return 'type-tag-text-primary'
 }
 
@@ -339,8 +370,6 @@ function formatExpire(expireAt: string): string {
 }
 
 function scopeDescription(item: MemberCoupon): string {
-  if (item.couponType === 'Shipping') return '避光恒温医药箱专送，保障道地草药与鲜药材活性'
-  if (item.couponType === 'Service') return '适用于执业中药师古法文武火代煎、名方粉碎破壁定制服务'
   return `限${item.couponName}指定品类使用，可与积分叠加`
 }
 
@@ -373,7 +402,7 @@ function claimProgress(item: AvailableCoupon): number {
 }
 
 function claimAmountClass(item: AvailableCoupon): string {
-  if (item.couponType === 'Discount') return 'claim-amount-primary'
+  if (isPercentCoupon(item.couponType)) return 'claim-amount-primary'
   return 'claim-amount-secondary'
 }
 
@@ -385,6 +414,8 @@ async function handleClaim(item: AvailableCoupon) {
     uni.hideLoading()
     claimedIds.value = new Set([...claimedIds.value, item.id])
     uni.showToast({ title: '领取成功！', icon: 'success' })
+    // 领券成功后同步刷新「可使用」与「领券中心」，无需退出页面
+    await Promise.all([fetchAvailable(), fetchClaimCoupons()])
   } catch (e: any) {
     uni.hideLoading()
     uni.showToast({ title: e?.message || '领取失败', icon: 'none' })

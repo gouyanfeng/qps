@@ -71,23 +71,11 @@
       @refreshed="queryPageRef?.getTableList()"
     />
 
-    <el-dialog v-model="shipmentDialogVisible" title="录入运单并发货" width="480px">
-      <el-form :model="shipmentForm" label-width="90px">
-        <el-form-item label="快递公司" required>
-          <el-input v-model="shipmentForm.expressCompany" placeholder="请输入快递公司" maxlength="50" />
-        </el-form-item>
-        <el-form-item label="快递单号" required>
-          <el-input v-model="shipmentForm.trackingNo" placeholder="请输入快递单号" maxlength="64" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="shipmentForm.remark" placeholder="请输入备注" maxlength="200" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="shipmentDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="shipmentSubmitting" @click="submitShipment">确定发货</el-button>
-      </template>
-    </el-dialog>
+    <ShipmentDialog
+      v-model="shipmentDialogVisible"
+      :order-id="currentShipmentOrderId"
+      @shipped="queryPageRef?.getTableList()"
+    />
   </div>
 </template>
 
@@ -100,6 +88,7 @@ import { mallStoreApi } from '@/api/modules/mallStore'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 import OrderDetailDrawer from './components/OrderDetailDrawer.vue'
+import ShipmentDialog from './components/ShipmentDialog.vue'
 
 const queryPageRef = ref()
 const drawerVisible = ref(false)
@@ -161,13 +150,7 @@ const openDetail = (id: string) => {
 }
 
 const shipmentDialogVisible = ref(false)
-const shipmentSubmitting = ref(false)
 const currentShipmentOrderId = ref('')
-const shipmentForm = reactive({
-  expressCompany: '',
-  trackingNo: '',
-  remark: ''
-})
 
 const cancelOrder = async (row: any) => {
   try {
@@ -180,26 +163,7 @@ const cancelOrder = async (row: any) => {
 
 const openShipmentDialog = (row: any) => {
   currentShipmentOrderId.value = row.id
-  Object.assign(shipmentForm, { expressCompany: '', trackingNo: '', remark: '' })
   shipmentDialogVisible.value = true
-}
-
-const submitShipment = async () => {
-  if (!shipmentForm.expressCompany.trim()) { ElMessage.warning('请输入快递公司'); return }
-  if (!shipmentForm.trackingNo.trim()) { ElMessage.warning('请输入快递单号'); return }
-  shipmentSubmitting.value = true
-  try {
-    await mallOrderApi.createShipment(currentShipmentOrderId.value, {
-      expressCompany: shipmentForm.expressCompany.trim(),
-      trackingNo: shipmentForm.trackingNo.trim(),
-      remark: shipmentForm.remark.trim()
-    })
-    ElMessage.success('发货成功')
-    shipmentDialogVisible.value = false
-    queryPageRef.value?.getTableList()
-  } catch {} finally {
-    shipmentSubmitting.value = false
-  }
 }
 
 const confirmReceipt = async (row: any) => {

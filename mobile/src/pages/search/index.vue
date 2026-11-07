@@ -170,8 +170,8 @@
             >
               <view class="card-thumb">
                 <q-cached-image :src="product.images[0]" mode="aspectFill" class="thumb-img" />
-                <view v-if="promoTagOf(product)" class="thumb-badge" :style="promoBadgeStyle(product)">
-                  <text class="thumb-badge-text">{{ promoTagOf(product)?.name }}</text>
+                <view v-if="product.promotionBadgeText" class="thumb-badge" :style="{ backgroundColor: product.promotionBadgeColor || '#C2410C' }">
+                  <text class="thumb-badge-text">{{ product.promotionBadgeText }}</text>
                 </view>
                 <view v-else-if="product.categoryName" class="thumb-badge thumb-badge-plain">
                   <text class="thumb-badge-text">{{ product.categoryName }}</text>
@@ -192,7 +192,7 @@
 
                 <view class="card-bottom">
                   <view class="price-col">
-                    <text v-if="marketPriceOf(product) > minPriceOf(product)" class="price-origin">¥{{ formatPrice(marketPriceOf(product)) }}</text>
+                    <text v-if="originalPriceOf(product) > 0" class="price-origin">¥{{ formatPrice(originalPriceOf(product)) }}</text>
                     <view class="price-row">
                       <text class="price-symbol">¥</text>
                       <text class="price-value">{{ formatPrice(minPriceOf(product)) }}</text>
@@ -256,7 +256,7 @@ import { ref, computed, onMounted } from 'vue'
 import { searchProducts, getHotProducts, addToCart } from '@/api'
 import type { Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
-import { tagChipStyle, resolveTagColor } from '@/utils/tagColor'
+import { tagChipStyle } from '@/utils/tagColor'
 
 const keyword = ref('')
 const hasSearched = ref(false)
@@ -406,27 +406,24 @@ function clearHistory() {
   })
 }
 
-function promoTagOf(product: Product) {
-  return product.tags.find(tag => tag.type === 'Promotion')
-}
-
-function promoBadgeStyle(product: Product) {
-  const tag = promoTagOf(product)
-  return { backgroundColor: resolveTagColor(tag ? tag.color : undefined) }
-}
-
 function displayTags(product: Product) {
   return product.tags.filter(tag => tag.type !== 'Promotion')
 }
 
-function minPriceOf(product: Product): number {
-  const prices = product.skus.map(sku => sku.price)
-  return prices.length ? Math.min(...prices) : 0
+function lowestSkuOf(product: Product) {
+  if (!product.skus.length) return null
+  return product.skus.reduce((min, item) =>
+    (item.discountedPrice ?? item.price) < (min.discountedPrice ?? min.price) ? item : min)
 }
 
-function marketPriceOf(product: Product): number {
-  const sku = product.skus.find(item => item.marketPrice > 0)
-  return sku ? sku.marketPrice : 0
+function minPriceOf(product: Product): number {
+  const sku = lowestSkuOf(product)
+  return sku ? sku.discountedPrice ?? sku.price : 0
+}
+
+function originalPriceOf(product: Product): number {
+  const sku = lowestSkuOf(product)
+  return sku && sku.discountedPrice !== null && sku.discountedPrice < sku.price ? sku.price : 0
 }
 
 function formatPrice(price: number): string {
@@ -865,13 +862,17 @@ $price: #8B5000;
 
 /* 商品双列卡片 */
 .result-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  column-count: 2;
+  column-gap: 16rpx;
   padding: 8rpx 24rpx 24rpx;
 }
 
 .result-card {
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 16rpx;
   background: #ffffff;
   border-radius: 20rpx;
   overflow: hidden;
@@ -912,6 +913,7 @@ $price: #8B5000;
 }
 
 .card-body {
+  flex: 1;
   padding: 12rpx 16rpx 16rpx;
   display: flex;
   flex-direction: column;
@@ -940,7 +942,6 @@ $price: #8B5000;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  height: 66rpx;
 }
 
 .card-desc {
@@ -955,7 +956,8 @@ $price: #8B5000;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-top: 6rpx;
+  margin-top: auto;
+  padding-top: 6rpx;
 }
 
 .price-col {
@@ -973,6 +975,7 @@ $price: #8B5000;
   display: flex;
   align-items: baseline;
 }
+
 
 .price-symbol {
   font-size: 20rpx;

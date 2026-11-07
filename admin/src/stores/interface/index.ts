@@ -13,6 +13,7 @@ export interface GlobalState {
   language: LanguageType;
   maximize: boolean;
   primary: string;
+  borderRadius: number;
   isDark: boolean;
   isGrey: boolean;
   isWeak: boolean;

@@ -58,6 +58,8 @@ export interface Product {
   isHot: boolean
   tags: ProductTag[]
   promotions: ProductPromotion[]
+  promotionBadgeText: string
+  promotionBadgeColor: string
 }
 
 export interface Sku {
@@ -67,6 +69,8 @@ export interface Sku {
   marketPrice: number
   stock: number
   weightGram: number
+  discountedPrice: number | null
+  discountLabel: string
 }
 
 export interface Banner {
@@ -82,19 +86,8 @@ export enum BannerLinkType {
   InternalCategory = 1,
   InternalPage = 2,
   ExternalUrl = 3,
-  InternalActivity = 4,
-  InternalRegistrationActivity = 5
-}
-
-export interface MallActivity {
-  id: string
-  name: string
-  subtitle: string
-  coverImage: string
-  description: string
-  detailHtml: string
-  startDate: string | null
-  endDate: string | null
+  InternalCampaign = 6,
+  InternalPromotion = 7
 }
 
 export interface CartItem {
@@ -104,6 +97,14 @@ export interface CartItem {
   skuId: string
   specName: string
   price: number
+  /** 折后价（后端按最优折扣计算，无折扣时等于 price） */
+  discountedPrice?: number
+  /** 折扣标签，如「8折」；无折扣为空 */
+  discountLabel?: string | null
+  /** 满减促销角标文案（后端判定，与商品列表同一套口径） */
+  promotionBadgeText?: string | null
+  /** 满减促销角标背景色 */
+  promotionBadgeColor?: string | null
   quantity: number
   weightGram: number
   selected: boolean

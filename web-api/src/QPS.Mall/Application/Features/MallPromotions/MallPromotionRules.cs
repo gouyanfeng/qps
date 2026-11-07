@@ -27,15 +27,13 @@ internal static class MallPromotionRules
     public static void ValidateCreate(MallPromotionCreateRequest req)
     {
         Validate(req.Name, req.Description, req.PromotionType, req.ThresholdAmount, req.ActionType,
-            req.ActionConfigJson, req.ScopeType, req.Scopes, req.MaxUsagePerUser,
-            req.MaxUsagePerOrder, req.StartDate, req.EndDate);
+            req.ActionConfigJson, req.ScopeType, req.Scopes, req.StartDate, req.EndDate);
     }
 
     public static void ValidateUpdate(MallPromotionUpdateRequest req)
     {
         Validate(req.Name, req.Description, req.PromotionType, req.ThresholdAmount, req.ActionType,
-            req.ActionConfigJson, req.ScopeType, req.Scopes, req.MaxUsagePerUser,
-            req.MaxUsagePerOrder, req.StartDate, req.EndDate);
+            req.ActionConfigJson, req.ScopeType, req.Scopes, req.StartDate, req.EndDate);
     }
 
     private static void Validate(
@@ -47,8 +45,6 @@ internal static class MallPromotionRules
         string actionConfigJson,
         string scopeType,
         IReadOnlyCollection<MallPromotionScopeRequest> scopes,
-        int maxUsagePerUser,
-        int maxUsagePerOrder,
         DateTime? startDate,
         DateTime? endDate)
     {
@@ -69,9 +65,6 @@ internal static class MallPromotionRules
 
         if (string.IsNullOrWhiteSpace(scopeType)) throw new BusinessException(400, "适用范围不能为空");
         if (!ValidScopeTypes.Contains(scopeType)) throw new BusinessException(400, $"无效的适用范围：{scopeType}");
-
-        if (maxUsagePerUser < 0) throw new BusinessException(400, "每人可用次数不能为负");
-        if (maxUsagePerOrder < 0) throw new BusinessException(400, "每单可用次数不能为负");
 
         if (startDate.HasValue && endDate.HasValue && startDate > endDate)
             throw new BusinessException(400, "开始时间不能晚于结束时间");

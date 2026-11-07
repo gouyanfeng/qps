@@ -26,10 +26,6 @@ public class MallPromotion : BaseEntity
 
     public string ScopeType { get; private set; } = "Global";
 
-    public int MaxUsagePerUser { get; private set; }
-
-    public int MaxUsagePerOrder { get; private set; }
-
     /// <summary>可选的促销自身时间窗口（为空则长期有效）。</summary>
     public DateTime? StartDate { get; private set; }
 
@@ -57,8 +53,6 @@ public class MallPromotion : BaseEntity
         string actionConfigJson,
         string scopeType,
         Guid? promotionTagId,
-        int maxUsagePerUser,
-        int maxUsagePerOrder,
         DateTime? startDate,
         DateTime? endDate,
         bool isActive)
@@ -71,8 +65,6 @@ public class MallPromotion : BaseEntity
         ActionConfigJson = actionConfigJson;
         ScopeType = scopeType;
         PromotionTagId = promotionTagId;
-        MaxUsagePerUser = maxUsagePerUser;
-        MaxUsagePerOrder = maxUsagePerOrder;
         StartDate = startDate;
         EndDate = endDate;
         IsActive = isActive;
@@ -87,8 +79,6 @@ public class MallPromotion : BaseEntity
         string actionConfigJson,
         string scopeType,
         Guid? promotionTagId,
-        int maxUsagePerUser,
-        int maxUsagePerOrder,
         DateTime? startDate,
         DateTime? endDate,
         bool isActive)
@@ -96,7 +86,7 @@ public class MallPromotion : BaseEntity
         return new MallPromotion(
             name, description, promotionType, thresholdAmount,
             actionType, actionConfigJson, scopeType, promotionTagId,
-            maxUsagePerUser, maxUsagePerOrder, startDate, endDate, isActive);
+            startDate, endDate, isActive);
     }
 
     public void Update(
@@ -108,8 +98,6 @@ public class MallPromotion : BaseEntity
         string actionConfigJson,
         string scopeType,
         Guid? promotionTagId,
-        int maxUsagePerUser,
-        int maxUsagePerOrder,
         DateTime? startDate,
         DateTime? endDate)
     {
@@ -121,8 +109,6 @@ public class MallPromotion : BaseEntity
         ActionConfigJson = actionConfigJson;
         ScopeType = scopeType;
         PromotionTagId = promotionTagId;
-        MaxUsagePerUser = maxUsagePerUser;
-        MaxUsagePerOrder = maxUsagePerOrder;
         StartDate = startDate;
         EndDate = endDate;
     }

@@ -181,18 +181,6 @@
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="每人限用">
-              <el-input-number v-model="form.maxUsagePerUser" :min="0" :max="99999" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="每单限用">
-              <el-input-number v-model="form.maxUsagePerOrder" :min="0" :max="99999" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="12">
             <el-form-item label="启用状态">
               <el-switch v-model="form.isActive" active-text="启用" inactive-text="停用" />
             </el-form-item>
@@ -260,8 +248,6 @@ const form = reactive({
   promotionTagId: '',
   startDate: '',
   endDate: '',
-  maxUsagePerUser: 0,
-  maxUsagePerOrder: 0,
   isActive: true
 })
 
@@ -343,7 +329,7 @@ const resetForm = () => {
   form.giftSkuId = ''
   form.promotionTagId = ''
   form.startDate = ''; form.endDate = ''
-  form.maxUsagePerUser = 0; form.maxUsagePerOrder = 0; form.isActive = true
+  form.isActive = true
 }
 
 const handleTypeChange = () => {
@@ -380,8 +366,6 @@ const openDialog = (type: string, row?: any) => {
       giftSkuId: action.skuId || '',
       promotionTagId: row.promotionTagId || '',
       startDate: row.startDate, endDate: row.endDate,
-      maxUsagePerUser: row.maxUsagePerUser || 0,
-      maxUsagePerOrder: row.maxUsagePerOrder || 0,
       isActive: row.isActive
     })
     currentId.value = row.id
@@ -431,8 +415,6 @@ const submitForm = async () => {
       scopes: scopeType === 'Global'
         ? []
         : form.scopeTargetIds.map(scopeTargetId => ({ scopeTargetType, scopeTargetId })),
-      maxUsagePerUser: form.maxUsagePerUser,
-      maxUsagePerOrder: form.maxUsagePerOrder,
       startDate: form.startDate || null,
       endDate: form.endDate || null,
       isActive: form.isActive

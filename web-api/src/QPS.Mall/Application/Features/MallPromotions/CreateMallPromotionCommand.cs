@@ -44,8 +44,6 @@ public class CreateMallPromotionHandler : IRequestHandler<CreateMallPromotionCom
             req.ActionConfigJson,
             req.ScopeType,
             req.PromotionTagId,
-            req.MaxUsagePerUser,
-            req.MaxUsagePerOrder,
             req.StartDate,
             req.EndDate,
             req.IsActive);

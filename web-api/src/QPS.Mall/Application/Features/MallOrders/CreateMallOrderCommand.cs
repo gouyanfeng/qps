@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Application.Features.MallFreightRules;
+using QPS.Mall.Application.Features.MallCoupons;
 using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
@@ -8,7 +9,6 @@ using QPS.Mall.Domain;
 using QPS.Mall.Domain.Entities;
 using QPS.Mall.Domain.Services;
 using QPS.Shared.Exceptions;
-using System.Text.Json;
 
 namespace QPS.Mall.Application.Features.MallOrders;
 
@@ -28,15 +28,18 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
     private readonly IMallDbContext _dbContext;
     private readonly MallPromotionEngine _promotionEngine;
     private readonly MallPromotionContextBuilder _promotionContextBuilder;
+    private readonly MallCouponService _couponService;
 
     public CreateMallOrderHandler(
         IMallDbContext dbContext,
         MallPromotionEngine promotionEngine,
-        MallPromotionContextBuilder promotionContextBuilder)
+        MallPromotionContextBuilder promotionContextBuilder,
+        MallCouponService couponService)
     {
         _dbContext = dbContext;
         _promotionEngine = promotionEngine;
         _promotionContextBuilder = promotionContextBuilder;
+        _couponService = couponService;
     }
 
     public async Task<MallOrderDetailDto> Handle(
@@ -46,16 +49,55 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         // ===== 阶段一：装配 —— 登录与地址快照、入参校验、SKU 与库存预检、促销数据装配 =====
         var context = await BuildOrderContextAsync(command.Request, cancellationToken);
 
-        // ===== 阶段二：促销计价 —— 引擎匹配有效促销并逐行应用（改价/赠品/免运费标记），计算货款 =====
-        var (matchedPromotions, applyResult) = ApplyPromotions(context);
-        var goodsAmount = CalculateGoodsAmount(applyResult);
+        // ===== 阶段二：促销计价 —— 引擎匹配有效促销并逐行应用（改价/赠品/免运费标记），计算原价与促销优惠 =====
+        var applyResult = ApplyPromotions(context);
+        var goodsAmount = CalculateOriginalGoodsAmount(applyResult);
+        var promotionDiscountAmount = Math.Max(
+            0,
+            goodsAmount - CalculatePromotedGoodsAmount(applyResult));
+
+        // ===== 阶段二之二：优惠券抵扣 —— 先商品金额、再促销、后券，券按促销后金额校验门槛并抵扣 =====
+        var couponDiscountAmount = 0m;
+        Guid? couponId = null;
+        var couponName = string.Empty;
+        if (command.Request.MemberCouponId.HasValue)
+        {
+            var evaluation = await _couponService.EvaluateAsync(
+                command.Request.MemberId!.Value,
+                command.Request.MemberCouponId.Value,
+                applyResult.Items,
+                cancellationToken);
+
+            couponDiscountAmount = evaluation.DiscountAmount;
+            couponId = evaluation.CouponId;
+            couponName = evaluation.CouponName;
+        }
 
         // ===== 阶段三：运费 —— 按商品运费模板（回退默认模板）与收货区域计算，促销免运费时清零 =====
         var freightAmount = await CalculateFreightAsync(context, applyResult, cancellationToken);
 
-        // ===== 阶段四：落库 —— 订单、明细（正常/赠品）、库存扣减、流水与限用计数 =====
+        // ===== 阶段四：落库 —— 订单、明细（正常/赠品）、库存扣减与流水 =====
         var order = await CreateOrderAsync(
-            context, applyResult, matchedPromotions, goodsAmount, freightAmount, cancellationToken);
+            context,
+            applyResult,
+            goodsAmount,
+            promotionDiscountAmount,
+            couponDiscountAmount,
+            couponId,
+            couponName,
+            freightAmount,
+            cancellationToken);
+
+        // 券核销与订单写入同事务：条件更新失败（已使用/已过期）时整体回滚
+        if (command.Request.MemberCouponId.HasValue)
+        {
+            await MallCouponService.RedeemAsync(
+                _dbContext,
+                command.Request.MemberCouponId.Value,
+                command.Request.MemberId!.Value,
+                order.OrderNo,
+                cancellationToken);
+        }
 
         // ===== 阶段五：提交 —— 单次 SaveChanges 事务提交，返回完整订单详情 =====
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -70,6 +112,11 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         CreateMallOrderRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.Items is null || request.Items.Count == 0)
+        {
+            throw new BusinessException(400, "请至少提交一个商品规格");
+        }
+
         var address = await ResolveReceiverAddressAsync(request, cancellationToken);
 
         // DataAnnotations 已覆盖备注长度、明细非空与数量范围；此处仅保留跨行规则
@@ -80,7 +127,6 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var skuMap = await LoadAndValidateSkuMapAsync(request.Items, cancellationToken);
         var totals = SumOrderTotals(request.Items, skuMap);
-        var defaultFreightTemplate = await LoadDefaultFreightTemplateAsync(cancellationToken);
         var quantitiesBySku = request.Items
             .GroupBy(item => item.SkuId)
             .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
@@ -100,7 +146,6 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             Address = address,
             SkuMap = skuMap,
             Totals = totals,
-            DefaultFreightTemplate = defaultFreightTemplate,
             ActivePromotions = promotionData.ActivePromotions,
             PromotionScopeMap = promotionData.ScopeMap,
             PromotionOrderContext = promotionData.OrderContext
@@ -196,25 +241,22 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         return totals;
     }
 
-    private async Task<MallFreightTemplate?> LoadDefaultFreightTemplateAsync(CancellationToken cancellationToken)
-    {
-        return await _dbContext.MallFreightTemplates
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.IsDefault && t.IsActive, cancellationToken);
-    }
-
     /// <summary>阶段二：促销引擎匹配与应用（逐行改价、免运费标记、赠品清单）。</summary>
-    private (List<MatchedPromotion> MatchedPromotions, ApplyResult ApplyResult) ApplyPromotions(
-        MallOrderBuildContext context)
+    private ApplyResult ApplyPromotions(MallOrderBuildContext context)
     {
         var orderCtx = context.PromotionOrderContext!;
         var matchedPromotions = _promotionEngine.Match(context.ActivePromotions, context.PromotionScopeMap, orderCtx);
-        var applyResult = _promotionEngine.Apply(orderCtx.Items, matchedPromotions);
-        return (matchedPromotions, applyResult);
+        return _promotionEngine.Apply(orderCtx.Items, matchedPromotions);
     }
 
-    /// <summary>货款 = 促销后商品金额。</summary>
-    private static decimal CalculateGoodsAmount(ApplyResult applyResult)
+    /// <summary>商品原价合计 = 各行促销前单价 × 数量。</summary>
+    private static decimal CalculateOriginalGoodsAmount(ApplyResult applyResult)
+    {
+        return applyResult.Items.Sum(i => i.OriginalPrice * i.Quantity);
+    }
+
+    /// <summary>促销后商品金额 = 各行改价后单价 × 数量。</summary>
+    private static decimal CalculatePromotedGoodsAmount(ApplyResult applyResult)
     {
         return applyResult.Items.Sum(i => i.CurrentPrice * i.Quantity);
     }
@@ -225,15 +267,7 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         ApplyResult applyResult,
         CancellationToken cancellationToken)
     {
-        await LoadFreightTemplatesAsync(context, cancellationToken);
-
         var freightItems = BuildFreightItems(context, applyResult);
-
-        if (context.DefaultFreightTemplate is null &&
-            !context.SkuMap.Values.Any(row => row.Product.FreightTemplateId.HasValue))
-        {
-            throw new BusinessException(400, "未配置默认运费模板，无法下单");
-        }
 
         var addressInfo = new FreightAddressInfo
         {
@@ -241,56 +275,13 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
             CityName = context.Address.CityName
         };
 
-        var calcResult = MallFreightCalculator.Calculate(
+        // 与预览共用同一运费口径：模板缺失/停用/无区域时返回 0，不阻断下单
+        return await MallFreightCalculator.CalculateAsync(
+            _dbContext,
+            addressInfo,
             freightItems,
-            context.DefaultFreightTemplate?.Id ?? Guid.Empty,
-            context.FreightTemplateMap,
-            context.FreightRegionMap,
-            addressInfo);
-
-        return applyResult.IsFreightFree ? 0 : calcResult.TotalFreight;
-    }
-
-    /// <summary>阶段三：收集商品涉及的运费模板（商品模板缺失时回退默认模板）并加载模板与区域数据。</summary>
-    private async Task LoadFreightTemplatesAsync(
-        MallOrderBuildContext context,
-        CancellationToken cancellationToken)
-    {
-        var templateIds = new HashSet<Guid>();
-        if (context.DefaultFreightTemplate is not null)
-        {
-            templateIds.Add(context.DefaultFreightTemplate.Id);
-        }
-
-        foreach (var row in context.SkuMap.Values)
-        {
-            if (row.Product.FreightTemplateId.HasValue)
-            {
-                templateIds.Add(row.Product.FreightTemplateId.Value);
-            }
-            else if (context.DefaultFreightTemplate is not null)
-            {
-                templateIds.Add(context.DefaultFreightTemplate.Id);
-            }
-        }
-
-        if (templateIds.Count == 0)
-        {
-            return;
-        }
-
-        var templates = await _dbContext.MallFreightTemplates
-            .AsNoTracking()
-            .Where(t => templateIds.Contains(t.Id))
-            .ToListAsync(cancellationToken);
-        context.FreightTemplateMap = templates.ToDictionary(t => t.Id);
-
-        var regions = await _dbContext.MallFreightRegions
-            .AsNoTracking()
-            .Where(r => templateIds.Contains(r.TemplateId))
-            .ToListAsync(cancellationToken);
-        context.FreightRegionMap = regions.GroupBy(r => r.TemplateId)
-            .ToDictionary(g => g.Key, g => g.OrderBy(r => r.IsDefaultRegion).ToList());
+            applyResult.IsFreightFree,
+            cancellationToken);
     }
 
     /// <summary>阶段三：构建运费计算输入行（促销后的商品行）。</summary>
@@ -317,12 +308,15 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         return freightItems;
     }
 
-    /// <summary>阶段四：生成订单与明细（正常行、赠品行），扣减库存并累加限用计数（随 SaveChanges 一次提交）。</summary>
+    /// <summary>阶段四：生成订单与明细（正常行、赠品行），扣减库存并写流水（随 SaveChanges 一次提交）。</summary>
     private async Task<MallOrder> CreateOrderAsync(
         MallOrderBuildContext context,
         ApplyResult applyResult,
-        List<MatchedPromotion> matchedPromotions,
         decimal goodsAmount,
+        decimal promotionDiscountAmount,
+        decimal couponDiscountAmount,
+        Guid? couponId,
+        string couponName,
         decimal freightAmount,
         CancellationToken cancellationToken)
     {
@@ -330,22 +324,34 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         var orderNo = await GenerateOrderNoAsync(cancellationToken);
         var fullReceiverAddress = context.ResolveFullReceiverAddress();
 
-        var order = MallOrder.Create(
-            orderNo,
-            request.MemberId,
-            context.Address.ReceiverName,
-            context.Address.ReceiverPhone,
-            fullReceiverAddress,
-            goodsAmount,
-            freightAmount,
-            context.Totals.TotalWeightGram,
-            request.Remark?.Trim() ?? string.Empty);
+        // 快照字段统一由 OrderSnapshotBuilder 写入，订单流程只负责提供业务数据
+        var order = OrderSnapshotBuilder.BuildOrder(new OrderHeaderSnapshot
+        {
+            OrderNo = orderNo,
+            MemberId = request.MemberId,
+            ReceiverName = context.Address.ReceiverName,
+            ReceiverPhone = context.Address.ReceiverPhone,
+            ReceiverAddress = fullReceiverAddress,
+            GoodsAmount = goodsAmount,
+            PromotionDiscountAmount = promotionDiscountAmount,
+            CouponDiscountAmount = couponDiscountAmount,
+            CouponId = couponId,
+            CouponName = couponName,
+            FreightAmount = freightAmount,
+            TotalWeightGram = context.Totals.TotalWeightGram,
+            Remark = request.Remark?.Trim() ?? string.Empty
+        });
 
         _dbContext.MallOrders.Add(order);
 
-        AppendProductLines(order, context, applyResult, matchedPromotions);
-        await AppendGiftLinesAsync(order, context, applyResult, cancellationToken);
-        await IncrementPromotionUsagesAsync(context, matchedPromotions, cancellationToken);
+        var deductions = new List<(MallSku Sku, int Quantity)>();
+        var orderItems = new List<MallOrderItem>();
+        AppendProductLines(order, context, applyResult, deductions, orderItems);
+        await AppendGiftLinesAsync(order, applyResult, orderItems, cancellationToken);
+        OrderSnapshotBuilder.EnsureLinePromotionTotal(order, orderItems);
+        _dbContext.MallOrderItems.AddRange(orderItems);
+
+        await ApplyStockDeductionsAsync(order, deductions, cancellationToken);
 
         return order;
     }
@@ -365,45 +371,29 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
         return orderNo;
     }
 
-    /// <summary>阶段四：正常商品行 —— 扣库存、写库存流水与订单明细（命中促销时记录促销来源与原价）。</summary>
-    private void AppendProductLines(
+    /// <summary>阶段四：正常商品行 —— 记录库存扣减与订单明细（命中促销时记录促销来源与原价）。</summary>
+    private static void AppendProductLines(
         MallOrder order,
         MallOrderBuildContext context,
         ApplyResult applyResult,
-        List<MatchedPromotion> matchedPromotions)
+        List<(MallSku Sku, int Quantity)> deductions,
+        List<MallOrderItem> orderItems)
     {
         foreach (var appliedItem in applyResult.Items)
         {
             var row = context.SkuMap[appliedItem.SkuId];
-            DeductStockAndLog(order, row.Sku, appliedItem.Quantity);
-
-            Guid? promotionId = null;
-            string promotionName = string.Empty;
-            decimal? originalUnitPrice = null;
-
-            if (appliedItem.IsDiscounted)
-            {
-                var matched = matchedPromotions.FirstOrDefault(m =>
-                    m.Promotion.Id == appliedItem.AppliedPromotionId);
-                if (matched != null)
-                {
-                    promotionId = matched.Promotion.Id;
-                    promotionName = matched.Promotion.Name;
-                    originalUnitPrice = appliedItem.OriginalPrice;
-                }
-            }
-
-            AddOrderItem(order, row.Sku, row.Product,
-                appliedItem.CurrentPrice, appliedItem.Quantity,
-                isGift: false, promotionId, promotionName, originalUnitPrice);
+            deductions.Add((row.Sku, appliedItem.Quantity));
+            orderItems.Add(OrderSnapshotBuilder.BuildProductItem(order, row.Sku, row.Product, appliedItem));
         }
     }
 
-    /// <summary>阶段四：赠品行 —— 校验库存、扣库存并生成 0 元赠品明细。</summary>
+    /// <summary>
+    /// 赠品按 SKU 条件更新原子扣库存；库存不足或规格失效时不发放该赠品、记录原因，不拦截下单。
+    /// </summary>
     private async Task AppendGiftLinesAsync(
         MallOrder order,
-        MallOrderBuildContext context,
         ApplyResult applyResult,
+        List<MallOrderItem> orderItems,
         CancellationToken cancellationToken)
     {
         if (applyResult.GiftSkus.Count == 0)
@@ -413,92 +403,135 @@ public class CreateMallOrderHandler : IRequestHandler<CreateMallOrderCommand, Ma
 
         var giftSkuMap = await LoadSkuProductMapAsync(
             applyResult.GiftSkus.Select(g => g.SkuId).ToList(), cancellationToken);
+        var shortages = new List<string>();
 
         foreach (var gift in applyResult.GiftSkus)
         {
-            var giftRow = EnsureSkuAvailable(giftSkuMap, gift.SkuId, 400, "赠品规格不存在");
-            giftRow.Sku.EnsureStockEnough(gift.Quantity);
-            DeductStockAndLog(order, giftRow.Sku, gift.Quantity);
+            var giftRow = giftSkuMap.GetValueOrDefault(gift.SkuId);
+            if (giftRow.Sku is null || !giftRow.Sku.IsActive || !giftRow.Product.IsActive)
+            {
+                shortages.Add($"赠品「{gift.PromotionName}」规格不存在或已下架，未发放");
+                continue;
+            }
 
-            AddOrderItem(order, giftRow.Sku, giftRow.Product,
-                0, gift.Quantity, isGift: true, gift.PromotionId, gift.PromotionName);
+            // 条件更新：库存不足时受影响行数为 0，仅跳过该赠品，不回滚订单
+            var affected = await _dbContext.MallSkus
+                .Where(sku => sku.Id == gift.SkuId && sku.Stock >= gift.Quantity)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(
+                        sku => sku.Stock,
+                        sku => sku.Stock - gift.Quantity),
+                    cancellationToken);
+
+            if (affected == 0)
+            {
+                shortages.Add($"赠品「{giftRow.Product.Name}·{giftRow.Sku.SpecName}」库存不足，未发放");
+                continue;
+            }
+
+            // 回查扣减后的真实库存写流水，避免使用内存旧值
+            var finalStock = await _dbContext.MallSkus
+                .AsNoTracking()
+                .Where(sku => sku.Id == gift.SkuId)
+                .Select(sku => (int?)sku.Stock)
+                .FirstOrDefaultAsync(cancellationToken) ?? 0;
+
+            _dbContext.MallStockLogs.Add(MallStockLog.Create(
+                giftRow.Sku.Id,
+                giftRow.Sku.SkuCode,
+                giftRow.Sku.SpecName,
+                MallStockChangeType.OrderDeduct,
+                finalStock + gift.Quantity,
+                finalStock,
+                relatedOrderNo: order.OrderNo));
+
+            orderItems.Add(OrderSnapshotBuilder.BuildGiftItem(
+                order, giftRow.Sku, giftRow.Product, gift));
+        }
+
+        if (shortages.Count > 0)
+        {
+            order.RecordGiftShortage(string.Join("；", shortages));
         }
     }
 
-    /// <summary>扣减库存并写入订单扣减流水。</summary>
-    private void DeductStockAndLog(MallOrder order, MallSku sku, int quantity)
-    {
-        var beforeStock = sku.DeductStock(quantity);
-
-        _dbContext.MallStockLogs.Add(MallStockLog.Create(
-            sku.Id,
-            sku.SkuCode,
-            sku.SpecName,
-            MallStockChangeType.OrderDeduct,
-            beforeStock,
-            sku.Stock,
-            relatedOrderNo: order.OrderNo));
-    }
-
-    /// <summary>写入订单商品明细行（价格、赠品标记与促销来源由调用方决定）。</summary>
-    private void AddOrderItem(
+    /// <summary>
+    /// 调用前先按库存预检给出友好错误，最终以条件更新的受影响行数为准，避免校验与扣减之间出现窗口。
+    /// </summary>
+    private async Task ApplyStockDeductionsAsync(
         MallOrder order,
-        MallSku sku,
-        MallProduct product,
-        decimal unitPrice,
-        int quantity,
-        bool isGift,
-        Guid? promotionId = null,
-        string promotionName = "",
-        decimal? originalUnitPrice = null)
-    {
-        _dbContext.MallOrderItems.Add(MallOrderItem.Create(
-            order.Id,
-            sku.Id,
-            product.Id,
-            product.Name,
-            sku.SkuCode,
-            sku.SpecName,
-            unitPrice,
-            quantity,
-            sku.WeightGram,
-            isGift,
-            promotionId,
-            promotionName,
-            originalUnitPrice));
-    }
-
-    /// <summary>阶段四：命中促销的每人限用计数累加；无记录时新建。</summary>
-    private async Task IncrementPromotionUsagesAsync(
-        MallOrderBuildContext context,
-        List<MatchedPromotion> matchedPromotions,
+        List<(MallSku Sku, int Quantity)> deductions,
         CancellationToken cancellationToken)
     {
-        var orderCtx = context.PromotionOrderContext;
-        if (matchedPromotions.Count == 0)
+        if (deductions.Count == 0)
         {
             return;
         }
 
-        var usageTargets = matchedPromotions.Select(m => m.Promotion)
-            .DistinctBy(p => p.Id)
-            .ToList();
-        var usagePromotionIds = usageTargets.Select(p => p.Id).ToList();
-        var existingUsages = await _dbContext.MallPromotionUsages
-            .Where(u => usagePromotionIds.Contains(u.PromotionId) && u.UserId == orderCtx.UserId.Value)
-            .ToListAsync(cancellationToken);
-
-        var usageDict = existingUsages.ToDictionary(u => u.PromotionId);
-        var now = DateTime.Now;
-
-        foreach (var promotion in usageTargets)
-        {
-            if (!usageDict.TryGetValue(promotion.Id, out var usage))
+        // 按 SKU 汇总并按 Id 升序更新，降低并发下单时死锁概率
+        var skuGroups = deductions
+            .GroupBy(deduction => deduction.Sku.Id)
+            .Select(group => new
             {
-                usage = MallPromotionUsage.Create(promotion.Id, orderCtx.UserId.Value);
-                _dbContext.MallPromotionUsages.Add(usage);
+                SkuId = group.Key,
+                Quantity = group.Sum(deduction => deduction.Quantity),
+                Sku = group.First().Sku
+            })
+            .OrderBy(group => group.SkuId)
+            .ToList();
+
+        foreach (var group in skuGroups)
+        {
+            // 条件更新：库存不足时受影响行数为 0，抛业务异常并回滚整个下单事务
+            var affected = await _dbContext.MallSkus
+                .Where(sku => sku.Id == group.SkuId && sku.Stock >= group.Quantity)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(
+                        sku => sku.Stock,
+                        sku => sku.Stock - group.Quantity),
+                    cancellationToken);
+
+            if (affected == 0)
+            {
+                throw new BusinessException(400, $"规格「{group.Sku.SpecName}」库存不足");
             }
-            usage.Increment(now);
+        }
+
+        // ExecuteUpdateAsync 绕过变更跟踪，回查数据库真实库存后再写流水，避免使用内存旧值
+        var skuIds = skuGroups.Select(group => group.SkuId).ToList();
+        var stockById = await _dbContext.MallSkus
+            .AsNoTracking()
+            .Where(sku => skuIds.Contains(sku.Id))
+            .Select(sku => new { sku.Id, sku.Stock })
+            .ToDictionaryAsync(sku => sku.Id, sku => sku.Stock, cancellationToken);
+
+        foreach (var group in skuGroups)
+        {
+            var finalStock = stockById.TryGetValue(group.SkuId, out var currentStock)
+                ? currentStock
+                : group.Sku.Stock - group.Quantity;
+            var groupDeductions = deductions
+                .Where(deduction => deduction.Sku.Id == group.SkuId)
+                .ToList();
+
+            // 由扣减后的真实库存倒推每行流水的前后值
+            var runningAfter = finalStock;
+            for (var index = groupDeductions.Count - 1; index >= 0; index--)
+            {
+                var quantity = groupDeductions[index].Quantity;
+                var afterStock = runningAfter;
+                var beforeStock = afterStock + quantity;
+                runningAfter = beforeStock;
+
+                _dbContext.MallStockLogs.Add(MallStockLog.Create(
+                    group.Sku.Id,
+                    group.Sku.SkuCode,
+                    group.Sku.SpecName,
+                    MallStockChangeType.OrderDeduct,
+                    beforeStock,
+                    afterStock,
+                    relatedOrderNo: order.OrderNo));
+            }
         }
     }
 }
@@ -521,12 +554,6 @@ internal sealed class MallOrderBuildContext
     public required Dictionary<Guid, List<MallPromotionScope>> PromotionScopeMap { get; init; }
 
     public required OrderContext PromotionOrderContext { get; init; }
-
-    public MallFreightTemplate? DefaultFreightTemplate { get; set; }
-
-    public Dictionary<Guid, MallFreightTemplate> FreightTemplateMap { get; set; } = new();
-
-    public Dictionary<Guid, List<MallFreightRegion>> FreightRegionMap { get; set; } = new();
 
     /// <summary>拼装省市区 + 详址的完整收货地址快照。</summary>
     public string ResolveFullReceiverAddress()

@@ -62,17 +62,21 @@ public class MallOrderController : ControllerBase
     [HttpGet("orders/{orderNo}")]
     public async Task<ActionResult<MallOrderDetailDto>> GetOrder(string orderNo)
     {
-        var memberId = _currentUser.GetUserId();
-        var order = await _mediator.Send(new GetMallOrderByNoQuery { OrderNo = orderNo });
-        if (order.MemberId != memberId)
-            return Forbid();
-        return Ok(order);
+        return Ok(await _mediator.Send(new GetMallOrderByNoQuery
+        {
+            OrderNo = orderNo,
+            MemberId = _currentUser.GetUserId()
+        }));
     }
 
     [HttpPost("orders/{orderNo}/cancel")]
     public async Task<ActionResult<bool>> CancelOrder(string orderNo)
     {
-        return Ok(await _mediator.Send(new CancelMallOrderCommand { OrderNo = orderNo }));
+        return Ok(await _mediator.Send(new CancelMallOrderCommand
+        {
+            OrderNo = orderNo,
+            MemberId = _currentUser.GetUserId()
+        }));
     }
 
     [HttpPost("orders/{orderNo}/payments")]
@@ -80,7 +84,12 @@ public class MallOrderController : ControllerBase
         string orderNo,
         [FromBody] CreateMallPaymentRequest request)
     {
-        return Ok(await _mediator.Send(new CreateMallPaymentCommand { OrderNo = orderNo, Request = request }));
+        return Ok(await _mediator.Send(new CreateMallPaymentCommand
+        {
+            OrderNo = orderNo,
+            MemberId = _currentUser.GetUserId(),
+            Request = request
+        }));
     }
 
     [HttpPost("payments/{paymentNo}/simulate")]
@@ -88,13 +97,22 @@ public class MallOrderController : ControllerBase
         string paymentNo,
         [FromBody] SimulateMallPaymentRequest request)
     {
-        return Ok(await _mediator.Send(new SimulateMallPaymentCommand { PaymentNo = paymentNo, Request = request }));
+        return Ok(await _mediator.Send(new SimulateMallPaymentCommand
+        {
+            PaymentNo = paymentNo,
+            MemberId = _currentUser.GetUserId(),
+            Request = request
+        }));
     }
 
     [HttpPost("orders/{orderNo}/confirm-receipt")]
     public async Task<ActionResult<bool>> ConfirmReceipt(string orderNo)
     {
-        return Ok(await _mediator.Send(new ConfirmMallOrderReceiptCommand { OrderNo = orderNo }));
+        return Ok(await _mediator.Send(new ConfirmMallOrderReceiptCommand
+        {
+            OrderNo = orderNo,
+            MemberId = _currentUser.GetUserId()
+        }));
     }
 
     [HttpPost("orders/{orderNo}/refunds")]
@@ -102,7 +120,12 @@ public class MallOrderController : ControllerBase
         string orderNo,
         [FromBody] CreateMallRefundRequest request)
     {
-        return Ok(await _mediator.Send(new CreateMallRefundCommand { OrderNo = orderNo, Request = request }));
+        return Ok(await _mediator.Send(new CreateMallRefundCommand
+        {
+            OrderNo = orderNo,
+            MemberId = _currentUser.GetUserId(),
+            Request = request
+        }));
     }
 
     [HttpPost("refunds/{refundNo}/simulate")]
@@ -110,6 +133,11 @@ public class MallOrderController : ControllerBase
         string refundNo,
         [FromBody] SimulateMallRefundRequest request)
     {
-        return Ok(await _mediator.Send(new SimulateMallRefundCommand { RefundNo = refundNo, Request = request }));
+        return Ok(await _mediator.Send(new SimulateMallRefundCommand
+        {
+            RefundNo = refundNo,
+            MemberId = _currentUser.GetUserId(),
+            Request = request
+        }));
     }
 }

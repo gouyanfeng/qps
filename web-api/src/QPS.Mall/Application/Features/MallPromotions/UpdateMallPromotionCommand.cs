@@ -54,8 +54,6 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             req.ActionConfigJson,
             req.ScopeType,
             req.PromotionTagId,
-            req.MaxUsagePerUser,
-            req.MaxUsagePerOrder,
             req.StartDate,
             req.EndDate);
 

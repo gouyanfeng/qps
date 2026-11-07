@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain.Entities;
 using QPS.Shared.Common;
 using QPS.Shared.Extensions;
 
@@ -98,10 +99,10 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
             ReceiverName = order.ReceiverName,
             ReceiverPhone = order.ReceiverPhone,
             GoodsAmount = order.GoodsAmount,
-            PromotionDiscountAmount = _dbContext.MallOrderItems
-                .Where(orderItem => orderItem.OrderId == order.Id &&
-                                    !orderItem.IsGift && orderItem.OriginalUnitPrice.HasValue)
-                .Sum(orderItem => (orderItem.OriginalUnitPrice!.Value - orderItem.UnitPrice) * orderItem.Quantity),
+            PromotionDiscountAmount = order.PromotionDiscountAmount,
+            CouponDiscountAmount = order.CouponDiscountAmount,
+            CouponId = order.CouponId,
+            CouponName = order.CouponName,
             FreightAmount = order.FreightAmount,
             PayableAmount = order.PayableAmount,
             PaidAmount = order.PaidAmount,
@@ -116,14 +117,49 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
 
         var page = await dtoQuery.ToPaginationResponseAsync(request, cancellationToken);
 
+        // 列表同样校验金额恒等式：存量数据不自洽时直接暴露，不静默展示错误金额
+        foreach (var order in page.List)
+        {
+            MallOrder.EnsureAmountIdentity(
+                order.OrderNo,
+                order.GoodsAmount,
+                order.PromotionDiscountAmount,
+                order.CouponDiscountAmount,
+                order.FreightAmount,
+                order.PayableAmount);
+        }
+
+        var memberIds = page.List
+            .Where(order => order.MemberId.HasValue)
+            .Select(order => order.MemberId!.Value)
+            .Distinct()
+            .ToList();
+        if (memberIds.Count > 0)
+        {
+            var members = await _dbContext.MallMembers
+                .AsNoTracking()
+                .Where(member => memberIds.Contains(member.Id))
+                .Select(member => new { member.Id, member.Nickname, member.Phone })
+                .ToListAsync(cancellationToken);
+            var memberMap = members.ToDictionary(
+                member => member.Id,
+                member => string.IsNullOrWhiteSpace(member.Nickname) ? member.Phone : member.Nickname);
+
+            foreach (var order in page.List)
+            {
+                if (order.MemberId.HasValue && memberMap.TryGetValue(order.MemberId.Value, out var memberName))
+                {
+                    order.MemberName = memberName;
+                }
+            }
+        }
+
         var orderIds = page.List.Select(o => o.Id).ToList();
         if (orderIds.Count > 0)
         {
             var items = await (
                 from i in _dbContext.MallOrderItems.AsNoTracking()
                 where orderIds.Contains(i.OrderId)
-                join p in _dbContext.MallProducts.AsNoTracking() on i.ProductId equals p.Id into products
-                from p in products.DefaultIfEmpty()
                 orderby i.CreatedAt
                 select new { i.OrderId, Dto = new MallOrderItemDto
                 {
@@ -131,18 +167,39 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
                     SkuId = i.SkuId,
                     ProductId = i.ProductId,
                     ProductName = i.ProductName,
-                    ProductImage = p != null ? p.MainImageUrl : string.Empty,
+                    ProductImage = i.ProductImage,
                     SpecName = i.SpecName,
                     UnitPrice = i.UnitPrice,
                     Quantity = i.Quantity,
                     ItemAmount = i.ItemAmount,
                     IsGift = i.IsGift,
+                    PromotionId = i.PromotionId,
                     PromotionName = i.PromotionName,
+                    PromotionSnapshot = i.PromotionSnapshot,
+                    PromotionDiscountAmount = i.PromotionDiscountAmount,
                     OriginalUnitPrice = i.OriginalUnitPrice
                 }}
             ).ToListAsync(cancellationToken);
 
             var itemMap = items.GroupBy(x => x.OrderId).ToDictionary(g => g.Key, g => g.Select(x => x.Dto).ToList());
+
+            // 列表也带真实运单信息，移动端不再用硬编码物流文案
+            var shipmentMap = (await _dbContext.MallShipments
+                    .AsNoTracking()
+                    .Where(shipment => orderIds.Contains(shipment.OrderId) && !shipment.IsVoided)
+                    .Select(shipment => new { shipment.OrderId, Dto = new MallShipmentDto
+                    {
+                        Id = shipment.Id,
+                        ShipmentNo = shipment.ShipmentNo,
+                        ExpressCompany = shipment.ExpressCompany,
+                        TrackingNo = shipment.TrackingNo,
+                        Status = shipment.Status,
+                        Remark = shipment.Remark,
+                        ShippedAt = shipment.ShippedAt,
+                        DeliveredAt = shipment.DeliveredAt
+                    }})
+                    .ToListAsync(cancellationToken))
+                .ToDictionary(x => x.OrderId, x => x.Dto);
 
             var itemIds = items.Select(x => x.Dto.Id).ToList();
             var reviewedItemIds = await _dbContext.MallProductReviews
@@ -155,6 +212,11 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
 
             foreach (var order in page.List)
             {
+                if (shipmentMap.TryGetValue(order.Id, out var shipment))
+                {
+                    order.Shipment = shipment;
+                }
+
                 if (itemMap.TryGetValue(order.Id, out var orderItems))
                 {
                     foreach (var orderItem in orderItems)

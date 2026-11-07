@@ -20,6 +20,9 @@ public class CreateMallPaymentCommand : IRequest<MallPaymentDto>
     /// <summary>外部订单号。</summary>
     public string? OrderNo { get; set; }
 
+    /// <summary>当前会员 ID；移动端必传，管理端为空。</summary>
+    public Guid? MemberId { get; set; }
+
     public CreateMallPaymentRequest Request { get; set; } = new();
 }
 
@@ -43,6 +46,8 @@ public class CreateMallPaymentHandler : IRequestHandler<CreateMallPaymentCommand
             command.OrderId,
             command.OrderNo,
             cancellationToken);
+
+        MallOrderResolver.EnsureOwnership(order, command.MemberId);
 
         if (order.Status != MallOrderStatus.PendingPayment)
         {

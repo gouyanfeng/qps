@@ -128,7 +128,7 @@
       "redirect": "/mall/store",
       "meta": {
         "icon": "Shop",
-        "title": "商场管理",
+        "title": "商城管理",
         "isLink": "",
         "isHide": false,
         "isFull": false,
@@ -137,12 +137,12 @@
       },
       "children": [
         {
-          "path": "/mall/store",
-          "name": "mallStore",
-          "component": "/mall/store/index",
+          "path": "/mall/product",
+          "name": "mallProduct",
+          "component": "/mall/product/index",
           "meta": {
-            "icon": "OfficeBuilding",
-            "title": "商场门店",
+            "icon": "Goods",
+            "title": "商品管理",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -151,12 +151,12 @@
           }
         },
         {
-          "path": "/mall/product",
-          "name": "mallProduct",
-          "component": "/mall/product/index",
+          "path": "/mall/category",
+          "name": "mallCategory",
+          "component": "/mall/category/index",
           "meta": {
-            "icon": "Goods",
-            "title": "商品管理",
+            "icon": "Menu",
+            "title": "商品分类",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -193,12 +193,12 @@
           }
         },
         {
-          "path": "/mall/promotion",
-          "name": "mallPromotion",
-          "component": "/mall/promotion/index",
+          "path": "/mall/stock",
+          "name": "mallStock",
+          "component": "/mall/stock/index",
           "meta": {
-            "icon": "Discount",
-            "title": "促销管理",
+            "icon": "Coin",
+            "title": "库存管理",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -207,12 +207,40 @@
           }
         },
         {
-          "path": "/mall/activity",
-          "name": "mallActivity",
-          "component": "/mall/activity/index",
+          "path": "/mall/promotion",
+          "name": "mallPromotion",
+          "component": "/mall/promotion/index",
+          "meta": {
+            "icon": "Discount",
+            "title": "促销活动",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/campaign",
+          "name": "mallCampaign",
+          "component": "/mall/campaign/index",
           "meta": {
             "icon": "Tickets",
-            "title": "活动管理",
+            "title": "专题活动",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/coupon",
+          "name": "mallCoupon",
+          "component": "/mall/coupon/index",
+          "meta": {
+            "icon": "Ticket",
+            "title": "优惠券管理",
             "isLink": "",
             "isHide": false,
             "isFull": false,
@@ -235,34 +263,6 @@
           }
         },
         {
-          "path": "/mall/category",
-          "name": "mallCategory",
-          "component": "/mall/category/index",
-          "meta": {
-            "icon": "Menu",
-            "title": "商品分类",
-            "isLink": "",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": true
-          }
-        },
-        {
-          "path": "/mall/stock",
-          "name": "mallStock",
-          "component": "/mall/stock/index",
-          "meta": {
-            "icon": "Coin",
-            "title": "库存管理",
-            "isLink": "",
-            "isHide": false,
-            "isFull": false,
-            "isAffix": false,
-            "isKeepAlive": true
-          }
-        },
-        {
           "path": "/mall/order",
           "name": "mallOrder",
           "component": "/mall/order/index",
@@ -277,12 +277,40 @@
           }
         },
         {
+          "path": "/mall/shipment",
+          "name": "mallShipment",
+          "component": "/mall/shipment/index",
+          "meta": {
+            "icon": "Box",
+            "title": "发货管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
           "path": "/mall/returnOrder",
           "name": "mallReturnOrder",
           "component": "/mall/returnOrder/index",
           "meta": {
             "icon": "RefreshLeft",
             "title": "退货管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/mall/store",
+          "name": "mallStore",
+          "component": "/mall/store/index",
+          "meta": {
+            "icon": "OfficeBuilding",
+            "title": "商城门店",
             "isLink": "",
             "isHide": false,
             "isFull": false,

@@ -170,7 +170,7 @@ public class MallCouponHandlers :
         return new MallMemberCouponDto
         {
             Id = mc.Id, CouponId = mc.CouponId, MemberId = mc.MemberId,
-            CouponCode = mc.CouponCode, CouponName = coupon.Name,
+            CouponCode = mc.CouponCode, CouponName = coupon.Name, CouponType = coupon.CouponType,
             ThresholdAmount = coupon.ThresholdAmount, DiscountAmount = coupon.DiscountAmount,
             Status = mc.Status, ExpireAt = mc.ExpireAt,
             ClaimedAt = mc.ClaimedAt, UsedAt = mc.UsedAt, UsedOrderNo = mc.UsedOrderNo

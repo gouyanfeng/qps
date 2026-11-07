@@ -115,6 +115,10 @@ public class ModuleRegistrationTests
             typeof(MediatR.IRequestHandler<QPS.System.Application.Features.Auth.LoginCommand, QPS.System.Contracts.DTOs.Auth.LoginResponse>)));
         Assert.NotNull(scopedProvider.GetService(
             typeof(MediatR.IRequestHandler<QPS.Crm.Application.Features.GetCrmHerbProductOptionsQuery, List<QPS.Crm.Contracts.DTOs.AttributeOptionDto>>)));
+        Assert.NotNull(scopedProvider.GetService(
+            typeof(MediatR.IRequestHandler<
+                QPS.Mall.Application.Features.MallOrders.GetMallOrdersQuery,
+                QPS.Shared.Common.PaginationResponse<QPS.Mall.Contracts.DTOs.MallOrderDto>>)));
     }
 
     private static ServiceCollection CreateServices(bool registerCrm, bool registerMall = true)

@@ -36,9 +36,9 @@
 			}
 		},
 		{
-			"path": "pages/activity-detail/index",
+			"path": "pages/campaign/index",
 			"style": {
-				"navigationBarTitleText": "活动详情",
+				"navigationBarTitleText": "活动专题",
 				"navigationStyle": "custom"
 			}
 		},
@@ -111,11 +111,18 @@
 				"navigationBarTitleText": "发表评价",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/after-sale/index",
+			"style": {
+				"navigationBarTitleText": "申请售后",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "中药材商场",
+		"navigationBarTitleText": "中药材商城",
 		"navigationBarBackgroundColor": "#F5F7F5",
 		"backgroundColor": "#F5F7F5"
 	},

@@ -65,8 +65,8 @@
           >
             <view class="thumb">
               <q-cached-image :src="p.images[0]" mode="aspectFill" class="thumb-img" />
-              <view v-if="promoTagOf(p)" class="promo-corner" :style="{ backgroundColor: resolveTagColor(promoTagOf(p)!.color) || '#C2410C' }">
-                <text class="promo-corner-text">{{ promoTagOf(p)!.name }}</text>
+              <view v-if="p.promotionBadgeText" class="promo-corner" :style="{ backgroundColor: p.promotionBadgeColor || '#C2410C' }">
+                <text class="promo-corner-text">{{ p.promotionBadgeText }}</text>
               </view>
             </view>
             <view class="p-info">
@@ -85,7 +85,7 @@
                 <view class="price-row">
                   <text class="p-symbol">¥</text>
                   <text class="p-price">{{ formatPrice(minPriceOf(p)) }}</text>
-                  <text v-if="crossedPriceOf(p) > 0" class="p-origin">¥{{ formatPrice(crossedPriceOf(p)) }}</text>
+                  <text v-if="originalPriceOf(p) > 0" class="p-origin">¥{{ formatPrice(originalPriceOf(p)) }}</text>
                 </view>
                 <view class="add-btn" @click.stop="quickAdd(p)">
                   <q-icon name="add" size="20" color="#ffffff" />
@@ -115,12 +115,14 @@ import { onShow } from '@dcloudio/uni-app'
 import { getCategories, getProducts, addToCart } from '@/api'
 import type { Category, Product } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
-import { tagChipStyle, resolveTagColor } from '@/utils/tagColor'
+import { tagChipStyle } from '@/utils/tagColor'
 
 interface SideNavItem {
   key: string
   label: string
   categoryIds: string[] | null
+  /** 二级类目完整列表，来自分类树，不随商品筛选变化 */
+  tabs: FilterTab[]
 }
 
 interface FilterTab {
@@ -178,11 +180,12 @@ onMounted(async () => {
   try {
     const categories = await getCategories()
     sideNav.value = [
-      { key: 'all', label: '全部商品', categoryIds: null },
+      { key: 'all', label: '全部商品', categoryIds: null, tabs: [] },
       ...categories.map((category: Category) => ({
         key: category.id,
         label: category.name,
-        categoryIds: category.children.map(child => child.id)
+        categoryIds: category.children.map(child => child.id),
+        tabs: category.children.map(child => ({ id: child.id, name: child.name }))
       }))
     ]
     applyPendingCategory()
@@ -215,9 +218,8 @@ const baseProducts = computed(() => products.value)
 
 const filterTabs = computed<FilterTab[]>(() => {
   const nav = sideNav.value.find(item => item.key === activeKey.value)
-  const children = nav?.categoryIds || []
-  const names = new Map(products.value.map(product => [product.categoryId || '', product.categoryName]))
-  return [{ id: 'all', name: '全部' }, ...children.map(id => ({ id, name: names.get(id) || '' })).filter(item => item.name)]
+  // 二级列表始终取分类树，不依赖当前已加载商品，避免点击后其他二级消失
+  return [{ id: 'all', name: '全部' }, ...(nav?.tabs ?? [])]
 })
 
 const categoryFilteredProducts = computed(() => baseProducts.value.filter(product =>
@@ -229,10 +231,6 @@ const visibleProducts = computed(() => {
     !activeTagCode.value || product.tags.some(tag => tag.code === activeTagCode.value)
   )
 })
-
-function promoTagOf(product: Product) {
-  return product.tags.find(tag => tag.type === 'Promotion')
-}
 
 function displayTags(product: Product) {
   return product.tags.filter(tag => tag.type !== 'Promotion')
@@ -257,16 +255,22 @@ function formatPrice(price: number): string {
   return price % 1 === 0 ? String(price) : price.toFixed(1)
 }
 
-// 列表价：所有规格中的最低促销价
-function minPriceOf(product: Product): number {
-  return product.skus.length ? Math.min(...product.skus.map(sku => sku.price)) : 0
+// 列表价规格：按折后价最低的一条；折后价与折扣标签均由后端计算
+function lowestSkuOf(product: Product) {
+  if (!product.skus.length) return null
+  return product.skus.reduce((min, item) =>
+    (item.discountedPrice ?? item.price) < (min.discountedPrice ?? min.price) ? item : min)
 }
 
-// 划线价：最低价规格的市场价；不高于现价时不展示
-function crossedPriceOf(product: Product): number {
-  if (!product.skus.length) return 0
-  const sku = product.skus.reduce((min, item) => (item.price < min.price ? item : min))
-  return sku.marketPrice > sku.price ? sku.marketPrice : 0
+function minPriceOf(product: Product): number {
+  const sku = lowestSkuOf(product)
+  return sku ? sku.discountedPrice ?? sku.price : 0
+}
+
+// 划线价：有折扣时显示该规格原价，无折扣不展示
+function originalPriceOf(product: Product): number {
+  const sku = lowestSkuOf(product)
+  return sku && sku.discountedPrice !== null && sku.discountedPrice < sku.price ? sku.price : 0
 }
 
 async function quickAdd(p: Product) {
@@ -565,12 +569,16 @@ $price: #8B5000;
 
 // ============ 商品网格 ============
 .product-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  column-count: 2;
+  column-gap: 16rpx;
   padding: 18rpx 20rpx 0;
 }
 .product-card {
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 16rpx;
   background: #ffffff;
   border-radius: 16rpx;
   overflow: hidden;
@@ -601,6 +609,7 @@ $price: #8B5000;
   display: block;
 }
 .p-info {
+  flex: 1;
   padding: 14rpx 18rpx 16rpx;
   display: flex;
   flex-direction: column;
@@ -611,7 +620,6 @@ $price: #8B5000;
   font-weight: 700;
   color: $on-surface;
   line-height: 1.35;
-  height: 66rpx;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -645,6 +653,7 @@ $price: #8B5000;
   margin: 6rpx 0 4rpx;
 }
 .p-bottom {
+  margin-top: auto;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallCarts;
 using QPS.Mall.Contracts.DTOs;
 using QPS.Shared.Contracts;
+using QPS.Shared.Exceptions;
 using QPS.Shared.Extensions;
 
 namespace QPS.Mall.Controllers;
@@ -27,6 +28,8 @@ public class MallCartController : ControllerBase
         Guid userId,
         [FromQuery] string? skuIds = null)
     {
+        EnsurePathUser(userId);
+
         // 带 skuIds 参数（即使为空串）表示按选中商品试算；不带表示全部选中
         var selectedSkuIds = Request.Query.ContainsKey("skuIds")
             ? ParseSkuIds(skuIds ?? string.Empty)
@@ -39,14 +42,29 @@ public class MallCartController : ControllerBase
         }));
     }
 
-    /// <summary>解析选中 SKU 列表；空串返回空集合（未选中任何商品）。</summary>
+    /// <summary>路径中的用户标识必须与当前登录会员一致，空 Guid 视为占位值放行。</summary>
+    private void EnsurePathUser(Guid userId)
+    {
+        if (userId != Guid.Empty && userId != _currentUser.GetUserId())
+        {
+            throw new BusinessException(400, "用户标识不匹配");
+        }
+    }
+
+    /// <summary>解析选中 SKU 列表；空串返回空集合（未选中任何商品），非法值直接报参数错误。</summary>
     private static List<Guid> ParseSkuIds(string skuIds)
     {
         return skuIds
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(value => Guid.TryParse(value, out var id) ? id : (Guid?)null)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
+            .Select(value =>
+            {
+                if (!Guid.TryParse(value, out var id))
+                {
+                    throw new BusinessException(400, "skuIds 参数格式不正确");
+                }
+
+                return id;
+            })
             .ToList();
     }
 
@@ -67,6 +85,7 @@ public class MallCartController : ControllerBase
     [HttpDelete("carts/{userId:guid}/items/{skuId:guid}")]
     public async Task<ActionResult<MallCartDto>> RemoveFromCart(Guid userId, Guid skuId)
     {
+        EnsurePathUser(userId);
         return Ok(await _mediator.Send(new RemoveFromMallCartCommand
         {
             UserId = _currentUser.GetUserId(),
@@ -74,9 +93,21 @@ public class MallCartController : ControllerBase
         }));
     }
 
+    /// <summary>批量移除本次下单的规格明细，保留购物车中其他商品。</summary>
+    [HttpPost("carts/remove-items")]
+    public async Task<ActionResult<MallCartDto>> RemoveItems([FromBody] MallCartRemoveItemsRequest request)
+    {
+        return Ok(await _mediator.Send(new RemoveMallCartItemsCommand
+        {
+            UserId = _currentUser.GetUserId(),
+            SkuIds = request.SkuIds
+        }));
+    }
+
     [HttpDelete("carts/{userId:guid}")]
     public async Task<ActionResult<bool>> ClearCart(Guid userId)
     {
+        EnsurePathUser(userId);
         return Ok(await _mediator.Send(new ClearMallCartCommand
         {
             UserId = _currentUser.GetUserId()

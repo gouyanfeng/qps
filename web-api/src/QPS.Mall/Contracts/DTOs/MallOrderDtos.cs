@@ -13,18 +13,33 @@ public class MallOrderDto
 
     public Guid? MemberId { get; set; }
 
+    /// <summary>会员昵称（无昵称时回退手机号），用于管理端订单列表展示。</summary>
+    public string MemberName { get; set; } = string.Empty;
+
     public string Status { get; set; } = string.Empty;
 
     public string ReceiverName { get; set; } = string.Empty;
 
     public string ReceiverPhone { get; set; } = string.Empty;
 
+    /// <summary>商品原价合计（促销与券抵扣前）。</summary>
     public decimal GoodsAmount { get; set; }
 
+    /// <summary>促销优惠金额。</summary>
     public decimal PromotionDiscountAmount { get; set; }
+
+    /// <summary>优惠券抵扣金额。</summary>
+    public decimal CouponDiscountAmount { get; set; }
+
+    /// <summary>优惠券 ID 快照（券后续被删除仍可追溯）。</summary>
+    public Guid? CouponId { get; set; }
+
+    /// <summary>优惠券名称快照。</summary>
+    public string CouponName { get; set; } = string.Empty;
 
     public decimal FreightAmount { get; set; }
 
+    /// <summary>应付金额 = max(0, 商品原价 - 促销优惠 - 券抵扣) + 运费。</summary>
     public decimal PayableAmount { get; set; }
 
     public decimal PaidAmount { get; set; }
@@ -43,6 +58,9 @@ public class MallOrderDto
 
     public DateTime? CancelledAt { get; set; }
 
+    /// <summary>运单（一单一运单）；未发货时为空。</summary>
+    public MallShipmentDto? Shipment { get; set; }
+
     public List<MallOrderItemDto> Items { get; set; } = new();
 }
 
@@ -55,13 +73,17 @@ public class MallOrderDetailDto : MallOrderDto
 
     public string Remark { get; set; } = string.Empty;
 
+    /// <summary>赠品未发放原因（库存不足等），无则为空。</summary>
+    public string GiftShortageMessage { get; set; } = string.Empty;
+
     public DateTime? RefundedAt { get; set; }
 
     public List<MallPaymentDto> Payments { get; set; } = new();
 
     public List<MallRefundDto> Refunds { get; set; } = new();
 
-    public MallShipmentDto? Shipment { get; set; }
+    /// <summary>退货/售后单，供移动端展示售后进度。</summary>
+    public List<MallReturnDto> Returns { get; set; } = new();
 }
 
 /// <summary>
@@ -83,8 +105,18 @@ public class MallOrderItemDto
     public decimal ItemAmount { get; set; }
     public bool IsGift { get; set; }
     public Guid? PromotionId { get; set; }
+
+    /// <summary>主促销名称快照（不含金额拼接）。</summary>
     public string PromotionName { get; set; } = string.Empty;
-    public decimal? OriginalUnitPrice { get; set; }
+
+    /// <summary>本行命中的促销快照 JSON：[{id, name, actionType, amount}]。</summary>
+    public string PromotionSnapshot { get; set; } = "[]";
+
+    /// <summary>本行实际促销优惠金额。</summary>
+    public decimal PromotionDiscountAmount { get; set; }
+
+    /// <summary>原价快照，恒有值；无促销时等于 UnitPrice。</summary>
+    public decimal OriginalUnitPrice { get; set; }
 
     /// <summary>
     /// 该明细是否已发表评价。
@@ -131,6 +163,12 @@ public class MallRefundDto
 
     public string Reason { get; set; } = string.Empty;
 
+    /// <summary>补充说明。</summary>
+    public string? Description { get; set; }
+
+    /// <summary>凭证图片。</summary>
+    public string[] EvidenceImages { get; set; } = Array.Empty<string>();
+
     public string Status { get; set; } = string.Empty;
 
     public DateTime? RefundedAt { get; set; }
@@ -172,8 +210,12 @@ public class CreateMallOrderRequest
     [MaxLength(500, ErrorMessage = "订单备注不能超过 500 个字符")]
     public string Remark { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "请至少提交一个商品规格")]
     [MinLength(1, ErrorMessage = "请至少提交一个商品规格")]
     public List<CreateMallOrderItemRequest> Items { get; set; } = new();
+
+    /// <summary>本次下单使用的会员券 ID，为空表示不使用优惠券。</summary>
+    public Guid? MemberCouponId { get; set; }
 }
 
 /// <summary>
@@ -209,11 +251,24 @@ public class SimulateMallPaymentRequest
 }
 
 /// <summary>
-/// 申请退款请求。
+/// 申请退款请求。仅支持整单退款，退款金额由后端按订单实付金额计算。
 /// </summary>
 public class CreateMallRefundRequest
 {
+    /// <summary>申请原因，必填。</summary>
     public string Reason { get; set; } = string.Empty;
+
+    /// <summary>补充说明，选择「其他」原因时填写。</summary>
+    public string? Description { get; set; }
+
+    /// <summary>凭证图片相对地址，最多 6 张。</summary>
+    public string[]? EvidenceImages { get; set; }
+
+    /// <summary>
+    /// 前端预期退款金额，仅用于一致性校验，不作为退款金额来源。
+    /// 传入时必须等于订单实付金额，否则拒绝；不传则直接按订单实付金额退款。
+    /// </summary>
+    public decimal? Amount { get; set; }
 }
 
 /// <summary>
@@ -241,8 +296,16 @@ public class CreateMallShipmentRequest
 /// </summary>
 public class PreviewMallOrderRequest
 {
+    [Required(ErrorMessage = "请选择要结算的商品")]
     [MinLength(1, ErrorMessage = "请选择要结算的商品")]
     public List<PreviewMallOrderItem> Items { get; set; } = new();
+
+    /// <summary>要试算的会员券 ID，为空表示不使用优惠券。</summary>
+    public Guid? MemberCouponId { get; set; }
+
+    /// <summary>收货地址 ID，与下单保持一致且必填；预览按该地址计算运费。</summary>
+    [Required(ErrorMessage = "请选择收货地址")]
+    public Guid? AddressId { get; set; }
 }
 
 public class PreviewMallOrderItem
@@ -264,11 +327,55 @@ public class MallOrderPreviewDto
     /// <summary>促销优惠金额。</summary>
     public decimal PromotionDiscountAmount { get; set; }
 
+    /// <summary>其中折后优惠（DiscountRate）金额。</summary>
+    public decimal RateDiscountAmount { get; set; }
+
+    /// <summary>其中满减优惠（DiscountAmount）金额。</summary>
+    public decimal AmountDiscountAmount { get; set; }
+
     /// <summary>促销优惠明细。</summary>
     public List<MallOrderPromotionDto> PromotionDetails { get; set; } = new();
 
-    /// <summary>应付金额 = GoodsAmount - PromotionDiscountAmount。</summary>
+    /// <summary>优惠券抵扣金额。</summary>
+    public decimal CouponDiscountAmount { get; set; }
+
+    /// <summary>使用的优惠券名称（未使用券时为空）。</summary>
+    public string? CouponName { get; set; }
+
+    /// <summary>券因差额未达门槛时还差的金额，供结算页提示“还差 X 元”；其他不可用场景为 null。</summary>
+    public decimal? CouponGapAmount { get; set; }
+
+    /// <summary>券不可用原因提示（可用时为空）。</summary>
+    public string? CouponHint { get; set; }
+
+    /// <summary>运费金额（无地址、无模板或免邮时为 0）。</summary>
+    public decimal FreightAmount { get; set; }
+
+    /// <summary>应付金额 = max(0, GoodsAmount - PromotionDiscountAmount - CouponDiscountAmount) + FreightAmount。</summary>
     public decimal PayableAmount { get; set; }
+
+    /// <summary>赠品清单（0 元，不参与金额计算，仅用于下单前展示）。</summary>
+    public List<MallPromotionGiftDto> Gifts { get; set; } = new();
+}
+
+/// <summary>赠品展示项：商品信息 + 来源促销，0 元计价。</summary>
+public class MallPromotionGiftDto
+{
+    public Guid SkuId { get; set; }
+
+    public Guid ProductId { get; set; }
+
+    public string ProductName { get; set; } = string.Empty;
+
+    public string ProductImage { get; set; } = string.Empty;
+
+    public string SpecName { get; set; } = string.Empty;
+
+    public int Quantity { get; set; }
+
+    public Guid PromotionId { get; set; }
+
+    public string PromotionName { get; set; } = string.Empty;
 }
 
 public class MallOrderPromotionDto

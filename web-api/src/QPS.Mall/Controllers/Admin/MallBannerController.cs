@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallBanners;
 using QPS.Mall.Contracts.DTOs;
@@ -6,6 +7,7 @@ using QPS.Mall.Contracts.DTOs;
 namespace QPS.Mall.Controllers;
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 public class MallBannerController : ControllerBase
 {
     private readonly IMediator _mediator;

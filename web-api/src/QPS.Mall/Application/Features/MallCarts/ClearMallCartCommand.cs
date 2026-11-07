@@ -21,14 +21,13 @@ public class ClearMallCartHandler : IRequestHandler<ClearMallCartCommand, bool>
 
     public async Task<bool> Handle(ClearMallCartCommand command, CancellationToken cancellationToken)
     {
-        var cart = await _dbContext.MallCarts
-            .FirstOrDefaultAsync(
-                c => c.UserId == command.UserId,
-                cancellationToken);
+        var cartItems = await _dbContext.MallCartItems
+            .Where(i => i.UserId == command.UserId)
+            .ToListAsync(cancellationToken);
 
-        if (cart is null) return true;
+        if (cartItems.Count == 0) return true;
 
-        _dbContext.MallCarts.Remove(cart);
+        _dbContext.MallCartItems.RemoveRange(cartItems);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

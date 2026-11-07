@@ -107,4 +107,17 @@ public class MallPayment : BaseEntity
 
         Status = MallPaymentStatus.Cancelled;
     }
+
+    /// <summary>
+    /// 整单退款成功后同步支付单状态。
+    /// </summary>
+    public void MarkRefunded()
+    {
+        if (Status != MallPaymentStatus.Success)
+        {
+            throw new BusinessException(400, "仅支付成功的支付单可以标记退款");
+        }
+
+        Status = MallPaymentStatus.Refunded;
+    }
 }

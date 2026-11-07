@@ -40,7 +40,7 @@
         </view>
         <view class="delivery-text">
           <text class="delivery-name">顺丰特快</text>
-          <text class="delivery-desc">已免运费（已满 ¥99 免邮，为您减免 ¥15.00）</text>
+          <text class="delivery-desc">{{ address ? (freightAmount > 0 ? `按运费模板计费 ¥${freightAmount.toFixed(2)}` : '已免运费') : '选择收货地址后计算运费' }}</text>
         </view>
         <view class="delivery-tag">包邮专享</view>
       </section>
@@ -70,6 +70,28 @@
             </view>
           </view>
         </view>
+        <!-- 赠品清单：0 元，不参与金额计算，提交前明确展示 -->
+        <view v-if="gifts.length" class="gift-list">
+          <view class="gift-list-title">
+            <q-icon name="gift" size="16" color="#E2601F" />
+            <text>赠品（随单赠送，¥0 不参与金额）</text>
+          </view>
+          <view v-for="gift in gifts" :key="gift.skuId" class="gift-row">
+            <q-cached-image class="gift-img" :src="gift.productImage" mode="aspectFill" />
+            <view class="gift-info">
+              <view class="gift-name-line">
+                <text class="gift-name">{{ gift.productName }}</text>
+                <view class="gift-tag"><text>赠品</text></view>
+              </view>
+              <text class="gift-spec">{{ gift.specName }}</text>
+              <text class="gift-promo">满赠活动：{{ gift.promotionName }}</text>
+            </view>
+            <view class="gift-right">
+              <text class="gift-price">¥0</text>
+              <text class="gift-qty">×{{ gift.quantity }}</text>
+            </view>
+          </view>
+        </view>
         <view class="dashed-divider"></view>
         <view class="shop-subtotal">
           <text>商品小计</text>
@@ -85,19 +107,36 @@
             <text>优惠券</text>
           </view>
           <view class="discount-row-right">
-            <text v-if="selectedCoupon" class="discount-neg">-¥{{ selectedCoupon.discountAmount.toFixed(2) }}</text>
-            <text v-else class="discount-hint">{{ availableCoupons.length ? `${availableCoupons.length}张可用` : '暂无可用优惠券' }}</text>
+            <text v-if="couponDiscount > 0" class="discount-neg">-¥{{ couponDiscount.toFixed(2) }}</text>
+            <text v-else class="discount-hint">{{ availableCouponCount ? `${availableCouponCount}张可用` : '暂无可用优惠券' }}</text>
             <q-icon name="chevron-right" size="28" color="#999999" />
           </view>
         </view>
-        <view class="discount-row promotion-row">
+        <view v-if="rateDiscount > 0" class="discount-row promotion-row">
           <view class="discount-row-left">
             <q-icon name="coupon" size="30" color="#E2601F" />
-            <text>促销活动</text>
+            <text>折后优惠</text>
           </view>
           <view class="discount-row-right">
-            <text v-if="promotionDiscount > 0" class="discount-neg">-¥{{ promotionDiscount.toFixed(2) }}</text>
-            <text v-else class="discount-hint">暂无可用促销</text>
+            <text class="discount-neg">-¥{{ rateDiscount.toFixed(2) }}</text>
+          </view>
+        </view>
+        <view v-if="amountDiscount > 0" class="discount-row promotion-row">
+          <view class="discount-row-left">
+            <q-icon name="coupon" size="30" color="#E2601F" />
+            <text>满减优惠</text>
+          </view>
+          <view class="discount-row-right">
+            <text class="discount-neg">-¥{{ amountDiscount.toFixed(2) }}</text>
+          </view>
+        </view>
+        <view v-if="rateDiscount === 0 && amountDiscount === 0" class="discount-row promotion-row">
+          <view class="discount-row-left">
+            <q-icon name="coupon" size="30" color="#E2601F" />
+            <text>促销优惠</text>
+          </view>
+          <view class="discount-row-right">
+            <text class="discount-hint">暂无可用促销</text>
           </view>
         </view>
 
@@ -122,24 +161,6 @@
           </view>
         </view>
 
-        <view class="fee-detail">
-          <view class="fee-line">
-            <text class="fee-label">商品金额</text>
-            <text class="fee-value">¥{{ subtotal.toFixed(2) }}</text>
-          </view>
-          <view class="fee-line">
-            <text class="fee-label">运费</text>
-            <text class="fee-value fee-free">已免</text>
-          </view>
-          <view v-if="promotionDiscount > 0" class="fee-line">
-            <text class="fee-label">促销优惠</text>
-            <text class="fee-value fee-neg">-¥{{ promotionDiscount.toFixed(2) }}</text>
-          </view>
-          <view v-if="selectedCoupon" class="fee-line">
-            <text class="fee-label">优惠券抵扣</text>
-            <text class="fee-value fee-neg">-¥{{ selectedCoupon.discountAmount.toFixed(2) }}</text>
-          </view>
-        </view>
       </section>
 
       <!-- 选择支付方式 -->
@@ -191,16 +212,22 @@
       <view class="bottom-placeholder"></view>
     </scroll-view>
 
-    <!-- 底部固定结算栏 -->
-    <view class="page-footer">
-      <view class="bottom-left">
-        <text class="pay-label">实付：</text>
-        <text class="pay-amount">¥{{ finalPrice.toFixed(2) }}</text>
-      </view>
-      <view class="submit-btn" @tap="submitOrder">
-        提交订单
-      </view>
-    </view>
+    <!-- 底部固定结算栏：应付/合计 + 明细抽屉入口 + 提交订单 -->
+    <q-checkout-bar
+      :payable-amount="finalPrice"
+      :goods-amount="subtotal"
+      :promotion-discount="promotionDiscount"
+      :coupon-discount="couponDiscount"
+      :coupon-name="couponName"
+      :freight-amount="freightAmount"
+    >
+      <template #action>
+        <view class="submit-btn" @tap="submitOrder">
+          <text>提交订单</text>
+          <text class="submit-count">({{ itemCount }})</text>
+        </view>
+      </template>
+    </q-checkout-bar>
 
     <!-- 优惠券选择弹窗 -->
     <view v-if="showCouponPicker" class="coupon-picker-mask" @tap="showCouponPicker = false">
@@ -216,24 +243,28 @@
             v-for="c in availableCoupons"
             :key="c.id"
             class="picker-coupon-item"
-            :class="{ selected: selectedCoupon?.id === c.id }"
+            :class="{ selected: selectedCoupon?.id === c.id, disabled: !c.isAvailable }"
             @tap="pickCoupon(c)"
           >
             <view class="picker-coupon-left">
-              <text class="picker-coupon-yen">¥</text>
-              <text class="picker-coupon-val">{{ Math.floor(c.discountAmount) }}</text>
+              <text v-if="isPercentCoupon(c.couponType)" class="picker-coupon-val">{{ couponDiscountRateText(c.faceValue) }}</text>
+              <template v-else>
+                <text class="picker-coupon-yen">¥</text>
+                <text class="picker-coupon-val">{{ Math.floor(c.faceValue) }}</text>
+              </template>
             </view>
             <view class="picker-coupon-right">
-              <text class="picker-coupon-name">{{ c.couponName }}</text>
+              <text class="picker-coupon-name">{{ c.name }}</text>
               <text class="picker-coupon-threshold">{{ c.thresholdAmount > 0 ? `满${Math.floor(c.thresholdAmount)}元可用` : '无门槛' }}</text>
-              <text class="picker-coupon-expire">{{ formatCouponExpire(c.expireAt) }}</text>
+              <text v-if="c.isAvailable" class="picker-coupon-expire">{{ formatCouponExpire(c.expireAt) }}</text>
+              <text v-else class="picker-coupon-expire">{{ c.unavailableReason || '当前不可用' }}</text>
             </view>
             <view v-if="selectedCoupon?.id === c.id" class="picker-check">
               <q-icon name="check" size="18" color="#ffffff" />
             </view>
           </view>
           <view v-if="!availableCoupons.length" class="picker-empty">
-            <text class="picker-empty-text">暂无可用优惠券</text>
+            <text class="picker-empty-text">暂无优惠券</text>
           </view>
         </scroll-view>
         <view v-if="selectedCoupon" class="picker-footer">
@@ -249,8 +280,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getCartItems, clearCart, getAddresses, createOrder, getMyCoupons, previewOrder } from '@/api'
-import type { MallAddress, MemberCoupon, OrderPreview } from '@/api'
+import { getCartItems, removeCartItems, getAddresses, createOrder, getCheckoutCoupons, previewOrder } from '@/api'
+import { couponDiscountRateText, isPercentCoupon } from '@/utils/coupon'
+import type { CheckoutCoupon, MallAddress, OrderPreview } from '@/api'
 import type { CartItem } from '@/api/types'
 import { UnauthorizedError } from '@/utils/http'
 
@@ -258,27 +290,73 @@ const items = ref<CartItem[]>([])
 const address = ref<MallAddress | null>(null)
 const payMethod = ref('wechat')
 const remark = ref('')
-const availableCoupons = ref<MemberCoupon[]>([])
-const selectedCoupon = ref<MemberCoupon | null>(null)
+const availableCoupons = ref<CheckoutCoupon[]>([])
+const selectedCoupon = ref<CheckoutCoupon | null>(null)
 const showCouponPicker = ref(false)
 const promotionPreview = ref<OrderPreview | null>(null)
+// 立即购买不经过购物车，下单成功后不能改动购物车
+const isBuyNow = ref(false)
 
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
 )
 
 const promotionDiscount = computed(() => promotionPreview.value?.promotionDiscountAmount ?? 0)
+const rateDiscount = computed(() => promotionPreview.value?.rateDiscountAmount ?? 0)
+const amountDiscount = computed(() => promotionPreview.value?.amountDiscountAmount ?? 0)
 const promotionDetails = computed(() => promotionPreview.value?.promotionDetails ?? [])
+const couponDiscount = computed(() => promotionPreview.value?.couponDiscountAmount ?? 0)
+const couponName = computed(() => promotionPreview.value?.couponName ?? '')
+// 运费后端口径：无地址/免邮/无模板时为 0
+const freightAmount = computed(() => promotionPreview.value?.freightAmount ?? 0)
+const availableCouponCount = computed(() =>
+  availableCoupons.value.filter(item => item.isAvailable).length
+)
 
-const finalPrice = computed(() => {
-  const discount = selectedCoupon.value?.discountAmount ?? 0
-  return Math.max(0, subtotal.value - promotionDiscount.value - discount)
-})
+// 实付金额以后端预览为准，预览失败时回退为商品金额
+const finalPrice = computed(() => Math.max(0, promotionPreview.value?.payableAmount ?? subtotal.value))
+const gifts = computed(() => promotionPreview.value?.gifts ?? [])
+// 件数含赠品：赠品 0 元但按件计入
+const itemCount = computed(() =>
+  items.value.reduce((s, i) => s + i.quantity, 0) +
+  gifts.value.reduce((s, gift) => s + gift.quantity, 0)
+)
+
+/** 按当前商品与已选券重新试算，金额一律采用后端返回。 */
+async function refreshPreview() {
+  if (items.value.length === 0) {
+    promotionPreview.value = null
+    return
+  }
+  // 预览必须带收货地址：未选地址时不请求，避免后端 400
+  if (!address.value) {
+    promotionPreview.value = null
+    uni.showToast({ title: '请选择收货地址', icon: 'none' })
+    return
+  }
+  promotionPreview.value = await previewOrder(
+    items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
+    address.value.id,
+    selectedCoupon.value?.id
+  ).catch(error => {
+    console.error('订单试算失败', error)
+    return null
+  })
+}
 
 onShow(async () => {
   try {
+    // 先确定收货地址，预览的运费才知道按哪个地区计算
+    const addresses = await getAddresses()
+    const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
+    address.value = addresses.find(item => item.id === selectedAddressId)
+      ?? addresses.find(item => item.isDefault)
+      ?? addresses[0]
+      ?? null
+
     const buyNow = uni.getStorageSync('qps_buy_now_item')
     if (buyNow && typeof buyNow === 'object' && buyNow.skuId) {
+      isBuyNow.value = true
       items.value = [{
         skuId: buyNow.skuId,
         productId: buyNow.productId,
@@ -292,27 +370,24 @@ onShow(async () => {
       }]
       uni.removeStorageSync('qps_buy_now_item')
     } else {
+      isBuyNow.value = false
       items.value = (await getCartItems()).filter(item => item.selected)
     }
     if (items.value.length > 0) {
-      promotionPreview.value = await previewOrder(
+      // 券列表按本次结算商品返回可用性与不可用原因
+      const coupons = await getCheckoutCoupons(
         items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity }))
       ).catch(error => {
-        console.error('促销试算失败', error)
-        return null
+        console.error('优惠券查询失败', error)
+        return [] as CheckoutCoupon[]
       })
+      availableCoupons.value = coupons
+      if (selectedCoupon.value) {
+        const current = coupons.find(item => item.id === selectedCoupon.value!.id)
+        if (!current || !current.isAvailable) selectedCoupon.value = null
+      }
+      await refreshPreview()
     }
-    const addresses = await getAddresses()
-    const selectedAddressId = uni.getStorageSync('qps_checkout_address_id')
-    address.value = addresses.find(item => item.id === selectedAddressId)
-      ?? addresses.find(item => item.isDefault)
-      ?? addresses[0]
-      ?? null
-    const coupons = await getMyCoupons('claimed').catch(() => [] as MemberCoupon[])
-    availableCoupons.value = coupons.filter(c => {
-      if (c.thresholdAmount > 0 && subtotal.value < c.thresholdAmount) return false
-      return true
-    })
   } catch (error) {
     console.error('加载结算数据失败', error)
     if (error instanceof UnauthorizedError) return
@@ -323,14 +398,19 @@ onShow(async () => {
 function editAddress() { uni.navigateTo({ url: '/pages/addresses/index' }) }
 function selectCoupon() {
   if (!availableCoupons.value.length) {
-    uni.showToast({ title: '暂无可用优惠券', icon: 'none' })
+    uni.showToast({ title: '暂无优惠券', icon: 'none' })
     return
   }
   showCouponPicker.value = true
 }
-function pickCoupon(coupon: MemberCoupon | null) {
+async function pickCoupon(coupon: CheckoutCoupon | null) {
+  if (coupon && !coupon.isAvailable) {
+    uni.showToast({ title: coupon.unavailableReason || '该优惠券当前不可用', icon: 'none' })
+    return
+  }
   selectedCoupon.value = coupon
   showCouponPicker.value = false
+  await refreshPreview()
 }
 function formatCouponExpire(expireAt: string): string {
   if (!expireAt) return ''
@@ -354,21 +434,30 @@ function submitOrder() {
     return
   }
 
+  const giftLine = gifts.value.length
+    ? `\n赠品：${gifts.value.map(gift => `${gift.productName}${gift.specName ? `·${gift.specName}` : ''}×${gift.quantity}`).join('，')}（¥0，不参与金额）`
+    : ''
+
   uni.showModal({
     title: '确认提交',
-    content: `商品金额 ¥${subtotal.value.toFixed(2)}，促销优惠 ¥${promotionDiscount.value.toFixed(2)}，应付 ¥${finalPrice.value.toFixed(2)}。确认创建订单？`,
+    content: `商品金额 ¥${subtotal.value.toFixed(2)}，促销优惠 ¥${promotionDiscount.value.toFixed(2)}，优惠券抵扣 ¥${couponDiscount.value.toFixed(2)}，应付 ¥${finalPrice.value.toFixed(2)}。${giftLine}确认创建订单？`,
     success: async r => {
       if (!r.confirm || !address.value) return
       try {
         const order = await createOrder({
           addressId: address.value.id,
           remark: remark.value,
-          items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity }))
+          items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
+          memberCouponId: selectedCoupon.value?.id
         })
+        const buyNowOrder = isBuyNow.value
         try {
-          await clearCart()
+          // 只移除本次下单的规格明细，保留购物车中未购买的商品；立即购买不改动购物车
+          if (!buyNowOrder) {
+            await removeCartItems(items.value.map(item => item.skuId))
+          }
         } catch (error) {
-          console.error('订单已创建但清空购物车失败', error)
+          console.error('订单已创建但同步购物车失败', error)
           uni.showToast({ title: '订单已创建，购物车同步失败', icon: 'none' })
         }
         uni.showModal({
@@ -637,13 +726,52 @@ $page-padding: 24rpx;
   color: #888;
   font-size: 26rpx;
 }
+.gift-list {
+  margin-top: 16rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 14rpx;
+  background: #FDF6EC;
+  border: 1rpx dashed #E9C9A6;
+}
+.gift-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #A85A00;
+}
 .gift-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 12rpx 0 12rpx 180rpx;
+  gap: 14rpx;
+  padding: 10rpx 0;
 }
-.gift-name { font-size: 24rpx; color: #666; }
+.gift-img { width: 88rpx; height: 88rpx; border-radius: 12rpx; flex-shrink: 0; }
+.gift-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.gift-name-line { display: flex; align-items: center; gap: 10rpx; }
+.gift-name {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #1B1C1C;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gift-tag { flex-shrink: 0; padding: 2rpx 10rpx; border-radius: 6rpx; background: #E2601F; }
+.gift-tag text { font-size: 18rpx; font-weight: 600; color: #FFFFFF; }
+.gift-spec { font-size: 21rpx; color: #8A8F86; }
+.gift-promo {
+  font-size: 20rpx;
+  color: #A85A00;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gift-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4rpx; flex-shrink: 0; }
+.gift-price { font-size: 28rpx; font-weight: 700; color: #8B5000; }
+.gift-qty { font-size: 21rpx; color: #8A8F86; }
 
 .dashed-divider {
   height: 2rpx;
@@ -730,27 +858,6 @@ $page-padding: 24rpx;
   color: #999;
 }
 .discount-hint.placeholder { color: #BBB; }
-.points-switch {
-  transform: scale(0.75);
-  transform-origin: right center;
-  margin-left: 4rpx;
-}
-
-.fee-detail {
-  margin-top: 16rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #F3F3F3;
-}
-.fee-line {
-  display: flex;
-  justify-content: space-between;
-  padding: 10rpx 0;
-  font-size: 26rpx;
-}
-.fee-label { color: #666; }
-.fee-value { color: #333; }
-.fee-free { color: $theme-primary; }
-.fee-neg { color: $theme-accent; }
 
 /* ===== 选择支付方式 ===== */
 .pay-section { margin-top: 24rpx; }
@@ -853,39 +960,25 @@ $page-padding: 24rpx;
 /* ===== 底部占位 ===== */
 .bottom-placeholder { height: 180rpx; }
 
-/* ===== 底部结算栏 ===== */
-.page-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));
-  background: #FFFFFF;
+/* ===== 提交订单按钮（结算栏操作区 slot） ===== */
+.submit-btn {
+  flex-shrink: 0;
+  height: 84rpx;
+  padding: 0 44rpx;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
-  z-index: 99;
-}
-.bottom-left { display: flex; align-items: baseline; gap: 4rpx; }
-.pay-label {
-  font-size: 28rpx;
-  color: #333;
-}
-.pay-amount {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: $theme-accent;
-}
-.submit-btn {
-  background: linear-gradient(135deg, $theme-primary, $theme-primary-dark);
+  justify-content: center;
+  gap: 6rpx;
+  background: $theme-primary;
   color: #FFFFFF;
-  font-size: 32rpx;
-  font-weight: 700;
-  padding: 24rpx 64rpx;
-  border-radius: 48rpx;
-  letter-spacing: 4rpx;
-  box-shadow: 0 8rpx 24rpx rgba(46, 125, 50, 0.35);
+  font-size: 28rpx;
+  font-weight: 500;
+  border-radius: 100rpx;
+  box-shadow: 0 8rpx 24rpx rgba(46, 125, 50, 0.28);
+}
+.submit-count {
+  font-size: 23rpx;
+  opacity: 0.9;
 }
 
 /* ===== 优惠券选择弹窗 ===== */
@@ -953,6 +1046,14 @@ $page-padding: 24rpx;
 .picker-coupon-item.selected {
   border-color: $theme-primary;
   background: #F4F9EF;
+}
+
+.picker-coupon-item.disabled {
+  opacity: 0.5;
+}
+.picker-coupon-item.disabled .picker-coupon-val,
+.picker-coupon-item.disabled .picker-coupon-yen {
+  color: #999999;
 }
 
 .picker-coupon-left {

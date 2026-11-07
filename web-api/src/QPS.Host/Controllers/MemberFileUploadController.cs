@@ -25,7 +25,8 @@ public class MemberFileUploadController : ControllerBase
 
     private static readonly HashSet<string> AllowedScenes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "review"
+        "review",
+        "aftersale"
     };
 
     private readonly IWebHostEnvironment _environment;

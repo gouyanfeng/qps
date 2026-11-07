@@ -49,7 +49,7 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
             throw new BusinessException(404, "商品不存在");
         }
 
-        var dto = GetMallProductsHandler.Map(row.Product, row.StoreName ?? string.Empty, row.CategoryName ?? string.Empty);
+        var dto = MallProductMapper.Map(row.Product, row.StoreName ?? string.Empty, row.CategoryName ?? string.Empty);
 
         dto.Skus = await _dbContext.MallSkus
             .AsNoTracking()
@@ -79,6 +79,7 @@ public class GetMallProductHandler : IRequestHandler<GetMallProductQuery, MallPr
                           select new MallTagDto
                           {
                               Id = tag.Id,
+                              Type = tag.Type,
                               Code = tag.Code,
                               Name = tag.Name,
                               Color = tag.Color,

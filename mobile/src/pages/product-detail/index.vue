@@ -19,6 +19,14 @@
           </swiper-item>
         </swiper>
 
+        <view
+          v-if="product.promotionBadgeText"
+          class="promo-corner"
+          :style="{ backgroundColor: product.promotionBadgeColor || '#C2410C' }"
+        >
+          <text class="promo-corner-text">{{ product.promotionBadgeText }}</text>
+        </view>
+
         <view class="swiper-indicator">
           <view class="frac-indicator">
             <text>{{ swiperIdx + 1 }}/{{ product.images.length }} 页</text>
@@ -31,18 +39,16 @@
         <view class="price-row">
           <view class="price-main">
             <text class="price-symbol">¥</text>
-            <text class="price-value">{{ currentSku.price }}</text>
+            <text class="price-value">{{ displayPrice }}</text>
             <text v-if="crossedPrice > 0" class="price-original">¥{{ crossedPrice }}</text>
-          </view>
-          <view v-if="marketSaving > 0" class="price-off">
-            <text>限时特惠 · 立减¥{{ marketSaving }}</text>
+            <text v-if="currentSku.discountLabel" class="price-discount">{{ currentSku.discountLabel }}</text>
           </view>
         </view>
 
         <view class="name-row">
           <text class="product-name">{{ product.name }}</text>
-          <view v-if="product.tags.length" class="pill-row">
-            <view v-for="tag in product.tags" :key="tag.id" class="pill" :style="tagChipStyle(tag.color)">
+          <view v-if="productTags.length" class="pill-row">
+            <view v-for="tag in productTags" :key="tag.id" class="pill" :style="tagChipStyle(tag.color)">
               <text class="pill-text" :style="{ color: resolveTagColor(tag.color) }">{{ tag.name }}</text>
             </view>
           </view>
@@ -54,28 +60,7 @@
         </view>
 
         <view v-if="product.description" class="sell-point">
-          <q-icon name="tree-round-dot" size="22" color="#2E7D32" />
           <text class="sell-point-text">{{ product.description }}</text>
-        </view>
-      </view>
-
-      <!-- ============ section 促销活动（取后端 enrich 的当前有效促销） ============ -->
-      <view v-if="product.promotions.length" class="promo-card">
-        <view class="promo-head">
-          <view class="promo-head-left">
-            <q-icon name="coupon" size="28" color="#C2410C" />
-            <text class="promo-head-title">尊享优惠 · 滋补特礼</text>
-          </view>
-          <text class="promo-head-link">{{ bestDiscount > 0 ? `领券立省¥${bestDiscount} ›` : '查看优惠 ›' }}</text>
-        </view>
-        <view class="promo-list">
-          <view v-for="promo in product.promotions" :key="promo.id" class="promo-line">
-            <view :class="['promo-badge', promoBadgeTone(promo)]">
-              <text>{{ promoBadge(promo) }}</text>
-            </view>
-            <text class="promo-text">{{ promo.ruleText || promo.name }}</text>
-            <text class="promo-action">{{ promoAction(promo) }}</text>
-          </view>
         </view>
       </view>
 
@@ -86,29 +71,50 @@
             <q-icon name="task" size="28" color="#2E7D32" />
             <text class="spec-title">规格选择</text>
           </view>
-          <text class="spec-standard">药典标准 ›</text>
+          <view class="spec-head-right">
+            <view class="spec-layout-switch">
+              <view
+                :class="['spec-layout-option', { active: specLayout === 'grid' }]"
+                @click="specLayout = 'grid'"
+              >
+                <view class="layout-icon layout-icon-grid">
+                  <view class="grid-cell"></view>
+                  <view class="grid-cell"></view>
+                  <view class="grid-cell"></view>
+                  <view class="grid-cell"></view>
+                </view>
+              </view>
+              <view
+                :class="['spec-layout-option', { active: specLayout === 'flat' }]"
+                @click="specLayout = 'flat'"
+              >
+                <view class="layout-icon layout-icon-list">
+                  <view class="list-line"></view>
+                  <view class="list-line"></view>
+                  <view class="list-line"></view>
+                </view>
+              </view>
+            </view>
+          </view>
         </view>
 
-        <view class="spec-list">
+        <view :class="['spec-list', specLayout]">
           <view
             v-for="sku in product.skus"
             :key="sku.id"
-            :class="['spec-row', { active: isSelected('规格', sku.specName) }]"
+            :class="['spec-item', { active: isSelected('规格', sku.specName), soldout: sku.stock <= 0 }]"
             @click="selectSpec('规格', sku.specName)"
           >
-            <view class="spec-meta">
+            <view class="spec-info">
               <text class="spec-name">{{ sku.specName }}</text>
-              <text class="spec-desc">{{ unitPriceText(sku) }} · {{ stockText(sku) }}</text>
+              <text class="spec-stock">{{ sku.stock > 0 ? `库存 ${sku.stock}` : '售罄' }}</text>
             </view>
-            <view class="spec-right">
-              <text class="spec-price">¥{{ sku.price }}</text>
-              <q-icon
-                v-if="isSelected('规格', sku.specName)"
-                name="check-circle-filled"
-                size="26"
-                color="#2E7D32"
-              />
-            </view>
+            <q-icon
+              v-if="isSelected('规格', sku.specName) && sku.stock > 0"
+              name="check-circle-filled"
+              size="22"
+              color="#2E7D32"
+            />
           </view>
         </view>
 
@@ -269,17 +275,17 @@
           <text>购物车</text>
         </view>
         <view class="bb-btn ghost" @click="addToCart">加入购物车</view>
-        <view class="bb-btn solid" @click="buyNow">立即购买 ¥{{ currentSku.price }}</view>
+        <view class="bb-btn solid" @click="buyNow">立即购买 ¥{{ displayPrice }}</view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getProductById, getProductReviews, addToCart as addCart } from '@/api'
-import type { Product, ProductPromotion, Sku, ProductReview, ProductReviewPage } from '@/api/types'
+import type { Product, Sku, ProductReview, ProductReviewPage } from '@/api/types'
 import { resolveFileUrl, UnauthorizedError } from '@/utils/http'
 import { resolveTagColor, tagChipStyle } from '@/utils/tagColor'
 
@@ -287,6 +293,8 @@ const product = ref<Product | null>(null)
 const productId = ref('')
 const quantity = ref(1)
 const selectedSpecs = ref<Record<string, string>>({})
+// 规格展示形式：grid 网格（默认）/ flat 平铺；可在此切换默认值
+const specLayout = ref<'grid' | 'flat'>('grid')
 
 const swiperIdx = ref(0)
 
@@ -305,8 +313,10 @@ onLoad(async (opts) => {
   void loadFeaturedReviews(opts.id)
   try {
     product.value = (await getProductById(opts.id)) ?? null
-    const firstSku = product.value?.skus[0]
-    if (firstSku) selectedSpecs.value = { 规格: firstSku.specName }
+    // 默认选中第一个有库存的规格，全部售罄时退回第一条供页面展示
+    const skus = product.value?.skus ?? []
+    const initialSku = skus.find(sku => sku.stock > 0) ?? skus[0]
+    if (initialSku) selectedSpecs.value = { 规格: initialSku.specName }
   } catch (error) {
     console.error('加载商品详情失败', error)
     if (error instanceof UnauthorizedError) return
@@ -336,37 +346,26 @@ async function loadFeaturedReviews(productId: string) {
   }
 }
 
+// 名称行只展示商品标签（type = Product），促销标签不在名称后出现
+const productTags = computed(() =>
+  (product.value?.tags ?? []).filter(tag => tag.type === 'Product')
+)
+
 const currentSku = computed(() => {
   const skus = product.value?.skus ?? []
-  return skus.find(s => s.specName === selectedSpecs.value['规格']) ?? skus[0] ?? { id: '', specName: '', price: 0, marketPrice: 0, stock: 0, weightGram: 0 }
+  return skus.find(s => s.specName === selectedSpecs.value['规格']) ?? skus[0] ?? { id: '', specName: '', price: 0, marketPrice: 0, stock: 0, weightGram: 0, discountedPrice: null, discountLabel: '' }
 })
 
-// 划线价：市场价高于现价时展示
+// 主价：有折扣促销时显示后端折后价，否则显示原价
+const displayPrice = computed(() => {
+  const sku = currentSku.value
+  return sku.discountedPrice ?? sku.price
+})
+
+// 划线价：有折扣时显示 SKU 原价，无折扣不展示；marketPrice 不再参与展示
 const crossedPrice = computed(() => {
   const sku = currentSku.value
-  return sku.marketPrice > sku.price ? sku.marketPrice : 0
-})
-
-// 价格卡右侧的限时立减提示（不命中划线价时不展示）
-const marketSaving = computed(() => {
-  const crossed = crossedPrice.value
-  if (crossed <= currentSku.value.price) return 0
-  return Number((crossed - currentSku.value.price).toFixed(2))
-})
-
-// 促销标题栏右侧的领券立省金额：取命中促销里最大的立减额度
-const bestDiscount = computed(() => {
-  let max = 0
-  for (const promo of product.value?.promotions ?? []) {
-    if (promo.actionType !== 'DiscountAmount') continue
-    try {
-      const amount = Number(JSON.parse(promo.actionConfigJson || '{}').amount)
-      if (amount > max) max = amount
-    } catch {
-      // 配置非 JSON 时忽略，不影响其它促销展示
-    }
-  }
-  return max
+  return sku.discountedPrice !== null && sku.discountedPrice < sku.price ? sku.price : 0
 })
 
 // 详情富文本里的相对图片地址补全为可访问的完整地址
@@ -413,39 +412,41 @@ function formatReviewDate(value: string) {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`
 }
 
-function unitPriceText(sku: Sku) {
-  return sku.weightGram > 0 ? `单克 ¥${(sku.price / sku.weightGram).toFixed(2)}` : '单规格'
-}
-
 function stockText(sku: Sku) {
   if (sku.stock <= 0) return '暂时缺货'
   return sku.stock <= 3 ? `仅剩 ${sku.stock} 件` : '库存充足'
 }
 
-// 促销行左侧标签：按优惠类型归类（所有类型统一基于订单门槛）
-function promoBadge(promo: ProductPromotion) {
-  if (promo.actionType === 'FreightFree') return '包邮'
-  if (promo.actionType === 'Gift') return '赠品'
-  if (promo.actionType === 'DiscountRate') return '特价'
-  if (promo.actionType === 'DiscountAmount') return '满减'
-  return '优惠'
-}
-
-// 促销徽标配色：赠品/包邮用主色绿，满减/特价用辅色橙（与设计稿一致）
-function promoBadgeTone(promo: ProductPromotion) {
-  return promo.actionType === 'Gift' || promo.actionType === 'FreightFree' ? 'green' : 'orange'
-}
-
-// 促销行右侧提示：与设计稿一致的「可操作 / 已享」区分
-function promoAction(promo: ProductPromotion) {
-  if (promo.actionType === 'FreightFree') return '已享'
-  if (promo.actionType === 'Gift') return '查看 ›'
-  if (promo.actionType === 'DiscountAmount') return '去领券 ›'
-  return '去凑单 ›'
-}
-
 function isSelected(name: string, opt: string) { return selectedSpecs.value[name] === opt }
-function selectSpec(name: string, opt: string) { selectedSpecs.value[name] = opt }
+function selectSpec(name: string, opt: string) {
+  const sku = product.value?.skus.find(item => item.specName === opt)
+  if (!sku || sku.stock <= 0) {
+    uni.showToast({ title: '该规格已售罄', icon: 'none' })
+    return
+  }
+  selectedSpecs.value[name] = opt
+}
+
+// 库存刷新后若当前选中已售罄，自动切到有货规格；全部售罄则清空选中并提示
+watch(
+  () => (product.value?.skus ?? []).map(sku => `${sku.specName}:${sku.stock}`).join('|'),
+  () => {
+    const skus = product.value?.skus ?? []
+    if (!skus.length) return
+    const selected = skus.find(sku => sku.specName === selectedSpecs.value['规格'])
+    if (selected && selected.stock > 0) return
+
+    const fallback = skus.find(sku => sku.stock > 0)
+    if (fallback) {
+      selectedSpecs.value = { 规格: fallback.specName }
+      quantity.value = 1
+      uni.showToast({ title: `已切换为有货规格：${fallback.specName}`, icon: 'none' })
+    } else {
+      selectedSpecs.value = {}
+      uni.showToast({ title: '该商品所有规格已售罄', icon: 'none' })
+    }
+  }
+)
 
 function onSwiperChange(e: { detail: { current: number } }) { swiperIdx.value = e.detail.current }
 function consult() { uni.showToast({ title: '正在连接药师…', icon: 'none' }) }
@@ -478,6 +479,10 @@ async function addToCart(): Promise<boolean> {
 function buyNow() {
   if (!product.value) return
   const sku = currentSku.value
+  if (!sku.id) {
+    uni.showToast({ title: '请选择商品规格', icon: 'none' })
+    return
+  }
   // 立即购买不走购物车：写入直购缓存，由确认订单页读取
   uni.setStorageSync('qps_buy_now_item', {
     skuId: sku.id,
@@ -527,6 +532,19 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 }
 .product-swiper { width: 702rpx; height: 526rpx; }
 .swiper-img { width: 100%; height: 100%; }
+.promo-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  padding: 6rpx 18rpx;
+  border-radius: 24rpx 0 24rpx 24rpx;
+}
+.promo-corner-text {
+  color: #ffffff;
+  font-size: 22rpx;
+  line-height: 32rpx;
+}
 
 .swiper-indicator {
   position: absolute; bottom: 24rpx; right: 24rpx; z-index: 5;
@@ -550,10 +568,19 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
   display: flex; align-items: center; justify-content: space-between;
   gap: 16rpx;
 }
-.price-main { display: flex; align-items: baseline; gap: 6rpx; min-width: 0; }
+.price-main { display: flex; align-items: flex-end; gap: 6rpx; min-width: 0; }
 .price-symbol { font-size: 30rpx; font-weight: 700; color: $price; }
 .price-value { font-size: 68rpx; font-weight: 800; color: $price; line-height: 1; letter-spacing: -2rpx; }
 .price-original { font-size: 24rpx; color: #B0ACA9; text-decoration: line-through; margin-left: 10rpx; }
+.price-discount {
+  margin-left: 10rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: #ffffff;
+  background: #C2410C;
+  line-height: 1.4;
+}
 .price-off {
   flex-shrink: 0;
   padding: 8rpx 16rpx;
@@ -603,51 +630,6 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 }
 .pill-text { font-size: 21rpx; font-weight: 600; color: $primary; }
 
-/* ===== section 尊享优惠（促销卡片） ===== */
-.promo-card {
-  margin: 20rpx 24rpx 0; padding: 24rpx 28rpx;
-  background: $surface; border-radius: 24rpx;
-  box-shadow: $shadow-card;
-}
-.promo-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid $line;
-}
-.promo-head-left { display: flex; align-items: center; gap: 10rpx; min-width: 0; }
-.promo-head-title {
-  font-family: 'Noto Serif SC', 'Songti SC', 'STSong', serif;
-  font-size: 28rpx; font-weight: 700; color: $on-surface; letter-spacing: 1rpx;
-}
-.promo-head-link { font-size: 21rpx; color: #C2410C; }
-
-.promo-list {
-  display: flex; flex-direction: column; gap: 20rpx;
-  padding-top: 20rpx;
-}
-.promo-line { display: flex; align-items: flex-start; gap: 14rpx; }
-.promo-badge {
-  flex-shrink: 0;
-  padding: 3rpx 12rpx;
-  background: #FDF3E3;
-  border: 1rpx solid rgba(194, 65, 12, 0.18);
-  border-radius: 6rpx;
-}
-.promo-badge text { font-size: 19rpx; font-weight: 600; color: #C2410C; }
-.promo-badge.green {
-  background: #F1F7F0;
-  border-color: rgba(46, 125, 50, 0.2);
-}
-.promo-badge.green text { color: $primary; }
-.promo-text {
-  flex: 1; min-width: 0;
-  font-size: 22rpx; color: $on-surface-var; line-height: 1.55;
-}
-.promo-action {
-  flex-shrink: 0;
-  font-size: 21rpx; color: #C2410C; line-height: 1.55;
-}
-
 /* ===== section 规格选择卡 #spec-group ===== */
 #spec-group {
   margin: 20rpx 24rpx 0; padding: 28rpx;
@@ -660,12 +642,50 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 }
 .spec-head-left { display: flex; align-items: center; gap: 10rpx; min-width: 0; }
 .spec-title { font-size: 30rpx; font-weight: 700; color: $on-surface; }
-.spec-standard { flex-shrink: 0; font-size: 21rpx; font-weight: 500; color: $primary; }
 
-.spec-list { display: flex; flex-direction: column; gap: 14rpx; }
-.spec-row {
-  display: flex; align-items: center; gap: 16rpx;
-  padding: 20rpx 22rpx;
+.spec-head-right { display: flex; align-items: center; gap: 16rpx; flex-shrink: 0; }
+.spec-layout-switch {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 3rpx;
+  background: #F1F5F0;
+  border-radius: 10rpx;
+}
+.spec-layout-option {
+  width: 46rpx;
+  height: 38rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8rpx;
+  color: $muted;
+}
+.spec-layout-option.active {
+  background: #ffffff;
+  color: $primary;
+  box-shadow: 0 1rpx 4rpx rgba(31, 45, 31, 0.1);
+}
+.layout-icon { display: flex; }
+.layout-icon-grid { width: 20rpx; flex-wrap: wrap; gap: 3rpx; }
+.grid-cell { width: 8rpx; height: 8rpx; border-radius: 2rpx; background: currentColor; }
+.layout-icon-list { flex-direction: column; gap: 4rpx; }
+.list-line { width: 20rpx; height: 4rpx; border-radius: 2rpx; background: currentColor; }
+
+.spec-list { gap: 14rpx; }
+.spec-list.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+/* 平铺：一个规格占满一行，整行可点 */
+.spec-list.flat {
+  display: flex;
+  flex-direction: column;
+}
+.spec-item {
+  display: flex; align-items: center; justify-content: center; gap: 8rpx;
+  min-height: 76rpx;
+  padding: 14rpx 18rpx;
   background: var(--page-bg);
   border: 2rpx solid #EDEAE7;
   border-radius: 14rpx;
@@ -675,18 +695,39 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
     background: #F5FAF3;
     border-color: $primary;
   }
-}
 
-.spec-meta { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12rpx; }
-.spec-name { flex-shrink: 0; font-size: 27rpx; font-weight: 700; color: $on-surface; }
-.spec-row.active .spec-name { color: $primary; }
-.spec-desc {
-  flex: 1; min-width: 0;
-  font-size: 20rpx; color: $muted;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* 售罄：置灰、整项不可点，样式覆盖选中态 */
+  &.soldout {
+    background: #F4F2EF;
+    border-color: #E8E5E1;
+
+    .spec-name,
+    .spec-stock { color: #A9A49C; }
+  }
 }
-.spec-right { flex-shrink: 0; display: flex; align-items: center; gap: 10rpx; }
-.spec-price { font-size: 30rpx; font-weight: 700; color: $price; }
+.spec-info {
+  display: flex; flex-direction: column; align-items: center; gap: 4rpx;
+  min-width: 0;
+}
+.spec-list.flat .spec-item {
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+}
+.spec-list.flat .spec-info {
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+.spec-list.flat .spec-name { text-align: left; }
+.spec-name {
+  font-size: 26rpx; font-weight: 700; color: $on-surface;
+  text-align: center; word-break: break-all;
+}
+.spec-stock { font-size: 19rpx; color: $muted; }
+.spec-item.active .spec-name { color: $primary; }
+.spec-item.active .spec-stock { color: $primary; }
 
 .qty-row {
   display: flex; justify-content: space-between; align-items: center;

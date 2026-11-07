@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallReturns;
 using QPS.Mall.Contracts.DTOs;
@@ -7,6 +8,7 @@ using QPS.Shared.Common;
 namespace QPS.Mall.Controllers.Admin;
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall")]
 public class MallReturnAdminController : ControllerBase
 {
@@ -18,7 +20,7 @@ public class MallReturnAdminController : ControllerBase
     }
 
     [HttpGet("returns")]
-    public async Task<ActionResult<PaginationResponse<MallReturnListDto>>> GetReturns(
+    public async Task<ActionResult<PaginationResponse<MallReturnDto>>> GetReturns(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string sortField = "CreatedAt",
@@ -42,7 +44,7 @@ public class MallReturnAdminController : ControllerBase
     }
 
     [HttpGet("returns/{id:guid}")]
-    public async Task<ActionResult<MallReturnDetailDto>> GetReturn(Guid id)
+    public async Task<ActionResult<MallReturnDto>> GetReturn(Guid id)
     {
         return Ok(await _mediator.Send(new GetMallReturnQuery { Id = id }));
     }
@@ -55,7 +57,8 @@ public class MallReturnAdminController : ControllerBase
         return Ok(await _mediator.Send(new ApproveMallReturnCommand
         {
             ReturnNo = returnNo,
-            Approve = request.Approve
+            Approve = request.Approve,
+            RejectReason = request.RejectReason
         }));
     }
 
@@ -69,4 +72,7 @@ public class MallReturnAdminController : ControllerBase
 public class ApproveMallReturnRequest
 {
     public bool Approve { get; set; }
+
+    /// <summary>审核拒绝时的原因。</summary>
+    public string? RejectReason { get; set; }
 }

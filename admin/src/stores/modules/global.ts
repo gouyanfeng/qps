@@ -17,6 +17,8 @@ export const useGlobalStore = defineStore("qps-global",{
     maximize: false,
     // 主题颜色
     primary: DEFAULT_PRIMARY,
+    // 按钮、输入框等 Element Plus 组件的基础圆角（px），菜单选中块共用此变量
+    borderRadius: 4,
     // 深色模式
     isDark: false,
     // 灰色模式

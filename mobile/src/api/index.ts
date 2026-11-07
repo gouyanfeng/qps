@@ -6,7 +6,7 @@ import {
   resolveFileUrl
 } from '@/utils/http'
 import type { ApiResp } from '@/utils/http'
-import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem, MallActivity, BannerLinkType, ProductReview, ProductReviewPage, MallTagItem } from './types'
+import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem, BannerLinkType, ProductReview, ProductReviewPage, MallTagItem } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const MEMBER_TOKEN_STORAGE_KEY = 'qps_member_token'
@@ -21,6 +21,8 @@ interface ApiSku {
   marketPrice: number
   stock: number
   weightGram: number
+  discountedPrice?: number | null
+  discountLabel?: string
 }
 
 interface ApiProduct {
@@ -40,6 +42,8 @@ interface ApiProduct {
   isHot: boolean
   tags?: ProductTag[]
   promotions?: ProductPromotion[]
+  promotionBadgeText?: string
+  promotionBadgeColor?: string
 }
 
 interface ApiPage<T> {
@@ -166,10 +170,19 @@ export function createProductReview(
 }
 
 export function uploadReviewImage(filePath: string): Promise<string> {
+  return uploadImage(filePath, 'review')
+}
+
+/** 售后凭证图片上传，走同一图片上传接口的 aftersale 场景 */
+export function uploadAfterSaleImage(filePath: string): Promise<string> {
+  return uploadImage(filePath, 'aftersale')
+}
+
+function uploadImage(filePath: string, scene: 'review' | 'aftersale'): Promise<string> {
   return new Promise((resolve, reject) => {
     const token = uni.getStorageSync(MEMBER_TOKEN_STORAGE_KEY) || ''
     uni.uploadFile({
-      url: `${API_BASE_URL}/api/mall/file/upload/img?scene=review`,
+      url: `${API_BASE_URL}/api/mall/file/upload/img?scene=${scene}`,
       filePath,
       name: 'file',
       header: token ? { Authorization: `Bearer ${token}` } : {},
@@ -228,7 +241,9 @@ function mapProduct(p: ApiProduct): Product {
       price: s.price,
       marketPrice: s.marketPrice || 0,
       stock: s.stock,
-      weightGram: s.weightGram
+      weightGram: s.weightGram,
+      discountedPrice: s.discountedPrice ?? null,
+      discountLabel: s.discountLabel || ''
     })),
     sales: p.sales || 0,
     isHot: p.isHot || false,
@@ -241,17 +256,132 @@ function mapProduct(p: ApiProduct): Product {
       sortOrder: tag.sortOrder,
       isActive: tag.isActive
     })),
-    promotions: (p.promotions || [])
+    promotions: (p.promotions || []),
+    promotionBadgeText: p.promotionBadgeText || '',
+    promotionBadgeColor: p.promotionBadgeColor || ''
   }
 }
 
-export async function getBanners(): Promise<Banner[]> {
-  const list = await request<MallBanner[]>('/api/mall/banners?position=home')
+export async function getBanners(position = 'home'): Promise<Banner[]> {
+  const list = await request<MallBanner[]>(`/api/mall/banners?position=${encodeURIComponent(position)}`)
   return list.map(mapBanner)
 }
 
-export function getMallActivity(id: string): Promise<MallActivity> {
-  return request<MallActivity>(`/api/mall/activities/${encodeURIComponent(id)}`)
+/** 活动专题（商品推荐 / 领券） */
+export interface CampaignCoupon {
+  id: string
+  couponId: string
+  name: string
+  code: string
+  couponType: string
+  thresholdAmount: number
+  discountAmount: number
+  maxDiscount: number | null
+  totalCount: number
+  remainCount: number
+  perLimit: number
+  validDays: number
+  startAt: string | null
+  endAt: string | null
+  scopeType: string
+  isActive: boolean
+  isClaimable: boolean
+  sortOrder: number
+}
+
+export interface CampaignSummary {
+  id: string
+  type: number
+  name: string
+  coverImageUrl: string
+  coverImage: string
+  startAt: string
+  endAt: string
+  status: 'Upcoming' | 'Ongoing' | 'Ended'
+  sortOrder: number
+}
+
+export interface CampaignDetail {
+  id: string
+  type: number
+  name: string
+  coverImageUrl: string
+  coverImage: string
+  contentHtml: string
+  startAt: string
+  endAt: string
+  status: 'Upcoming' | 'Ongoing' | 'Ended'
+  coupons: CampaignCoupon[]
+}
+
+export interface CampaignProductItem {
+  campaignProductId: string
+  groupName: string
+  sortOrder: number
+  product: Product
+}
+
+interface ApiCampaign {
+  id: string
+  type: number
+  name: string
+  coverImageUrl: string
+  startAt: string
+  endAt: string
+  status: string
+  sortOrder?: number
+  contentHtml?: string
+  coupons?: CampaignCoupon[]
+}
+
+function mapCampaignSummary(campaign: ApiCampaign): CampaignSummary {
+  return {
+    id: campaign.id,
+    type: campaign.type,
+    name: campaign.name,
+    coverImageUrl: campaign.coverImageUrl || '',
+    coverImage: resolveFileUrl(campaign.coverImageUrl || ''),
+    startAt: campaign.startAt,
+    endAt: campaign.endAt,
+    status: (campaign.status || 'Ongoing') as CampaignSummary['status'],
+    sortOrder: campaign.sortOrder || 0
+  }
+}
+
+export async function getCampaigns(): Promise<CampaignSummary[]> {
+  const list = await request<ApiCampaign[]>('/api/mall/campaigns')
+  return list.map(mapCampaignSummary)
+}
+
+export async function getCampaignDetail(id: string): Promise<CampaignDetail> {
+  const campaign = await request<ApiCampaign>(`/api/mall/campaigns/${encodeURIComponent(id)}`)
+  return {
+    ...mapCampaignSummary(campaign),
+    contentHtml: campaign.contentHtml || '',
+    coupons: campaign.coupons || []
+  }
+}
+
+export async function getCampaignProducts(
+  id: string,
+  page = 1,
+  pageSize = 10
+): Promise<{ items: CampaignProductItem[]; hasMore: boolean; total: number }> {
+  const data = await request<ApiPage<{ campaignProductId: string; groupName: string; sortOrder: number; product: ApiProduct }>>(
+    `/api/mall/campaigns/${encodeURIComponent(id)}/products?page=${page}&pageSize=${pageSize}`
+  )
+  const rows = data.items || data.list || []
+  const total = data.totalCount ?? data.total ?? 0
+  return {
+    items: rows.map(row => ({
+      campaignProductId: row.campaignProductId,
+      groupName: row.groupName || '',
+      sortOrder: row.sortOrder,
+      product: mapProduct(row.product)
+    })),
+    hasMore: data.hasMore ?? page * pageSize < total,
+    total
+  }
 }
 
 export async function getCartItems(): Promise<CartItem[]> {
@@ -264,29 +394,62 @@ export interface CartPromotionDetail {
   discountAmount: number
 }
 
+/** 赠品展示项：0 元计价，不参与金额，仅用于下单前展示 */
+export interface CartGiftItem {
+  skuId: string
+  productId: string
+  productName: string
+  productImage: string
+  specName: string
+  quantity: number
+  promotionId: string
+  promotionName: string
+}
+
 export interface CartSummary {
   items: CartItem[]
   /** 选中商品的原价合计 */
   selectedAmount: number
   /** 预计促销优惠金额（按选中商品试算，最终以下单结果为准） */
   promotionDiscountAmount: number
+  /** 其中折后优惠金额 */
+  rateDiscountAmount: number
+  /** 其中满减优惠金额 */
+  amountDiscountAmount: number
   /** 预计应付金额 */
   payableAmount: number
   /** 预计促销优惠明细 */
   promotionDetails: CartPromotionDetail[]
+  /** 按选中商品试算命中的赠品 */
+  gifts: CartGiftItem[]
 }
 
 export async function getCartOverview(selectedSkuIds?: string[]): Promise<CartSummary> {
-  const cart = await fetchRemoteCart(selectedSkuIds)
+  return mapCartSummary(await fetchRemoteCart(selectedSkuIds))
+}
+
+function mapCartSummary(cart: MallCartResponse): CartSummary {
   return {
     items: mapCartItems(cart),
     selectedAmount: Number(cart.selectedAmount || 0),
     promotionDiscountAmount: Number(cart.promotionDiscountAmount || 0),
+    rateDiscountAmount: Number(cart.rateDiscountAmount || 0),
+    amountDiscountAmount: Number(cart.amountDiscountAmount || 0),
     payableAmount: Number(cart.payableAmount || 0),
     promotionDetails: (cart.promotionDetails || []).map(detail => ({
       promotionId: detail.promotionId,
       name: detail.name,
       discountAmount: Number(detail.discountAmount || 0)
+    })),
+    gifts: (cart.gifts || []).map(gift => ({
+      skuId: gift.skuId,
+      productId: gift.productId,
+      productName: gift.productName,
+      productImage: resolveFileUrl(gift.productImage),
+      specName: gift.specName,
+      quantity: Number(gift.quantity || 0),
+      promotionId: gift.promotionId,
+      promotionName: gift.promotionName
     }))
   }
 }
@@ -299,6 +462,10 @@ interface MallCartResponse {
     productImage: string
     specName: string
     price: number
+    discountedPrice?: number | null
+    discountLabel?: string | null
+    promotionBadgeText?: string | null
+    promotionBadgeColor?: string | null
     quantity: number
     weightGram: number
     stock: number
@@ -307,12 +474,24 @@ interface MallCartResponse {
     invalidReason: string | null
   }>
   promotionDiscountAmount?: number
+  rateDiscountAmount?: number
+  amountDiscountAmount?: number
   payableAmount?: number
   selectedAmount?: number
   promotionDetails?: Array<{
     promotionId: string
     name: string
     discountAmount: number
+  }>
+  gifts?: Array<{
+    skuId: string
+    productId: string
+    productName: string
+    productImage: string
+    specName: string
+    quantity: number
+    promotionId: string
+    promotionName: string
   }>
 }
 
@@ -335,6 +514,10 @@ function mapCartItems(cart: MallCartResponse): CartItem[] {
     skuId: item.skuId,
     specName: item.specName,
     price: item.price,
+    discountedPrice: item.discountedPrice ?? item.price,
+    discountLabel: item.discountLabel || null,
+    promotionBadgeText: item.promotionBadgeText || null,
+    promotionBadgeColor: item.promotionBadgeColor || null,
     quantity: item.quantity,
     weightGram: item.weightGram,
     selected: !deselectedCartSkuIds.has(item.skuId),
@@ -351,31 +534,44 @@ async function getRemoteCart(): Promise<CartItem[]> {
 
 export async function addToCart(item: CartItem): Promise<CartItem[]> {
   if (!isGuid(item.skuId)) throw new Error('商品规格信息无效，请刷新后重试')
-  await request<MallCartResponse>('/api/mall/carts/add', 'POST', {
+  const cart = await request<MallCartResponse>('/api/mall/carts/add', 'POST', {
     userId: getMemberId() || '00000000-0000-0000-0000-000000000000',
     skuId: item.skuId,
     quantity: item.quantity
   })
-  return getRemoteCart()
+  return mapCartItems(cart)
 }
 
-export async function updateCartItemQuantity(skuId: string, quantity: number): Promise<CartItem[]> {
+export async function updateCartItemQuantity(skuId: string, quantity: number): Promise<CartSummary> {
   if (!isGuid(skuId)) throw new Error('商品规格信息无效，请刷新后重试')
   if (quantity <= 0) return removeCartItem(skuId)
-  await request<MallCartResponse>('/api/mall/carts/update-item', 'PUT', {
+  const cart = await request<MallCartResponse>('/api/mall/carts/update-item', 'PUT', {
     userId: getMemberId() || '00000000-0000-0000-0000-000000000000',
     skuId,
     quantity
   })
-  return getRemoteCart()
+  return mapCartSummary(cart)
 }
 
-export async function removeCartItem(skuId: string): Promise<CartItem[]> {
+export async function removeCartItem(skuId: string): Promise<CartSummary> {
   if (!isGuid(skuId)) throw new Error('商品规格信息无效，请刷新后重试')
   const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
-  await request(`/api/mall/carts/${memberId}/items/${skuId}`, 'DELETE')
+  const cart = await request<MallCartResponse>(`/api/mall/carts/${memberId}/items/${skuId}`, 'DELETE')
   deselectedCartSkuIds.delete(skuId)
-  return getRemoteCart()
+  return mapCartSummary(cart)
+}
+
+/** 下单成功后只移除本次提交的规格明细，未购买的商品保留在购物车。 */
+export async function removeCartItems(skuIds: string[]): Promise<CartSummary> {
+  const uniqueIds = [...new Set(skuIds.filter(id => isGuid(id)))]
+  if (uniqueIds.length === 0) return getCartOverview()
+  const cart = await request<MallCartResponse>('/api/mall/carts/remove-items', 'POST', {
+    skuIds: uniqueIds
+  })
+  for (const skuId of uniqueIds) {
+    deselectedCartSkuIds.delete(skuId)
+  }
+  return mapCartSummary(cart)
 }
 
 export function toggleCartItemSelection(items: CartItem[], skuId: string): CartItem[] {
@@ -394,12 +590,6 @@ export function setCartItemsSelection(items: CartItem[], selected: boolean): Car
     else deselectedCartSkuIds.add(item.skuId)
   }
   return items.map(item => ({ ...item, selected }))
-}
-
-export async function clearCart(): Promise<void> {
-  const memberId = getMemberId() || '00000000-0000-0000-0000-000000000000'
-  await request(`/api/mall/carts/${memberId}`, 'DELETE')
-  deselectedCartSkuIds.clear()
 }
 
 export interface LoginRequest { phone: string; password: string }
@@ -520,6 +710,28 @@ export function claimCoupon(couponId: string): Promise<MemberCoupon> {
   return request<MemberCoupon>(`/api/mall/member/me/coupons/${couponId}/claim`, 'POST')
 }
 
+/** 确认页可用券：按当前结算商品返回，不可用券带原因。 */
+export interface CheckoutCoupon {
+  id: string
+  couponId: string
+  name: string
+  couponType: string
+  thresholdAmount: number
+  faceValue: number
+  maxDiscount: number | null
+  scopeType: string
+  expireAt: string
+  isAvailable: boolean
+  unavailableReason: string | null
+  discountAmount: number
+}
+
+export function getCheckoutCoupons(
+  items: Array<{ skuId: string; quantity: number }>
+): Promise<CheckoutCoupon[]> {
+  return request<CheckoutCoupon[]>('/api/mall/coupons/for-order', 'POST', { items })
+}
+
 export function getMyOrders(status?: string): Promise<ApiPage<MallOrder>> {
   const statusQuery = status ? `&status=${encodeURIComponent(status)}` : ''
   return request<ApiPage<MallOrder>>(`/api/mall/orders?page=1&pageSize=50${statusQuery}`)
@@ -536,8 +748,10 @@ export interface MallOrderItem {
   itemAmount: number
   isGift: boolean
   promotionName: string
+  promotionSnapshot: string
+  promotionDiscountAmount: number
   badge: string
-  originalUnitPrice: number | null
+  originalUnitPrice: number
   reviewed?: boolean
 }
 
@@ -548,11 +762,27 @@ export interface MallOrder {
   receiverName: string
   goodsAmount: number
   promotionDiscountAmount: number
+  couponDiscountAmount: number
+  couponId: string | null
+  couponName: string
   payableAmount: number
   paidAmount: number
   freightAmount: number
   createdAt: string
+  shipment: MallShipment | null
   items: MallOrderItem[]
+}
+
+export interface MallShipment {
+  id: string
+  shipmentNo: string
+  expressCompany: string
+  expressPhone: string
+  trackingNo: string
+  status: string
+  remark: string
+  shippedAt: string | null
+  deliveredAt: string | null
 }
 
 export function getAddresses(): Promise<MallAddress[]> {
@@ -608,19 +838,40 @@ export interface OrderPromotionDetail {
 export interface OrderPreview {
   goodsAmount: number
   promotionDiscountAmount: number
+  /** 其中折后优惠金额 */
+  rateDiscountAmount: number
+  /** 其中满减优惠金额 */
+  amountDiscountAmount: number
   promotionDetails: OrderPromotionDetail[]
+  couponDiscountAmount: number
+  couponName: string | null
+  freightAmount: number
   payableAmount: number
+  /** 赠品清单（0 元，不参与金额，用于提交前展示） */
+  gifts: CartGiftItem[]
 }
 
-/** 订单确认页价格预览：按当前商品与数量试算促销优惠。 */
-export function previewOrder(items: Array<{ skuId: string; quantity: number }>): Promise<OrderPreview> {
-  return request<OrderPreview>('/api/mall/orders/preview', 'POST', { items })
+/** 订单确认页价格预览：必须先有收货地址，金额（含运费）以后端为准。 */
+export async function previewOrder(
+  items: Array<{ skuId: string; quantity: number }>,
+  addressId: string,
+  memberCouponId?: string
+): Promise<OrderPreview> {
+  const preview = await request<OrderPreview>('/api/mall/orders/preview', 'POST', { items, memberCouponId, addressId })
+  return {
+    ...preview,
+    gifts: (preview.gifts || []).map(gift => ({
+      ...gift,
+      productImage: resolveFileUrl(gift.productImage)
+    }))
+  }
 }
 
 export interface CreateOrderRequest {
   addressId: string
   remark: string
   items: Array<{ skuId: string; quantity: number }>
+  memberCouponId?: string
 }
 
 export interface MallOrderDetail extends MallOrder {
@@ -650,21 +901,65 @@ export interface MallOrderDetail extends MallOrder {
     refundNo: string
     amount: number
     reason: string
+    description: string | null
+    evidenceImages: string[]
     status: string
     refundedAt: string | null
     createdAt: string
   }>
-  shipment: {
-    id: string
-    shipmentNo: string
-    expressCompany: string
-    expressPhone: string
-    trackingNo: string
-    status: string
-    remark: string
-    shippedAt: string | null
-    deliveredAt: string | null
-  } | null
+  /** 退货/售后单，展示售后进度 */
+  returns: MallReturnRecord[]
+}
+
+export interface MallReturnRecord {
+  id: string
+  returnNo: string
+  amount: number
+  reason: string
+  description: string | null
+  evidenceImages: string[]
+  rejectReason: string | null
+  status: string
+  expressCompany: string | null
+  trackingNo: string | null
+  approvedAt: string | null
+  rejectedAt: string | null
+  shippedAt: string | null
+  receivedAt: string | null
+  completedAt: string | null
+  createdAt: string
+}
+
+export interface MallAfterSalePayload {
+  reason: string
+  description?: string
+  evidenceImages?: string[]
+}
+
+/** 待发货订单申请仅退款（整单退，金额取订单实付） */
+export function createRefund(orderNo: string, payload: MallAfterSalePayload): Promise<unknown> {
+  return request(`/api/mall/orders/${encodeURIComponent(orderNo)}/refunds`, 'POST', payload)
+}
+
+/** 已发货/已签收订单申请退货退款（整单退） */
+export function createReturn(orderNo: string, payload: MallAfterSalePayload): Promise<MallReturnRecord> {
+  return request<MallReturnRecord>(
+    `/api/mall/orders/${encodeURIComponent(orderNo)}/returns`,
+    'POST',
+    payload
+  )
+}
+
+/** 退货审核通过后填写寄回运单 */
+export function submitReturnTracking(
+  returnNo: string,
+  payload: { expressCompany: string; trackingNo: string }
+): Promise<MallReturnRecord> {
+  return request<MallReturnRecord>(
+    `/api/mall/returns/${encodeURIComponent(returnNo)}/ship`,
+    'POST',
+    payload
+  )
 }
 
 export function getOrderDetail(orderNo: string): Promise<MallOrderDetail> {

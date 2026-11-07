@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Mall.Application.Features.MallCoupons;
 using QPS.Mall.Contracts;
 using QPS.Mall.Domain;
 
@@ -15,6 +16,9 @@ public class CancelMallOrderCommand : IRequest<bool>
 
     /// <summary>外部订单号。</summary>
     public string? OrderNo { get; set; }
+
+    /// <summary>当前会员 ID；移动端必传，管理端为空。</summary>
+    public Guid? MemberId { get; set; }
 }
 
 public class CancelMallOrderHandler : IRequestHandler<CancelMallOrderCommand, bool>
@@ -34,6 +38,8 @@ public class CancelMallOrderHandler : IRequestHandler<CancelMallOrderCommand, bo
             request.OrderNo,
             cancellationToken);
 
+        MallOrderResolver.EnsureOwnership(order, request.MemberId);
+
         order.Cancel();
 
         await MallOrderResolver.RestoreStockAsync(
@@ -42,11 +48,8 @@ public class CancelMallOrderHandler : IRequestHandler<CancelMallOrderCommand, bo
             MallStockChangeType.OrderCancel,
             cancellationToken);
 
-        await MallOrderResolver.ReleasePromotionUsageAsync(
-            _dbContext,
-            order,
-            null,
-            cancellationToken);
+        // 取消后回补该订单占用的优惠券
+        await MallCouponService.ReleaseByOrderNoAsync(_dbContext, order.OrderNo, cancellationToken);
 
         var pendingPayments = await _dbContext.MallPayments
             .Where(payment =>

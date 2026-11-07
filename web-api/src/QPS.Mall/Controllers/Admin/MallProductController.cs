@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallProducts;
 using QPS.Mall.Contracts.DTOs;
@@ -10,6 +11,7 @@ namespace QPS.Mall.Controllers;
 /// 管理端商品与规格维护。
 /// </summary>
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall")]
 public class MallProductController : ControllerBase
 {

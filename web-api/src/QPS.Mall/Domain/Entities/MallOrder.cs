@@ -39,14 +39,29 @@ public class MallOrder : BaseEntity
     public string ReceiverAddress { get; private set; } = string.Empty;
 
     /// <summary>
-    /// 收货地址ID，关联 MallAddress。
-    /// </summary>
-    public Guid? AddressId { get; private set; }
-
-    /// <summary>
-    /// 商品金额。
+    /// 商品原价合计（促销与优惠券抵扣前）。
     /// </summary>
     public decimal GoodsAmount { get; private set; }
+
+    /// <summary>
+    /// 促销优惠金额（下单时快照，含折扣与满减）。
+    /// </summary>
+    public decimal PromotionDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// 优惠券抵扣金额。
+    /// </summary>
+    public decimal CouponDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// 优惠券 ID 快照（券后续被删除仍可追溯）。
+    /// </summary>
+    public Guid? CouponId { get; private set; }
+
+    /// <summary>
+    /// 优惠券名称快照。
+    /// </summary>
+    public string CouponName { get; private set; } = string.Empty;
 
     /// <summary>
     /// 运费金额。
@@ -54,7 +69,7 @@ public class MallOrder : BaseEntity
     public decimal FreightAmount { get; private set; }
 
     /// <summary>
-    /// 应付金额 = 商品金额 + 运费金额。
+    /// 应付金额 = max(0, 商品原价 - 促销优惠 - 券抵扣) + 运费金额。
     /// </summary>
     public decimal PayableAmount { get; private set; }
 
@@ -77,6 +92,11 @@ public class MallOrder : BaseEntity
     /// 订单备注。
     /// </summary>
     public string Remark { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 赠品未发放原因（库存不足等），下单时写入，用于订单详情追溯。
+    /// </summary>
+    public string GiftShortageMessage { get; private set; } = string.Empty;
 
     /// <summary>
     /// 支付时间。
@@ -114,10 +134,13 @@ public class MallOrder : BaseEntity
         string receiverPhone,
         string receiverAddress,
         decimal goodsAmount,
+        decimal promotionDiscountAmount,
+        decimal couponDiscountAmount,
         decimal freightAmount,
         int totalWeightGram,
         string remark,
-        Guid? addressId)
+        Guid? couponId,
+        string couponName)
     {
         OrderNo = orderNo;
         MemberId = memberId;
@@ -125,11 +148,14 @@ public class MallOrder : BaseEntity
         ReceiverPhone = receiverPhone;
         ReceiverAddress = receiverAddress;
         GoodsAmount = goodsAmount;
+        PromotionDiscountAmount = promotionDiscountAmount;
+        CouponDiscountAmount = couponDiscountAmount;
+        CouponId = couponId;
+        CouponName = couponName;
         FreightAmount = freightAmount;
-        PayableAmount = goodsAmount + freightAmount;
+        PayableAmount = CalculatePayableAmount(goodsAmount, promotionDiscountAmount, couponDiscountAmount, freightAmount);
         TotalWeightGram = totalWeightGram;
         Remark = remark;
-        AddressId = addressId;
         Status = MallOrderStatus.PendingPayment;
     }
 
@@ -140,11 +166,19 @@ public class MallOrder : BaseEntity
         string receiverPhone,
         string receiverAddress,
         decimal goodsAmount,
+        decimal promotionDiscountAmount,
+        decimal couponDiscountAmount,
         decimal freightAmount,
         int totalWeightGram,
         string remark,
-        Guid? addressId = null)
+        Guid? couponId = null,
+        string couponName = "")
     {
+        if (goodsAmount < 0 || promotionDiscountAmount < 0 || couponDiscountAmount < 0 || freightAmount < 0)
+        {
+            throw new BusinessException(400, "订单金额不能为负数");
+        }
+
         return new MallOrder(
             orderNo,
             memberId,
@@ -152,10 +186,65 @@ public class MallOrder : BaseEntity
             receiverPhone,
             receiverAddress,
             goodsAmount,
+            promotionDiscountAmount,
+            couponDiscountAmount,
             freightAmount,
             totalWeightGram,
             remark,
-            addressId);
+            couponId,
+            couponName);
+    }
+
+    /// <summary>
+    /// 应付金额唯一口径：商品原价扣除促销与券后封底为 0，再加运费。
+    /// </summary>
+    private static decimal CalculatePayableAmount(
+        decimal goodsAmount,
+        decimal promotionDiscountAmount,
+        decimal couponDiscountAmount,
+        decimal freightAmount)
+    {
+        return Math.Max(0, goodsAmount - promotionDiscountAmount - couponDiscountAmount) + freightAmount;
+    }
+
+    /// <summary>
+    /// 金额恒等式校验：商品原价 − 促销优惠 − 券抵扣（封底为 0）+ 运费 = 应付金额。
+    /// 下单时与订单查询时共用，口径不一致直接暴露错误，不静默展示。
+    /// </summary>
+    public static void EnsureAmountIdentity(
+        string orderNo,
+        decimal goodsAmount,
+        decimal promotionDiscountAmount,
+        decimal couponDiscountAmount,
+        decimal freightAmount,
+        decimal payableAmount)
+    {
+        var expected = CalculatePayableAmount(
+            goodsAmount,
+            promotionDiscountAmount,
+            couponDiscountAmount,
+            freightAmount);
+        if (Math.Abs(expected - payableAmount) > 0.01m)
+        {
+            throw new BusinessException(
+                500,
+                $"订单 {orderNo} 金额不自洽：商品 {goodsAmount:0.00} - 促销 {promotionDiscountAmount:0.00} - 券 {couponDiscountAmount:0.00} + 运费 {freightAmount:0.00} = {expected:0.00}，实际应付 {payableAmount:0.00}");
+        }
+    }
+
+    /// <summary>
+    /// 记录赠品未发放原因（不拦截下单，仅用于订单追溯）。
+    /// </summary>
+    public void RecordGiftShortage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        GiftShortageMessage = string.IsNullOrEmpty(GiftShortageMessage)
+            ? message
+            : $"{GiftShortageMessage}；{message}";
     }
 
     /// <summary>
@@ -202,6 +291,20 @@ public class MallOrder : BaseEntity
     }
 
     /// <summary>
+    /// 运单作废后订单回退到已支付（待发货），可重新发货。
+    /// </summary>
+    public void RevertShipment()
+    {
+        if (Status != MallOrderStatus.Shipped)
+        {
+            throw new BusinessException(400, "仅已发货订单可以作废运单");
+        }
+
+        Status = MallOrderStatus.Paid;
+        ShippedAt = null;
+    }
+
+    /// <summary>
     /// 确认收货。
     /// </summary>
     public void MarkCompleted()
@@ -216,13 +319,16 @@ public class MallOrder : BaseEntity
     }
 
     /// <summary>
-    /// 进入退款流程。
+    /// 进入退款流程。已支付（未发货）、已发货、已签收订单均可发起整单退款；
+    /// 已发货/已签收订单退款不立即回补库存，等待退货入库确认。
     /// </summary>
     public void BeginRefund()
     {
-        if (Status != MallOrderStatus.Paid)
+        if (Status != MallOrderStatus.Paid &&
+            Status != MallOrderStatus.Shipped &&
+            Status != MallOrderStatus.Completed)
         {
-            throw new BusinessException(400, "仅已支付未发货订单可以申请退款");
+            throw new BusinessException(400, "当前订单状态不可申请退款");
         }
 
         Status = MallOrderStatus.Refunding;
@@ -248,22 +354,34 @@ public class MallOrder : BaseEntity
     /// </summary>
     public void FailRefund()
     {
+        FailRefund(MallOrderStatus.Paid);
+    }
+
+    /// <summary>
+    /// 退款失败，订单回到退款前状态。
+    /// 未发货回到已支付；已发货回到已发货；已签收回已完成，避免丢失发货状态。
+    /// </summary>
+    public void FailRefund(string previousStatus)
+    {
         if (Status != MallOrderStatus.Refunding)
         {
             throw new BusinessException(400, "当前订单不在退款流程中");
         }
 
-        Status = MallOrderStatus.Paid;
+        Status = previousStatus;
     }
 
     /// <summary>
-    /// 进入退货流程，已发货/已完成订单可发起。
+    /// 进入退货流程。已发货/已完成订单可发起；
+    /// 已退款但库存尚未回补的订单也可发起退货，等入库确认后再回补。
     /// </summary>
     public void BeginReturn()
     {
-        if (Status != MallOrderStatus.Shipped && Status != MallOrderStatus.Completed)
+        if (Status != MallOrderStatus.Shipped &&
+            Status != MallOrderStatus.Completed &&
+            Status != MallOrderStatus.Refunded)
         {
-            throw new BusinessException(400, "仅已发货或已完成订单可以申请退货");
+            throw new BusinessException(400, "仅已发货、已完成或已退款待入库订单可以申请退货");
         }
 
         Status = MallOrderStatus.Returning;

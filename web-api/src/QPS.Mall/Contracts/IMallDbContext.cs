@@ -43,11 +43,11 @@ public interface IMallDbContext
 
     DbSet<MallPromotionScope> MallPromotionScopes { get; }
 
-    DbSet<MallPromotionUsage> MallPromotionUsages { get; }
+    DbSet<MallCampaign> MallCampaigns { get; }
 
-    DbSet<MallActivity> MallActivities { get; }
+    DbSet<MallCampaignProduct> MallCampaignProducts { get; }
 
-    DbSet<MallCart> MallCarts { get; }
+    DbSet<MallCampaignCoupon> MallCampaignCoupons { get; }
 
     DbSet<MallCartItem> MallCartItems { get; }
 

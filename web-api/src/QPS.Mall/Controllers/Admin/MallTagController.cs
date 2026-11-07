@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QPS.Mall.Application.Features.MallTags;
 using QPS.Mall.Contracts.DTOs;
@@ -7,6 +8,7 @@ using QPS.Shared.Common;
 namespace QPS.Mall.Controllers.Admin;
 
 [ApiController]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/mall/tags")]
 public class MallTagController(IMediator mediator) : ControllerBase
 {

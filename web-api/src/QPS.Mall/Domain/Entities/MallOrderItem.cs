@@ -38,6 +38,11 @@ public class MallOrderItem : BaseEntity
     public string SpecName { get; private set; } = string.Empty;
 
     /// <summary>
+    /// 商品主图快照。
+    /// </summary>
+    public string ProductImage { get; private set; } = string.Empty;
+
+    /// <summary>
     /// 下单单价。
     /// </summary>
     public decimal UnitPrice { get; private set; }
@@ -73,9 +78,20 @@ public class MallOrderItem : BaseEntity
     public string PromotionName { get; private set; } = string.Empty;
 
     /// <summary>
-    /// 原价快照（折扣/秒杀场景记录原价）。
+    /// 原价快照，恒有值：无促销时与 <see cref="UnitPrice"/> 相同。
     /// </summary>
-    public decimal? OriginalUnitPrice { get; private set; }
+    public decimal OriginalUnitPrice { get; private set; }
+
+    /// <summary>
+    /// 本行实际促销优惠金额（各条命中促销分摊到本行的优惠合计），赠品为 0。
+    /// </summary>
+    public decimal PromotionDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// 本行命中的促销快照，JSON 数组：[{id, name, actionType, amount}]。
+    /// 仅存放结构化数据，展示文案由前端自行拼装。
+    /// </summary>
+    public string PromotionSnapshot { get; private set; } = "[]";
 
     private MallOrderItem()
     {
@@ -94,7 +110,10 @@ public class MallOrderItem : BaseEntity
         bool isGift = false,
         Guid? promotionId = null,
         string promotionName = "",
-        decimal? originalUnitPrice = null)
+        decimal originalUnitPrice = 0,
+        string productImage = "",
+        decimal promotionDiscountAmount = 0,
+        string promotionSnapshot = "[]")
     {
         OrderId = orderId;
         SkuId = skuId;
@@ -102,13 +121,17 @@ public class MallOrderItem : BaseEntity
         ProductName = productName;
         SkuCode = skuCode;
         SpecName = specName;
+        ProductImage = productImage;
         UnitPrice = unitPrice;
         Quantity = quantity;
         WeightGram = weightGram;
         IsGift = isGift;
         PromotionId = promotionId;
         PromotionName = promotionName;
-        OriginalUnitPrice = originalUnitPrice;
+        // 原价恒写：未提供原价（无促销）时与成交单价一致
+        OriginalUnitPrice = originalUnitPrice > 0 ? originalUnitPrice : unitPrice;
+        PromotionDiscountAmount = promotionDiscountAmount;
+        PromotionSnapshot = string.IsNullOrWhiteSpace(promotionSnapshot) ? "[]" : promotionSnapshot;
         ItemAmount = unitPrice * quantity;
     }
 
@@ -125,7 +148,10 @@ public class MallOrderItem : BaseEntity
         bool isGift = false,
         Guid? promotionId = null,
         string promotionName = "",
-        decimal? originalUnitPrice = null)
+        decimal originalUnitPrice = 0,
+        string productImage = "",
+        decimal promotionDiscountAmount = 0,
+        string promotionSnapshot = "[]")
     {
         return new MallOrderItem(
             orderId,
@@ -140,6 +166,9 @@ public class MallOrderItem : BaseEntity
             isGift,
             promotionId,
             promotionName,
-            originalUnitPrice);
+            originalUnitPrice,
+            productImage,
+            promotionDiscountAmount,
+            promotionSnapshot);
     }
 }

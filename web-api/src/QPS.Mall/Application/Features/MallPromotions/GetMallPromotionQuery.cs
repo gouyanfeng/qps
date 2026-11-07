@@ -48,8 +48,6 @@ public class GetMallPromotionHandler : IRequestHandler<GetMallPromotionQuery, Ma
             ActionConfigJson = p.ActionConfigJson,
             PromotionTagId = p.PromotionTagId,
             ScopeType = p.ScopeType,
-            MaxUsagePerUser = p.MaxUsagePerUser,
-            MaxUsagePerOrder = p.MaxUsagePerOrder,
             StartDate = p.StartDate,
             EndDate = p.EndDate,
             IsActive = p.IsActive,
