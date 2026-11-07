@@ -1,0 +1,455 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QPS 文档结构图</title>
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#64748b;
+    --line:#d7dee8;
+    --fact:#2563eb;
+    --contract:#7c3aed;
+    --design:#db2777;
+    --decision:#d97706;
+    --archive:#6b7280;
+    --rule:#047857;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;font-size:14px;line-height:1.65}
+  body{padding:28px 32px 48px}
+  .page{max-width:1376px;margin:0 auto}
+  header.top{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 24px;margin-bottom:22px}
+  header.top h1{margin:0 0 6px;font-size:24px;letter-spacing:.5px}
+  header.top .meta{color:var(--muted);font-size:13px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .chip{display:inline-block;padding:1px 9px;border-radius:999px;font-size:13px;line-height:1.7;
+    border:1px solid currentColor;white-space:nowrap}
+  .c-fact{color:var(--fact);background:#eff6ff}
+  .c-contract{color:var(--contract);background:#f5f3ff}
+  .c-design{color:var(--design);background:#fdf2f8}
+  .c-decision{color:var(--decision);background:#fffbeb}
+  .c-archive{color:var(--archive);background:#f1f5f9}
+  .c-rule{color:var(--rule);background:#ecfdf5}
+  section.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px 26px;margin-bottom:22px}
+  section.card > h2{margin:0 0 4px;font-size:19px}
+  section.card > .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .tree ul{list-style:none;margin:0;padding:0}
+  .tree .tchildren{margin-left:14px;padding-left:20px;border-left:1px dashed var(--line)}
+  .tnode{padding:5px 0}
+  .tline{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .tpath{font-family:Consolas,"Courier New",monospace;font-size:13.5px;color:#0f172a;background:#f1f5f9;
+    border:1px solid #e2e8f0;border-radius:4px;padding:0 6px}
+  .tdesc{color:#334155;font-size:13.5px}
+  .tnode.root > .tline .tpath{background:#ecfdf5;border-color:#a7f3d0;color:#065f46;font-weight:700}
+  .tnode.readme > .tline .tpath{background:#f8fafc;border-color:#e2e8f0;color:#475569}
+  .note{color:var(--muted);font-size:13px;margin:10px 0 0}
+  .svg-wrap{width:100%;overflow:hidden;background:#fbfcfe;border:1px solid #e5eaf1;border-radius:8px;padding:8px}
+  svg{display:block;width:100%;height:auto}
+  .caption{color:var(--muted);font-size:13px;margin-top:8px}
+  table.idx{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+  table.idx th,table.idx td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  table.idx th{background:#f1f5f9;font-weight:600;white-space:nowrap}
+  table.idx td.path{font-family:Consolas,"Courier New",monospace;font-size:13px;color:#0f172a}
+  .t-required{color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:999px;padding:1px 9px;font-size:13px;white-space:nowrap}
+  .t-optional{color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:1px 9px;font-size:13px;white-space:nowrap}
+  .grid3{display:grid;grid-template-columns:1fr;gap:14px}
+  h3.subh{margin:24px 0 10px;font-size:16px;color:#0f172a}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .bd{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fbfcfe}
+  .bd-title{font-weight:700;font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .bd ul{margin:0 0 8px;padding-left:20px}
+  .bd li{margin:3px 0;font-size:13.5px}
+  .bd-no{margin:0;font-size:13px;color:#b91c1c}
+  .overlap{margin-top:12px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:13.5px}
+  .rulebox{margin-top:12px;padding:14px 16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;font-size:13.5px;line-height:1.9}
+  .rulebox .cor{margin-top:8px;padding-top:8px;border-top:1px dashed #86efac;color:#065f46}
+  footer{color:var(--muted);font-size:13px;padding:4px 6px}
+  @media (max-width:900px){
+    body{padding:16px}
+    header.top,section.card{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <h1>QPS 文档结构图</h1>
+    <div class="meta">生成时间 2026-11-07 · 依据 <code>.trae/documents/doc-structure-plan.md</code> · 本图为规划示意，未移动任何现有文件</div>
+    <div class="legend">
+      <span class="chip c-rule">索引 / 强制约束</span>
+      <span class="chip c-fact">事实（架构 / 领域 / 运维）</span>
+      <span class="chip c-contract">契约</span>
+      <span class="chip c-design">设计</span>
+      <span class="chip c-decision">决策</span>
+      <span class="chip c-archive">归档</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>1. 目录树：唯一入口与各类文档的位置</h2>
+    <div class="sub">根 AGENTS 只做索引；README 只做项目介绍；docs/ 下按类型分层；各端 AGENTS 只写本端约束。</div>
+    <div class="tree">
+      <ul>
+        <li class="tnode root">
+          <div class="tline"><span class="tpath">AGENTS.md</span><span class="tdesc">唯一文档索引：路径 + 一句话说明 + 必读/选读，不写任何条文</span><span class="chip c-rule">索引</span></div>
+          <div class="tchildren">
+            <ul>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">docs/</span><span class="tdesc">长期文档根目录，固定 8 个子目录</span><span class="chip c-fact">事实</span></div>
+                <div class="tchildren">
+                  <ul>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">product/</span><span class="tdesc">放：项目背景、角色、业务链路；不放：字段、接口、实现</span><span class="chip c-fact">事实</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">operations/</span><span class="tdesc">放：环境、端口、构建/迁移/发布、排障；不放：架构理由、业务规则</span><span class="chip c-fact">事实</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">architecture/</span><span class="tdesc">放：六项目依赖、分层、Pipeline、权限模型、编码/共享层约定；不放：实体字段、页面样式</span><span class="chip c-fact">事实</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">domain/</span><span class="tdesc">放：实体与表归属、状态机、金额口径、软删除/唯一索引、订单快照；不放：接口路径、组件</span><span class="chip c-fact">事实</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">contracts/</span><span class="tdesc">放：URL、方法、请求/响应、错误码、鉴权；命名 <code>&lt;module&gt;-&lt;scope&gt;-api.md</code></span><span class="chip c-contract">契约</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">design/</span><span class="tdesc">放：页面结构、交互、视觉基准；命名 <code>&lt;page&gt;-spec.md</code></span><span class="chip c-design">设计</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">decisions/</span><span class="tdesc">放：ADR（背景/决策/放弃的方案/影响）；命名 <code>adr-0001-&lt;slug&gt;.md</code>，编号只增不减</span><span class="chip c-decision">决策</span></div>
+                    </li>
+                    <li class="tnode">
+                      <div class="tline"><span class="tpath">archive/</span><span class="tdesc">放：已完成计划、规格、验收、审计（只读，不指导开发；当前为 docs/superpowers）</span><span class="chip c-archive">归档</span></div>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">admin/AGENTS.md</span><span class="tdesc">管理端：组件复用、共享层禁改、UI 测试纪律</span><span class="chip c-rule">约束</span></div>
+              </li>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">mobile/AGENTS.md</span><span class="tdesc">移动端：技术栈、图标/布局/组件规范、常见坑、验收</span><span class="chip c-rule">约束</span></div>
+              </li>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">web-api/AGENTS.md</span><span class="tdesc">后端：业务约束、权限码、参数校验、代码风格；命令改为链接 docs/operations</span><span class="chip c-rule">约束</span></div>
+              </li>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">tools/comfyui/AGENTS.md</span><span class="tdesc">图片生成脚本用法、参数、输出路径</span><span class="chip c-rule">约束</span></div>
+              </li>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">tools/build-docs-viewer.mjs</span><span class="tdesc">阅读器生成工具（入库）：自动遍历 docs/，不维护文件清单；重建命令 <code>node tools/build-docs-viewer.mjs</code></span><span class="chip c-rule">工具</span></div>
+              </li>
+              <li class="tnode">
+                <div class="tline"><span class="tpath">agent-temp/</span><span class="tdesc">会话临时产物：不入库、不进索引、不承诺有效，用完即弃</span><span class="chip c-archive">不入库</span></div>
+              </li>
+            </ul>
+          </div>
+        </li>
+        <li class="tnode readme">
+          <div class="tline"><span class="tpath">README.md</span><span class="tdesc">项目介绍 / 技术栈 / 三端最简启动 / 目录概览 / 许可证，不承担索引</span><span class="chip c-archive">不索引</span></div>
+        </li>
+      </ul>
+    </div>
+    <p class="note">文档只有两处：进 <code>docs/</code> 并入库，或进 <code>agent-temp/</code> 临时用（不入库）。没有第三处，<code>.trae/</code> 取消。</p>
+    <p class="note"><strong>索引硬规则：</strong>根 AGENTS 只列 <code>docs/</code> 与各端 <code>AGENTS.md</code>；不得出现 <code>agent-temp/</code>、<code>.trae/</code> 或未被 git 跟踪的路径。索引不是备份，只是路牌——路径必须可被 <code>git ls-files</code> 命中，否则就是死链。</p>
+
+    <h3 class="subh">命名规则：路径全 ASCII，中文只在标题与链接文字</h3>
+    <div class="split">
+      <div class="bd">
+        <div class="bd-title">规则</div>
+        <ul>
+          <li>目录名、文件名一律小写 kebab-case，只允许 <code>[a-z0-9-]</code></li>
+          <li>文档第一行 H1 用中文标题；索引链接文字用中文（<code>[本地启动与发布](operations/getting-started.md)</code>）</li>
+          <li>ADR：<code>adr-0001-&lt;slug&gt;.md</code>，编号只增不减</li>
+          <li>契约：<code>&lt;module&gt;-&lt;scope&gt;-api.md</code>；设计：<code>&lt;page&gt;-spec.md</code></li>
+          <li>归档保留英文 slug，不保留中文路径；迁移用 <code>git mv</code></li>
+        </ul>
+      </div>
+      <div class="bd">
+        <div class="bd-title">首批重命名</div>
+        <ul>
+          <li><code>本地启动与发布.md</code> → <code>getting-started.md</code></li>
+          <li><code>实体说明.md</code> → <code>entities.md</code></li>
+          <li><code>模块化单体架构.md</code> → <code>modular-monolith.md</code></li>
+          <li><code>权限设计.md</code> → <code>permissions.md</code></li>
+          <li><code>商城促销规则.md</code> → <code>mall-rules.md</code></li>
+          <li><code>项目背景与业务链路.md</code> → <code>business-context.md</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="subh">根 README.md 与根 AGENTS.md 的分工</h3>
+    <div class="split">
+      <div class="bd">
+        <div class="bd-title">README.md <span class="chip c-archive">给人看</span></div>
+        <ul>
+          <li>项目是什么、技术栈</li>
+          <li>三端各一行最简启动命令</li>
+          <li>目录概览、许可证</li>
+        </ul>
+        <p class="bd-no">不写：规范条文、迁移细节、架构理由</p>
+      </div>
+      <div class="bd">
+        <div class="bd-title">AGENTS.md <span class="chip c-rule">给会话看</span></div>
+        <ul>
+          <li>只有索引：相对路径 + 一句话说明</li>
+          <li>标签：必读 / 选读</li>
+          <li>让会话知道先读哪几份</li>
+        </ul>
+        <p class="bd-no">不写：命令、条文、表格以外的内容</p>
+      </div>
+    </div>
+    <div class="overlap"><strong>唯一刻意重叠：</strong>三端启动命令在 README 各留最简一行；完整版（迁移、生产发布、排障、端口冲突）只在 <code>docs/operations</code>。</div>
+    <div class="rulebox">
+      <div><strong>归属口诀：</strong>这条内容删掉，谁更会做错事？</div>
+      <div>只有人会懵（不知道项目是什么、怎么跑）→ <strong>README 或 docs</strong></div>
+      <div>AI 照着干会出错（漏 <code>-m:1</code>、手写事务、漏软删除、读实时表）→ <strong>docs 对应章节 + 索引标「必读」</strong></div>
+      <div class="cor">推论：索引不是内容备份，只是路牌。只在 AGENTS 存在、docs 没有的规则视为未落地，迁移时必须先补 docs，不能跟着删。</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. 引用关系：谁指向谁</h2>
+    <div class="sub">根 AGENTS 向下只发“链接”；各端 AGENTS 向上只引用对应章节，不转述内容。</div>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 1200 470" role="img" aria-label="根 AGENTS 指向 docs 八个目录">
+        <defs>
+          <marker id="arrowA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#047857" opacity="0.75"/>
+          </marker>
+        </defs>
+        <rect x="30" y="165" width="230" height="140" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="1.6"/>
+        <text x="145" y="196" text-anchor="middle" font-size="16" font-weight="700" fill="#065f46">根 AGENTS.md</text>
+        <text x="145" y="221" text-anchor="middle" font-size="14" fill="#065f46">唯一文档索引</text>
+        <text x="145" y="245" text-anchor="middle" font-size="13" fill="#334155">列：路径 / 一句话 / 标签</text>
+        <text x="145" y="268" text-anchor="middle" font-size="13" fill="#334155">标签：必读 · 选读</text>
+        <text x="145" y="292" text-anchor="middle" font-size="13" fill="#b91c1c">不写命令 · 不写条文</text>
+
+        <!-- docs 8 目录 -->
+        <g font-size="14">
+          <rect x="790" y="15" width="380" height="48" rx="7" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="36" font-weight="600" fill="#0f172a">docs/operations/</text>
+          <text x="806" y="55" font-size="13" fill="#64748b">端口 / -m:1 构建 / 迁移 / 发布</text>
+
+          <rect x="790" y="71" width="380" height="48" rx="7" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="92" font-weight="600" fill="#0f172a">docs/architecture/</text>
+          <text x="806" y="111" font-size="13" fill="#64748b">分层 / Pipeline / 事务 / 权限 / 编码约定</text>
+
+          <rect x="790" y="127" width="380" height="48" rx="7" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="148" font-weight="600" fill="#0f172a">docs/domain/</text>
+          <text x="806" y="167" font-size="13" fill="#64748b">实体 / 软删除 / 唯一索引 / 订单快照</text>
+
+          <rect x="790" y="183" width="380" height="48" rx="7" fill="#fcfaff" stroke="#c7d2e1"/>
+          <text x="806" y="204" font-weight="600" fill="#0f172a">docs/contracts/</text>
+          <text x="806" y="223" font-size="13" fill="#64748b">接口契约：URL / DTO / 错误码 / 鉴权</text>
+
+          <rect x="790" y="239" width="380" height="48" rx="7" fill="#fffafb" stroke="#c7d2e1"/>
+          <text x="806" y="260" font-weight="600" fill="#0f172a">docs/design/</text>
+          <text x="806" y="279" font-size="13" fill="#64748b">页面结构 / 交互 / 视觉基准</text>
+
+          <rect x="790" y="295" width="380" height="48" rx="7" fill="#fffdf5" stroke="#c7d2e1"/>
+          <text x="806" y="316" font-weight="600" fill="#0f172a">docs/decisions/</text>
+          <text x="806" y="335" font-size="13" fill="#64748b">ADR：为什么这样选 / 放弃了什么</text>
+
+          <rect x="790" y="351" width="380" height="48" rx="7" fill="#f9fafb" stroke="#c7d2e1"/>
+          <text x="806" y="372" font-weight="600" fill="#0f172a">docs/archive/</text>
+          <text x="806" y="391" font-size="13" fill="#64748b">已完成计划 / 规格 / 验收 / 审计</text>
+
+          <rect x="790" y="407" width="380" height="48" rx="7" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="428" font-weight="600" fill="#0f172a">docs/product/</text>
+          <text x="806" y="447" font-size="13" fill="#64748b">项目背景 / 角色 / 业务链路</text>
+        </g>
+
+        <!-- 连线 -->
+        <g stroke="#047857" stroke-width="1.2" opacity="0.5" marker-end="url(#arrowA)">
+          <line x1="260" y1="235" x2="786" y2="39"/>
+          <line x1="260" y1="235" x2="786" y2="95"/>
+          <line x1="260" y1="235" x2="786" y2="151"/>
+          <line x1="260" y1="235" x2="786" y2="207"/>
+          <line x1="260" y1="235" x2="786" y2="263"/>
+          <line x1="260" y1="235" x2="786" y2="319"/>
+          <line x1="260" y1="235" x2="786" y2="375"/>
+          <line x1="260" y1="235" x2="786" y2="431"/>
+        </g>
+        <text x="520" y="150" font-size="13" fill="#047857" font-weight="600">只给链接，不复制正文</text>
+        <text x="30" y="330" font-size="13" fill="#b91c1c" font-weight="600">索引只列 docs/ 与各端 AGENTS.md；不得出现 agent-temp/、.trae/ 或未入库路径</text>
+      </svg>
+    </div>
+    <p class="caption">根 AGENTS 对 8 个目录只发 8 条索引行，每条 3 列；任何命令与规范正文都不进入根 AGENTS。</p>
+
+    <div class="svg-wrap" style="margin-top:16px">
+      <svg viewBox="0 0 1200 380" role="img" aria-label="各端 AGENTS 引用 docs 章节">
+        <defs>
+          <marker id="arrowB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#2563eb" opacity="0.8"/>
+          </marker>
+        </defs>
+        <g font-size="14">
+          <rect x="30" y="20" width="260" height="60" rx="8" fill="#ecfdf5" stroke="#047857"/>
+          <text x="46" y="47" font-weight="700" fill="#065f46">admin/AGENTS.md</text>
+          <text x="46" y="68" font-size="13" fill="#334155">管理端组件 · UI 测试纪律</text>
+
+          <rect x="30" y="100" width="260" height="60" rx="8" fill="#ecfdf5" stroke="#047857"/>
+          <text x="46" y="127" font-weight="700" fill="#065f46">mobile/AGENTS.md</text>
+          <text x="46" y="148" font-size="13" fill="#334155">技术栈 · 布局 · 图标 · 验收</text>
+
+          <rect x="30" y="180" width="260" height="60" rx="8" fill="#ecfdf5" stroke="#047857"/>
+          <text x="46" y="207" font-weight="700" fill="#065f46">web-api/AGENTS.md</text>
+          <text x="46" y="228" font-size="13" fill="#334155">业务约束 · 权限码 · 校验 · 风格</text>
+
+          <rect x="30" y="260" width="260" height="60" rx="8" fill="#ecfdf5" stroke="#047857"/>
+          <text x="46" y="287" font-weight="700" fill="#065f46">tools/comfyui/AGENTS.md</text>
+          <text x="46" y="308" font-size="13" fill="#334155">图片生成脚本用法</text>
+        </g>
+
+        <g font-size="14">
+          <rect x="830" y="20" width="330" height="86" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="846" y="46" font-weight="600" fill="#0f172a">docs/operations/getting-started.md</text>
+          <text x="846" y="68" font-size="13" fill="#64748b">端口 5000/5173/5174 · -m:1 · 迁移 · 发布</text>
+          <text x="846" y="89" font-size="13" fill="#64748b">UI 测试 6174 + 5001 · 禁用 20004</text>
+
+          <rect x="830" y="126" width="330" height="96" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="846" y="152" font-weight="600" fill="#0f172a">docs/architecture/modular-monolith.md</text>
+          <text x="846" y="174" font-size="13" fill="#64748b">六项目依赖 · 模块启用 · Pipeline 顺序</text>
+          <text x="846" y="195" font-size="13" fill="#64748b">Handler 不手写事务 · [Permission] 走 Pipeline</text>
+          <text x="846" y="214" font-size="13" fill="#64748b">编码与终端 · 共享层边界</text>
+
+          <rect x="830" y="242" width="330" height="96" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="846" y="268" font-weight="600" fill="#0f172a">docs/domain/entities.md</text>
+          <text x="846" y="290" font-size="13" fill="#64748b">实体归属 · 全局软删除过滤器</text>
+          <text x="846" y="311" font-size="13" fill="#64748b">唯一索引带 [IsDeleted]=0 过滤</text>
+          <text x="846" y="332" font-size="13" fill="#64748b">订单读快照，不读实时商品/促销表</text>
+        </g>
+
+        <g stroke="#2563eb" stroke-width="1.2" opacity="0.55" marker-end="url(#arrowB)">
+          <line x1="290" y1="50" x2="826" y2="55"/>
+          <line x1="290" y1="130" x2="826" y2="60"/>
+          <line x1="290" y1="210" x2="826" y2="63"/>
+          <line x1="290" y1="210" x2="826" y2="170"/>
+          <line x1="290" y1="210" x2="826" y2="288"/>
+          <line x1="290" y1="290" x2="826" y2="292"/>
+        </g>
+        <text x="480" y="317" font-size="13" fill="#2563eb" font-weight="600">只引用对应章节，不转述</text>
+        <text x="480" y="337" font-size="13" fill="#64748b">plan: 各端首屏重贴 2–3 条硬约束（唯一允许的重复）</text>
+      </svg>
+    </div>
+    <p class="caption">各端 AGENTS 保留本端约束，事实一律回到 docs；首屏重复 2–3 条最易踩的硬约束作为兜底。</p>
+  </section>
+
+  <section class="card">
+    <h2>3. 根 AGENTS.md：从 5 章约束到纯索引</h2>
+    <div class="sub">左侧为现状，中间箭头表示内容去向，右侧为目标索引形态。</div>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 1200 500" role="img" aria-label="根 AGENTS 五章迁移去向">
+        <defs>
+          <marker id="arrowC" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#047857" opacity="0.8"/>
+          </marker>
+          <marker id="arrowD" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#b45309" opacity="0.8"/>
+          </marker>
+        </defs>
+
+        <g font-size="13.5">
+          <!-- 左：现有 5 章 -->
+          <rect x="20" y="10" width="350" height="78" rx="8" fill="#fff" stroke="#b45309"/>
+          <text x="36" y="36" font-weight="700" fill="#7c2d12">① 文件头 · 适用范围</text>
+          <text x="36" y="58" fill="#334155">本文件约束 E:\Code\QPS 下所有项目</text>
+          <text x="36" y="77" fill="#64748b">子目录 AGENTS 只补充技术栈与运行方式</text>
+
+          <rect x="20" y="105" width="350" height="86" rx="8" fill="#fff" stroke="#b45309"/>
+          <text x="36" y="131" font-weight="700" fill="#7c2d12">② 通用要求</text>
+          <text x="36" y="153" fill="#334155">中文回答 · 最小修改 · 不回退未提交改动</text>
+          <text x="36" y="174" fill="#334155">agent-temp / ui-tests / 禁用系统临时目录</text>
+
+          <rect x="20" y="208" width="350" height="78" rx="8" fill="#fff" stroke="#b45309"/>
+          <text x="36" y="234" font-weight="700" fill="#7c2d12">③ UI 测试</text>
+          <text x="36" y="256" fill="#334155">6174 + 5001 隔离 · 禁用 20004</text>
+          <text x="36" y="277" fill="#334155">Edge 实操验收 · 保留服务进程</text>
+
+          <rect x="20" y="303" width="350" height="78" rx="8" fill="#fff" stroke="#b45309"/>
+          <text x="36" y="329" font-weight="700" fill="#7c2d12">④ 编码</text>
+          <text x="36" y="351" fill="#334155">UTF-8 读取 · PowerShell -Encoding UTF8</text>
+          <text x="36" y="372" fill="#334155">乱码先判链路 · PS 5.1 用 BOM</text>
+
+          <rect x="20" y="398" width="350" height="86" rx="8" fill="#fff" stroke="#b45309"/>
+          <text x="36" y="424" font-weight="700" fill="#7c2d12">⑤ 组件与共享层</text>
+          <text x="36" y="446" fill="#334155">封装优先 · shared 层禁改</text>
+          <text x="36" y="467" fill="#334155">未确认的改动只在页面内</text>
+
+          <!-- 右：目标 -->
+          <rect x="790" y="10" width="380" height="62" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.6"/>
+          <text x="806" y="35" font-weight="700" fill="#065f46">根 AGENTS.md → 新标题</text>
+          <text x="806" y="57" fill="#334155"># QPS 文档索引（只保留索引表）</text>
+
+          <rect x="790" y="88" width="380" height="62" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="113" font-weight="600" fill="#0f172a">admin/AGENTS.md · UI 测试节</text>
+          <text x="806" y="135" fill="#64748b">端口纪律 / Edge 验收 / 产物分工</text>
+
+          <rect x="790" y="166" width="380" height="108" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="191" font-weight="600" fill="#0f172a">docs/architecture/modular-monolith.md</text>
+          <text x="806" y="213" fill="#64748b">协作约定 · 编码与终端 · 共享层边界</text>
+          <text x="806" y="234" fill="#64748b">Handler 事务边界 · [Permission] 校验链路</text>
+          <text x="806" y="255" fill="#64748b">Pipeline 顺序：Permission → Validation → Transaction</text>
+
+          <rect x="790" y="290" width="380" height="86" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="315" font-weight="600" fill="#0f172a">docs/operations/getting-started.md</text>
+          <text x="806" y="337" fill="#64748b">产物目录 · 端口 5000/5173/5174</text>
+          <text x="806" y="358" fill="#64748b">-m:1 构建 · 迁移策略 · 发布</text>
+
+          <rect x="790" y="392" width="380" height="86" rx="8" fill="#f8fafc" stroke="#c7d2e1"/>
+          <text x="806" y="417" font-weight="600" fill="#0f172a">docs/domain/entities.md</text>
+          <text x="806" y="439" fill="#64748b">全局软删除过滤器</text>
+          <text x="806" y="460" fill="#64748b">唯一索引 [IsDeleted]=0 · 订单读快照</text>
+        </g>
+
+        <g stroke="#b45309" stroke-width="1.1" opacity="0.5" marker-end="url(#arrowD)">
+          <line x1="370" y1="49" x2="786" y2="41"/>
+          <line x1="370" y1="148" x2="786" y2="220"/>
+          <line x1="370" y1="158" x2="786" y2="330"/>
+          <line x1="370" y1="247" x2="786" y2="115"/>
+          <line x1="370" y1="342" x2="786" y2="240"/>
+          <line x1="370" y1="441" x2="786" y2="260"/>
+        </g>
+      </svg>
+    </div>
+    <p class="caption">① 文件头由新标题承担；② 拆成“协作约定”与“产物目录”；③ 落 admin；④ 落 architecture；⑤ 落 architecture。另五条硬约束（-m:1 / 事务 / 唯一索引 / 快照 / [Permission]）不在根 AGENTS 正文，只在索引里标 <strong>必读</strong>。</p>
+
+    <table class="idx">
+      <thead>
+        <tr><th>相对路径</th><th>一句话说明</th><th>标签</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="path">docs/operations/getting-started.md</td><td>端口、-m:1 构建、迁移策略、发布</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">docs/architecture/modular-monolith.md</td><td>六项目分层、Pipeline、Handler 事务边界、编码约定</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">docs/architecture/permissions.md</td><td>权限码模型、[Permission] 校验链路</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">docs/domain/entities.md</td><td>实体归属、软删除、唯一索引过滤、订单快照</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">docs/domain/mall-rules.md</td><td>促销、换购、优惠展示与金额口径</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">docs/contracts/mall-campaign-api.md</td><td>活动专题接口契约</td><td><span class="t-optional">选读</span></td></tr>
+        <tr><td class="path">docs/design/admin-permissions-spec.md</td><td>权限页规格</td><td><span class="t-optional">选读</span></td></tr>
+        <tr><td class="path">docs/decisions/adr-0001-doc-structure.md</td><td>文档结构决策记录</td><td><span class="t-optional">选读</span></td></tr>
+        <tr><td class="path">admin/AGENTS.md</td><td>管理端组件约束、UI 测试纪律</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">mobile/AGENTS.md</td><td>移动端技术栈、布局、图标、验收</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">web-api/AGENTS.md</td><td>后端业务约束、权限码、校验、代码风格</td><td><span class="t-required">必读</span></td></tr>
+        <tr><td class="path">tools/comfyui/AGENTS.md</td><td>图片生成脚本用法</td><td><span class="t-optional">选读</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note">索引只有 3 列，表格外不写任何正文；每行路径必须被 git 跟踪，<strong>不得出现 agent-temp/、.trae/ 或未入库文件</strong>。风险由“必读标签 + 各端 AGENTS 首屏重复关键约束”兜底。</p>
+  </section>
+
+  <footer>
+    本图为规划示意：现有文件未移动、未改写；实际迁移按 doc-structure-plan.md 的批次执行。
+  </footer>
+</div>
+</body>
+</html>
+
