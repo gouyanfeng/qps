@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using QPS.Crm;
 using QPS.Host.Middleware;
@@ -61,9 +61,12 @@ var app = builder.Build();
 
 #region 数据库初始化
 
-using (var scope = app.Services.CreateScope())
+string connStringForDiagnostic = null;
+try
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    connStringForDiagnostic = dbContext.Database.GetConnectionString();
     var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Database");
 
     if (app.Environment.IsDevelopment())
@@ -97,6 +100,12 @@ using (var scope = app.Services.CreateScope())
     {
         await dbContext.Database.CanConnectAsync();
     }
+}
+catch (Microsoft.Data.SqlClient.SqlException)
+{
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    startupLogger.LogError("数据库连接失败，当前连接字符串: {ConnectionString}", connStringForDiagnostic ?? "无法获取");
+    throw;
 }
 
 #endregion
