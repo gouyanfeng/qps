@@ -23,6 +23,4 @@ jobs:
             --base master \
             --head dev \
             --title "dev to master" \
-            --body "Automated PR from dev to master." \
-            --label auto \
-            || echo "PR already exists or no diff, skipping"
+            --body "Automated PR from dev to master."
