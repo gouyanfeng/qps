@@ -6,13 +6,36 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+
 jobs:
-
-  build:
-
+  build-and-push:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write      # 推送 GHCR 必须，缺了会 denied: permission_denied
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker compose --env-file .env.example --file ./docker-compose.yml build
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # GHCR 命名空间必须全小写
+      - name: Normalize owner to lowercase
+        run: echo "IMAGE_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      # 仅在 push 到 master 时登录
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # 构建 qps-api 与 admin（gateway 无 build，compose 会自动跳过）
+      - name: Build images
+        run: docker compose --env-file .env.production --file ./docker-compose.yml build
+
+      # 只推需要构建的两个服务，gateway 是 nginx 官方镜像，不推
+      - name: Push images
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: docker compose --env-file .env.production --file ./docker-compose.yml push qps-api admin
