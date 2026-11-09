@@ -1,0 +1,28 @@
+name: Auto PR dev to master
+
+on:
+  push:
+    branches: [ "dev" ]
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base master \
+            --head dev \
+            --title "dev to master" \
+            --body "Automated PR from dev to master." \
+            --label auto \
+            || echo "PR already exists or no diff, skipping"
