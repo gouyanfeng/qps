@@ -3,7 +3,7 @@ services:
     build:
       context: ./web-api
       dockerfile: Dockerfile
-    image: qps-api:local
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-api:${IMAGE_TAG:-latest}
     container_name: qps-api
     # 仅内部网络访问；对外统一由 gateway 反向代理。
     expose:
@@ -23,7 +23,8 @@ services:
       - qps-uploads:/app/wwwroot
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5000/swagger/v1/swagger.json || exit 1"]
+      # 探匿名落地页：不经过鉴权、不依赖数据库，Swagger 已移除后不能再作为探针。
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5000/ || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -33,7 +34,7 @@ services:
     build:
       context: ./admin
       dockerfile: Dockerfile
-    image: qps-admin:local
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-admin:${IMAGE_TAG:-latest}
     container_name: qps-admin
     environment:
       TZ: Asia/Shanghai
@@ -51,6 +52,7 @@ services:
       retries: 5
 
   # 统一入口：宿主 80 被系统进程占用，改用 8000。
+  # gateway 使用官方镜像，不参与构建与推送。
   gateway:
     image: nginx:alpine-slim
     container_name: qps-gateway
