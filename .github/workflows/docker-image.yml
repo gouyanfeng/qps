@@ -38,7 +38,9 @@ jobs:
       # 只推需要构建的两个服务，gateway 是 nginx 官方镜像，不推
       - name: Push images
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: docker compose --env-file .env.production --file ./docker-compose.yml push qps-api admin
+        run: for svc in qps-api qps-admin; do
+            docker push "${REGISTRY}/${IMAGE_OWNER}/${svc}:${IMAGE_TAG}"
+          done
 
       # 发布分支额外覆盖 latest：compose 的 IMAGE_TAG 默认值就是 latest，
       # 服务器不注入 IMAGE_TAG 时也能拉到镜像；可精确回滚的引用仍以 sha tag 为准。
