@@ -41,7 +41,7 @@ import SubMenu from "@/layouts/components/Menu/SubMenu.vue";
 import ToolBarLeft from "@/layouts/components/Header/ToolBarLeft.vue";
 import ToolBarRight from "@/layouts/components/Header/ToolBarRight.vue";
 
-const title = import.meta.env.VITE_ADMIN_TITLE;
+const title = 'QPS';
 
 const route = useRoute();
 const authStore = useAuthStore();
