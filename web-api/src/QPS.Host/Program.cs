@@ -103,8 +103,7 @@ try
 }
 catch (Microsoft.Data.SqlClient.SqlException)
 {
-    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-    startupLogger.LogError("数据库连接失败，当前连接字符串: {ConnectionString}", connStringForDiagnostic ?? "无法获取");
+    Console.Error.WriteLine("[FATAL] 数据库连接失败，连接串: {0}", connStringForDiagnostic ?? "无法获取");
     throw;
 }
 
