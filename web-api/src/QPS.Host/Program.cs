@@ -150,9 +150,7 @@ var serviceVersion = serviceAssembly.GetName().Version?.ToString() ?? "unknown";
 var buildTimeUtc = File.GetLastWriteTimeUtc(serviceAssembly.Location).ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
 var environmentName = System.Net.WebUtility.HtmlEncode(app.Environment.EnvironmentName);
 
-app.MapGet("/", () =>
-{
-    var html = $$"""
+Func<string> buildLandingPage = () => $$"""
         <!DOCTYPE html>
         <html lang="zh-CN">
         <head>
@@ -183,8 +181,10 @@ app.MapGet("/", () =>
         </html>
         """;
 
-    return Results.Content(html, "text/html; charset=utf-8");
-}).AllowAnonymous();
+app.MapGet("/", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
+app.MapGet("/api/", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
+
+app.MapFallback(() => Results.NotFound()).AllowAnonymous();
 
 #endregion
 
