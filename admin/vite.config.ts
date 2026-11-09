@@ -14,6 +14,7 @@ import path from "path";
 // 导出 Vite 配置
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: "..",
   // 插件配置
   plugins: [
     // 使用 Vue 插件

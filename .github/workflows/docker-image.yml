@@ -26,7 +26,7 @@ jobs:
       - name: Normalize owner to lowercase
         run: echo "IMAGE_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
-      # 仅在 push 到 master 时登录
+      # 仅在 push 到 master 时登录；dev 推送不触发本 workflow。
       - name: Log in to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -39,3 +39,15 @@ jobs:
       - name: Push images
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: docker compose --env-file .env.production --file ./docker-compose.yml push qps-api admin
+
+      # 发布分支额外覆盖 latest：compose 的 IMAGE_TAG 默认值就是 latest，
+      # 服务器不注入 IMAGE_TAG 时也能拉到镜像；可精确回滚的引用仍以 sha tag 为准。
+      - name: Tag and push latest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          for service in qps-api qps-admin; do
+            source_image="${REGISTRY}/${IMAGE_OWNER}/${service}:${IMAGE_TAG}"
+            latest_image="${REGISTRY}/${IMAGE_OWNER}/${service}:latest"
+            docker tag "$source_image" "$latest_image"
+            docker push "$latest_image"
+          done

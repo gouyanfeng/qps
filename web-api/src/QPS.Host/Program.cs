@@ -18,12 +18,17 @@ builder.Logging.AddDebug();
 
 #region 服务注册
 
-// HTTP 基础设施：MVC 与响应包装、Controller 发现范围、CORS、Swagger、JWT 鉴权。
+// HTTP 基础设施：MVC 与响应包装、Controller 发现范围、CORS、JWT 鉴权；Swagger 仅开发环境注册。
 var mvcBuilder = builder.Services.AddQpsMvc();
 mvcBuilder.ConfigureQpsApplicationParts(typeof(Program).Assembly);
 
 builder.Services.AddQpsCors();
-builder.Services.AddQpsSwagger();
+
+// Swagger 只在 Development 注册：生产不生成文档、不挂 UI，避免暴露接口清单。
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddQpsSwagger();
+}
 
 // JWT 配置只读取一次，令牌校验（Host）与令牌签发（Persistence）共用同一实例。
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -98,8 +103,12 @@ using (var scope = app.Services.CreateScope())
 
 #region HTTP请求管道配置
 
-app.UseSwagger();
-app.UseSwaggerUI();
+// 与注册保持同一条件：只有开发环境才挂 Swagger 中间件。
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseCors("AllowAll");
 
@@ -126,6 +135,48 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// 匿名落地页：只暴露服务名、环境、版本与构建时间，显式 AllowAnonymous 以绕开 FallbackPolicy。
+var serviceAssembly = typeof(Program).Assembly;
+var serviceVersion = serviceAssembly.GetName().Version?.ToString() ?? "unknown";
+var buildTimeUtc = File.GetLastWriteTimeUtc(serviceAssembly.Location).ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
+var environmentName = System.Net.WebUtility.HtmlEncode(app.Environment.EnvironmentName);
+
+app.MapGet("/", () =>
+{
+    var html = $$"""
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>QPS API</title>
+        <style>
+        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif}
+        main{max-width:520px;padding:32px}
+        h1{margin:0 0 8px;font-size:22px}
+        p{margin:0 0 20px;color:#94a3b8}
+        dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}
+        dt{color:#94a3b8}
+        dd{margin:0;font-variant-numeric:tabular-nums}
+        </style>
+        </head>
+        <body>
+        <main>
+        <h1>QPS API</h1>
+        <p>服务正在运行。</p>
+        <dl>
+        <dt>环境</dt><dd>{{environmentName}}</dd>
+        <dt>版本</dt><dd>{{serviceVersion}}</dd>
+        <dt>构建时间（UTC）</dt><dd>{{buildTimeUtc}}</dd>
+        </dl>
+        </main>
+        </body>
+        </html>
+        """;
+
+    return Results.Content(html, "text/html; charset=utf-8");
+}).AllowAnonymous();
 
 #endregion
 

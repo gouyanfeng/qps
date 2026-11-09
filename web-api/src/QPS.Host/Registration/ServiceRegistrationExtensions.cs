@@ -88,7 +88,7 @@ public static class ServiceRegistrationExtensions
     }
 
     /// <summary>
-    /// 注册 Swagger 文档，并提供 Bearer 令牌输入入口。
+    /// 注册 Swagger 文档，并提供 Bearer 令牌输入入口。仅由开发环境调用。
     /// </summary>
     public static IServiceCollection AddQpsSwagger(this IServiceCollection services)
     {
