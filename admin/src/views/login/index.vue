@@ -2,8 +2,10 @@
   <div class="login-page">
     <aside class="login-aside">
       <div class="aside-grid"></div>
-      <div class="aside-glow-top"></div>
-      <div class="aside-glow-bottom"></div>
+      <div class="aside-glow aside-glow-1"></div>
+      <div class="aside-glow aside-glow-2"></div>
+      <div class="aside-glow aside-glow-3"></div>
+      <div class="aside-glow aside-glow-4"></div>
 
       <div class="aside-brand">
         <div class="brand-logo">
