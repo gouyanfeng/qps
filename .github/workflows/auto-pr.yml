@@ -19,8 +19,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh pr view dev --json number >/dev/null 2>&1; then
-            echo "PR already exists, skipping"
+          if gh pr list --head dev --base master --state open --json number --jq 'length' | grep -q '^[1-9]'; then
+            echo "Open PR already exists, skipping"
           else
             gh pr create \
               --base master \
