@@ -134,9 +134,7 @@ public class ModuleRegistrationTests
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton(new JwtOptions
         {
-            SecretKey = "ArchitectureTestsSecretKeyThatIsLongEnough",
-            Issuer = "QPS.ArchitectureTests",
-            Audience = "QPS.ArchitectureTests"
+            SecretKey = "ArchitectureTestsSecretKeyThatIsLongEnough"
         });
         services.AddLogging();
         services.AddHttpContextAccessor();

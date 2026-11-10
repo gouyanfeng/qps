@@ -33,11 +33,9 @@ if (builder.Environment.IsDevelopment())
 // JWT 配置只读取一次，令牌校验（Host）与令牌签发（Persistence）共用同一实例。
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("缺少 Jwt 配置节点。");
-if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey) ||
-    string.IsNullOrWhiteSpace(jwtOptions.Issuer) ||
-    string.IsNullOrWhiteSpace(jwtOptions.Audience))
+if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey))
 {
-    throw new InvalidOperationException("Jwt 配置不完整，请检查 SecretKey、Issuer、Audience。");
+    throw new InvalidOperationException("Jwt 配置不完整，请检查 SecretKey。");
 }
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddQpsJwtAuthentication(jwtOptions);

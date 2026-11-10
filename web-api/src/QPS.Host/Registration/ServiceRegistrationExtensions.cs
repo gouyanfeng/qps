@@ -122,7 +122,7 @@ public static class ServiceRegistrationExtensions
     }
 
     /// <summary>
-    /// 注册 JWT Bearer 鉴权，密钥、签发者与受众由 Host 启动时统一绑定。
+    /// 注册 JWT Bearer 鉴权，仅校验签名与有效期；签发者/受众不做校验。
     /// </summary>
     public static IServiceCollection AddQpsJwtAuthentication(
         this IServiceCollection services,
@@ -134,12 +134,10 @@ public static class ServiceRegistrationExtensions
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtOptions.Issuer,
-                    ValidAudience = jwtOptions.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
                     RoleClaimType = "role",
                     NameClaimType = "username"
