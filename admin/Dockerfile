@@ -10,9 +10,9 @@ RUN npm ci
 
 COPY . .
 
-# 接口地址默认与 .env.production 一致（/api）。
+# 接口地址默认与 .env 一致（/api）。
 # CI 需要指向其他地址时才用 --build-arg VITE_API_URL=... 覆盖；
-# 构建参数优先级高于 .env.production，两者都没有时才会落到代码里的 localhost 兜底。
+# 构建参数优先级高于 .env，两者都没有时才会落到代码里的 localhost 兜底。
 ARG VITE_API_URL=/api
 RUN VITE_API_URL="$VITE_API_URL" npm run build
 

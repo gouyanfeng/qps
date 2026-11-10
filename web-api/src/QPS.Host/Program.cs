@@ -147,7 +147,7 @@ app.MapControllers();
 // 匿名落地页：只暴露服务名、环境、版本与构建时间，显式 AllowAnonymous 以绕开 FallbackPolicy。
 var serviceAssembly = typeof(Program).Assembly;
 var serviceVersion = serviceAssembly.GetName().Version?.ToString() ?? "unknown";
-var buildTimeUtc = File.GetLastWriteTimeUtc(serviceAssembly.Location).ToString("yyyy-MM-dd HH:mm:ss") + " UTC";
+var buildTimeUtc =DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 var environmentName = System.Net.WebUtility.HtmlEncode(app.Environment.EnvironmentName);
 
 Func<string> buildLandingPage = () => $$"""
