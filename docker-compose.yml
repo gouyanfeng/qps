@@ -21,7 +21,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - qps-uploads:/app/wwwroot
-    restart: unless-stopped
+    restart: "no"
     healthcheck:
       # 探匿名落地页：不经过鉴权、不依赖数据库，Swagger 已移除后不能再作为探针。
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5000/ || exit 1"]
@@ -44,7 +44,7 @@ services:
     depends_on:
       qps-api:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 10s
@@ -67,7 +67,7 @@ services:
         condition: service_healthy
       admin:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/favicon.svg || exit 1"]
       interval: 10s
