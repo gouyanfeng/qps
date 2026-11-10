@@ -61,50 +61,43 @@ var app = builder.Build();
 
 #region 数据库初始化
 
-string connStringForDiagnostic = null;
-try
+using var scope = app.Services.CreateScope();
+var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+var connStringForDiagnostic = dbContext.Database.GetConnectionString();
+var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Database");
+
+if (!await dbContext.Database.CanConnectAsync())
 {
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    connStringForDiagnostic = dbContext.Database.GetConnectionString();
-    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Database");
+    Console.Error.WriteLine("[FATAL] 数据库连接失败，连接串: {0}", connStringForDiagnostic ?? "无法获取");
+    throw new InvalidOperationException("数据库无法连接。");
+}
 
-    if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    var strategy = dbContext.Database.CreateExecutionStrategy();
+    await strategy.ExecuteAsync(async () =>
     {
-        var strategy = dbContext.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
-        {
-            await dbContext.Database.MigrateAsync();
-        });
+        await dbContext.Database.MigrateAsync();
+    });
 
-        var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
-        while (workspaceDirectory is not null &&
-               !Directory.Exists(Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock")))
-        {
-            workspaceDirectory = workspaceDirectory.Parent;
-        }
+    var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
+    while (workspaceDirectory is not null &&
+           !Directory.Exists(Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock")))
+    {
+        workspaceDirectory = workspaceDirectory.Parent;
+    }
 
-        var mockPath = workspaceDirectory is null
-            ? string.Empty
-            : Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock");
-        if (Directory.Exists(mockPath))
-        {
-            await MallMockDataSeeder.SeedAsync(dbContext, logger, mockPath);
-        }
-        else
-        {
-            logger.LogWarning("⚠️  Mock 数据目录不存在: {Path}", mockPath);
-        }
+    var mockPath = workspaceDirectory is null
+        ? string.Empty
+        : Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock");
+    if (Directory.Exists(mockPath))
+    {
+        await MallMockDataSeeder.SeedAsync(dbContext, logger, mockPath);
     }
     else
     {
-        await dbContext.Database.CanConnectAsync();
+        logger.LogWarning("⚠️  Mock 数据目录不存在: {Path}", mockPath);
     }
-}
-catch (Microsoft.Data.SqlClient.SqlException)
-{
-    Console.Error.WriteLine("[FATAL] 数据库连接失败，连接串: {0}", connStringForDiagnostic ?? "无法获取");
-    throw;
 }
 
 #endregion
@@ -174,7 +167,7 @@ Func<string> buildLandingPage = () => $$"""
         <dl>
         <dt>环境</dt><dd>{{environmentName}}</dd>
         <dt>版本</dt><dd>{{serviceVersion}}</dd>
-        <dt>构建时间（UTC）</dt><dd>{{buildTimeUtc}}</dd>
+        <dt>构建时间</dt><dd>{{buildTimeUtc}}</dd>
         </dl>
         </main>
         </body>
@@ -182,7 +175,7 @@ Func<string> buildLandingPage = () => $$"""
         """;
 
 app.MapGet("/", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
-app.MapGet("/api/", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
+app.MapGet("/api", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
 
 app.MapFallback(() => Results.NotFound()).AllowAnonymous();
 

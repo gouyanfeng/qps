@@ -19,8 +19,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --base master \
-            --head dev \
-            --title "dev to master" \
-            --body "Automated PR from dev to master."
+          if gh pr view dev --json number >/dev/null 2>&1; then
+            echo "PR already exists, skipping"
+          else
+            gh pr create \
+              --base master \
+              --head dev \
+              --title "dev to master" \
+              --body "Automated PR from dev to master."
+          fi
