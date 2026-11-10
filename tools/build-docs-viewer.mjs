@@ -10,23 +10,27 @@ const DOC_ROOTS = ['docs'];
 
 const GROUP_LABELS = {
   architecture: '架构',
+  contracts: '接口契约',
+  decisions: '决策记录',
+  design: '页面设计',
   domain: '领域',
   operations: '运维',
-  product: '产品',
-  plans: '实施计划',
-  specs: '设计',
-  testing: '验收'
+  product: '产品'
 };
+
+// 归档目录只读留档，不进入阅读器。
+const SKIP_DIRS = new Set(['archive']);
 
 function walkMarkdown(dir) {
   if (!fs.existsSync(dir)) return [];
   const files = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;
+    if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...walkMarkdown(full));
-    } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
+    } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md') && !entry.name.startsWith('_')) {
       files.push(full);
     }
   }
