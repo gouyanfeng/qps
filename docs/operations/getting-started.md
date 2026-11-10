@@ -193,3 +193,14 @@ npm run build:h5
 | 移动端请求打到错误地址 | 检查 `VITE_API_BASE_URL`；`.env` 中的 `VITE_API_URL` 对 H5 不生效 |
 | 本地没有商城示例数据 | 确认 `mobile/src/mock` 存在，且环境为 Development |
 | 接口 403 | 请求类型上是否有正确的 `[Permission]`，当前用户角色是否拥有该权限码 |
+
+## 9. 产物目录
+- 普通临时产物（草稿、分析结果、实验脚本、调试输出、构建日志）统一放在 `E:\Code\QPS\agent-temp`；不得放入源码目录或提交。
+- Playwright UI 测试的 spec、调试脚本、截图和报告统一放在 `E:\Code\QPS\ui-tests`；不得混入 `agent-temp` 或源码目录。
+- 不得使用 `C:\Users\Dust\AppData\Local\Temp\QPS`、`CodexTemp` 或其他系统临时目录保存项目产物。
+
+## 10. 编码与终端
+- Windows 下读取 `.md`、`.txt`、`.json`、`.xml`、`.yml`、`.yaml`、`.cs`、`.js`、`.ts`、`.vue`、`.html`、`.css` 等文本文件时，优先按 UTF-8 编码处理。
+- PowerShell 读取文件使用 `Get-Content -LiteralPath "路径" -Encoding UTF8`；除非项目已有其他明确要求，文本修改保持 UTF-8。
+- 遇到 `鈥?`、`鈫?`、`鈮?`、`锟斤拷` 等乱码时，先判断控制台或输出链路编码，不能直接认定源文件已损坏。
+- Windows PowerShell 5.1 运行含中文的临时 `.ps1` 时使用 UTF-8 with BOM，或改用 PowerShell 7。

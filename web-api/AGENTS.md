@@ -1,6 +1,6 @@
 # QPS 后端开发指南
 
-本文件只约束 `web-api/` 内的后端开发工作；本地启动与 IIS 发布流程见 [`../docs/operations/本地启动与发布.md`](../docs/operations/本地启动与发布.md)。
+本文件只约束 `web-api/` 内的后端开发工作；本地启动与 IIS 发布流程见 [`../docs/operations/getting-started.md`](../docs/operations/getting-started.md)。
 
 ## 运行与验证
 

@@ -1,31 +1,31 @@
-# QPS 工作区开发指南
+# QPS 文档索引
 
-本文件约束 `E:\Code\QPS` 下的所有项目；子目录的 `AGENTS.md` 只补充其技术栈、运行方式和业务规则。
+本文件是 `E:\Code\QPS` 唯一的文档索引入口，只做导航，不写正文。规则、约束、命令、表结构一律落在被索引的文件里。
 
-## 通用要求
+## 索引
 
-- 所有回答使用中文。
-- 修改范围保持最小，只改完成当前任务所必需的源码或配置；不得回退其他未提交改动。
-- 普通临时产物（草稿、分析结果、实验脚本、调试输出、构建日志）统一放在 `E:\Code\QPS\agent-temp`；不得放入源码目录或提交。
-- Playwright UI 测试的 spec、调试脚本、截图和报告统一放在 `E:\Code\QPS\ui-tests`；不得混入 `agent-temp` 或源码目录。
-- 不得使用 `C:\Users\Dust\AppData\Local\Temp\QPS`、`CodexTemp` 或其他系统临时目录保存项目产物。
+| 文档 | 内容 | 标签 |
+|---|---|---|
+| [docs/operations/getting-started.md](docs/operations/getting-started.md) | 端口与启动、`dotnet build -m:1`、数据库迁移、IIS 发布、产物目录（`agent-temp` / `ui-tests`）、UTF-8 与 PowerShell 编码、常见故障排查 | **必读** |
+| [docs/architecture/modular-monolith.md](docs/architecture/modular-monolith.md) | 六项目分层与依赖方向、模块启用方式、Pipeline 顺序、Handler 事务边界、共享层边界、协作约定（最小改动 / 不回退他人改动） | **必读** |
+| [docs/architecture/permissions.md](docs/architecture/permissions.md) | 权限码模型、`[Permission]` 校验链路、菜单与权限的对应关系 | **必读** |
+| [docs/domain/entities.md](docs/domain/entities.md) | 实体归属、软删除、唯一索引需带 `IsDeleted`、订单读快照 | **必读** |
+| [docs/domain/mall-rules.md](docs/domain/mall-rules.md) | 促销、订单、购物车、售后规则与金额口径 | **必读** |
+| [docs/architecture/sqlite-migration-analysis.md](docs/architecture/sqlite-migration-analysis.md) | SQL Server 与 SQLite 双 provider 可行性结论与风险 | 选读 |
+| [docs/product/business-context.md](docs/product/business-context.md) | CRM 供需撮合业务背景、角色、业务链路 | 选读 |
+| [docs/contracts/mall-campaign-api.md](docs/contracts/mall-campaign-api.md) | 活动专题接口契约：URL、字段、错误码、真实响应示例 | 选读 |
+| [docs/design/admin-permissions-spec.md](docs/design/admin-permissions-spec.md) | 权限设置页两栏矩阵规格 | 选读 |
+| [docs/design/member-health-spec.md](docs/design/member-health-spec.md) | 会员健康档案设计与建表方案（待实施） | 选读 |
+| [docs/decisions/adr-0001-doc-structure.md](docs/decisions/adr-0001-doc-structure.md) | 文档结构取舍：为什么根目录只做索引 | 选读 |
+| [docs/README.md](docs/README.md) | 各子目录边界、命名规则、写作约定、阅读器用法 | 选读 |
+| [docs/archive/README.md](docs/archive/README.md) | 归档规则与历史产物存放约定 | 选读 |
+| [admin/AGENTS.md](admin/AGENTS.md) | 管理端封装组件优先、共享层禁改、列表页模式、语义重命名、UI 测试端口隔离 | **必读** |
+| [web-api/AGENTS.md](web-api/AGENTS.md) | 后端业务约束、权限码、校验分工、代码风格、构建与端口 | **必读** |
+| [mobile/AGENTS.md](mobile/AGENTS.md) | 移动端技术栈、布局与图标规范、图片组件、验收脚本 | **必读** |
 
-## UI 测试
+## 维护规则
 
-- 开发环境使用管理端 `http://127.0.0.1:5173`、移动端 H5 `http://127.0.0.1:5174` 和后端 `http://localhost:5000/api`；Playwright UI 测试固定使用隔离的 `http://127.0.0.1:6174` 和 `http://127.0.0.1:5001/api`。
-- `6174` 或 `5001` 被占用时先释放测试进程，不得切换端口；UI 测试不使用本地 IIS 的 `20004`，也不得占用、停止开发环境的 `5173`、`5174` 或 `5000`。
-- UI 测试完成后保留开发环境 `5173`、`5174` 与 `5000` 的服务进程，不得主动停止端口。
-- UI 验收必须通过用户 Edge 中的实际页面操作创建、编辑和回查测试数据，不得以直接调用 API 替代业务流程；完成后保留浏览器标签供回归复用。
-
-## 编码
-
-- Windows 下读取 `.md`、`.txt`、`.json`、`.xml`、`.yml`、`.yaml`、`.cs`、`.js`、`.ts`、`.vue`、`.html`、`.css` 等文本文件时，优先按 UTF-8 编码处理。
-- PowerShell 读取文件使用 `Get-Content -LiteralPath "路径" -Encoding UTF8`；除非项目已有其他明确要求，文本修改保持 UTF-8。
-- 遇到 `鈥?`、`鈫?`、`鈮?`、`锟斤拷` 等乱码时，先判断控制台或输出链路编码，不能直接认定源文件已损坏。
-- Windows PowerShell 5.1 运行含中文的临时 `.ps1` 时使用 UTF-8 with BOM，或改用 PowerShell 7。
-
-## 组件与共享层（强制执行，三端通用）
-
-- **已有封装组件优先使用**：各端项目中已有的封装组件（业务组件、布局组件、图表组件等），开发新功能时必须优先使用，不得绕过已有封装自行编写功能重复的代码。
-- **禁止直接修改基础组件与公共模块**：各端的 `components`、`layout`、`utils`、`api` 拦截器、路由守卫、权限模块等共享基础设施，**严禁未经确认直接修改**。如需扩展或修复，必须先向负责人说明原因、影响范围和拟议方案，**得到明确确认后才能执行**。未经确认的改动一律退回。
-- 未获确认的改动仅限在业务页面/模块内部完成，不得扩散到共享层。
+- 只索引已被 git 跟踪的文件；不得出现 `agent-temp/`、`ui-tests/`、`.trae/` 或任何未跟踪路径。
+- 新增文档必须与索引行在同一个提交里出现；删除文档时同提交删掉对应索引行。
+- 新行按「必读在前、选读在后」插入，说明列写关键词，便于不打开文件也能判断相关性。
+- 历史与已失效内容一律放 `docs/archive/`，不进入本表逐条列举。
