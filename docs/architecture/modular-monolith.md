@@ -1,6 +1,8 @@
 # 模块化单体架构
 
-> 基于 2026-11-07 的 `web-api` 代码整理。后端为 .NET 8 模块化单体：一个进程、一个数据库，按业务模块拆分项目，模块通过 `AddQpsXxx()` 显式启用。
+> 状态：有效 | 最后核对：2026-11-10 | 对应代码：`web-api/src`（六项目结构与 `QPS.Host/Registration`、`QPS.Shared/Pipeline`）
+
+后端为 .NET 8 模块化单体：一个进程、一个数据库，按业务模块拆分项目，模块通过 `AddQpsXxx()` 显式启用。
 
 ## 1. 项目与职责
 
@@ -57,8 +59,8 @@ Common/      BaseEntity、ApiResponse、PaginationRequest/Response、JwtOptions
 Contracts/   IUnitOfWork、ICurrentUserService、IPermissionChecker、PermissionAttribute、
              IAllowAnonymousRequest、IDomainEvent、IDomainEventDispatcher、IJwtGenerator
 Pipeline/    PermissionBehaviour、ValidationBehaviour、TransactionBehaviour、领域事件派发
-Exceptions/  BusinessException、ValidationException 处理约定
-Extensions/  通用扩展
+Exceptions/  BusinessException（由 Host 异常中间件统一转换为响应）
+Extensions/  通用扩展（CurrentUserExtensions、PaginationExtensions）
 ```
 
 `QPS.Persistence` 分层：

@@ -1,14 +1,13 @@
 # 权限设置页重构规格（对齐 Stitch 稿）
 
+> 状态：有效 | 最后核对：2026-11-10 | 对应代码：`admin/src/views/system/permission/index.vue`、`admin/src/api/modules/permission.ts`、`web-api/src/QPS.System/Controllers/PermissionController.cs`
+
 ## 1. 设计稿来源
 
 - Stitch 项目：`6780509780344141433`
 - 目标 screen：`projects/6780509780344141433/screens/f1b2f86418eb4157bb66917a97b1674c`
 - 标题：权限配置中心 - 三栏联动与矩阵授权重构版（2560×4468，DESKTOP）
-- 本地文件：
-  - `admin/design/stitch-permission/permission-config-center-3column-matrix.html`
-  - `admin/design/stitch-permission/permission-config-center-3column-matrix-1280x2048.jpg`（Stitch 官方截图，正文区域未渲染为空白，仅顶部可读）
-  - `admin/design/stitch-permission/permission-config-center-local-render-1440.png`（用下载的 HTML 本地渲染，作为实际视觉依据）
+- 本地留档：原 `admin/design/stitch-permission/` 下的 HTML 与截图未纳入版本库，当前仓库中已不存在；本文件只保留设计结论与映射规则，视觉基准以 Stitch 线上稿为准，实现以 `admin/src/views/system/permission` 现有代码为准。
 - 同项目其余 screen：「image.png」两屏分别是促销活动列表原型、当前权限页带红框批注的参考图；「电商管理后台 - 侧边栏结构优化原型」是侧栏稿。均不是本页的另一个版本，本页只有一版。
 
 ## 2. 数据来源与结构映射

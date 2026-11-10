@@ -248,6 +248,6 @@ MallTagController.GetPage
 MallTagController.GetTags
 MallTagController.Update
 
-# ===== QPS.Host（ 条）=====
+# ===== QPS.Host（1 条）=====
 # --- FileUploadController（1 条）
 FileUploadController.UploadImage

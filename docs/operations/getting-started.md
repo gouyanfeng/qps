@@ -1,6 +1,8 @@
 # 本地启动与发布
 
-> 基于 2026-11-07 的仓库结构与 `QPS.Host` 配置整理。所有命令均以 `E:\Code\QPS` 为根目录。
+> 状态：有效 | 最后核对：2026-11-10 | 对应代码：`web-api/src/QPS.Host`（端口与配置）、`docker-compose.yml`、`admin/nginx.conf`
+
+所有命令均以 `E:\Code\QPS` 为根目录。
 
 ## 1. 环境要求
 
@@ -153,7 +155,7 @@ dotnet publish src/QPS.Host -c Release -o ./publish
 发布前/后检查：
 
 1. 目标环境设置 `ASPNETCORE_ENVIRONMENT=Production`。
-2. 通过环境变量提供 `ConnectionStrings__DefaultConnection` 与 `Jwt__SecretKey` / `Jwt__Issuer` / `Jwt__Audience`。
+2. 通过环境变量提供 `ConnectionStrings__DefaultConnection` 与 `Jwt__SecretKey`。
 3. 先执行 3.3 的 `dotnet ef database update`，再启动进程。
 4. 确保进程对 `wwwroot/uploads` 有读写权限；目录在启动时自动创建。
 5. Production 不会导入 `mobile/src/mock` 示例数据。

@@ -6,9 +6,7 @@ namespace QPS.System.Contracts.DTOs.Auth;
 public class UserPermissionsResponse
 {
     /// <summary>
-    /// 权限代码列表（如 ["HOME", "CRM_HERB_BASE_ADD", "DATA_DICTIONARY_EDIT"]）
+    /// 权限代码列表（如 ["HOME", "CRM_HERB_BASE_ADD", "SYSTEM_DATA_DICTIONARY_EDIT"]）
     /// </summary>
     public List<string> Permissions { get; set; } = new();
 }
-
-

@@ -1,6 +1,8 @@
 # 实体说明
 
-> 基于 2026-11-07 的 `web-api/src` 代码整理。实体定义位于各模块 `Domain/Entities`，表映射位于 `QPS.Persistence/Configurations`，迁移位于 `QPS.Persistence/Migrations`。
+> 状态：有效 | 最后核对：2026-11-10 | 对应代码：`web-api/src/*/Domain/Entities`、`web-api/src/QPS.Persistence/Configurations`、`web-api/src/QPS.Persistence/Migrations`
+
+实体定义位于各模块 `Domain/Entities`，表映射位于 `QPS.Persistence/Configurations`，迁移位于 `QPS.Persistence/Migrations`。
 
 ## 1. 阅读约定
 
@@ -91,8 +93,8 @@
 | `MallOrder` | `MallOrders` | `OrderNo`、`MemberId`、`Status`、`ReceiverName/Phone/Address`、`GoodsAmount`、`PromotionDiscountAmount`、`CouponDiscountAmount`、`FreightAmount`、`PayableAmount`、`PaidAmount`、`RefundedAmount`、`GiftShortageMessage` | 订单主表，金额有恒等校验 |
 | `MallOrderItem` | `MallOrderItems` | `OrderId`、`SkuId`、`ProductId`、`ProductName`、`SkuCode`、`SpecName`、`ProductImage`、`UnitPrice`、`Quantity`、`WeightGram`、`ItemAmount`、`IsGift`、`PromotionId`、`PromotionName`、`OriginalUnitPrice`、`PromotionDiscountAmount`、`PromotionSnapshot` | 订单明细，保存下单时的商品与促销快照 |
 | `MallPayment` | `MallPayments` | `PaymentNo`、`OrderId`、`Amount`、`Method`、`Status`、`TransactionNo`、`FailureReason`、`PaidAt` | 支付单 |
-| `MallRefund` | `MallRefunds` | `RefundNo`、`OrderId`、`PaymentId`、`Amount`、`Reason`、`EvidenceImages`、`Status`、`RefundedAt` | 退款单 |
-| `MallReturn` | `MallReturns` | `ReturnNo`、`OrderId`、`PaymentId`、`RefundId`、`Amount`、`Reason`、`Status`、`ExpressCompany`、`TrackingNo`、`ApprovedAt`、`ReceivedAt` | 退货单 |
+| `MallRefund` | `MallRefunds` | `RefundNo`、`OrderId`、`PaymentId`、`Amount`、`Reason`、`Description`、`EvidenceImages`、`Status`、`RefundedAt` | 退款单，仅整单退款，金额恒等于订单实付 |
+| `MallReturn` | `MallReturns` | `ReturnNo`、`OrderId`、`PaymentId`、`RefundId`、`Amount`、`Reason`、`Description`、`EvidenceImages`、`RejectReason`、`Status`、`ExpressCompany`、`TrackingNo`、`ApprovedAt`、`RejectedAt`、`ShippedAt`、`ReceivedAt`、`CompletedAt` | 退货单，仅整单退货，同一订单只允许一条非 `Rejected` 记录 |
 | `MallShipment` | `MallShipments` | `ShipmentNo`、`OrderId`、`ExpressCompany`、`TrackingNo`、`Status`、`ShippedAt`、`DeliveredAt`、`IsVoided`、`VoidedAt`、`VoidReason` | 运单，支持作废 |
 | `MallStockLog` | `MallStockLogs` | `SkuId`、`SkuCode`、`SpecName`、`ChangeType`、`ChangeQuantity`、`BeforeStock`、`AfterStock`、`RelatedOrderNo` | 库存变更流水 |
 | `MallAddress` | `MallAddresses` | `UserId`、`ReceiverName`、`ReceiverPhone`、`ProvinceName`、`CityName`、`DistrictName`、`DetailAddress`、`IsDefault` | 会员收货地址 |
@@ -172,7 +174,7 @@
 |---|---|
 | `MallPromotionType` | `DiscountAmount=0`、`DiscountRate=1`、`Gift=2` |
 | `MallCampaignType` | `ProductShowcase=0`、`Signup=1`（预留）、`Coupon=2` |
-| `MallOrderStatus` | 待支付/已支付/已发货/已完成/已取消/退款中/已退款/退货中/已退货 |
+| `MallOrderStatus` | `PendingPayment`（待支付）、`Paid`、`Shipped`、`Completed`、`Cancelled`、`Refunding`（退款中）、`Refunded`、`Returning`（退货中）、`Returned` |
 | `MallPaymentStatus` | `Pending`、`Success`、`Failed`、`Refunded`、`Cancelled` |
 | `MallRefundStatus` | `Pending`、`Success`、`Failed` |
 | `MallReturnStatus` | `Pending`、`Approved`、`Received`、`Completed`、`Rejected` |

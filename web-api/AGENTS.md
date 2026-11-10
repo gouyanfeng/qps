@@ -28,7 +28,8 @@ dotnet test "E:\Code\QPS\web-api\QPS.sln" --no-build --logger "console;verbosity
 ## 权限与业务规则边界
 
 - 功能权限由 Application 层的 `PermissionAttribute` 与 MediatR `PermissionBehaviour` 校验；权限特性标记在对应 Query、Command 类型上，禁止在 Controller 或普通 HTTP 中间件维护“路由 -> 权限码”映射。
-- 权限码按模块归属定义：CRM 权限码在 `QPS.Crm.Contracts.Permissions.CrmPermissionCodes`；常量名必须与权限码字符串完全一致，例如 `CRM_MATCH_OPPORTUNITY_VIEW = "CRM_MATCH_OPPORTUNITY_VIEW"`；禁止在 Query、Command、Handler 中重复写权限码字符串字面量。
+- 权限码按模块归属定义：CRM 权限码在 `QPS.Crm.Contracts.Permissions.CrmPermissionCodes`；常量名必须与权限码字符串完全一致，例如 `CRM_MATCH_OPPORTUNITY_VIEW = "CRM_MATCH_OPPORTUNITY_VIEW"`；禁止在 Query、Command、Handler 中重复写权限码字符串字面量。存量例外：`CRM_TRANSFER` 仍是 `ChangeCrmOwnerCommand` 内的私有常量，`CRM_FOLLOW`、`CRM_VENDOR_*`、`CRM_HERB_BASE_*`、`CRM_PURCHASE_DEMAND_MANAGE` 仍以字面量散落；System 侧 `SYSTEM_PERMISSION` / `SYSTEM_PERMISSION_EDIT` 无常量类。新增权限码必须先补进常量类，不得沿用字面量写法。
+- 管理端端点必须有 `[Permission]` 或命中 `tests/QPS.ArchitectureTests/AdminPermissionBaseline.txt`，由 `AdminEndpointPermissionTests` 强制；基线只允许缩小，补齐权限后同提交删除对应行。
 - `PermissionBehaviour` 只负责当前用户有效性和功能权限，不得查询或改变 CRM 业务状态，也不得承担数据范围、对象归属、关联引用或状态流转校验。
 - Handler 只负责用例编排、资源存在性、数据范围和跨聚合协作；采购需求有效性、撮合机会关闭状态、候选可追加性等业务状态，必须由 Handler 调用领域实体或领域规则处理。
 - 通用权限行为尚未迁移到的存量模块，暂时沿用模块权限助手；禁止在新的 Handler 中直接重复查询用户、角色和 `SystemRolePermissions`。迁移完成后删除对应模块权限助手和手工权限调用。

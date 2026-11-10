@@ -8,9 +8,9 @@
 |---|---|---|
 | [docs/operations/getting-started.md](docs/operations/getting-started.md) | 端口与启动、`dotnet build -m:1`、数据库迁移、IIS 发布、产物目录（`agent-temp` / `ui-tests`）、UTF-8 与 PowerShell 编码、常见故障排查 | **必读** |
 | [docs/architecture/modular-monolith.md](docs/architecture/modular-monolith.md) | 六项目分层与依赖方向、模块启用方式、Pipeline 顺序、Handler 事务边界、共享层边界、协作约定（最小改动 / 不回退他人改动） | **必读** |
-| [docs/architecture/permissions.md](docs/architecture/permissions.md) | 权限码模型、`[Permission]` 校验链路、菜单与权限的对应关系 | **必读** |
+| [docs/architecture/permissions.md](docs/architecture/permissions.md) | 权限码唯一判断依据、Menu/Button 权限清单、`[Permission]` 校验链路、前端 `Permission` 用法、`AdminEndpointPermissionTests` 护栏 | **必读** |
 | [docs/domain/entities.md](docs/domain/entities.md) | 实体归属、软删除、唯一索引需带 `IsDeleted`、订单读快照 | **必读** |
-| [docs/domain/mall-rules.md](docs/domain/mall-rules.md) | 促销、订单、购物车、售后规则与金额口径 | **必读** |
+| [docs/domain/mall-rules.md](docs/domain/mall-rules.md) | 促销动作类型与应用顺序、门槛与时间窗、优惠互斥、金额口径；售后申请约束、退款/退货状态流转、库存回补与优惠券释放 | **必读** |
 | [docs/architecture/sqlite-migration-analysis.md](docs/architecture/sqlite-migration-analysis.md) | SQL Server 与 SQLite 双 provider 可行性结论与风险 | 选读 |
 | [docs/product/business-context.md](docs/product/business-context.md) | CRM 供需撮合业务背景、角色、业务链路 | 选读 |
 | [docs/contracts/mall-campaign-api.md](docs/contracts/mall-campaign-api.md) | 活动专题接口契约：URL、字段、错误码、真实响应示例 | 选读 |

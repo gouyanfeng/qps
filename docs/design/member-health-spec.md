@@ -1,8 +1,6 @@
 # 会员健康档案 v1 详细设计与建表方案
 
-**日期：** 2026-11-07  
-**状态：** 设计方案，待确认后落地  
-**约束：** 本文只做设计与建表方案，不修改代码、不建表、不执行迁移；方案确认后再进入实施。
+> 状态：待实施 | 最后核对：2026-11-10 | 对应代码：当前仓库尚无实现，落地后应落在 `web-api/src/QPS.Mall`（实体 `Domain/Entities`、EF 配置 `QPS.Persistence/Configurations`、Handler `Application/Features`）与 `admin/src/views/mall`、`mobile/src/pages`。本文只做设计与建表方案，不修改代码、不建表、不执行迁移；方案确认后再进入实施。
 
 ---
 
@@ -24,16 +22,16 @@
 
 | 约定 | 现有实现 | 本方案落点 |
 | --- | --- | --- |
-| 实体基类 | [`BaseEntity.cs`](file:///e:/Code/QPS/web-api/src/QPS.Shared/Common/BaseEntity.cs)：`Guid Id`、`CreatedAt/By`、`UpdatedAt/By`、`IsDeleted`，软删除全局过滤器 | 所有健康实体继承 `BaseEntity` |
+| 实体基类 | [`BaseEntity.cs`](../../web-api/src/QPS.Shared/Common/BaseEntity.cs)：`Guid Id`、`CreatedAt/By`、`UpdatedAt/By`、`IsDeleted`，软删除全局过滤器 | 所有健康实体继承 `BaseEntity` |
 | 表命名 | `Mall` + 复数，如 `MallMembers`、`MallOrders` | `MallHealthProfiles`、`MallHealthAssessments` 等 |
-| EF 配置 | [`MallModelConfiguration.cs`](file:///e:/Code/QPS/web-api/src/QPS.Persistence/Configurations/Mall/MallModelConfiguration.cs)：`ToTable`、`HasMaxLength`、`HasIndex(...).HasFilter("[IsDeleted] = 0")`、枚举存 `int` | 在 `MallModelConfiguration.Apply` 内追加配置 |
-| DbContext | [`AppDbContext.cs`](file:///e:/Code/QPS/web-api/src/QPS.Persistence/Database/AppDbContext.cs)：单一 `AppDbContext`，实现 `IMallDbContext`，自动审计与操作日志 | 新增 `DbSet`，同步在 [`IMallDbContext.cs`](file:///e:/Code/QPS/web-api/src/QPS.Mall/Contracts/IMallDbContext.cs) 增加属性 |
+| EF 配置 | [`MallModelConfiguration.cs`](../../web-api/src/QPS.Persistence/Configurations/Mall/MallModelConfiguration.cs)：`ToTable`、`HasMaxLength`、`HasIndex(...).HasFilter("[IsDeleted] = 0")`、枚举存 `int` | 在 `MallModelConfiguration.Apply` 内追加配置 |
+| DbContext | [`AppDbContext.cs`](../../web-api/src/QPS.Persistence/Database/AppDbContext.cs)：单一 `AppDbContext`，实现 `IMallDbContext`，自动审计与操作日志 | 新增 `DbSet`，同步在 [`IMallDbContext.cs`](../../web-api/src/QPS.Mall/Contracts/IMallDbContext.cs) 增加属性 |
 | 迁移 | `QPS.Persistence/Migrations`，EF Core 8.0.8；部分迁移手写并附回填/权限 SQL | 新增 `AddMallHealthProfiles` 迁移，权限种子 SQL 沿用既有写法 |
 | Controller | 移动端 `[Route("api/mall")] [Authorize(Policy = "MallMember")]`；管理端 `api/admin/mall/...`，返回 `Ok(await _mediator.Send(...))` | 新增移动端 `MallHealthController`、管理端 `MallHealthQuestionnaireController` / `MallHealthMemberController` |
 | Handler | `Application/Features/{功能}`，MediatR；一个用例一个文件，复杂规则下沉到 `Rules` / `Mapper` / 领域服务 | `Features/MallHealthProfiles`、`Features/MallHealthAssessments`、`Features/MallHealthQuestionnaires`、`Features/MallHealthAdmin` |
 | DTO | 跨功能共享 DTO 放 `Contracts/DTOs`；会员相关已有 `Contracts/DTOs/MallMembers` | 健康 DTO 放 `Contracts/DTOs/MallHealth`，按画像/测评/问卷/管理端分组 |
 | 权限 | `[Permission(MallPermissionCodes.XXX)]` + `PermissionBehaviour`；权限码常量名与字符串一致 | 新增 `QPS.Mall.Contracts.Permissions.MallPermissionCodes` |
-| 移动端入口 | [`profile/index.vue`](file:///e:/Code/QPS/mobile/src/pages/profile/index.vue)：`goService('archive')` 仍走 toast；顶部体质文案写死“气虚夹湿型” | v1 改为跳转健康档案页，并读取最近一次测评结果；删除写死文案 |
+| 移动端入口 | [`profile/index.vue`](../../mobile/src/pages/profile/index.vue)：`goService('archive')` 仍走 toast；顶部体质文案写死“气虚夹湿型” | v1 改为跳转健康档案页，并读取最近一次测评结果；删除写死文案 |
 | 管理端结构 | `admin/src/views/mall/*`、`admin/src/api/modules/mall*.ts`、`admin/src/assets/json/authMenuList.json` | 新增 `views/mall/health/*`、`api/modules/mallHealth.ts` 和菜单项 |
 
 > 说明：移动端已通过 `VITE_API_BASE_URL` 调用真实后端（如 `/api/mall/member/me`），健康档案按同一请求层接入，不新增独立 mock。
@@ -204,7 +202,9 @@ erDiagram
 
 ### 3.4 表结构
 
-#### 3.4.1 `MallHealthConsents` 健康数据同意记录
+v1 共 9 张表：1 张同意记录、1 张画像、3 张问卷配置（问卷版本、题目、选项）、1 张测评记录、1 张建议、2 张审计日志。全部落在 `QPS.Mall` 模块，表名前缀 `MallHealth`。
+
+### 3.4.1 `MallHealthConsents` 健康数据同意记录
 
 追加式记录：每次同意、撤回都新增一行，不覆盖历史。
 
@@ -227,7 +227,7 @@ erDiagram
 
 当前是否已同意：取该会员该 `ConsentType` 最新一条 `Action`，`1` 表示有效，`2` 表示已撤回。
 
-#### 3.4.2 `MallHealthProfiles` 会员健康画像
+### 3.4.2 `MallHealthProfiles` 会员健康画像
 
 1:1 画像，`MemberId` 唯一。画像只保存稳定属性；主体质从最近一次已提交测评派生。
 
@@ -253,7 +253,7 @@ erDiagram
 - 外键：`MemberId -> MallMembers.Id`，`ON DELETE NO ACTION`。
 - 不建立 `CurrentConstitution` 字段；需要主体质时查询最新已提交测评。
 
-#### 3.4.3 `MallHealthQuestionnaires` 问卷版本
+### 3.4.3 `MallHealthQuestionnaires` 问卷版本
 
 | 字段 | 类型 | 可空 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
@@ -282,7 +282,7 @@ erDiagram
 - 已归档版本仍可被历史测评引用；
 - 已有测评引用的问卷不物理删除，只能归档。
 
-#### 3.4.4 `MallHealthQuestions` 题目
+### 3.4.4 `MallHealthQuestions` 题目
 
 | 字段 | 类型 | 可空 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
@@ -303,7 +303,7 @@ erDiagram
 - 普通索引：`(QuestionnaireId, SortOrder)`。
 - 外键：`QuestionnaireId -> MallHealthQuestionnaires.Id`，`ON DELETE CASCADE`（仅物理清理草稿问卷时使用；业务上优先归档/软删除）。
 
-#### 3.4.5 `MallHealthQuestionOptions` 选项
+### 3.4.5 `MallHealthQuestionOptions` 选项
 
 | 字段 | 类型 | 可空 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
@@ -320,7 +320,7 @@ erDiagram
 - 检查约束：`Score BETWEEN 1 AND 5`。
 - 外键：`QuestionId -> MallHealthQuestions.Id`，`ON DELETE CASCADE`。
 
-#### 3.4.6 `MallHealthAssessments` 体质测评记录
+### 3.4.6 `MallHealthAssessments` 体质测评记录
 
 1:N，追加式；草稿可更新，提交后不可更新。
 
@@ -359,7 +359,7 @@ erDiagram
 - 重复提交同一草稿：幂等返回已提交结果，不重复计分；
 - 修正历史结论只能新增测评，不能覆盖旧记录。
 
-#### 3.4.7 `MallHealthAdvices` 药师/客服建议
+### 3.4.7 `MallHealthAdvices` 药师/客服建议
 
 追加式记录，不提供修改/删除接口；修正建议以新增记录表达。
 
@@ -388,7 +388,7 @@ erDiagram
 - 不提供药品剂量、处方组合、停药/换药指令；
 - v1 采用人工审核，不做自动内容判定；如需，可在后续增加敏感词提示，但不能替代人工审核。
 
-#### 3.4.8 `MallHealthChangeLogs` 健康档案变更日志
+### 3.4.8 `MallHealthChangeLogs` 健康档案变更日志
 
 记录“谁、何时、改了哪个字段、改前改后”。由 Handler 在业务事务内显式写入。
 
@@ -422,7 +422,7 @@ erDiagram
 - 同意/撤回：记录 `Action` 与 `PolicyVersion`。
 - 问卷配置变更：属于配置数据，不进会员健康变更日志，仍由通用 `SystemOperationLogs` 记录。
 
-#### 3.4.9 `MallHealthAccessLogs` 管理端访问审计
+### 3.4.9 `MallHealthAccessLogs` 管理端访问审计
 
 记录药师/客服/管理员对会员健康数据的读取行为。
 
@@ -453,7 +453,9 @@ erDiagram
 
 ### 3.5 JSON 结构
 
-#### 3.5.1 `ScoresJson`
+三处 JSON 列统一带 `schemaVersion`，读取时按版本兼容解析，不做就地改写。
+
+### 3.5.1 `ScoresJson`
 
 ```json
 {
@@ -477,7 +479,7 @@ erDiagram
 - `measured`：该维度是否有题目。
 - `judgement`：`MAIN`、`SECONDARY`、`TENDENCY`、`NONE`、`UNMEASURED`、`PINGHE`。
 
-#### 3.5.2 `SecondaryConstitutionsJson` / `TendencyConstitutionsJson`
+### 3.5.2 `SecondaryConstitutionsJson` / `TendencyConstitutionsJson`
 
 ```json
 [2, 5]
@@ -485,7 +487,7 @@ erDiagram
 
 只存 `MallConstitutionType` 的 `int` 值，顺序按分数从高到低，同分按枚举顺序。
 
-#### 3.5.3 `AnswersJson`
+### 3.5.3 `AnswersJson`
 
 ```json
 {
@@ -543,7 +545,7 @@ erDiagram
 
 ### 3.8 审计与通用操作日志的关系
 
-现有 [`AppDbContext.cs`](file:///e:/Code/QPS/web-api/src/QPS.Persistence/Database/AppDbContext.cs) 的 `AddOperationLogs()` 会对所有 `BaseEntity` 的增删改写 `SystemOperationLogs`，并把字段改前/改后完整写入 `ChangeJson`。这会把健康明文复制到通用操作日志，存在两个问题：
+现有 [`AppDbContext.cs`](../../web-api/src/QPS.Persistence/Database/AppDbContext.cs) 的 `AddOperationLogs()` 会对所有 `BaseEntity` 的增删改写 `SystemOperationLogs`，并把字段改前/改后完整写入 `ChangeJson`。这会把健康明文复制到通用操作日志，存在两个问题：
 
 1. 通用操作日志的查看权限与健康档案权限不一致，可能扩大健康数据可见范围；
 2. 同一份答案/病史会被重复保存，增加泄露面和存储成本。
@@ -738,7 +740,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 | `GET` | `/api/mall/member/me/health/assessments/latest` | 最近一次已提交结果 |
 | `GET` | `/api/mall/member/me/health/advices` | 查看药师/客服建议 |
 
-#### 5.1.1 查询画像
+### 5.1.1 查询画像
 
 `GET /api/mall/member/me/health/profile`
 
@@ -787,7 +789,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 
 无画像时返回 `profile: null`，不返回 404，方便前端直接进入完善流程。
 
-#### 5.1.2 保存画像
+### 5.1.2 保存画像
 
 `PUT /api/mall/member/me/health/profile`
 
@@ -818,7 +820,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 
 响应：返回保存后的画像。
 
-#### 5.1.3 记录同意/撤回
+### 5.1.3 记录同意/撤回
 
 `POST /api/mall/member/me/health/consents`
 
@@ -835,7 +837,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 - `action = 2` 表示撤回；
 - 撤回后不允许新增/修改画像、创建/提交测评；历史数据按政策处理。
 
-#### 5.1.4 获取当前问卷
+### 5.1.4 获取当前问卷
 
 `GET /api/mall/health/questionnaires/current?scaleCode=TCM_CONSTITUTION`
 
@@ -877,7 +879,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 - 客户端只提交选项 ID，服务端计分；
 - 无已发布问卷时返回 `404` 或 `200` 带 `questionnaire: null`，前端展示“暂未开放”。
 
-#### 5.1.5 创建/恢复草稿
+### 5.1.5 创建/恢复草稿
 
 `POST /api/mall/member/me/health/assessments/drafts`
 
@@ -909,7 +911,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 - 必须先有有效同意记录；
 - 问卷必须是已发布或已归档状态。
 
-#### 5.1.6 保存草稿答案
+### 5.1.6 保存草稿答案
 
 `PUT /api/mall/member/me/health/assessments/{id}/answers`
 
@@ -928,7 +930,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 - 只允许草稿状态；
 - 响应返回 `answeredCount`、`questionCount`、已保存答案。
 
-#### 5.1.7 提交测评
+### 5.1.7 提交测评
 
 `POST /api/mall/member/me/health/assessments/{id}/submit`
 
@@ -973,7 +975,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 }
 ```
 
-#### 5.1.8 测评历史与结果
+### 5.1.8 测评历史与结果
 
 `GET /api/mall/member/me/health/assessments?pageIndex=1&pageSize=10`
 
@@ -991,7 +993,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 
 - 返回最近一次已提交结果；无记录时返回 `null`。
 
-#### 5.1.9 查看建议
+### 5.1.9 查看建议
 
 `GET /api/mall/member/me/health/advices`
 
@@ -1017,7 +1019,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 
 管理端健康接口建议使用 `[Authorize(Policy = "AnyUser")]`，并在 Query/Command 上标记 `[Permission(...)]`。原因：药师/客服通常不属于现有 `admin` 角色，若继续使用 `AdminOnly` 会被角色策略直接拦截；使用 `AnyUser` + 权限码可以复用现有 `PermissionBehaviour`，不需要改共享鉴权基础设施。
 
-#### 5.2.1 问卷维护
+### 5.2.1 问卷维护
 
 | 方法 | 路径 | 权限码 | 用途 |
 | --- | --- | --- | --- |
@@ -1076,7 +1078,7 @@ FUNCTION ScoreAssessment(questionnaire, answers):
 - 题号、选项编码、分值、排序按请求校验；
 - 发布前执行 3.6 的完整性校验。
 
-#### 5.2.2 查看会员健康档案
+### 5.2.2 查看会员健康档案
 
 | 方法 | 路径 | 权限码 | 用途 |
 | --- | --- | --- | --- |
@@ -1154,7 +1156,7 @@ MALL_HEALTH_QUESTIONNAIRE_MANAGE  = "MALL_HEALTH_QUESTIONNAIRE_MANAGE";
 MALL_HEALTH_AUDIT_VIEW            = "MALL_HEALTH_AUDIT_VIEW";
 ```
 
-迁移中按 [`20260905065617_AddCrmMatchOpportunities.cs`](file:///e:/Code/QPS/web-api/src/QPS.Persistence/Migrations/20260905065617_AddCrmMatchOpportunities.cs) 的写法幂等插入权限，并按下发策略给角色授权。v1 至少给 `admin` 全量授权；药师/客服角色需要业务确认后创建。
+迁移中按 [`20260905065617_AddCrmMatchOpportunities.cs`](../../web-api/src/QPS.Persistence/Migrations/20260905065617_AddCrmMatchOpportunities.cs) 的写法幂等插入权限，并按下发策略给角色授权。v1 至少给 `admin` 全量授权；药师/客服角色需要业务确认后创建。
 
 ### 6.2 单独同意
 
