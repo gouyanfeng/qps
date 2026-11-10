@@ -20,8 +20,19 @@
         width: 210px;
         margin-right: 16px;
         .logo-img {
+          display: flex;
+          flex-shrink: 0;
+          align-items: center;
+          justify-content: center;
           width: 28px;
-          object-fit: contain;
+          height: 28px;
+          font-size: 16px;
+          font-weight: 600;
+          line-height: 1;
+          color: var(--el-color-white);
+          background-color: var(--el-color-primary);
+          border-radius: 6px;
+          user-select: none;
         }
         .logo-text {
           margin-left: 6px;

@@ -4,8 +4,8 @@
     <el-aside>
       <div class="aside-box" :style="{ width: isCollapse ? '65px' : '210px' }">
         <div class="logo" :class="{ 'is-collapse': isCollapse }">
-          <span class="logo-mark">Q</span>
-          <span v-show="!isCollapse" class="logo-text">{{ title }}</span>
+          <span class="logo-mark">{{ LOGO }}</span>
+          <span v-show="!isCollapse" class="logo-text">{{ TITLE }}</span>
         </div>
         <el-scrollbar>
           <el-menu :router="false" :default-active="activeMenu" :collapse="isCollapse" :unique-opened="accordion"
@@ -30,12 +30,14 @@ import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useGlobalStore } from "@/stores/modules/global";
+import { DEFAULT_TITLE, DEFAULT_LOGO } from "@/config";
 import Main from "@/layouts/components/Main/index.vue";
 import ToolBarLeft from "@/layouts/components/Header/ToolBarLeft.vue";
 import ToolBarRight from "@/layouts/components/Header/ToolBarRight.vue";
 import SubMenu from "@/layouts/components/Menu/SubMenu.vue";
 
-const title = 'QPS';
+const TITLE = DEFAULT_TITLE;
+const LOGO = DEFAULT_LOGO;
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -49,4 +51,3 @@ const activeMenu = computed(() => (route.meta.activeMenu ? route.meta.activeMenu
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
-

@@ -4,7 +4,7 @@ import {
 } from "vue-router";
 import { useUserStore } from "@/stores/modules/user";
 import { useAuthStore } from "@/stores/modules/auth";
-import { LOGIN_URL, ROUTER_WHITE_LIST } from "@/config";
+import { LOGIN_URL, ROUTER_WHITE_LIST, DEFAULT_TITLE } from "@/config";
 import { initDynamicRouter } from "@/routers/modules/dynamicRouter";
 import { staticRouter, errorRouter } from "@/routers/modules/staticRouter";
 import NProgress from "@/config/nprogress";
@@ -42,7 +42,7 @@ router.beforeEach(async (to, from, next) => {
   NProgress.start();
 
   // 2.动态设置标题
-  const title = "QPS";
+  const title = DEFAULT_TITLE;
   document.title = to.meta.title ? `${to.meta.title} - ${title}` : title;
 
   // 3.判断是访问登陆页，有 Token 就在当前页面，没有 Token 重置路由到登陆页
@@ -103,5 +103,3 @@ router.afterEach(() => {
 });
 
 export default router;
-
-

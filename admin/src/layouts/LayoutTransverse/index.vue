@@ -3,8 +3,8 @@
   <el-container class="layout">
     <el-header>
       <div class="logo flx-center">
-        <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" />  
-        <span class="logo-text">{{ title }}</span>
+        <span class="logo-img">{{ LOGO }}</span>  
+        <span class="logo-text">{{ TITLE }}</span>
       </div>
       <el-menu mode="horizontal" :router="false" :default-active="activeMenu">
         <!-- 不能直接使用 SubMenu 组件，无法触发 el-menu 隐藏省略功能 -->
@@ -38,16 +38,20 @@
 <script setup lang="ts" name="layoutTransverse">
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/modules/auth";
+import { useGlobalStore } from "@/stores/modules/global";
+import { DEFAULT_TITLE, DEFAULT_LOGO } from "@/config";
 import { useRoute, useRouter } from "vue-router";
 import Main from "@/layouts/components/Main/index.vue";
 import ToolBarRight from "@/layouts/components/Header/ToolBarRight.vue";
 import SubMenu from "@/layouts/components/Menu/SubMenu.vue";
 
-const title = 'QPS';
+const TITLE = DEFAULT_TITLE;
+const LOGO = DEFAULT_LOGO;
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const globalStore = useGlobalStore();
 const menuList = computed(() => authStore.showMenuListGet);
 const activeMenu = computed(() => (route.meta.activeMenu ? route.meta.activeMenu : route.path) as string);
 
@@ -60,5 +64,3 @@ const handleClickMenu = (subItem: Menu.MenuOptions) => {
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
-
-
