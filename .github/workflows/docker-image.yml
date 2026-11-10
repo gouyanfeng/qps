@@ -33,7 +33,7 @@ jobs:
 
       # 构建 qps-api 与 admin（gateway 无 build，compose 会自动跳过）
       - name: Build images
-        run: docker compose --env-file .env.production --file ./docker-compose.yml build
+        run: docker compose --env-file .env --file ./docker-compose.yml build
 
       # 只推需要构建的两个服务，gateway 是 nginx 官方镜像，不推
       - name: Push images
