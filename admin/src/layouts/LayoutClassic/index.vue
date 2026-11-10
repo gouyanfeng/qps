@@ -4,8 +4,8 @@
     <el-header>
       <div class="header-lf mask-image">
         <div class="logo flx-center">
-          <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" />  
-          <span class="logo-text">{{ title }}</span>
+          <span class="logo-img">{{ LOGO }}</span>  
+          <span class="logo-text">{{ TITLE }}</span>
         </div>
         <ToolBarLeft />
       </div>
@@ -36,12 +36,14 @@ import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useGlobalStore } from "@/stores/modules/global";
+import { DEFAULT_TITLE, DEFAULT_LOGO } from "@/config";
 import Main from "@/layouts/components/Main/index.vue";
 import SubMenu from "@/layouts/components/Menu/SubMenu.vue";
 import ToolBarLeft from "@/layouts/components/Header/ToolBarLeft.vue";
 import ToolBarRight from "@/layouts/components/Header/ToolBarRight.vue";
 
-const title = 'QPS';
+const TITLE = DEFAULT_TITLE;
+const LOGO = DEFAULT_LOGO;
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -55,5 +57,3 @@ const activeMenu = computed(() => (route.meta.activeMenu ? route.meta.activeMenu
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
-
-

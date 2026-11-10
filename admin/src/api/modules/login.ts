@@ -39,7 +39,7 @@ export const clearUserPermissionsCache = (userId: string) => {
 };
 
 export const logoutApi = () => {
-  return http.post("admin/auth/logout");
+  return http.post("admin/auth/logout", {});
 };
 
 export const changePasswordApi = (oldPassword: string, newPassword: string) => {
@@ -48,5 +48,3 @@ export const changePasswordApi = (oldPassword: string, newPassword: string) => {
     newPassword
   });
 };
-
-

@@ -13,8 +13,19 @@
       box-sizing: border-box;
       height: 55px;
       .logo-img {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
         width: 32px;
-        object-fit: contain;
+        height: 32px;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1;
+        color: var(--el-color-white);
+        background-color: var(--el-color-primary);
+        border-radius: 8px;
+        user-select: none;
       }
     }
     .el-scrollbar {

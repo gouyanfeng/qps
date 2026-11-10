@@ -55,4 +55,3 @@ export const useGlobalStore = defineStore("qps-global",{
   },
   persist: piniaPersistConfig("qps-global")
 });
-

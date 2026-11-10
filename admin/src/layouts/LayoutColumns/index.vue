@@ -3,8 +3,8 @@
   <el-container class="layout">
     <div class="aside-split">
       <div class="logo flx-center">
-         <img class="logo-img" src="@/assets/images/logo.svg" alt="logo" />   
-                 <span class="logo-text">{{ title }}</span>
+         <span class="logo-img">{{ LOGO }}</span>   
+                 <span class="logo-text">{{ TITLE }}</span>
       </div>
       <el-scrollbar>
         <div class="split-list">
@@ -21,7 +21,7 @@
     </div>
     <el-aside :class="{ 'not-aside': !subMenuList.length }" :style="{ width: isCollapse ? '65px' : '210px' }">
       <div class="logo flx-center">
-        <span v-show="subMenuList.length" class="logo-text">{{ isCollapse ? "G" : title }}</span>
+        <span v-show="subMenuList.length" class="logo-text">{{ isCollapse ? LOGO : TITLE }}</span>
       </div>
       <el-scrollbar>
         <el-menu :router="false" :default-active="activeMenu" :collapse="isCollapse" :unique-opened="accordion"
@@ -45,12 +45,14 @@ import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/modules/auth";
 import { useGlobalStore } from "@/stores/modules/global";
+import { DEFAULT_TITLE, DEFAULT_LOGO } from "@/config";
 import Main from "@/layouts/components/Main/index.vue";
 import ToolBarLeft from "@/layouts/components/Header/ToolBarLeft.vue";
 import ToolBarRight from "@/layouts/components/Header/ToolBarRight.vue";
 import SubMenu from "@/layouts/components/Menu/SubMenu.vue";
 
-const title = 'QPS';
+const TITLE = DEFAULT_TITLE;
+const LOGO = DEFAULT_LOGO;
 
 const route = useRoute();
 const router = useRouter();
@@ -93,5 +95,3 @@ const changeSubMenu = (item: Menu.MenuOptions) => {
 <style scoped lang="scss">
 @import "./index.scss";
 </style>
-
-

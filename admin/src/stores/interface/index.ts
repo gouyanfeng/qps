@@ -61,5 +61,3 @@ export interface AuthState {
   authMenuList: Menu.MenuOptions[];
   userPermissions: string[];
 }
-
-
