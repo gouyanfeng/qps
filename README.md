@@ -53,7 +53,6 @@ ui-tests/                  Playwright UI 测试、截图和报告（已忽略）
 
 ## 文档
 
-- 架构：[模块化单体架构](docs/architecture/模块化单体架构.md)、[权限设计](docs/architecture/权限设计.md)
-- 领域：[实体说明](docs/domain/实体说明.md)
-- 运维：[本地启动与发布](docs/operations/本地启动与发布.md)
-- 示例业务背景：[项目背景与业务链路](docs/product/项目背景与业务链路.md)
+文档入口只有一处：[AGENTS.md](AGENTS.md)。该文件是索引表，按「必读 / 选读」列出架构、领域、运维、契约、设计与各端开发约束，并给出每份文档的一句话说明。目录边界与命名规则见 [docs/README.md](docs/README.md)。
+
+浏览器阅读全部长期文档：`node tools/build-docs-viewer.mjs` 后打开 `docs/docs-viewer.html`。

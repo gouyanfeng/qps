@@ -283,6 +283,6 @@ SQLite 没有 `GETDATE()` / `NEWID()` / `TOP`；`N'…'` 不是合法字符串�
 
 ---
 
-## 附：文档生成器状态
+## 附录：文档生成器状态
 
-本次按要求尝试运行 `node tools/build-docs-viewer.mjs`，但 **`tools/build-docs-viewer.mjs` 不存在**（`tools/` 目录下没有该文件）。仓库里只有一个未跟踪的临时脚本 `agent-temp/build-docs-viewer.mjs`，不属于入库工具，因此没有运行、也没有临时新建替代脚本。`docs/docs-viewer.html` 尚未包含本文；如需更新阅读器，请先把生成器正式放到 `tools/build-docs-viewer.mjs`，我再执行。
+阅读器生成脚本已入库在 `tools/build-docs-viewer.mjs`，在仓库根执行 `node tools/build-docs-viewer.mjs` 即可重新生成 `docs/docs-viewer.html`；脚本自动遍历 `docs/`，跳过 `archive/`、HTML 文件与下划线开头的文件，本文会被自动收录，无需维护清单。

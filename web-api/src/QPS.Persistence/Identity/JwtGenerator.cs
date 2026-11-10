@@ -11,8 +11,6 @@ namespace QPS.Persistence.Identity;
 public class JwtGenerator : IJwtGenerator
 {
     private readonly string _secretKey;
-    private readonly string _issuer;
-    private readonly string _audience;
 
     public JwtGenerator(JwtOptions options)
     {
@@ -21,12 +19,6 @@ public class JwtGenerator : IJwtGenerator
         _secretKey = string.IsNullOrWhiteSpace(options.SecretKey)
             ? throw new ArgumentException("Jwt SecretKey 不能为空。", nameof(options))
             : options.SecretKey;
-        _issuer = string.IsNullOrWhiteSpace(options.Issuer)
-            ? throw new ArgumentException("Jwt Issuer 不能为空。", nameof(options))
-            : options.Issuer;
-        _audience = string.IsNullOrWhiteSpace(options.Audience)
-            ? throw new ArgumentException("Jwt Audience 不能为空。", nameof(options))
-            : options.Audience;
     }
 
     public string GenerateToken(Guid userId, string username, string role)
@@ -41,10 +33,9 @@ public class JwtGenerator : IJwtGenerator
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        // 单系统自签自验，不写 iss/aud 声明；安全性完全由签名密钥保证。
         var token = new JwtSecurityToken(
-            _issuer,
-            _audience,
-            claims,
+            claims: claims,
             expires: DateTime.UtcNow.AddDays(10),
             signingCredentials: credentials
         );

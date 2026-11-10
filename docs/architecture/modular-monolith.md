@@ -1,6 +1,8 @@
 # 模块化单体架构
 
-> 基于 2026-11-07 的 `web-api` 代码整理。后端为 .NET 8 模块化单体：一个进程、一个数据库，按业务模块拆分项目，模块通过 `AddQpsXxx()` 显式启用。
+> 状态：有效 | 最后核对：2026-11-10 | 对应代码：`web-api/src`（六项目结构与 `QPS.Host/Registration`、`QPS.Shared/Pipeline`）
+
+后端为 .NET 8 模块化单体：一个进程、一个数据库，按业务模块拆分项目，模块通过 `AddQpsXxx()` 显式启用。
 
 ## 1. 项目与职责
 
@@ -57,8 +59,8 @@ Common/      BaseEntity、ApiResponse、PaginationRequest/Response、JwtOptions
 Contracts/   IUnitOfWork、ICurrentUserService、IPermissionChecker、PermissionAttribute、
              IAllowAnonymousRequest、IDomainEvent、IDomainEventDispatcher、IJwtGenerator
 Pipeline/    PermissionBehaviour、ValidationBehaviour、TransactionBehaviour、领域事件派发
-Exceptions/  BusinessException、ValidationException 处理约定
-Extensions/  通用扩展
+Exceptions/  BusinessException（由 Host 异常中间件统一转换为响应）
+Extensions/  通用扩展（CurrentUserExtensions、PaginationExtensions）
 ```
 
 `QPS.Persistence` 分层：
@@ -175,3 +177,10 @@ Swagger → CORS(AllowAll) → StaticFiles(wwwroot, /uploads 长缓存)
 4. 写操作命名 `XxxCommand` 并依赖全局事务；读操作命名 `XxxQuery`。
 5. 需要权限的请求加 `[Permission]`；公开接口实现 `IAllowAnonymousRequest`。
 6. 新增跨模块能力时通过 Contracts 接口，不直接引用其他模块内部实现。
+
+## 9. 协作与共享层约定（三端通用）
+- 所有回答使用中文。
+- 修改范围保持最小，只改完成当前任务所必需的源码或配置；不得回退其他未提交改动。
+- **已有封装组件优先使用**：各端项目中已有的封装组件（业务组件、布局组件、图表组件等），开发新功能时必须优先使用，不得绕过已有封装自行编写功能重复的代码。
+- **禁止直接修改基础组件与公共模块**：各端的 `components`、`layout`、`utils`、`api` 拦截器、路由守卫、权限模块等共享基础设施，**严禁未经确认直接修改**。如需扩展或修复，必须先向负责人说明原因、影响范围和拟议方案，**得到明确确认后才能执行**。未经确认的改动一律退回。
+- 未获确认的改动仅限在业务页面/模块内部完成，不得扩散到共享层。

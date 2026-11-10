@@ -4,7 +4,7 @@
 
 QPS Backend 是通用框架的后端基座：模块化单体 + MediatR + EF Core，提供鉴权、权限、数据字典、操作日志以及统一的响应与分页契约。`QPS.Crm`、`QPS.Mall` 是示例业务模块，按需注册或整体替换。
 
-框架整体定位见 [根目录 README](../README.md)，示例业务背景见 [项目背景与业务链路](../docs/product/项目背景与业务链路.md)。
+框架整体定位见 [根目录 README](../README.md)，示例业务背景见 [项目背景与业务链路](../docs/product/business-context.md)。
 
 QPS Backend is an ASP.NET Core 8 service that provides CRM and system
 administration capabilities, including authentication, users, roles,
@@ -48,7 +48,7 @@ tests/
 - 校验、权限、事务三个公共 Pipeline 行为只在 `Shared` 中实现；业务模块不得重复定义。
 - 全系统只保留一个 `AppDbContext`，同时满足 `ISystemDbContext`、`ICrmDbContext`、`IMallDbContext` 与 `IUnitOfWork`。
 
-完整说明见 [模块化单体架构](../docs/architecture/模块化单体架构.md)。
+完整说明见 [模块化单体架构](../docs/architecture/modular-monolith.md)。
 
 ## API Areas
 
@@ -70,6 +70,6 @@ tests/
 
 ## 运行
 
-本地启动、构建验证和 IIS 发布统一见 [本地启动与发布](../docs/operations/本地启动与发布.md)。
+本地启动、构建验证和 IIS 发布统一见 [本地启动与发布](../docs/operations/getting-started.md)。
 
 Swagger is available at `/swagger` when the API is running.
