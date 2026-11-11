@@ -27,3 +27,7 @@ qps-ui-tests/
 
 # 本地环境覆盖（dev-only，不入库）
 .env*.local
+
+# 本机私有配置（含 OSS 凭据，不入库）
+appsettings.Local.json
+.env.local

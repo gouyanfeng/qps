@@ -15,6 +15,11 @@ using QPS.Shared.Storage;
 using QPS.System;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 本机私有配置：appsettings.Local.json 不入库，用于存放 OSS 凭据等敏感项；
+// 放在 Environment 配置之后加载，优先级最高，缺失时静默跳过。
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();

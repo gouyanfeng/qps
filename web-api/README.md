@@ -81,9 +81,12 @@ tests/
 
 - 场景白名单：管理端 `product/category/banner/activity/avatar/common`，会员端 `review/aftersale`
 - 限制：单图 ≤5MB，仅 jpg/jpeg/png/gif/webp，文件名统一为 GUID
-- OSS 配置：`Storage:Oss:{Endpoint,BucketName,AccessKeyId,AccessKeySecret,Prefix}`；容器部署由根目录 `.env` 的 `STORAGE_PROVIDER` 与 `OSS_*` 经 compose 注入
-- Bucket 需公共读，或把自定义 CDN 域名绑定到该 Bucket；前端 `VITE_FILE_BASE_URL` 必须配成同一域名
-- 缺配置时启动即抛错（fail fast），不会等到上传才报 500
+- 默认走 `Local`；切 OSS 时把凭据写进 `appsettings.Local.json`（与 `appsettings.json` 同目录，**不入库**，加载优先级最高），本地 `dotnet run` 立即生效
+- 容器部署：根目录 `.env` 只放占位符，真实值写服务器本地 `.env.local`（不入库），启动命令
+  `docker compose --env-file .env --env-file .env.local up -d`，compose 以 `Storage__*` 注入 api
+- 图片可访问性：上传后按 `Storage:Oss:ObjectAcl`（默认 `public-read`）给**单个对象**授权，Bucket 保持私有也能读；若账号开了「阻止公共访问」，该授权会被 OSS 拒绝（`Put public object acl is not allowed`），此时需关闭该开关或改走 CDN/签名 URL
+- 前端 `VITE_FILE_BASE_URL` 必须与 Bucket 访问域名一致（当前 `https://qps-bucket.oss-cn-hangzhou.aliyuncs.com`）
+- `Provider=Oss` 但关键参数缺失时启动即抛错（fail fast），不会等到上传才报 500
 
 ## 运行
 
