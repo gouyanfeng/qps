@@ -142,7 +142,7 @@ import { mallCategoryApi } from '@/api/modules/mallCategory'
 import { mallStoreApi } from '@/api/modules/mallStore'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
-import { formatDate, resolveFileUrl } from '@/utils'
+import { formatDate, resolveFileUrl, toRelativeFileUrl } from '@/utils'
 import Permission from "@/components/Permission/index.vue"
 
 const queryPageRef = ref()
@@ -181,11 +181,10 @@ const parentOptions = computed(() => categoryOptions.value.filter(category =>
 ))
 
 // 上传组件展示绝对地址，保存时仍写回后端相对路径
-const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
 const iconUrlModel = computed({
   get: () => resolveFileUrl(form.icon),
   set: (value: string) => {
-    form.icon = value.startsWith(apiOrigin) ? value.slice(apiOrigin.length) : value
+    form.icon = toRelativeFileUrl(value)
   }
 })
 

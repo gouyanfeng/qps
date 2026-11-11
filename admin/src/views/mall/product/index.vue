@@ -539,7 +539,7 @@ import { uploadImg } from '@/api/modules/upload'
 import UploadImg from '@/components/Upload/Img.vue'
 import UploadImgs from '@/components/Upload/Imgs.vue'
 import QueryPage from '@/components/QueryPage/index.vue'
-import { formatDate, resolveFileUrl } from '@/utils'
+import { formatDate, resolveFileUrl, toRelativeFileUrl } from '@/utils'
 import Permission from "@/components/Permission/index.vue"
 
 const uploadProductDetailImage = async (file: File): Promise<string> => {
@@ -650,14 +650,13 @@ const currentProductId = ref('')
 const submitting = ref(false)
 const productEditTab = ref('basic')
 const albumFileList = ref<UploadUserFile[]>([])
-const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
 const resolveDetailImageUrls = (html: string) => html.replace(
   /(<img\b[^>]*\bsrc=["'])([^"']+)(["'])/gi,
   (_match, prefix: string, url: string, suffix: string) => `${prefix}${resolveFileUrl(url)}${suffix}`
 )
 const normalizeDetailImageUrls = (html: string) => html.replace(
   /(<img\b[^>]*\bsrc=["'])([^"']+)(["'])/gi,
-  (_match, prefix: string, url: string, suffix: string) => `${prefix}${toRelativeUrl(url)}${suffix}`
+  (_match, prefix: string, url: string, suffix: string) => `${prefix}${toRelativeFileUrl(url)}${suffix}`
 )
 
 const searchForm = reactive({
@@ -685,18 +684,16 @@ const productForm = reactive({
 const mainImageUrlModel = computed({
   get: () => resolveFileUrl(productForm.mainImageUrl),
   set: (value: string) => {
-    productForm.mainImageUrl = value.startsWith(apiOrigin) ? value.slice(apiOrigin.length) : value
+    productForm.mainImageUrl = toRelativeFileUrl(value)
   }
 })
-
-const toRelativeUrl = (url: string) => (url.startsWith(apiOrigin) ? url.slice(apiOrigin.length) : url)
 
 const handleAlbumChange = (files: UploadUserFile[]) => {
   albumFileList.value = files
   productForm.albumImages = files
     .map(file => file.url || '')
     .filter(url => !!url)
-    .map(toRelativeUrl)
+    .map(toRelativeFileUrl)
 }
 
 // ---------------- 商品规格（SKU） ----------------

@@ -166,6 +166,12 @@ export const getAllBreadcrumbList = (
 };
 
 /**
+ * 静态文件（图片等）访问域名，可通过环境变量 VITE_FILE_BASE_URL 覆盖；
+ * 未配置时默认走阿里云 OSS。
+ */
+export const FILE_BASE_URL: string = (import.meta.env.VITE_FILE_BASE_URL || "https://qps.oss-rg-china-mainland.aliyuncs.com").replace(/\/+$/, "");
+
+/**
  * @description 将后端返回的相对文件地址拼接为可访问地址
  * @param path 相对地址或完整地址
  * @returns 可直接用于 img src 的地址
@@ -174,8 +180,19 @@ export function resolveFileUrl(path?: string | null): string {
   if (!path) return "";
   if (/^(https?:)?\/\//i.test(path) || path.startsWith("data:")) return path;
 
+  return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+/**
+ * @description 将文件地址规整为相对路径存库（剥离文件域名或旧 API 来源前缀）
+ * @param url 用户输入或上传回显的地址
+ * @returns 相对路径，如 /uploads/product/202610/xxx.png
+ */
+export function toRelativeFileUrl(url: string): string {
+  if (url.startsWith(FILE_BASE_URL)) return url.slice(FILE_BASE_URL.length) || "/";
   const apiUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
-  return `${apiUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+  if (url.startsWith(apiUrl)) return url.slice(apiUrl.length) || "/";
+  return url;
 }
 
 /**

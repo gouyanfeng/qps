@@ -1,4 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+
+/** 静态文件（图片等）访问域名，可通过 VITE_FILE_BASE_URL 覆盖；未配置时默认走阿里云 OSS */
+export const FILE_BASE_URL = (import.meta.env.VITE_FILE_BASE_URL || 'https://qps.oss-rg-china-mainland.aliyuncs.com').replace(/\/+$/, '')
+
 const TOKEN_KEY = 'qps_member_token'
 const LOGIN_PATH = '/pages/account/index'
 const LOGIN_REDIRECT_PATH_KEY = 'qps_login_redirect_path'
@@ -116,7 +120,7 @@ export function resolveFileUrl(path?: string | null): string {
   if (!path) return ''
   if (/^(https?:)?\/\//i.test(path) || path.startsWith('data:')) return path
   if (path.startsWith('/static/')) return path
-  return `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+  return `${FILE_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
 }
 
 export function request<T>(

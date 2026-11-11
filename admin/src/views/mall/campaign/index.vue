@@ -435,7 +435,7 @@ import { mallCampaignApi } from '@/api/modules/mallCampaign'
 import { mallProductApi } from '@/api/modules/mallProduct'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
-import { formatDate, resolveFileUrl } from '@/utils'
+import { formatDate, resolveFileUrl, toRelativeFileUrl } from '@/utils'
 import { extensions } from './tiptapExtensions'
 import Permission from "@/components/Permission/index.vue"
 
@@ -496,12 +496,10 @@ const form = reactive({
   coupons: [] as CampaignCoupon[]
 })
 
-const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
-
 const coverImageModel = computed({
   get: () => resolveFileUrl(form.coverImageUrl),
   set: (value: string) => {
-    form.coverImageUrl = value.startsWith(apiOrigin) ? value.slice(apiOrigin.length) : value
+    form.coverImageUrl = toRelativeFileUrl(value)
   }
 })
 
