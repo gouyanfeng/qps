@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using QPS.Crm;
 using QPS.Host.Middleware;
@@ -64,20 +65,45 @@ var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 var connStringForDiagnostic = dbContext.Database.GetConnectionString();
 var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Database");
 
-if (!await dbContext.Database.CanConnectAsync())
+if (await dbContext.Database.CanConnectAsync())
 {
-    Console.Error.WriteLine("[FATAL] 数据库连接失败，连接串: {0}", connStringForDiagnostic ?? "无法获取");
-    throw new InvalidOperationException("数据库无法连接。");
+    // 数据库已存在：跳过建库与迁移，只补记初始迁移历史（幂等，便于后续增量迁移）。
+    logger.LogInformation("数据库已存在，跳过初始化。");
+    await DatabaseProvisioning.MarkInitialMigrationAppliedAsync(dbContext);
 }
-
-if (app.Environment.IsDevelopment())
+else
 {
+    // 区分「服务器不可达」与「库缺失」：连 master 查询目标库是否存在。
+    // master 也连不上说明服务器不可达，按存在处理以走 FATAL 分支。
+    bool databaseExists;
+    try
+    {
+        databaseExists = connStringForDiagnostic is not null
+            && await DatabaseProvisioning.DatabaseExistsAsync(connStringForDiagnostic);
+    }
+    catch (SqlException)
+    {
+        databaseExists = true;
+    }
+
+    if (databaseExists)
+    {
+        Console.Error.WriteLine("[FATAL] 数据库连接失败，连接串: {0}", connStringForDiagnostic ?? "无法获取");
+        throw new InvalidOperationException("数据库无法连接。");
+    }
+
+    // 库缺失：自动建库并应用迁移（InitialCreate 内含 System 基线数据）。
+    logger.LogInformation("数据库不存在，自动创建并写入 System 基线数据…");
     var strategy = dbContext.Database.CreateExecutionStrategy();
     await strategy.ExecuteAsync(async () =>
     {
         await dbContext.Database.MigrateAsync();
     });
+    logger.LogInformation("数据库创建完成。");
+}
 
+if (app.Environment.IsDevelopment())
+{
     var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
     while (workspaceDirectory is not null &&
            !Directory.Exists(Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock")))
@@ -134,46 +160,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// 匿名落地页：只暴露服务名、环境、版本与构建时间，显式 AllowAnonymous 以绕开 FallbackPolicy。
-var serviceAssembly = typeof(Program).Assembly;
-var serviceVersion = serviceAssembly.GetName().Version?.ToString() ?? "unknown";
-var buildTimeUtc =DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-var environmentName = System.Net.WebUtility.HtmlEncode(app.Environment.EnvironmentName);
-
-Func<string> buildLandingPage = () => $$"""
-        <!DOCTYPE html>
-        <html lang="zh-CN">
-        <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>QPS API</title>
-        <style>
-        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif}
-        main{max-width:520px;padding:32px}
-        h1{margin:0 0 8px;font-size:22px}
-        p{margin:0 0 20px;color:#94a3b8}
-        dl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}
-        dt{color:#94a3b8}
-        dd{margin:0;font-variant-numeric:tabular-nums}
-        </style>
-        </head>
-        <body>
-        <main>
-        <h1>QPS API</h1>
-        <p>服务正在运行。</p>
-        <dl>
-        <dt>环境</dt><dd>{{environmentName}}</dd>
-        <dt>版本</dt><dd>{{serviceVersion}}</dd>
-        <dt>构建时间</dt><dd>{{buildTimeUtc}}</dd>
-        </dl>
-        </main>
-        </body>
-        </html>
-        """;
-
-app.MapGet("/", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
-app.MapGet("/api", () => Results.Content(buildLandingPage(), "text/html; charset=utf-8")).AllowAnonymous();
 
 app.MapFallback(() => Results.NotFound()).AllowAnonymous();
 
