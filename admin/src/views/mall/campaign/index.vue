@@ -23,7 +23,7 @@
       </template>
 
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增专题活动</el-button>
+        <Permission code="MALL_CAMPAIGN_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增专题活动</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -71,11 +71,11 @@
             header-class-name="actions-column"
           >
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+              <Permission code="MALL_CAMPAIGN_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
               <el-button :type="row.isActive ? 'warning' : 'success'" link @click="changeStatus(row)">
                 {{ row.isActive ? '下架' : '上架' }}
               </el-button>
-              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
+              <Permission code="MALL_CAMPAIGN_DELETE"><el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -437,6 +437,7 @@ import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
 import { extensions } from './tiptapExtensions'
+import Permission from "@/components/Permission/index.vue"
 
 interface CampaignItem {
   id?: string

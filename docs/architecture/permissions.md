@@ -46,11 +46,26 @@
 | `HOME` | `HOME` | 首页（`/home/index`），顶层菜单即页面 |
 | `CRM` | `CRM` | CRM 管理分组 |
 | `CRM` | `CRM_FOLLOW_TASK` | 我的待办（`/crm/follow-tasks`） |
-| `CRM` | `CRM_HERB_BASE` | 基地管理（`/crm/herb-base`）、供应列表（`/crm/herb-base-supply`）共用同一入口码 |
+| `CRM` | `CRM_HERB_BASE` | 基地管理（`/crm/herb-base`） |
+| `CRM` | `CRM_HERB_BASE_SUPPLY` | 供应列表（`/crm/herb-base-supply`），与基地管理独立授权 |
 | `CRM` | `CRM_VENDOR` | 厂商管理（`/crm/vendor`） |
 | `CRM` | `CRM_PURCHASE_DEMAND_VIEW` | 采购需求（`/crm/purchase-demand`） |
 | `CRM` | `CRM_MATCH_OPPORTUNITY_VIEW` | 撮合机会（`/crm/match-opportunity`），同时用于详情按钮 |
-| `MALL` | `MALL` | 商城管理分组；子页面（商品、分类、订单等）不单独挂权限码 |
+| `MALL` | `MALL` | 商城管理分组 |
+| `MALL` | `MALL_PRODUCT` | 商品管理（`/mall/product`） |
+| `MALL` | `MALL_CATEGORY` | 商品分类（`/mall/category`） |
+| `MALL` | `MALL_TAG` | 标签管理（`/mall/tag`） |
+| `MALL` | `MALL_REVIEW` | 评价管理（`/mall/review`） |
+| `MALL` | `MALL_STOCK` | 库存管理（`/mall/stock`） |
+| `MALL` | `MALL_PROMOTION` | 促销活动（`/mall/promotion`） |
+| `MALL` | `MALL_CAMPAIGN` | 专题活动（`/mall/campaign`） |
+| `MALL` | `MALL_COUPON` | 优惠券管理（`/mall/coupon`） |
+| `MALL` | `MALL_BANNER` | Banner 管理（`/mall/banner`） |
+| `MALL` | `MALL_ORDER` | 订单管理（`/mall/order`） |
+| `MALL` | `MALL_SHIPMENT` | 发货管理（`/mall/shipment`） |
+| `MALL` | `MALL_RETURN_ORDER` | 退货管理（`/mall/returnOrder`） |
+| `MALL` | `MALL_STORE` | 商城门店（`/mall/store`） |
+| `MALL` | `MALL_FREIGHT` | 运费规则（`/mall/freight`） |
 | `SYSTEM` | `SYSTEM` | 系统设置分组 |
 | `SYSTEM` | `SYSTEM_ROLE` | 角色设置 |
 | `SYSTEM` | `SYSTEM_PERMISSION` | 权限设置 |
@@ -60,7 +75,7 @@
 | `SYSTEM` | `SYSTEM_OPERATION_LOG` | 操作日志 |
 | `SYSTEM` | `SYSTEM_ERROR_LOG` | 错误日志 |
 
-菜单数据来自 `admin/src/assets/json/authMenuList.json` 的 `meta.permissionCode`；`ROOT` 是权限树根，不在菜单与矩阵中展示。分组码（`CRM`、`MALL`、`SYSTEM`）既是菜单节点也是权限树中的祖先节点，勾选子页面时会自动补齐。
+菜单数据来自 `admin/src/assets/json/authMenuList.json` 的 `meta.permissionCode`；`ROOT` 是权限树根，不在菜单与矩阵中展示。**每个菜单页面都必须声明 `permissionCode`**，否则权限矩阵里没有该行、无法授权；分组码（`CRM`、`MALL`、`SYSTEM`）既是菜单节点也是权限树中的祖先节点，勾选子页面时会自动补齐。权限矩阵按菜单顺序展示，按钮按「新增 → 编辑 → 删除」排列，删除类固定最后。
 
 ### 3.2 页面内操作（Button）
 
@@ -68,7 +83,7 @@
 |---|---|---|
 | 基地管理 | `CRM_HERB_BASE_ADD` / `CRM_HERB_BASE_EDIT` / `CRM_HERB_BASE_DELETE` / `CRM_HERB_BASE_STATUS` | 新增、编辑、删除、启停 |
 | 基地管理 | `CRM_HERB_BASE_CONTACT_ADD` / `CRM_HERB_BASE_CONTACT_EDIT` / `CRM_HERB_BASE_CONTACT_PRIMARY` | 联系人新增、编辑、设为主 |
-| 基地管理 | `CRM_HERB_BASE_SUPPLY_MANAGE` | 供应信息维护（新增、编辑、删除、状态变更合并为一个权限） |
+| 供应列表 | `CRM_HERB_BASE_SUPPLY_MANAGE` | 供应信息维护（新增、编辑、删除、状态变更合并为一个权限） |
 | 基地管理 | `CRM_HERB_BASE_SUPPLY_VIEW` | 供应信息查看；由迁移创建，当前前后端均无引用，视为存量待清理 |
 | 厂商管理 | `CRM_VENDOR_ADD` / `CRM_VENDOR_EDIT` | 新增、编辑 |
 | 采购需求 | `CRM_PURCHASE_DEMAND_MANAGE` | 维护采购需求 |
@@ -79,6 +94,20 @@
 | 角色设置 | `SYSTEM_ROLE_ADD` / `SYSTEM_ROLE_EDIT` / `SYSTEM_ROLE_DELETE` | 新增、编辑、删除角色 |
 | 权限设置 | `SYSTEM_PERMISSION_EDIT` | 保存角色权限矩阵 |
 | 数据字典 | `SYSTEM_DATA_DICTIONARY_ADD` / `SYSTEM_DATA_DICTIONARY_EDIT` / `SYSTEM_DATA_DICTIONARY_DELETE` | 新增、编辑、删除字典项 |
+| 商品管理 | `MALL_PRODUCT_ADD` / `MALL_PRODUCT_EDIT` / `MALL_PRODUCT_DELETE` | 新增、编辑、删除商品（含标签维护） |
+| 商品分类 | `MALL_CATEGORY_ADD` / `MALL_CATEGORY_EDIT` / `MALL_CATEGORY_DELETE` | 新增、编辑、删除分类 |
+| 标签管理 | `MALL_TAG_ADD` / `MALL_TAG_EDIT` / `MALL_TAG_DELETE` | 新增、编辑、删除标签 |
+| 评价管理 | `MALL_REVIEW_EDIT` / `MALL_REVIEW_DELETE` | 审核、回复、删除评价 |
+| 库存管理 | `MALL_STOCK_EDIT` | 调整库存（含批量调整） |
+| 促销活动 | `MALL_PROMOTION_ADD` / `MALL_PROMOTION_EDIT` / `MALL_PROMOTION_DELETE` | 新增、编辑、删除促销 |
+| 专题活动 | `MALL_CAMPAIGN_ADD` / `MALL_CAMPAIGN_EDIT` / `MALL_CAMPAIGN_DELETE` | 新增、编辑、删除专题 |
+| 优惠券管理 | `MALL_COUPON_ADD` / `MALL_COUPON_EDIT` / `MALL_COUPON_DELETE` | 新增、编辑、删除优惠券 |
+| Banner 管理 | `MALL_BANNER_ADD` / `MALL_BANNER_EDIT` / `MALL_BANNER_DELETE` | 新增、编辑、删除 Banner |
+| 订单管理 | `MALL_ORDER_EDIT` | 发货、退款、收货、取消订单等状态操作 |
+| 发货管理 | `MALL_SHIPMENT_EDIT` | 发货、作废发货单 |
+| 退货管理 | `MALL_RETURN_ORDER_EDIT` | 通过、拒绝、确认收货并退款 |
+| 商城门店 | `MALL_STORE_ADD` / `MALL_STORE_EDIT` / `MALL_STORE_DELETE` | 新增、编辑、删除门店 |
+| 运费规则 | `MALL_FREIGHT_ADD` / `MALL_FREIGHT_EDIT` / `MALL_FREIGHT_DELETE` | 新增、编辑、删除运费模板 |
 
 已废弃、不得重新引入的权限码：
 

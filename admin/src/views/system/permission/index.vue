@@ -168,6 +168,7 @@ import { Refresh, Check, Search, Sort, Finished, FolderOpened, ArrowRight } from
 import { permissionApi } from '@/api/modules/permission'
 import { roleApi } from '@/api/modules/role'
 import Permission from '@/components/Permission/index.vue'
+import authMenuList from '@/assets/json/authMenuList.json'
 
 // ── 类型 ──
 
@@ -442,6 +443,23 @@ const collectButtons = (node: TreeNode): MatrixButton[] =>
             name: child.name,
             highRisk: child.code.endsWith('_DELETE')
         }))
+        // 删除类按钮统一排到最后，避免字母序把高危操作放在最前
+        .sort((a, b) => Number(a.highRisk) - Number(b.highRisk))
+
+// 权限树来自数据库（按 code 排序），这里换成菜单声明顺序，保证矩阵与侧边栏一致
+const menuOrder = new Map<string, number>()
+{
+    let seq = 0
+    const walkMenu = (items: any[]) => {
+        items.forEach(item => {
+            const code = item?.meta?.permissionCode
+            if (code && !menuOrder.has(code)) menuOrder.set(code, seq++)
+            if (item.children?.length) walkMenu(item.children)
+        })
+    }
+    walkMenu((authMenuList as any).data || [])
+}
+const orderOf = (code: string) => menuOrder.get(code) ?? Number.MAX_SAFE_INTEGER
 
 const buildMatrix = (roots: TreeNode[]): MatrixGroup[] => {
     const root = roots.find(node => node.code === 'ROOT')
@@ -484,6 +502,10 @@ const buildMatrix = (roots: TreeNode[]): MatrixGroup[] => {
             leaf: menuChildren.length === 0
         })
     })
+
+    // 分组与页面都按菜单位置排序
+    groups.sort((a, b) => orderOf(a.code) - orderOf(b.code))
+    groups.forEach(group => group.pages.sort((a, b) => orderOf(a.code) - orderOf(b.code)))
 
     leafCodeSet.value = leafCodes
     return groups

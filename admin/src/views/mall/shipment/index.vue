@@ -57,8 +57,8 @@
           </el-table-column>
           <el-table-column label="操作" width="110" align="center" fixed="right">
             <template #default="{ row }">
-              <el-button v-if="isOrderRow(row)" type="primary" link :icon="Van" @click="openShipmentDialog(row)">发货</el-button>
-              <el-button v-else type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
+              <Permission code="MALL_SHIPMENT_EDIT"><el-button v-if="isOrderRow(row)" type="primary" link :icon="Van" @click="openShipmentDialog(row)">发货</el-button></Permission>
+              <el-button v-if="!isOrderRow(row)" type="primary" link :icon="View" @click="openDetail(row)">详情</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -121,6 +121,7 @@ import { mallShipmentApi } from '@/api/modules/mallShipment'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 import ShipmentDialog from '../order/components/ShipmentDialog.vue'
+import Permission from "@/components/Permission/index.vue"
 
 type StatusFilter = 'pending' | 'shipped' | 'voided' | 'all'
 

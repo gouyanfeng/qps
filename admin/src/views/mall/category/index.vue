@@ -24,7 +24,7 @@
 
       <!-- 功能按钮 -->
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增分类</el-button>
+        <Permission code="MALL_CATEGORY_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增分类</el-button></Permission>
       </template>
 
       <!-- 表格 -->
@@ -59,7 +59,7 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="240" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+              <Permission code="MALL_CATEGORY_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
               <el-button
                 :type="row.isActive ? 'warning' : 'success'"
                 link
@@ -68,7 +68,7 @@
               >
                 {{ row.isActive ? '停用' : '启用' }}
               </el-button>
-              <el-button type="danger" link :icon="Delete" @click="deleteCategory(row)">删除</el-button>
+              <Permission code="MALL_CATEGORY_DELETE"><el-button type="danger" link :icon="Delete" @click="deleteCategory(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -143,6 +143,7 @@ import { mallStoreApi } from '@/api/modules/mallStore'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
+import Permission from "@/components/Permission/index.vue"
 
 const queryPageRef = ref()
 

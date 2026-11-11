@@ -17,7 +17,7 @@
       </template>
 
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增模板</el-button>
+        <Permission code="MALL_FREIGHT_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增模板</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -40,8 +40,8 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="160" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
-              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
+              <Permission code="MALL_FREIGHT_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
+              <Permission code="MALL_FREIGHT_DELETE"><el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -153,6 +153,7 @@ import { CirclePlus, EditPen, Delete, Plus } from '@element-plus/icons-vue'
 import { mallFreightTemplateApi } from '@/api/modules/mallFreightTemplate'
 import { regionApi } from '@/api/modules/region'
 import QueryPage from '@/components/QueryPage/index.vue'
+import Permission from "@/components/Permission/index.vue"
 
 const billingTypeMap: Record<number, string> = { 1: '按重量', 2: '按件数', 3: '按体积' }
 
