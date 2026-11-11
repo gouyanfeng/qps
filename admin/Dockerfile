@@ -14,7 +14,9 @@ COPY . .
 # CI 需要指向其他地址时才用 --build-arg VITE_API_URL=... 覆盖；
 # 构建参数优先级高于 .env，两者都没有时才会落到代码里的 localhost 兜底。
 ARG VITE_API_URL=/api
-RUN VITE_API_URL="$VITE_API_URL" npm run build
+# 图片等静态文件访问域名；缺省由代码兜底为阿里云 OSS 域名（见 admin/src/utils/index.ts）。
+ARG VITE_FILE_BASE_URL=
+RUN VITE_API_URL="$VITE_API_URL" VITE_FILE_BASE_URL="$VITE_FILE_BASE_URL" npm run build
 
 FROM nginx:alpine-slim AS runtime
 

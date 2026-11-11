@@ -3,12 +3,12 @@ import {
   setToken,
   clearToken,
   isLoggedIn,
-  resolveFileUrl
+  resolveFileUrl,
+  BASE_URL as API_BASE_URL
 } from '@/utils/http'
 import type { ApiResp } from '@/utils/http'
 import type { Category, Product, ProductTag, ProductPromotion, Banner, CartItem, BannerLinkType, ProductReview, ProductReviewPage, MallTagItem } from './types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const MEMBER_TOKEN_STORAGE_KEY = 'qps_member_token'
 const MEMBER_ID_STORAGE_KEY = 'qps_member_id'
 const deselectedCartSkuIds = new Set<string>()

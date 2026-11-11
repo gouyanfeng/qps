@@ -32,6 +32,9 @@ services:
     build:
       context: ./admin
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-admin:${IMAGE_TAG:-latest}
     container_name: qps-admin
     environment:
@@ -45,6 +48,31 @@ services:
     restart: "no"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # 移动端 H5：网关转发 /h5/* 时剥前缀，容器内按根路径托管；API 走同源相对路径由 gateway 转发。
+  mobile:
+    build:
+      context: ./mobile
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-mobile:${IMAGE_TAG:-latest}
+    container_name: qps-mobile
+    environment:
+      TZ: Asia/Shanghai
+    # 仅内部网络访问；对外统一由 gateway 反向代理。
+    expose:
+      - "80"
+    depends_on:
+      qps-api:
+        condition: service_healthy
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/index.html || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -64,6 +92,8 @@ services:
       qps-api:
         condition: service_healthy
       admin:
+        condition: service_healthy
+      mobile:
         condition: service_healthy
     restart: "no"
     healthcheck:
