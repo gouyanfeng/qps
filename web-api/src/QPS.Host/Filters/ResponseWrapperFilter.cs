@@ -20,6 +20,15 @@ public class ResponseWrapperFilter : IAsyncResultFilter
     {
         switch (context.Result)
         {
+            // 落地页等原生 HTML 响应原样放行，不包 ApiResponse
+            case ContentResult contentResult when
+                contentResult.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) == true:
+                await next();
+                return;
+            // 文件下载（FileContentResult/FileStreamResult/PhysicalFileResult 等）原样放行
+            case FileResult:
+                await next();
+                return;
             case ObjectResult objectResult:
             {
                 var value = objectResult.Value;

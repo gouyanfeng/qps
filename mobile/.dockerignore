@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+.vscode
+.idea
+.git
+unpackage
+agent-temp
+playwright-report
+test-results

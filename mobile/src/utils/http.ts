@@ -1,4 +1,9 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+// API 基址：未显式设置 VITE_API_BASE_URL 时本地默认连 5000；
+// 容器部署时设为空串，请求走同源相对路径（BASE_URL + "/api/..."），由网关转发。
+export const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL === undefined
+    ? 'http://localhost:5000'
+    : import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
 
 /** 静态文件（图片等）访问域名，可通过 VITE_FILE_BASE_URL 覆盖；未配置时默认走阿里云 OSS */
 export const FILE_BASE_URL = (import.meta.env.VITE_FILE_BASE_URL || 'https://qps.oss-rg-china-mainland.aliyuncs.com').replace(/\/+$/, '')
