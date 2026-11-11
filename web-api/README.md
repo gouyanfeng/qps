@@ -82,8 +82,7 @@ tests/
 - 场景白名单：管理端 `product/category/banner/activity/avatar/common`，会员端 `review/aftersale`
 - 限制：单图 ≤5MB，仅 jpg/jpeg/png/gif/webp，文件名统一为 GUID
 - 默认走 `Local`；切 OSS 时把凭据写进 `appsettings.Local.json`（与 `appsettings.json` 同目录，**不入库**，加载优先级最高），本地 `dotnet run` 立即生效
-- 容器部署：根目录 `.env` 只放占位符，真实值写服务器本地 `.env.local`（不入库），启动命令
-  `docker compose --env-file .env --env-file .env.local up -d`，compose 以 `Storage__*` 注入 api
+- 容器部署：根目录 `.env` 一份即可，真实值直接填进去，启动 `docker compose up -d`；仓库里保存的是占位符版本，本地改动由 `git update-index --skip-worktree .env` 屏蔽，不会被提交
 - 图片可访问性：上传后按 `Storage:Oss:ObjectAcl`（默认 `public-read`）给**单个对象**授权，Bucket 保持私有也能读；若账号开了「阻止公共访问」，该授权会被 OSS 拒绝（`Put public object acl is not allowed`），此时需关闭该开关或改走 CDN/签名 URL
 - 前端 `VITE_FILE_BASE_URL` 必须与 Bucket 访问域名一致（当前 `https://qps-bucket.oss-cn-hangzhou.aliyuncs.com`）
 - `Provider=Oss` 但关键参数缺失时启动即抛错（fail fast），不会等到上传才报 500
