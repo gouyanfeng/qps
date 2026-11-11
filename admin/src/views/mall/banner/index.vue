@@ -157,7 +157,7 @@ import { mallStoreApi } from '@/api/modules/mallStore'
 import { mallCampaignApi } from '@/api/modules/mallCampaign'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
-import { formatDate, resolveFileUrl } from '@/utils'
+import { formatDate, resolveFileUrl, toRelativeFileUrl } from '@/utils'
 import Permission from "@/components/Permission/index.vue"
 
 const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 6: '专题活动' }
@@ -192,11 +192,10 @@ const form = reactive({
   isActive: true
 })
 
-const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
 const imageUrlModel = computed({
   get: () => resolveFileUrl(form.imageUrl),
   set: (value: string) => {
-    form.imageUrl = value.startsWith(apiOrigin) ? value.slice(apiOrigin.length) : value
+    form.imageUrl = toRelativeFileUrl(value)
   }
 })
 

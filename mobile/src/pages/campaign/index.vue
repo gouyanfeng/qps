@@ -196,7 +196,7 @@ import {
 } from '@/api'
 import type { CampaignCoupon, CampaignDetail, CampaignProductItem } from '@/api'
 import type { Product, Sku } from '@/api/types'
-import { UnauthorizedError } from '@/utils/http'
+import { FILE_BASE_URL, UnauthorizedError } from '@/utils/http'
 import { couponDiscountRateText, isPercentCoupon } from '@/utils/coupon'
 
 interface DisplayProduct {
@@ -222,8 +222,6 @@ interface ProductGroup {
   name: string
   items: DisplayProduct[]
 }
-
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '')
 
 const detail = ref<CampaignDetail | null>(null)
 const loading = ref(true)
@@ -260,7 +258,7 @@ const richNodes = computed(() => {
   const html = detail.value?.contentHtml || ''
   if (!html) return ''
   return html
-    .replace(/src="\/uploads/g, `src="${API_ORIGIN}/uploads`)
+    .replace(/src="\/uploads/g, `src="${FILE_BASE_URL}/uploads`)
     .replace(/<img/g, '<img style="max-width:100%;height:auto;display:block;"')
 })
 
