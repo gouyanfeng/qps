@@ -7,7 +7,7 @@ export const HOME_URL: string = "/home/index";
 export const LOGIN_URL: string = "/login";
 
 // 默认主题颜色
-export const DEFAULT_PRIMARY: string = "#009688";
+export const DEFAULT_PRIMARY: string = "#daa96e";
 
 // 系统默认标题
 export const DEFAULT_TITLE: string = "QPS";

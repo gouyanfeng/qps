@@ -8,7 +8,7 @@ export const useGlobalStore = defineStore("qps-global",{
   // 修改默认值之后，需清除 localStorage 数据
   state: (): GlobalState => ({
     // 布局模式 (纵向：vertical | 经典：classic | 横向：transverse | 分栏：columns)
-    layout: "transverse",
+    layout: "vertical",
     // element 组件大小
     assemblySize: "default",
     // 当前系统语言
@@ -18,7 +18,7 @@ export const useGlobalStore = defineStore("qps-global",{
     // 主题颜色
     primary: DEFAULT_PRIMARY,
     // 按钮、输入框等 Element Plus 组件的基础圆角（px），菜单选中块共用此变量
-    borderRadius: 4,
+    borderRadius: 32,
     // 深色模式
     isDark: false,
     // 灰色模式
@@ -26,9 +26,9 @@ export const useGlobalStore = defineStore("qps-global",{
     // 色弱模式
     isWeak: false,
     // 侧边栏反转
-    asideInverted: true,
+    asideInverted: false,
     // 头部反转
-    headerInverted: true,
+    headerInverted: false,
     // 折叠菜单
     isCollapse: false,
     // 菜单手风琴
