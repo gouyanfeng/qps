@@ -9,7 +9,8 @@ namespace QPS.Host.Storage;
 /// <summary>
 /// 阿里云 OSS 存储：对象键为 uploads/{scene}/{yyyyMM}/{guid}.ext，与本地目录结构一致。
 /// 返回给前端的仍是 /uploads/... 相对地址，由前端拼上 VITE_FILE_BASE_URL 访问。
-/// Bucket 需为公共读，或把 PublicDomain 指向已绑定该 Bucket 的 CDN 域名。
+/// Bucket 可保持私有，上传后按 ObjectAcl 给单个对象授权（默认 public-read），
+/// 这样浏览器能匿名读图，又不必把整个 Bucket 开放出去。
 /// </summary>
 public sealed class OssFileStorage : IFileStorage, IDisposable
 {
@@ -17,6 +18,7 @@ public sealed class OssFileStorage : IFileStorage, IDisposable
     private readonly string _bucketName;
     private readonly string _objectPrefix;
     private readonly string _urlPrefix;
+    private readonly CannedAccessControlList? _objectAcl;
     private readonly ILogger<OssFileStorage> _logger;
 
     public OssFileStorage(
@@ -32,6 +34,7 @@ public sealed class OssFileStorage : IFileStorage, IDisposable
         // 对象键前缀去掉两端斜杠，避免出现 //uploads/。
         _objectPrefix = ossOptions.Prefix.Trim('/');
         _urlPrefix = LocalFileStorage.NormalizePrefix(storageOptions.UrlPrefix, "/uploads");
+        _objectAcl = MapObjectAcl(ossOptions.ObjectAcl);
 
         // SDK 接受裸域名，这里统一取 Host，防止配置里误写 http:// 或结尾斜杠。
         var endpoint = ossOptions.Endpoint.Trim();
@@ -59,7 +62,11 @@ public sealed class OssFileStorage : IFileStorage, IDisposable
         {
             // SDK 只提供同步 PutObject 与 APM 接口，没有 Task 版方法：
             // 放到线程池执行，避免阻塞请求线程（单张图 ≤5MB，走单请求上传，不触发分片）。
-            await Task.Run(() => _client.PutObject(_bucketName, objectKey, content, metadata), cancellationToken);
+            await Task.Run(() =>
+            {
+                _client.PutObject(_bucketName, objectKey, content, metadata);
+                ApplyObjectAcl(objectKey);
+            }, cancellationToken);
         }
         catch (OssException ex)
         {
@@ -69,6 +76,31 @@ public sealed class OssFileStorage : IFileStorage, IDisposable
 
         return $"{_urlPrefix}/{string.Join('/', segments)}";
     }
+
+    /// <summary>
+    /// 给单个对象单独授权，使私有 Bucket 下的图片也能被浏览器匿名读取。
+    /// 权限不足（缺 oss:PutObjectAcl）时只告警，不影响上传本身。
+    /// </summary>
+    private void ApplyObjectAcl(string objectKey)
+    {
+        if (_objectAcl is null) return;
+
+        try
+        {
+            _client.SetObjectAcl(_bucketName, objectKey, _objectAcl.Value);
+        }
+        catch (OssException ex)
+        {
+            _logger.LogWarning(ex, "OSS 对象 ACL 设置失败，图片可能无法匿名访问；bucket={Bucket}，key={Key}，错误码={ErrorCode}", _bucketName, objectKey, ex.ErrorCode);
+        }
+    }
+
+    private static CannedAccessControlList? MapObjectAcl(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        "public-read" => CannedAccessControlList.PublicRead,
+        "public-read-write" => CannedAccessControlList.PublicReadWrite,
+        _ => null // private / default / 空：不额外设置，跟随 Bucket ACL
+    };
 
     public void Dispose() => (_client as IDisposable)?.Dispose();
 }

@@ -20,6 +20,7 @@ services:
       Storage__Oss__BucketName: "${OSS_BUCKET:-}"
       Storage__Oss__AccessKeyId: "${OSS_ACCESS_KEY_ID:-}"
       Storage__Oss__AccessKeySecret: "${OSS_ACCESS_KEY_SECRET:-}"
+      Storage__Oss__ObjectAcl: "${OSS_OBJECT_ACL:-public-read}"
     # Linux 容器访问宿主机服务需要显式声明 host.docker.internal。
     extra_hosts:
       - "host.docker.internal:host-gateway"

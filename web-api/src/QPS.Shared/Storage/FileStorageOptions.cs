@@ -38,4 +38,10 @@ public sealed class OssStorageOptions
 
     /// <summary>对象键前缀，落到 OSS 上就是 uploads/product/202611/xxx.png。</summary>
     public string Prefix { get; init; } = "uploads";
+
+    /// <summary>
+    /// 上传后给对象单独设置的 ACL：public-read（默认）/ private / default（不设置，跟随 Bucket）。
+    /// 默认 public-read 是因为 Bucket 通常保持私有，只有图片对象需要被浏览器匿名读取。
+    /// </summary>
+    public string ObjectAcl { get; init; } = "public-read";
 }
