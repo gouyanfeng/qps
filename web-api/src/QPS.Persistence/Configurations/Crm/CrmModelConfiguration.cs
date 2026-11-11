@@ -14,6 +14,7 @@ public static class CrmModelConfiguration
             entity.Property(herbBase => herbBase.Scale).HasPrecision(18, 2);
             entity.Property(herbBase => herbBase.Lat).HasPrecision(10, 6);
             entity.Property(herbBase => herbBase.Lng).HasPrecision(10, 6);
+            entity.Property(herbBase => herbBase.CoordinateText).HasMaxLength(200);
             entity.HasOne(herbBase => herbBase.HerbBaseSubject)
                 .WithMany(subject => subject.HerbBases)
                 .HasForeignKey(herbBase => herbBase.HerbBaseSubjectId)

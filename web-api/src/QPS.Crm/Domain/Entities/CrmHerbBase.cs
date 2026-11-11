@@ -72,6 +72,11 @@ public class CrmHerbBase : BaseEntity
     public decimal? Lng { get; private set; }
 
     /// <summary>
+    /// 坐标原始文本，例如「东经103.98403°，北纬35.16284°」。
+    /// </summary>
+    public string? CoordinateText { get; private set; }
+
+    /// <summary>
     /// 数据来源平台，例如百度地图。
     /// </summary>
     public string SourcePlatform { get; private set; } = string.Empty;
