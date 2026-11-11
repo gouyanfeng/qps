@@ -4,15 +4,22 @@ using Microsoft.Extensions.FileProviders;
 using QPS.Crm;
 using QPS.Host.Middleware;
 using QPS.Host.Registration;
+using QPS.Host.Storage;
 using QPS.Mall;
 using QPS.Persistence;
 using QPS.Persistence.Database;
 using QPS.Persistence.Seeds;
 using QPS.Shared;
 using QPS.Shared.Common;
+using QPS.Shared.Storage;
 using QPS.System;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 本机私有配置：appsettings.Local.json 不入库，用于存放 OSS 凭据等敏感项；
+// 放在 Environment 配置之后加载，优先级最高，缺失时静默跳过。
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
@@ -42,6 +49,9 @@ builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddQpsJwtAuthentication(jwtOptions);
 
 builder.Services.AddHttpContextAccessor();
+
+// 文件存储：默认本地 wwwroot，配置 Storage:Provider=Oss 后切到阿里云 OSS。
+builder.Services.AddQpsFileStorage(builder.Configuration);
 
 // 公共能力：契约、Pipeline、领域事件
 builder.Services.AddQpsShared();
@@ -127,6 +137,9 @@ if (app.Environment.IsDevelopment())
 #endregion
 
 #region HTTP请求管道配置
+
+// 启动即打印存储方式，便于部署后确认图片到底落在本地还是 OSS。
+app.Logger.LogInformation("文件存储方式：{Provider}", app.Services.GetRequiredService<IFileStorage>().ProviderName);
 
 // 与注册保持同一条件：只有开发环境才挂 Swagger 中间件。
 if (app.Environment.IsDevelopment())

@@ -31,15 +31,15 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      # 构建 qps-api 与 admin（gateway 无 build，compose 会自动跳过）
+      # 构建全部有 build 段的服务（qps-api / admin / mobile；gateway 无 build，自动跳过）
       - name: Build images
         run: docker compose --env-file .env --file ./docker-compose.yml build
 
-      # 只推需要构建的两个服务，gateway 是 nginx 官方镜像，不推
+      # 只推这三个服务，gateway 是 nginx 官方镜像，不推
       - name: Push images
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          for svc in qps-api qps-admin; do
+          for svc in qps-api qps-admin qps-mobile; do
             docker push "${REGISTRY}/${IMAGE_OWNER}/${svc}:${IMAGE_TAG}"
           done
 
@@ -48,7 +48,7 @@ jobs:
       - name: Tag and push latest
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          for service in qps-api qps-admin; do
+          for service in qps-api qps-admin qps-mobile; do
             source_image="${REGISTRY}/${IMAGE_OWNER}/${service}:${IMAGE_TAG}"
             latest_image="${REGISTRY}/${IMAGE_OWNER}/${service}:latest"
             docker tag "$source_image" "$latest_image"

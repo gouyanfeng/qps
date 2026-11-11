@@ -1,0 +1,43 @@
+name: Sync Deploy Branch
+
+# deploy 分支只保留 docker-compose.yml / .env / nginx.conf 三个部署配置文件，
+# 供服务器 git pull 使用。master 上这三个文件变更时，自动按文件覆盖到 deploy。
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "docker-compose.yml"
+      - ".env"
+      - "nginx.conf"
+  workflow_dispatch: # 支持在 Actions 页面手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # 需要检出 deploy 分支，取全量历史
+          fetch-depth: 0
+
+      - name: Sync config files to deploy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout deploy
+          # 按文件覆盖（不能 merge，否则整个代码库会灌进 deploy）
+          git checkout origin/master -- docker-compose.yml .env nginx.conf
+
+          if git diff --cached --quiet; then
+            echo "配置文件无变化，跳过提交"
+          else
+            git commit -m "chore: 从 master 同步部署配置 (${GITHUB_SHA:0:7})"
+            git push origin deploy
+          fi

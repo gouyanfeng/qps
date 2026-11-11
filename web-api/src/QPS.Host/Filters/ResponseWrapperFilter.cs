@@ -48,7 +48,8 @@ public class ResponseWrapperFilter : IAsyncResultFilter
                     return;
                 }
 
-                context.Result = new JsonResult(ApiResponse<object>.Success(value), JsonOptions) { StatusCode = 200 };
+                // value 为 null 时仍按成功返回，data 置空即可，故此处用 ! 抑制可空告警。
+                context.Result = new JsonResult(ApiResponse<object>.Success(value!), JsonOptions) { StatusCode = 200 };
                 await next();
                 return;
             }
@@ -62,7 +63,7 @@ public class ResponseWrapperFilter : IAsyncResultFilter
         }
 
         object? payload = context.Result is ObjectResult r ? r.Value : null;
-        context.Result = new JsonResult(ApiResponse<object>.Success(payload), JsonOptions) { StatusCode = 200 };
+        context.Result = new JsonResult(ApiResponse<object>.Success(payload!), JsonOptions) { StatusCode = 200 };
         await next();
     }
 }

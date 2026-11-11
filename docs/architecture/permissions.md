@@ -128,7 +128,7 @@
 | `CRM_MATCH_OPPORTUNITY_MANAGE` | 撮合机会创建、更新、进度选项查询 |
 | `CRM_TRANSFER` | `ChangeCrmOwnerCommand` 内的 `TransferPermissionCode` 常量 |
 
-重要事实：**除上述端点外，CRM 与 Mall 的管理端端点目前都没有 `[Permission]`，全部落在 `AdminPermissionBaseline.txt` 基线里**。也就是说 `CRM_HERB_BASE_ADD`、`CRM_VENDOR_EDIT`、`CRM_FOLLOW`、`CRM_HERB_BASE_SUPPLY_MANAGE` 等按钮权限当前只有前端生效，后端没有拦截。基线 205 条按项目分布为 `QPS.System` 16 条、`QPS.Crm` 60 条、`QPS.Mall` 128 条、`QPS.Host` 1 条（`FileUploadController.UploadImage`），这就是缺口的具体清单；不要把「权限码存在于 `SystemPermissions`」误认为「后端已校验」。
+重要事实：**除上述端点外，CRM 与 Mall 的管理端端点目前都没有 `[Permission]`，全部落在 `AdminPermissionBaseline.txt` 基线里**。也就是说 `CRM_HERB_BASE_ADD`、`CRM_VENDOR_EDIT`、`CRM_FOLLOW`、`CRM_HERB_BASE_SUPPLY_MANAGE` 等按钮权限当前只有前端生效，后端没有拦截。基线 205 条按项目分布为 `QPS.System` 16 条、`QPS.Crm` 60 条、`QPS.Mall` 129 条（含 `MallFileController.UploadImage`），这就是缺口的具体清单；不要把「权限码存在于 `SystemPermissions`」误认为「后端已校验」。
 
 现状与规范差距（`web-api/AGENTS.md` 要求 CRM 权限码必须收敛到 `CrmPermissionCodes`，常量名与权限码字符串完全一致）：
 

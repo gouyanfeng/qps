@@ -98,7 +98,7 @@ DashboardController.GetVendorFollowTrend
 DashboardController.GetVendorPriorityDistribution
 DashboardController.GetVendorPurchaseProductDistribution
 
-# ===== QPS.Mall（128 条）=====
+# ===== QPS.Mall（129 条）=====
 # --- MallArticleController（8 条）
 MallArticleController.Create
 MallArticleController.Delete
@@ -248,6 +248,5 @@ MallTagController.GetPage
 MallTagController.GetTags
 MallTagController.Update
 
-# ===== QPS.Host（1 条）=====
-# --- FileUploadController（1 条）
-FileUploadController.UploadImage
+# --- MallFileController（1 条，原 QPS.Host/FileUploadController，随控制器归位迁入）
+MallFileController.UploadImage
