@@ -30,7 +30,7 @@
       <!-- 功能按钮 -->
       <template #headerButtons>
         <el-button @click="openTagManager">管理标签</el-button>
-        <el-button type="primary" :icon="CirclePlus" @click="openProductDialog('新增')">新增商品</el-button>
+        <Permission code="MALL_PRODUCT_ADD"><el-button type="primary" :icon="CirclePlus" @click="openProductDialog('新增')">新增商品</el-button></Permission>
       </template>
 
       <!-- 表格 -->
@@ -107,7 +107,7 @@
           <el-table-column label="操作" align="center" width="400" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="Goods" @click="openSkuDialog(row)">规格</el-button>
-              <el-button type="primary" link :icon="EditPen" @click="openProductDialog('编辑', row)">编辑</el-button>
+              <Permission code="MALL_PRODUCT_EDIT"><el-button type="primary" link :icon="EditPen" @click="openProductDialog('编辑', row)">编辑</el-button></Permission>
               <el-button
                 :type="row.isActive ? 'warning' : 'success'"
                 link
@@ -116,7 +116,7 @@
               >
                 {{ row.isActive ? '下架' : '上架' }}
               </el-button>
-              <el-button type="danger" link :icon="Delete" @click="deleteProduct(row)">删除</el-button>
+              <Permission code="MALL_PRODUCT_DELETE"><el-button type="danger" link :icon="Delete" @click="deleteProduct(row)">删除</el-button></Permission>
               <el-button type="primary" link :icon="CopyDocument" @click="copyProduct(row)">拷贝</el-button>
             </template>
           </el-table-column>
@@ -237,7 +237,7 @@
 
     <el-dialog v-model="tagDialogVisible" title="商品标签管理" width="680px">
       <div class="tag-toolbar">
-        <el-button type="primary" :icon="CirclePlus" @click="openTagForm()">新增标签</el-button>
+        <Permission code="MALL_PRODUCT_ADD"><el-button type="primary" :icon="CirclePlus" @click="openTagForm()">新增标签</el-button></Permission>
       </div>
       <el-table :data="tagOptions" border>
         <el-table-column prop="code" label="标签编码" min-width="140" />
@@ -259,11 +259,11 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right" class-name="actions-column" header-class-name="actions-column">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openTagForm(row)">编辑</el-button>
+            <Permission code="MALL_PRODUCT_EDIT"><el-button link type="primary" @click="openTagForm(row)">编辑</el-button></Permission>
             <el-button link :type="row.isActive ? 'warning' : 'success'" @click="toggleTagStatus(row)">
               {{ row.isActive ? '停用' : '启用' }}
             </el-button>
-            <el-button link type="danger" @click="deleteTag(row)">删除</el-button>
+            <Permission code="MALL_PRODUCT_DELETE"><el-button link type="danger" @click="deleteTag(row)">删除</el-button></Permission>
           </template>
         </el-table-column>
       </el-table>
@@ -540,6 +540,7 @@ import UploadImg from '@/components/Upload/Img.vue'
 import UploadImgs from '@/components/Upload/Imgs.vue'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
+import Permission from "@/components/Permission/index.vue"
 
 const uploadProductDetailImage = async (file: File): Promise<string> => {
   if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {

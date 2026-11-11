@@ -24,7 +24,7 @@
       </template>
 
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增促销</el-button>
+        <Permission code="MALL_PROMOTION_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增促销</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -55,11 +55,11 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+              <Permission code="MALL_PROMOTION_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
               <el-button :type="row.isActive ? 'warning' : 'success'" link @click="changeStatus(row)">
                 {{ row.isActive ? '停用' : '启用' }}
               </el-button>
-              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
+              <Permission code="MALL_PROMOTION_DELETE"><el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -208,6 +208,7 @@ import { mallCategoryApi } from '@/api/modules/mallCategory'
 import { mallTagApi } from '@/api/modules/mallTag'
 import { formatDate } from '@/utils'
 import QueryPage from '@/components/QueryPage/index.vue'
+import Permission from "@/components/Permission/index.vue"
 
 
 const scopeMap: Record<string, string> = {

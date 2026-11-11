@@ -28,7 +28,7 @@
       </template>
 
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog()">新增标签</el-button>
+        <Permission code="MALL_TAG_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog()">新增标签</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -67,8 +67,8 @@
             header-class-name="actions-column"
           >
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog(row)">编辑</el-button>
-              <el-button type="danger" link :icon="Delete" @click="deleteTag(row)">删除</el-button>
+              <Permission code="MALL_TAG_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog(row)">编辑</el-button></Permission>
+              <Permission code="MALL_TAG_DELETE"><el-button type="danger" link :icon="Delete" @click="deleteTag(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -128,6 +128,7 @@ import { CirclePlus, Delete, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { mallTagApi } from '@/api/modules/mallTag'
 import QueryPage from '@/components/QueryPage/index.vue'
+import Permission from "@/components/Permission/index.vue"
 
 const queryPageRef = ref()
 const submitting = ref(false)

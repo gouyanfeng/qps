@@ -61,7 +61,7 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="190" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button type="primary" link :icon="Sort" @click="openAdjustDialog(row)">调整库存</el-button>
+              <Permission code="MALL_STOCK_EDIT"><el-button type="primary" link :icon="Sort" @click="openAdjustDialog(row)">调整库存</el-button></Permission>
               <el-button type="primary" link :icon="Tickets" @click="openLogDrawer(row)">流水</el-button>
             </template>
           </el-table-column>
@@ -176,6 +176,7 @@ import { EditPen, Sort, Tickets } from '@element-plus/icons-vue'
 import { mallStockApi } from '@/api/modules/mallStock'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
+import Permission from "@/components/Permission/index.vue"
 
 const queryPageRef = ref()
 const selectedRows = ref<any[]>([])

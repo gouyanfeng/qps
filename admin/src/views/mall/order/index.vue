@@ -55,10 +55,10 @@
           <el-table-column label="操作" align="center" width="280" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
               <el-button type="primary" link :icon="View" @click="openDetail(row.id)">详情</el-button>
-              <el-button v-if="row.status === 'PendingPayment'" type="danger" link :icon="CircleClose" @click="cancelOrder(row)">取消</el-button>
-              <el-button v-if="row.status === 'Paid'" type="primary" link :icon="Van" @click="openShipmentDialog(row)">发货</el-button>
-              <el-button v-if="row.status === 'Paid'" type="warning" link :icon="RefreshLeft" @click="createRefund(row)">退款</el-button>
-              <el-button v-if="row.status === 'Shipped'" type="success" link :icon="CircleCheck" @click="confirmReceipt(row)">收货</el-button>
+              <Permission code="MALL_ORDER_EDIT"><el-button v-if="row.status === 'PendingPayment'" type="danger" link :icon="CircleClose" @click="cancelOrder(row)">取消</el-button></Permission>
+              <Permission code="MALL_ORDER_EDIT"><el-button v-if="row.status === 'Paid'" type="primary" link :icon="Van" @click="openShipmentDialog(row)">发货</el-button></Permission>
+              <Permission code="MALL_ORDER_EDIT"><el-button v-if="row.status === 'Paid'" type="warning" link :icon="RefreshLeft" @click="createRefund(row)">退款</el-button></Permission>
+              <Permission code="MALL_ORDER_EDIT"><el-button v-if="row.status === 'Shipped'" type="success" link :icon="CircleCheck" @click="confirmReceipt(row)">收货</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -89,6 +89,7 @@ import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 import OrderDetailDrawer from './components/OrderDetailDrawer.vue'
 import ShipmentDialog from './components/ShipmentDialog.vue'
+import Permission from "@/components/Permission/index.vue"
 
 const queryPageRef = ref()
 const drawerVisible = ref(false)

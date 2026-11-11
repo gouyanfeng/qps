@@ -45,11 +45,11 @@
             <template #default="{ row }">
               <el-button type="primary" link @click="openDetail(row)">详情</el-button>
               <template v-if="row.status === 'Pending'">
-                <el-button type="success" link @click="approve(row)">通过</el-button>
-                <el-button type="danger" link @click="reject(row)">拒绝</el-button>
+                <Permission code="MALL_RETURN_ORDER_EDIT"><el-button type="success" link @click="approve(row)">通过</el-button></Permission>
+                <Permission code="MALL_RETURN_ORDER_EDIT"><el-button type="danger" link @click="reject(row)">拒绝</el-button></Permission>
               </template>
               <template v-if="row.status === 'Approved'">
-                <el-button type="warning" link @click="confirmReceive(row)">确认收货并退款</el-button>
+                <Permission code="MALL_RETURN_ORDER_EDIT"><el-button type="warning" link @click="confirmReceive(row)">确认收货并退款</el-button></Permission>
               </template>
             </template>
           </el-table-column>
@@ -106,6 +106,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { mallReturnApi } from '@/api/modules/mallReturn'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
+import Permission from "@/components/Permission/index.vue"
 
 const statusTagMap: Record<string, { text: string; type: string }> = {
   Pending: { text: '待审核', type: 'warning' },

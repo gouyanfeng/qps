@@ -108,9 +108,9 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="220" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openAuditDialog(row)">审核</el-button>
-              <el-button type="primary" link :icon="ChatDotRound" @click="openReplyDialog(row)">回复</el-button>
-              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
+              <Permission code="MALL_REVIEW_EDIT"><el-button type="primary" link :icon="EditPen" @click="openAuditDialog(row)">审核</el-button></Permission>
+              <Permission code="MALL_REVIEW_EDIT"><el-button type="primary" link :icon="ChatDotRound" @click="openReplyDialog(row)">回复</el-button></Permission>
+              <Permission code="MALL_REVIEW_DELETE"><el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -173,6 +173,7 @@ import { EditPen, ChatDotRound, Delete } from '@element-plus/icons-vue'
 import { mallReviewApi } from '@/api/modules/mallReview'
 import { resolveFileUrl } from '@/utils'
 import QueryPage from '@/components/QueryPage/index.vue'
+import Permission from "@/components/Permission/index.vue"
 
 const ratingOptions = [1, 2, 3, 4, 5]
 

@@ -88,7 +88,7 @@
             "isFull": false,
             "isAffix": false,
             "isKeepAlive": true,
-            "permissionCode": "CRM_HERB_BASE"
+            "permissionCode": "CRM_HERB_BASE_SUPPLY"
           }
         },
         {
@@ -149,7 +149,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_PRODUCT"
           }
         },
         {
@@ -163,7 +164,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_CATEGORY"
           }
         },
         {
@@ -177,7 +179,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_TAG"
           }
         },
         {
@@ -191,7 +194,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_REVIEW"
           }
         },
         {
@@ -205,7 +209,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_STOCK"
           }
         },
         {
@@ -219,7 +224,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_PROMOTION"
           }
         },
         {
@@ -233,7 +239,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_CAMPAIGN"
           }
         },
         {
@@ -247,7 +254,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_COUPON"
           }
         },
         {
@@ -261,7 +269,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_BANNER"
           }
         },
         {
@@ -275,7 +284,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_ORDER"
           }
         },
         {
@@ -289,7 +299,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_SHIPMENT"
           }
         },
         {
@@ -303,7 +314,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_RETURN_ORDER"
           }
         },
         {
@@ -317,7 +329,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_STORE"
           }
         },
         {
@@ -331,7 +344,8 @@
             "isHide": false,
             "isFull": false,
             "isAffix": false,
-            "isKeepAlive": true
+            "isKeepAlive": true,
+            "permissionCode": "MALL_FREIGHT"
           }
         }
       ]

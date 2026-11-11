@@ -22,7 +22,7 @@
       </template>
 
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增 Banner</el-button>
+        <Permission code="MALL_BANNER_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增 Banner</el-button></Permission>
         <el-button type="warning" :icon="Sort" @click="openSortDialog" :disabled="!searchForm.storeId">批量排序</el-button>
       </template>
 
@@ -56,7 +56,7 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="240" fixed="right" class-name="actions-column" header-class-name="actions-column">
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+              <Permission code="MALL_BANNER_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
               <el-button
                 :type="row.isActive ? 'warning' : 'success'"
                 link
@@ -64,7 +64,7 @@
               >
                 {{ row.isActive ? '停用' : '启用' }}
               </el-button>
-              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
+              <Permission code="MALL_BANNER_DELETE"><el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -158,6 +158,7 @@ import { mallCampaignApi } from '@/api/modules/mallCampaign'
 import QueryPage from '@/components/QueryPage/index.vue'
 import UploadImg from '@/components/Upload/Img.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
+import Permission from "@/components/Permission/index.vue"
 
 const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 6: '专题活动' }
 

@@ -23,7 +23,7 @@
       </template>
 
       <template #headerButtons>
-        <el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增优惠券</el-button>
+        <Permission code="MALL_COUPON_ADD"><el-button type="primary" :icon="CirclePlus" @click="openDialog('新增')">新增优惠券</el-button></Permission>
       </template>
 
       <template #table="{ tableData }">
@@ -85,12 +85,12 @@
             header-class-name="actions-column"
           >
             <template #default="{ row }">
-              <el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button>
+              <Permission code="MALL_COUPON_EDIT"><el-button type="primary" link :icon="EditPen" @click="openDialog('编辑', row)">编辑</el-button></Permission>
               <el-button :type="row.isActive ? 'warning' : 'success'" link @click="changeStatus(row)">
                 {{ row.isActive ? '停用' : '启用' }}
               </el-button>
               <el-button type="primary" link @click="replenish(row)">补库存</el-button>
-              <el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button>
+              <Permission code="MALL_COUPON_DELETE"><el-button type="danger" link :icon="Delete" @click="remove(row)">删除</el-button></Permission>
             </template>
           </el-table-column>
         </el-table>
@@ -282,6 +282,7 @@ import { mallCategoryApi } from '@/api/modules/mallCategory'
 import { couponFaceValueText, couponScopeText, couponTypeLabel, isPercentCoupon } from '@/utils/coupon'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
+import Permission from "@/components/Permission/index.vue"
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)
