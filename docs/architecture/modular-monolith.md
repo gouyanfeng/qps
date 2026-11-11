@@ -76,10 +76,11 @@ Seeds/           MallMockDataSeeder（仅 Development）
 `QPS.Host` 分层：
 
 ```
-Controllers/   FileUploadController、MemberFileUploadController
+Controllers/   LandingController（Host 自带端点；上传端点已归入 QPS.Mall/Controllers/{Admin,Mobile}）
 Filters/       ResponseWrapperFilter
 Middleware/    ExceptionHandlerMiddleware
-Registration/  ServiceRegistrationExtensions（MVC、CORS、Swagger、JWT）
+Registration/  ServiceRegistrationExtensions（MVC、CORS、Swagger、JWT、文件存储）
+Storage/       LocalFileStorage、OssFileStorage（IFileStorage 契约在 QPS.Shared/Storage）
 Properties/    launchSettings.json（5000/5001）
 ```
 

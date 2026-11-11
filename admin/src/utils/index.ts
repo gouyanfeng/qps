@@ -169,7 +169,7 @@ export const getAllBreadcrumbList = (
  * 静态文件（图片等）访问域名，可通过环境变量 VITE_FILE_BASE_URL 覆盖；
  * 未配置时默认走阿里云 OSS。
  */
-export const FILE_BASE_URL: string = (import.meta.env.VITE_FILE_BASE_URL || "https://qps.oss-rg-china-mainland.aliyuncs.com").replace(/\/+$/, "");
+export const FILE_BASE_URL: string = (import.meta.env.VITE_FILE_BASE_URL || "https://qps-bucket.oss-cn-hangzhou.aliyuncs.com").replace(/\/+$/, "");
 
 /**
  * @description 将后端返回的相对文件地址拼接为可访问地址

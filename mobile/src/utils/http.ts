@@ -1,12 +1,26 @@
+/**
+ * 归一化 API 基址：
+ * - 缺协议（如 47.114.97.160/api）补 http://，否则浏览器会把请求当成相对路径拼到当前域上
+ * - 去掉末尾斜杠
+ * - 去掉误带的 /api 后缀，因为各请求路径本身已含 /api（否则会拼出 /api/api/...）
+ * - 空串表示同源相对路径（容器部署经网关转发），原样返回
+ */
+const normalizeApiBaseUrl = (value: string) => {
+  let url = value.trim().replace(/\/+$/, '')
+  if (!url) return ''
+  if (!/^https?:\/\//i.test(url)) url = `http://${url}`
+  return url.replace(/\/api$/i, '')
+}
+
 // API 基址：未显式设置 VITE_API_BASE_URL 时本地默认连 5000；
 // 容器部署时设为空串，请求走同源相对路径（BASE_URL + "/api/..."），由网关转发。
 export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL === undefined
     ? 'http://localhost:5000'
-    : import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
+    : normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
 
 /** 静态文件（图片等）访问域名，可通过 VITE_FILE_BASE_URL 覆盖；未配置时默认走阿里云 OSS */
-export const FILE_BASE_URL = (import.meta.env.VITE_FILE_BASE_URL || 'https://qps.oss-rg-china-mainland.aliyuncs.com').replace(/\/+$/, '')
+export const FILE_BASE_URL = (import.meta.env.VITE_FILE_BASE_URL || 'https://qps-bucket.oss-cn-hangzhou.aliyuncs.com').replace(/\/+$/, '')
 
 const TOKEN_KEY = 'qps_member_token'
 const LOGIN_PATH = '/pages/account/index'

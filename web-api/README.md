@@ -67,6 +67,23 @@ tests/
 | CrmBusinessEntityAttributeController | /api/admin/crm/business-entity-attributes | CRM 业务实体扩展属性维护 |
 | DashboardController | /api/admin/dashboard/crm/* | CRM 首页图表 |
 | Mall（示例模块） | /api/admin/mall/*、/api/mall/* | 商品、分类、订单、支付、退款、优惠券、会员、Banner、活动、库存、运费模板等 |
+| MallFileController | /api/admin/file | 管理端图片上传（`QPS.Mall/Controllers/Admin`） |
+| MallMemberFileController | /api/mall/file | 会员端评价/售后图片上传（`QPS.Mall/Controllers/Mobile`） |
+
+## 文件存储
+
+上传通过 `IFileStorage` 抽象落地：契约与校验在 `QPS.Shared/Storage`，实现（`LocalFileStorage` / `OssFileStorage`）在 `QPS.Host/Storage`，由 `Storage:Provider` 决定。两种模式返回同一套 `/uploads/...` 相对地址，前端无需区分。
+
+| Provider | 落点 | 访问方式 |
+| --- | --- | --- |
+| `Local`（默认） | `ContentRoot/wwwroot/uploads/{scene}/{yyyyMM}/`，容器内挂 `qps-uploads` 数据卷 | api 静态文件直出，网关 `/uploads/` 或其自身对外 |
+| `Oss` | 阿里云 OSS 对象 `uploads/{scene}/{yyyyMM}/` | 前端拼 `VITE_FILE_BASE_URL` 访问 Bucket 域名 |
+
+- 场景白名单：管理端 `product/category/banner/activity/avatar/common`，会员端 `review/aftersale`
+- 限制：单图 ≤5MB，仅 jpg/jpeg/png/gif/webp，文件名统一为 GUID
+- OSS 配置：`Storage:Oss:{Endpoint,BucketName,AccessKeyId,AccessKeySecret,Prefix}`；容器部署由根目录 `.env` 的 `STORAGE_PROVIDER` 与 `OSS_*` 经 compose 注入
+- Bucket 需公共读，或把自定义 CDN 域名绑定到该 Bucket；前端 `VITE_FILE_BASE_URL` 必须配成同一域名
+- 缺配置时启动即抛错（fail fast），不会等到上传才报 500
 
 ## 运行
 

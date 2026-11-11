@@ -14,6 +14,12 @@ services:
       # 数据库沿用主机上现有的 SQL Server；值来自仓库根目录 .env（模板见 .env.example）。
       ConnectionStrings__DefaultConnection: "Server=${DB_HOST},${DB_PORT};Database=${DB_NAME};User Id=${DB_USER};Password=${DB_PASSWORD:?DB_PASSWORD is required};TrustServerCertificate=True;Encrypt=False;"
       Jwt__SecretKey: "${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}"
+      # 文件存储：local 写 wwwroot（数据卷），oss 直传阿里云 OSS；两者返回同一套 /uploads/... 相对地址。
+      Storage__Provider: "${STORAGE_PROVIDER:-local}"
+      Storage__Oss__Endpoint: "${OSS_ENDPOINT:-}"
+      Storage__Oss__BucketName: "${OSS_BUCKET:-}"
+      Storage__Oss__AccessKeyId: "${OSS_ACCESS_KEY_ID:-}"
+      Storage__Oss__AccessKeySecret: "${OSS_ACCESS_KEY_SECRET:-}"
     # Linux 容器访问宿主机服务需要显式声明 host.docker.internal。
     extra_hosts:
       - "host.docker.internal:host-gateway"

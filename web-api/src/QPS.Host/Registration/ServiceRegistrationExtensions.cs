@@ -11,7 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QPS.Host.Filters;
+using QPS.Host.Storage;
 using QPS.Shared.Common;
+using QPS.Shared.Storage;
 
 namespace QPS.Host.Registration;
 
@@ -117,6 +119,43 @@ public static class ServiceRegistrationExtensions
                 }
             });
         });
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册文件存储：Storage:Provider=Oss 时走阿里云 OSS，否则写本地 wwwroot。
+    /// 两种实现返回同一套 /uploads/... 相对地址，前端无需区分。
+    /// </summary>
+    public static IServiceCollection AddQpsFileStorage(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var section = configuration.GetSection(FileStorageOptions.SectionName);
+        services.Configure<FileStorageOptions>(section);
+
+        var storageOptions = section.Get<FileStorageOptions>() ?? new FileStorageOptions();
+
+        if (storageOptions.UseOss)
+        {
+            var oss = storageOptions.Oss;
+
+            // 缺配置在启动阶段就失败，避免上传时才暴露成 500。
+            if (string.IsNullOrWhiteSpace(oss.Endpoint) ||
+                string.IsNullOrWhiteSpace(oss.BucketName) ||
+                string.IsNullOrWhiteSpace(oss.AccessKeyId) ||
+                string.IsNullOrWhiteSpace(oss.AccessKeySecret))
+            {
+                throw new InvalidOperationException(
+                    "Storage:Provider=Oss 时必须配置 Oss:Endpoint、BucketName、AccessKeyId、AccessKeySecret。");
+            }
+
+            services.AddSingleton<IFileStorage, OssFileStorage>();
+        }
+        else
+        {
+            services.AddSingleton<IFileStorage, LocalFileStorage>();
+        }
 
         return services;
     }
