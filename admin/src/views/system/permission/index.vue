@@ -46,8 +46,8 @@
                 <div class="matrix-scroll">
                     <table class="perm-matrix">
                         <colgroup>
-                            <col />
-                            <col style="width: 180px" />
+                            <col class="col-menu" />
+                            <col style="width: 300px" />
                             <col />
                         </colgroup>
                         <thead>
@@ -737,6 +737,11 @@ onMounted(loadData)
     border-collapse: collapse;
     font-size: 13px;
 
+    // 菜单列宽：fixed 布局下 col 宽度优先，td 上的宽度会被忽略
+    col.col-menu {
+        width: 400px;
+    }
+
     th {
         position: sticky;
         top: 0;
@@ -834,6 +839,12 @@ onMounted(loadData)
         font-size: 11px;
         color: var(--el-text-color-secondary);
     }
+}
+
+.page-cell {
+    width: 400px;
+    max-width: 400px;
+    overflow: hidden;
 }
 
 .page-cell .page-inner {
