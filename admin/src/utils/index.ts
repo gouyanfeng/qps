@@ -184,14 +184,27 @@ export function resolveFileUrl(path?: string | null): string {
 }
 
 /**
+ * API 站点根（不含 /api 后缀），可通过环境变量 VITE_API_BASE_URL 覆盖；
+ * /api 前缀由各请求处自行拼接，避免 /api/api/... 重复。
+ */
+const normalizeApiHost = (value: string): string => {
+  let host = value.trim().replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(host)) host = `http://${host}`;
+  return host.replace(/\/api$/i, "");
+};
+export const API_BASE_URL: string = normalizeApiHost(
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
+);
+
+/**
  * @description 将文件地址规整为相对路径存库（剥离文件域名或旧 API 来源前缀）
  * @param url 用户输入或上传回显的地址
  * @returns 相对路径，如 /uploads/product/202610/xxx.png
  */
 export function toRelativeFileUrl(url: string): string {
   if (url.startsWith(FILE_BASE_URL)) return url.slice(FILE_BASE_URL.length) || "/";
-  const apiUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
-  if (url.startsWith(apiUrl)) return url.slice(apiUrl.length) || "/";
+  if (url.startsWith(`${API_BASE_URL}/api`)) return url.slice(`${API_BASE_URL}/api`.length) || "/";
+  if (url.startsWith(API_BASE_URL)) return url.slice(API_BASE_URL.length) || "/";
   return url;
 }
 
