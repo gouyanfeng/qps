@@ -1,14 +1,15 @@
 name: Sync Deploy Branch
 
-# deploy 分支只保留 docker-compose.yml 一个部署配置文件，
-# 供服务器 git pull 使用。master 上该文件变更时，自动覆盖到 deploy。
-# .env 不入库、不参与同步：由各环境（服务器）自行创建和维护。
+# deploy 分支保留 docker-compose.yml / .env.example 两个部署配置文件，
+# 供服务器 git pull 使用。master 上这两个文件变更时，自动按文件覆盖到 deploy。
+# .env 不入库、不参与同步：服务器参照 .env.example 自行创建并维护。
 
 on:
   push:
     branches: ["master"]
     paths:
       - "docker-compose.yml"
+      - ".env.example"
   workflow_dispatch: # 支持在 Actions 页面手动触发
 
 permissions:
@@ -32,7 +33,7 @@ jobs:
 
           git checkout deploy
           # 按文件覆盖（不能 merge，否则整个代码库会灌进 deploy）
-          git checkout origin/master -- docker-compose.yml
+          git checkout origin/master -- docker-compose.yml .env.example
 
           if git diff --cached --quiet; then
             echo "配置文件无变化，跳过提交"
