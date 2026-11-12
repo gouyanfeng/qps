@@ -31,11 +31,17 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      # 构建全部有 build 段的服务（qps-api / admin / mobile；gateway 无 build，自动跳过）。
+      # 构建全部有 build 段的服务（qps-api / admin / mobile）。
       # .env 不入库，CI 用模板 .env.example；DB_PASSWORD / JWT_SECRET_KEY 用占位值覆盖
       # （shell 环境变量优先于 env 文件），满足 compose 的 :? 必填校验即可，构建无需真实值。
+      # VITE_API_BASE_URL 来自仓库变量（Settings → Secrets and variables → Actions →
+      # Variables），前端 API 地址在构建时烧入产物；未配置时回退 .env.example 的
+      # localhost:5000（仅本地调试可用）。
       - name: Build images
-        run: DB_PASSWORD=ci-placeholder JWT_SECRET_KEY=ci-placeholder docker compose --env-file .env.example --file ./docker-compose.yml build
+        run: >
+          DB_PASSWORD=ci-placeholder JWT_SECRET_KEY=ci-placeholder
+          VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}"
+          docker compose --env-file .env.example --file ./docker-compose.yml build
 
       # 只推这三个服务，gateway 是 nginx 官方镜像，不推
       - name: Push images
