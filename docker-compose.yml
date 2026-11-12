@@ -40,14 +40,15 @@ services:
       context: ./admin
       dockerfile: Dockerfile
       args:
-        # 前端直连后端（后端 CORS 全开，不做反代）：地址在 .env 配置。
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        # 前端直连后端（后端 CORS 全开，不做反代）：API 站点根（不含 /api 后缀）在 .env 配置，
+        # 两个前端共用 VITE_API_BASE_URL，/api 前缀由各自项目代码拼接。
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000}
         VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-admin:${IMAGE_TAG:-latest}
     container_name: qps-admin
     environment:
       TZ: Asia/Shanghai
-    # 直接暴露宿主机 5173；容器内 nginx 同时反代 /api、/uploads 到 qps-api（同源免跨域）。
+    # 直接暴露宿主机 5173；纯静态托管，API 由前端直连 5000。
     ports:
       - "5173:80"
     depends_on:
@@ -66,7 +67,7 @@ services:
       context: ./mobile
       dockerfile: Dockerfile
       args:
-        # 前端直连后端（后端 CORS 全开，不做反代）：地址在 .env 配置。
+        # API 站点根（不含 /api 后缀），与 admin 共用同一变量；mobile 请求路径自带 /api。
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000}
         VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-mobile:${IMAGE_TAG:-latest}

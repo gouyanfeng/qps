@@ -16,6 +16,7 @@ import { ResultEnum } from "@/enums/httpEnum";
 import { checkStatus } from "./helper/checkStatus";
 import { AxiosCanceler } from "./helper/axiosCancel";
 import { useUserStore } from "@/stores/modules/user";
+import { API_BASE_URL } from "@/utils";
 import router from "@/routers";
 
 export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -24,9 +25,8 @@ export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 const config = {
-  // 默认地址请求地址，可在 .env.** 文件中修改
-  baseURL: (import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api") as string,
+  // API 站点根由 VITE_API_BASE_URL 配置（不含 /api 后缀），此处统一拼上 /api 前缀
+  baseURL: `${API_BASE_URL}/api`,
   // 设置超时时间
   timeout: ResultEnum.TIMEOUT as number,
   // 跨域时候允许携带凭证

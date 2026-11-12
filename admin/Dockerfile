@@ -10,13 +10,13 @@ RUN npm ci
 
 COPY . .
 
-# 接口地址默认与 .env 一致（/api）。
-# CI 需要指向其他地址时才用 --build-arg VITE_API_URL=... 覆盖；
-# 构建参数优先级高于 .env，两者都没有时才会落到代码里的 localhost 兜底。
-ARG VITE_API_URL=/api
+# API 站点根（不含 /api 后缀），/api 前缀由代码统一拼接。
+# CI 需要指向其他地址时才用 --build-arg VITE_API_BASE_URL=... 覆盖；
+# 构建参数优先级高于 .env，两者都没有时才会落到代码里的 localhost:5000 兜底。
+ARG VITE_API_BASE_URL=
 # 图片等静态文件访问域名；缺省由代码兜底为阿里云 OSS 域名（见 admin/src/utils/index.ts）。
 ARG VITE_FILE_BASE_URL=
-RUN VITE_API_URL="$VITE_API_URL" VITE_FILE_BASE_URL="$VITE_FILE_BASE_URL" npm run build
+RUN VITE_API_BASE_URL="$VITE_API_BASE_URL" VITE_FILE_BASE_URL="$VITE_FILE_BASE_URL" npm run build
 
 FROM nginx:alpine-slim AS runtime
 

@@ -52,7 +52,7 @@ declare interface ViteEnv {
   VITE_PWA: boolean;
   VITE_DEVTOOLS: boolean;
   VITE_PUBLIC_PATH: string;
-  VITE_API_URL: string;
+  VITE_API_BASE_URL: string;
   VITE_FILE_BASE_URL: string;
   VITE_PROXY: [string, string][];
   VITE_CODEINSPECTOR: boolean;
