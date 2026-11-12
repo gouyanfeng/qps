@@ -3,8 +3,8 @@ import uni from "@dcloudio/vite-plugin-uni";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // H5 固定挂网关 /h5/ 子路径下，但网关转发时会剥掉前缀，
-  // 因此产物按根路径构建（base 默认 /），本地 dev 也用 http://localhost:5174 访问。
+  // H5 容器直接暴露 5174 端口、按根路径托管（不再有网关 /h5/ 前缀），
+  // 产物按根路径构建（base 默认 /），本地 dev 同样用 http://localhost:5174 访问。
   envDir: "..",
   plugins: [uni()],
   server: {

@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-api:${IMAGE_TAG:-latest}
     container_name: qps-api
-    # 仅内部网络访问；对外统一由 gateway 反向代理。
-    expose:
-      - "5000"
+    # 直接暴露到宿主机 5000，供调试/直连；前端实际走各自容器的 /api 反代（同源）。
+    ports:
+      - "5000:5000"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       TZ: Asia/Shanghai
@@ -40,15 +40,16 @@ services:
       context: ./admin
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: /api
+        # 前端直连后端（后端 CORS 全开，不做反代）：地址在 .env 配置。
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
         VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-admin:${IMAGE_TAG:-latest}
     container_name: qps-admin
     environment:
       TZ: Asia/Shanghai
-    # 仅内部网络访问；对外统一由 gateway 反向代理。
-    expose:
-      - "80"
+    # 直接暴露宿主机 5173；容器内 nginx 同时反代 /api、/uploads 到 qps-api（同源免跨域）。
+    ports:
+      - "5173:80"
     depends_on:
       qps-api:
         condition: service_healthy
@@ -59,52 +60,28 @@ services:
       timeout: 3s
       retries: 5
 
-  # 移动端 H5：网关转发 /h5/* 时剥前缀，容器内按根路径托管；API 走同源相对路径由 gateway 转发。
+  # 移动端 H5：直接暴露宿主机 5174，按根路径托管纯静态站点；API 由前端直连 5000。
   mobile:
     build:
       context: ./mobile
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        # 前端直连后端（后端 CORS 全开，不做反代）：地址在 .env 配置。
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000}
         VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
     image: ${REGISTRY:-ghcr.io}/${IMAGE_OWNER:-local}/qps-mobile:${IMAGE_TAG:-latest}
     container_name: qps-mobile
     environment:
       TZ: Asia/Shanghai
-    # 仅内部网络访问；对外统一由 gateway 反向代理。
-    expose:
-      - "80"
+    # 直接暴露宿主机 5174；容器内 nginx 同时反代 /api、/uploads 到 qps-api（同源免跨域）。
+    ports:
+      - "5174:80"
     depends_on:
       qps-api:
         condition: service_healthy
     restart: "no"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/index.html || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
-  # 统一入口：直接占用宿主 80 端口（如与宿主机其他服务冲突，可用 GATEWAY_PORT 覆盖）。
-  # gateway 使用官方镜像，不参与构建与推送。
-  gateway:
-    image: nginx:alpine-slim
-    container_name: qps-gateway
-    environment:
-      TZ: Asia/Shanghai
-    ports:
-      - "${GATEWAY_PORT:-80}:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      qps-api:
-        condition: service_healthy
-      admin:
-        condition: service_healthy
-      mobile:
-        condition: service_healthy
-    restart: "no"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/favicon.svg || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
