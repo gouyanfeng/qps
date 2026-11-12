@@ -34,13 +34,15 @@ jobs:
       # 构建全部有 build 段的服务（qps-api / admin / mobile）。
       # .env 不入库，CI 用模板 .env.example；DB_PASSWORD / JWT_SECRET_KEY 用占位值覆盖
       # （shell 环境变量优先于 env 文件），满足 compose 的 :? 必填校验即可，构建无需真实值。
-      # VITE_API_BASE_URL 来自仓库变量（Settings → Secrets and variables → Actions →
-      # Variables），前端 API 地址在构建时烧入产物；未配置时回退 .env.example 的
-      # localhost:5000（仅本地调试可用）。
+      # VITE_API_BASE_URL 优先取仓库变量（Settings → Secrets and variables → Actions →
+      # Variables）；未配置时不要导出空值——空串会让 compose 的 ${VAR:-默认值} 回落到
+      # localhost:5000，把 .env.example 里的服务器地址覆盖掉。
       - name: Build images
-        run: >
-          DB_PASSWORD=ci-placeholder JWT_SECRET_KEY=ci-placeholder
-          VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}"
+        run: |
+          export DB_PASSWORD=ci-placeholder JWT_SECRET_KEY=ci-placeholder
+          if [ -n "${{ vars.VITE_API_BASE_URL }}" ]; then
+            export VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}"
+          fi
           docker compose --env-file .env.example --file ./docker-compose.yml build
 
       # 只推这三个服务，gateway 是 nginx 官方镜像，不推
