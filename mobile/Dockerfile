@@ -10,7 +10,7 @@ RUN npm ci
 
 COPY . .
 
-# 部署在网关 /h5/ 子路径下（vite.config.ts 固定 base=/h5/）。
+# 产物按根路径构建（vite.config.ts 的 base 默认为 /）：网关 /h5/ 转发时已剥掉前缀。
 # API 走同源相对路径（空串），由 gateway 把 /api 转发给 qps-api；
 # 指向其他地址时用 --build-arg VITE_API_BASE_URL=... 覆盖。
 ARG VITE_API_BASE_URL=
@@ -25,5 +25,8 @@ FROM nginx:alpine-slim AS runtime
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 # 网关转发 /h5/* 时已剥掉前缀，容器内按根路径托管即可。
 COPY --from=build /app/dist/build/h5 /usr/share/nginx/html
+# 构建期兜底：产物里没有 index.html 直接让镜像构建失败，
+# 而不是等容器起来后 nginx 在 try_files 上死循环（500 且 healthy 探针失败）。
+RUN test -f /usr/share/nginx/html/index.html
 
 EXPOSE 80
