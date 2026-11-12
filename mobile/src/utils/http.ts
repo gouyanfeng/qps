@@ -3,7 +3,7 @@
  * - 缺协议（如 47.114.97.160/api）补 http://，否则浏览器会把请求当成相对路径拼到当前域上
  * - 去掉末尾斜杠
  * - 去掉误带的 /api 后缀，因为各请求路径本身已含 /api（否则会拼出 /api/api/...）
- * - 空串表示同源相对路径（容器部署经网关转发），原样返回
+ * - 空串表示同源相对路径（前端与 API 同域部署时），原样返回
  */
 const normalizeApiBaseUrl = (value: string) => {
   let url = value.trim().replace(/\/+$/, '')
@@ -13,7 +13,8 @@ const normalizeApiBaseUrl = (value: string) => {
 }
 
 // API 基址：未显式设置 VITE_API_BASE_URL 时本地默认连 5000；
-// 容器部署时设为空串，请求走同源相对路径（BASE_URL + "/api/..."），由网关转发。
+// 容器部署时由 .env 提供 http://<server>:5000，前端直连后端（后端 CORS 已全开），
+// 各请求路径本身已含 /api（BASE_URL + "/api/..."）。
 export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL === undefined
     ? 'http://localhost:5000'
