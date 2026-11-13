@@ -484,6 +484,36 @@
             "isKeepAlive": true,
             "permissionCode": "SYSTEM_ERROR_LOG"
           }
+        },
+        {
+          "path": "/system/notice",
+          "name": "systemNotice",
+          "component": "/system/notice/index",
+          "meta": {
+            "icon": "Bell",
+            "title": "消息管理",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "SYSTEM"
+          }
+        },
+        {
+          "path": "/system/jobs",
+          "name": "systemJobs",
+          "component": "/system/jobs/index",
+          "meta": {
+            "icon": "AlarmClock",
+            "title": "定时任务",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "SYSTEM"
+          }
         }
       ]
     }
