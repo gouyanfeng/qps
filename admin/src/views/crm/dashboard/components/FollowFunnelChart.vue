@@ -15,7 +15,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { FunnelChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import VChart from "vue-echarts";
-import type { CrmDashboardChartItem } from "@/api/modules/dashboard";
+import type { CrmDashboardChartItem } from "@/api/modules/crm/crmDashboard";
 
 use([CanvasRenderer, FunnelChart, TooltipComponent]);
 

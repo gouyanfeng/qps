@@ -50,9 +50,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import crmMatchOpportunityApi from "@/api/modules/crmMatchOpportunity";
+import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
 import Permission from "@/components/Permission/index.vue";
-import ProductSelect from "@/components/ProductSelect/index.vue";
+import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
 
 const props = defineProps<{ demandItemId: string; demandItem?: any; opportunityId?: string }>();
 const emit = defineEmits<{ created: [opportunityId: string]; appended: [opportunityId: string] }>();

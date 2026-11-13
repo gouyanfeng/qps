@@ -164,7 +164,7 @@
 import { ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Close, Refresh, Van, CircleCheck, CircleClose, RefreshLeft } from '@element-plus/icons-vue'
-import { mallOrderApi } from '@/api/modules/mallOrder'
+import { mallOrderApi } from '@/api/modules/mall/mallOrder'
 import { formatDate } from '@/utils'
 import ShipmentDialog from './ShipmentDialog.vue'
 

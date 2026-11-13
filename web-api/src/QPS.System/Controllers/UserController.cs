@@ -29,7 +29,8 @@ public class UserController : ControllerBase
         [FromQuery] string sortDirection = "Ascending",
         [FromQuery] string? username = null,
         [FromQuery] string? realName = null,
-        [FromQuery] bool? isActive = null)
+        [FromQuery] bool? isActive = null,
+        [FromQuery] string? keyword = null)
     {
         var query = new GetUsersQuery
         {
@@ -39,7 +40,8 @@ public class UserController : ControllerBase
             SortDirection = sortDirection,
             Username = username,
             RealName = realName,
-            IsActive = isActive
+            IsActive = isActive,
+            Keyword = keyword
         };
         var users = await _mediator.Send(query);
         return Ok(users);

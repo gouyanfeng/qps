@@ -76,7 +76,7 @@ import { useRouter } from "vue-router";
 import { HOME_URL } from "@/config";
 import { Login } from "@/api/interface";
 import { ElNotification } from "element-plus";
-import { clearUserPermissionsCache, loginApi } from "@/api/modules/login";
+import { clearUserPermissionsCache, loginApi } from "@/api/modules/system/login";
 import { useUserStore } from "@/stores/modules/user";
 import { useTabsStore } from "@/stores/modules/tabs";
 import { initDynamicRouter } from "@/routers/modules/dynamicRouter";

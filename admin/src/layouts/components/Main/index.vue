@@ -3,9 +3,9 @@
   <Tabs v-show="tabs" />
   <el-main>
     <router-view v-slot="{ Component }">
-      <transition appear name="fade-transform" mode="out-in">
+      <el-fade-in-linear appear mode="out-in">
         <component :is="Component" v-if="isRouterShow" />
-      </transition>
+      </el-fade-in-linear>
     </router-view>
   </el-main>
   <el-footer v-show="footer">

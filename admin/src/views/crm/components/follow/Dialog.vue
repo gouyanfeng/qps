@@ -52,8 +52,8 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
-import { crmVendorApi } from "@/api/modules/crmVendor";
+import { crmHerbBaseApi } from "@/api/modules/crm/crmHerbBase";
+import { crmVendorApi } from "@/api/modules/crm/crmVendor";
 
 type CrmEntityType = "CRM_HERB_BASE_SUBJECT" | "CRM_VENDOR";
 

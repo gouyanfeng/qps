@@ -2,6 +2,9 @@ using System.Reflection;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Hangfire;
+using Hangfire.Dashboard;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QPS.Host.Filters;
+using QPS.Host.Jobs;
 using QPS.Host.Storage;
 using QPS.Shared.Common;
 using QPS.Shared.Storage;
@@ -161,6 +165,64 @@ public static class ServiceRegistrationExtensions
     }
 
     /// <summary>
+    /// 注册定时任务基础设施（Hangfire）：
+    /// 存储复用主库连接串（首次启动自动建 Hang* 表），Worker 数读 Hangfire:WorkerCount；
+    /// 并登记启动引导器（宿主启动时登记周期任务）。
+    /// </summary>
+    public static IServiceCollection AddQpsHangfire(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("缺少连接串 DefaultConnection，Hangfire 无法注册。");
+
+        var workerCount = configuration.GetSection("Hangfire").GetValue("WorkerCount", 4);
+
+        services
+            .AddHangfire(options => options
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.FromSeconds(15),
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }))
+            .AddHangfireServer(options => options.WorkerCount = workerCount);
+
+        // 启动引导：宿主启动时登记周期任务（见 Jobs/HangfireBootstrapper）。
+        services.AddHostedService<HangfireBootstrapper>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 挂载 Hangfire Dashboard（路径读 Hangfire:DashboardPath，未配置则不挂）。
+    /// 访问控制见 Jobs/QpsDashboardAuthorizationFilter：本机放行；
+    /// 远程访问需 ?access_token= 携带 admin 角色 JWT（iframe 嵌入 admin 时用）。
+    /// </summary>
+    public static IApplicationBuilder UseQpsHangfireDashboard(this IApplicationBuilder app)
+    {
+        var section = app.ApplicationServices.GetRequiredService<IConfiguration>().GetSection("Hangfire");
+        var path = section.GetValue<string>("DashboardPath");
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return app;
+        }
+
+        return app.UseHangfireDashboard(path, new DashboardOptions
+        {
+            Authorization = new IDashboardAuthorizationFilter[]
+            {
+                new QpsDashboardAuthorizationFilter(app.ApplicationServices.GetRequiredService<JwtOptions>())
+            }
+        });
+    }
+
+    /// <summary>
     /// 注册 JWT Bearer 鉴权，仅校验签名与有效期；签发者/受众不做校验。
     /// </summary>
     public static IServiceCollection AddQpsJwtAuthentication(
@@ -180,6 +242,23 @@ public static class ServiceRegistrationExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
                     RoleClaimType = "role",
                     NameClaimType = "username"
+                };
+
+                // SignalR：浏览器 WebSocket 无法自定义请求头，令牌改从 access_token 查询参数读取。
+                // 仅对 /hubs 路径生效，普通接口仍走 Authorization 头，避免令牌出现在 URL 日志里。
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken)
+                            && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
                 };
             });
 

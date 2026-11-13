@@ -14,7 +14,7 @@
 - uni-app（Vue3 + TypeScript + Vite），同时编译 H5 与 App（HBuilderX「运行到手机」）
 - UI 组件库：`tdesign-mobile-vue`（仅用其基础组件，图标不用它的 `t-icon`）
 - 样式：SCSS + rpx（750 设计基准），全局皮肤类与变量见 `src/App.vue`、`src/uni.scss`
-- 数据：本地 mock，无真实后端
+- 数据：H5 已接入真实后端 API（`src/utils/http.ts` 读 `VITE_API_BASE_URL`，请求路径自带 `/api` 前缀）；`src/mock/` 保留商品示例数据，仅供后端 Development 环境种子导入
 - 类型检查：`typescript@5.3.3` + `vue-tsc@1.8.27`；`tsconfig.json` **不再继承** `@vue/tsconfig`，基础选项直接内联，并启用 `verbatimModuleSyntax`
 
 ## 目录与职责
@@ -129,8 +129,8 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 
 ## 数据层
 
-- 商品数据：`src/mock/products.json`（`prod-101`~`106` 为新增商品，`prod-001`~`007` 图片已换成本地图）
-- API：`src/api/index.ts` 提供 mock 接口，购物车种子数据为 3 件（`qps_cart_seeded_v2`）
+- 后端 API：`src/utils/http.ts` 以 `VITE_API_BASE_URL`（默认 `http://localhost:5000`）为基址请求真实后端，token 携带与 401 处理在拦截器内完成
+- 商品示例数据：`src/mock/products.json`（`prod-101`~`106` 为新增商品，`prod-001`~`007` 图片已换成本地图），后端 Development 启动时由 `MallMockDataSeeder` 导入数据库
 - 页面通过 `src/api` 取数，不要在页面里直接读 JSON
 
 ## 视觉基准

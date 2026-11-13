@@ -36,5 +36,22 @@ public static class SystemModelConfiguration
             entity.HasIndex(log => new { log.EntityType, log.EntityId });
             entity.HasIndex(log => log.ActionType);
         });
+
+        modelBuilder.Entity<SystemMessage>(entity =>
+        {
+            entity.Property(message => message.Title).HasMaxLength(200);
+            entity.HasIndex(message => new { message.MessageType, message.IsPublished });
+            entity.HasIndex(message => message.CreatedAt);
+        });
+
+        modelBuilder.Entity<SystemMessageRecipient>(entity =>
+        {
+            // 同一用户对同一消息只允许一条生效状态行；软删行不参与唯一约束（符合"唯一索引带 IsDeleted"约定）
+            entity.HasIndex(recipient => new { recipient.MessageId, recipient.UserId, recipient.IsDeleted })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+            entity.HasIndex(recipient => new { recipient.UserId, recipient.IsRead });
+            entity.HasIndex(recipient => recipient.UserId);
+        });
     }
 }

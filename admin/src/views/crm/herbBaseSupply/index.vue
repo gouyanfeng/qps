@@ -43,7 +43,7 @@ import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
-import ProductSelect from "@/components/ProductSelect/index.vue";
+import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
 
 const router = useRouter();
 const queryPageRef = ref();

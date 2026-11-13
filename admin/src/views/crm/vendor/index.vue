@@ -181,7 +181,7 @@ import { Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue
 import { ElMessage } from "element-plus";
 import { useRoute, useRouter } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
-import { crmVendorApi } from "@/api/modules/crmVendor";
+import { crmVendorApi } from "@/api/modules/crm/crmVendor";
 import Permission from "@/components/Permission/index.vue";
 import TransferDialog from "@/views/crm/components/transfer/Dialog.vue";
 import FollowDialog from "@/views/crm/components/follow/Dialog.vue";

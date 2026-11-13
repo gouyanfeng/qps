@@ -173,7 +173,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { EditPen, Sort, Tickets } from '@element-plus/icons-vue'
-import { mallStockApi } from '@/api/modules/mallStock'
+import { mallStockApi } from '@/api/modules/mall/mallStock'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 import Permission from "@/components/Permission/index.vue"

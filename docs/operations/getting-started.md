@@ -1,6 +1,6 @@
 # 本地启动与发布
 
-> 状态：有效 | 最后核对：2026-11-10 | 对应代码：`web-api/src/QPS.Host`（端口与配置）、`docker-compose.yml`、`admin/nginx.conf`
+> 状态：有效 | 最后核对：2026-11-13 | 对应代码：`web-api/src/QPS.Host`（端口与配置）、`docker-compose.yml`、`admin/nginx.conf`、`mobile/Dockerfile`
 
 所有命令均以 `E:\Code\QPS` 为根目录。
 
@@ -29,17 +29,15 @@
 
 ### 3.1 连接串
 
-`web-api/src/QPS.Host/appsettings.json`：
+`web-api/src/QPS.Host/appsettings.json` 默认走 **Windows 集成认证**（本机 SQL Server 实例，`QPS_CRM` 库）：
 
 ```
-Server=localhost;Database=QPS_CRM;User Id=sa;Password=123456;TrustServerCertificate=True;Encrypt=False;
+Server=localhost;Database=QPS_CRM;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False;
 ```
 
-生产环境不要改仓库内文件，使用环境变量覆盖：
+本地 `dotnet run` 直跑零配置即可连库。Docker 容器内无法使用 Windows 认证，连接串由 compose 从 `.env` 的 `DB_*` 变量拼接注入（SQL 认证）；本机私有覆盖放 `QPS.Host/appsettings.Local.json`（gitignore，优先级最高）。
 
-```
-ConnectionStrings__DefaultConnection=Server=...;Database=...;User Id=...;Password=...;
-```
+生产环境不要改仓库内文件，通过 compose `.env` 注入，机制详见 [deployment.md](deployment.md) 第 2 节。
 
 ### 3.2 Development：自动迁移 + 示例数据
 
@@ -115,7 +113,7 @@ npm run dev
 ```
 
 - 开发地址 `http://127.0.0.1:5173`。
-- `.env` 中 `VITE_API_URL=http://localhost:5000/api`，`admin/src/api/index.ts` 以此为 axios `baseURL`；未配置时回退 `http://localhost:5000/api`。
+- API 地址统一用 `VITE_API_BASE_URL`（**站点根，不含 `/api` 后缀**），vite `envDir: ".."` 读仓库根目录 `.env`；`admin/src/utils/index.ts` 的 `normalizeApiHost()` 兜底 `localhost:5000`，`admin/src/api/index.ts` 自行拼接 `/api` 前缀作为 axios `baseURL`。
 - 生产构建：
 
 ```powershell
@@ -133,8 +131,7 @@ npm run dev:h5
 ```
 
 - 开发地址 `http://127.0.0.1:5174`。
-- H5 代码读取 `VITE_API_BASE_URL`（`src/utils/http.ts`、`src/api/index.ts`），未设置时回退 `http://localhost:5000`。
-- 当前 `.env` 写的是 `VITE_API_URL`，该变量不会被 H5 的 HTTP 层读取；需要指定后端时，在 `.env.local` 中设置 `VITE_API_BASE_URL=http://localhost:5000`。
+- H5 与管理端统一读 `VITE_API_BASE_URL`（`src/utils/http.ts` 的 `normalizeApiBaseUrl()` 兜底 `localhost:5000`，请求路径自带 `/api` 前缀）；仓库根 `.env`（vite `envDir: ".."`）默认已指向本地 5000。旧的 `VITE_API_URL` 已废弃，两个前端都不再读取。
 - 生产构建：
 
 ```powershell
@@ -145,7 +142,9 @@ npm run build:h5
 
 ## 7. 生产发布
 
-### 7.1 后端
+生产部署已 Docker 化（GHCR 镜像 + CI 构建 + 服务器 compose 拉取），完整流程见 [deployment.md](deployment.md)。以下源码发布方式仅作为无 Docker 环境的备选。
+
+### 7.1 后端（备选：源码发布）
 
 ```powershell
 cd E:\Code\QPS\web-api
@@ -169,7 +168,7 @@ dotnet .\publish\QPS.Host.dll
 
 或由 IIS / 反向代理承载 `publish` 目录，按实际承载方式配置进程模型与端口。
 
-### 7.2 前端
+### 7.2 前端（备选：源码发布）
 
 ```powershell
 cd E:\Code\QPS\admin
@@ -181,7 +180,7 @@ npm run build:h5
 # 产物在 mobile/dist/build/h5
 ```
 
-部署前确认构建时的 `VITE_API_URL` / `VITE_API_BASE_URL` 指向生产 API，而不是 `localhost:5000`。
+部署前确认构建时的 `VITE_API_BASE_URL`（站点根，不含 `/api`）指向生产 API，而不是 `localhost:5000`；该值是构建期内联变量，改后必须重新构建。
 
 ## 8. 常见问题
 
@@ -192,7 +191,7 @@ npm run build:h5
 | 启动时报数据库连接失败 | 检查 SQL Server 实例、`DefaultConnection`、账号密码与 `TrustServerCertificate` |
 | 生产启动后表结构缺失 | Production 只做 `CanConnectAsync`，需先手动 `database update` |
 | 登录返回 401 | 检查 `Jwt` 三个配置项是否完整，以及请求是否携带 Bearer Token |
-| 移动端请求打到错误地址 | 检查 `VITE_API_BASE_URL`；`.env` 中的 `VITE_API_URL` 对 H5 不生效 |
+| 移动端请求打到错误地址 | 检查 `VITE_API_BASE_URL`（站点根，不含 `/api`）；`VITE_API_URL` 已废弃 |
 | 本地没有商城示例数据 | 确认 `mobile/src/mock` 存在，且环境为 Development |
 | 接口 403 | 请求类型上是否有正确的 `[Permission]`，当前用户角色是否拥有该权限码 |
 

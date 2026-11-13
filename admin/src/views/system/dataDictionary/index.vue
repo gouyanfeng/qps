@@ -102,7 +102,7 @@
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
-import { dataDictionaryApi } from '@/api/modules/dataDictionary'
+import { dataDictionaryApi } from '@/api/modules/system/dataDictionary'
 import QueryPage from '@/components/QueryPage/index.vue'
 import Permission from '@/components/Permission/index.vue'
 

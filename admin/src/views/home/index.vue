@@ -1,143 +1,115 @@
 <template>
-  <div class="home-dashboard">
-    <el-alert v-if="errorMessage" :title="errorMessage" type="error" show-icon :closable="false">
-      <template #default>
-        <el-button type="danger" link @click="loadDashboard">重试</el-button>
-      </template>
-    </el-alert>
+  <div class="home-welcome">
+    <div class="welcome-body">
+      <section class="greeting-card">
+        <h1 class="greeting-title">{{ greeting }}，{{ userName }}</h1>
+        <p class="greeting-sub">欢迎回来，今天是 {{ today }}</p>
+      </section>
 
-    <div v-loading="loading" class="dashboard-body">
-      <div class="dashboard-grid">
-        <section class="chart-section">
-          <h2 class="section-title">基地数据</h2>
-          <div class="chart-grid">
-            <FollowFunnelChart title="基地主体状态" :items="followFunnel" />
-            <FollowTrendChart title="近 7 天基地跟进趋势" :items="followTrend" />
-            <NewBaseTrendChart :items="newBaseTrend" />
-            <ProductDistributionChart title="基地供应品类分布" :items="supplyProductDistribution" />
+      <section v-if="entries.length" class="entry-section">
+        <h2 class="section-title">快捷入口</h2>
+        <div class="entry-grid">
+          <div v-for="entry in entries" :key="entry.path" class="entry-card" @click="router.push(entry.path)">
+            <div class="entry-icon">
+              <el-icon :size="22">
+                <component :is="entry.icon" />
+              </el-icon>
+            </div>
+            <div class="entry-info">
+              <div class="entry-name">{{ entry.title }}</div>
+              <div class="entry-desc">{{ entry.desc }}</div>
+            </div>
+            <el-icon class="entry-arrow"><ArrowRight /></el-icon>
           </div>
-        </section>
-
-        <section class="chart-section">
-          <h2 class="section-title">厂商数据</h2>
-          <div class="chart-grid">
-            <ProductDistributionChart title="厂商优先级分布" :items="vendorPriorityDistribution" />
-            <FollowTrendChart title="近 7 天厂商跟进趋势" :items="vendorFollowTrend" />
-            <NewPurchaseDemandTrendChart :items="newPurchaseDemandTrend" />
-            <ProductDistributionChart
-              title="厂商采购品类 Top 10"
-              :items="vendorPurchaseProductDistribution"
-            />
-          </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts" name="home">
-import { onMounted, ref } from "vue";
-import { ElMessage } from "element-plus";
-import dashboardApi, {
-  type CrmDashboardChartItem,
-  type CrmDashboardNewBaseTrendItem,
-  type CrmDashboardNewPurchaseDemandTrendItem,
-  type CrmDashboardTrendItem,
-} from "@/api/modules/dashboard";
-import FollowFunnelChart from "./components/FollowFunnelChart.vue";
-import ProductDistributionChart from "./components/ProductDistributionChart.vue";
-import FollowTrendChart from "./components/FollowTrendChart.vue";
-import NewBaseTrendChart from "./components/NewBaseTrendChart.vue";
-import NewPurchaseDemandTrendChart from "./components/NewPurchaseDemandTrendChart.vue";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { ArrowRight } from "@element-plus/icons-vue";
+import { useUserStore } from "@/stores/modules/user";
+import { useAuthStore } from "@/stores/modules/auth";
 
-const loading = ref(false);
-const errorMessage = ref("");
-const followFunnel = ref<CrmDashboardChartItem[]>([]);
-const supplyProductDistribution = ref<CrmDashboardChartItem[]>([]);
-const followTrend = ref<CrmDashboardTrendItem[]>([]);
-const newBaseTrend = ref<CrmDashboardNewBaseTrendItem[]>([]);
-const vendorPriorityDistribution = ref<CrmDashboardChartItem[]>([]);
-const vendorFollowTrend = ref<CrmDashboardTrendItem[]>([]);
-const newPurchaseDemandTrend = ref<CrmDashboardNewPurchaseDemandTrendItem[]>([]);
-const vendorPurchaseProductDistribution = ref<CrmDashboardChartItem[]>([]);
+interface MenuLeaf {
+  title: string;
+  path: string;
+  icon: string;
+  group: string;
+  desc: string;
+}
 
-const normalizeVendorPriority = (items: CrmDashboardChartItem[]) => {
-  const labelMap: Record<string, string> = {
-    High: "高",
-    Medium: "中",
-    Low: "低",
-    high: "高",
-    medium: "中",
-    low: "低",
-  };
-  const counts = new Map<string, number>();
-  items.forEach(item => {
-    const name = labelMap[item.name] || item.name || labelMap[item.code] || item.code || "中";
-    counts.set(name, (counts.get(name) || 0) + item.value);
-  });
-  return ["高", "中", "低"]
-    .filter(name => counts.has(name))
-    .map(name => ({ code: name, name, value: counts.get(name) || 0 }));
-};
+const router = useRouter();
+const userName = computed(() => useUserStore().userInfo.name);
+const authStore = useAuthStore();
 
-const loadDashboard = async () => {
-  loading.value = true;
-  errorMessage.value = "";
-  try {
-    const [followFunnelResult, supplyProductResult, followTrendResult, newBaseTrendResult, vendorPriorityResult, vendorFollowTrendResult, newPurchaseDemandTrendResult, vendorPurchaseProductResult] = await Promise.all([
-      dashboardApi.getFollowFunnel(),
-      dashboardApi.getSupplyProductDistribution(),
-      dashboardApi.getFollowTrend(),
-      dashboardApi.getNewBaseTrend(),
-      dashboardApi.getVendorPriorityDistribution(),
-      dashboardApi.getVendorFollowTrend(),
-      dashboardApi.getNewPurchaseDemandTrend(),
-      dashboardApi.getVendorPurchaseProductDistribution(),
-    ]);
-    followFunnel.value = followFunnelResult.data;
-    supplyProductDistribution.value = supplyProductResult.data;
-    followTrend.value = followTrendResult.data;
-    newBaseTrend.value = newBaseTrendResult.data;
-    vendorPriorityDistribution.value = normalizeVendorPriority(vendorPriorityResult.data);
-    vendorFollowTrend.value = vendorFollowTrendResult.data;
-    newPurchaseDemandTrend.value = newPurchaseDemandTrendResult.data;
-    vendorPurchaseProductDistribution.value = vendorPurchaseProductResult.data;
-  } catch (error) {
-    errorMessage.value = "首页数据加载失败";
-    ElMessage.error(errorMessage.value);
-  } finally {
-    loading.value = false;
-  }
-};
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 6) return "凌晨好";
+  if (hour < 12) return "上午好";
+  if (hour < 18) return "下午好";
+  return "晚上好";
+});
 
-onMounted(loadDashboard);
+const today = new Date().toLocaleDateString("zh-CN", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+});
+
+// 从真实菜单取每个顶级分组下的第一个可见叶子菜单，作为快捷入口（菜单变化自动跟随，无业务硬编码）
+const entries = computed<MenuLeaf[]>(() =>
+  authStore
+    .showMenuListGet!.slice(0, 3)
+    .map<MenuLeaf | null>(group => {
+      const firstLeaf = (group.children ?? []).find(item => !item.meta.isHide) ?? (group.meta.isHide ? null : group);
+      if (!firstLeaf) return null;
+      return {
+        group: group.meta.title,
+        title: group.meta.title,
+        desc: firstLeaf.meta.title,
+        path: firstLeaf.path,
+        icon: group.meta.icon,
+      };
+    })
+    .filter((item): item is MenuLeaf => item !== null)
+);
 </script>
 
 <style scoped lang="scss">
-.home-dashboard {
+.home-welcome {
   min-height: calc(100vh - 96px);
   padding: 18px 20px 28px;
   background: var(--el-bg-color-page);
 }
 
-.dashboard-body {
+.welcome-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-height: 420px;
+  gap: 16px;
 }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+.greeting-card {
+  padding: 28px 32px;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-bg-color);
 }
 
-.chart-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
+.greeting-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.greeting-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 .section-title {
@@ -147,31 +119,69 @@ onMounted(loadDashboard);
   color: var(--el-text-color-primary);
 }
 
-.chart-grid {
+.entry-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
-.chart-grid :deep(.chart-block) {
+.entry-card {
   display: flex;
-  flex-direction: column;
-  height: 400px;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-bg-color);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--el-box-shadow-light);
+    transform: translateY(-2px);
+
+    .entry-arrow {
+      color: var(--el-color-primary);
+    }
+  }
 }
 
-.chart-grid :deep(.chart) {
+.entry-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.entry-info {
   flex: 1;
-  min-height: 0;
-  height: auto;
+  min-width: 0;
 }
 
-.chart-grid :deep(.el-empty) {
-  flex: 1;
+.entry-name {
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
-@media (max-width: 640px) {
-  .home-dashboard {
-    padding: 12px;
+.entry-desc {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.entry-arrow {
+  color: var(--el-text-color-placeholder);
+  transition: color 0.2s ease;
+}
+
+@media (max-width: 900px) {
+  .entry-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

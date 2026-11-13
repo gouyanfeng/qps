@@ -150,8 +150,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete, Plus } from '@element-plus/icons-vue'
-import { mallFreightTemplateApi } from '@/api/modules/mallFreightTemplate'
-import { regionApi } from '@/api/modules/region'
+import { mallFreightTemplateApi } from '@/api/modules/mall/mallFreightTemplate'
+import { regionApi } from '@/api/modules/system/region'
 import QueryPage from '@/components/QueryPage/index.vue'
 import Permission from "@/components/Permission/index.vue"
 

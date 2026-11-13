@@ -24,6 +24,11 @@ public class GetUsersQuery : PaginationRequest, IRequest<PaginationResponse<User
     public string? RealName { get; set; }
 
     /// <summary>
+    /// 联合关键字：命中用户名或真实姓名即返回（收件人远程搜索等场景）
+    /// </summary>
+    public string? Keyword { get; set; }
+
+    /// <summary>
     /// 是否激活
     /// </summary>
     public bool? IsActive { get; set; }
@@ -82,6 +87,11 @@ public class GetUsersHandler : IRequestHandler<GetUsersQuery, PaginationResponse
         if (request.IsActive.HasValue)
         {
             query = query.Where(u => u.IsActive == request.IsActive.Value);
+        }
+
+        if (!string.IsNullOrEmpty(request.Keyword))
+        {
+            query = query.Where(u => u.Username.Contains(request.Keyword) || u.RealName.Contains(request.Keyword));
         }
 
         // 转换为DTO

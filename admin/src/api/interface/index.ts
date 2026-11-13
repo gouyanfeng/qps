@@ -40,10 +40,12 @@ export namespace Login {
 
 export namespace User {
   export interface ReqUserParams extends ReqPage {
-    username: string;
-    realName: string;
-    roleId: string;
-    isActive: boolean;
+    username?: string;
+    realName?: string;
+    roleId?: string;
+    isActive?: boolean;
+    /** 联合关键字：命中用户名或真实姓名（收件人远程搜索） */
+    keyword?: string;
   }
 
   export interface ResUserList {

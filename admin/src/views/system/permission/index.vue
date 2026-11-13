@@ -8,10 +8,7 @@
                     <el-option v-for="role in roleList" :key="role.code"
                         :label="`${role.name} (${role.code})`" :value="role.code" />
                 </el-select>
-                <span class="banner-badge">
-                    <span class="badge-dot" />
-                    已授权 {{ currentLeafCodes.length }} 项
-                </span>
+                <el-tag effect="light" size="small" class="banner-badge">已授权 {{ currentLeafCodes.length }} 项</el-tag>
             </div>
             <div class="banner-actions">
                 <el-button :icon="Refresh" @click="resetPerm">重置</el-button>
@@ -27,19 +24,18 @@
                 <div class="matrix-toolbar">
                     <div class="module-chips">
                         <span class="toolbar-label">模块分类:</span>
-                        <button class="chip" :class="{ active: moduleFilter === 'ALL' }"
-                            @click="moduleFilter = 'ALL'">全部模块</button>
-                        <button v-for="group in matrixGroups" :key="group.code" class="chip"
-                            :class="{ active: moduleFilter === group.code }"
-                            @click="moduleFilter = group.code">{{ group.name }}</button>
+                        <el-check-tag :checked="moduleFilter === 'ALL'" @change="moduleFilter = 'ALL'">全部模块</el-check-tag>
+                        <el-check-tag v-for="group in matrixGroups" :key="group.code"
+                            :checked="moduleFilter === group.code"
+                            @change="moduleFilter = group.code">{{ group.name }}</el-check-tag>
                     </div>
                     <div class="toolbar-tools">
-                        <el-input v-model="keyword" class="row-search" size="small"
+                        <el-input v-model="keyword" class="row-search" 
                             placeholder="搜索页面或操作按钮..." :prefix-icon="Search" clearable />
-                        <el-button size="small" :icon="Sort" @click="toggleAllGroups">
+                        <el-button  :icon="Sort" @click="toggleAllGroups">
                             {{ allCollapsed ? '全部展开' : '全部收起' }}
                         </el-button>
-                        <el-button size="small" :icon="Finished" @click="selectAllVisible">全选访问</el-button>
+                        <el-button :icon="Finished" @click="selectAllVisible">全选访问</el-button>
                     </div>
                 </div>
 
@@ -109,7 +105,7 @@
                                                     :disabled="!isChecked(page.code)" :title="btn.code"
                                                     @change="(val: any) => toggleButton(page, btn, val)">
                                                     <span class="btn-name">{{ btn.name }}</span>
-                                                    <el-tag v-if="btn.highRisk" type="danger" size="small"
+                                                    <el-tag v-if="btn.highRisk" type="danger"
                                                         effect="plain" class="risk-tag">高危</el-tag>
                                                 </el-checkbox>
                                             </div>
@@ -136,7 +132,7 @@
                 </div>
                 <div class="changes-summary">
                     <span>待保存变更 ({{ diffTotal }}项)</span>
-                    <el-button link type="primary" size="small" :disabled="!diffTotal"
+                    <el-button link type="primary" :disabled="!diffTotal"
                         @click="resetPerm">撤销所有</el-button>
                 </div>
                 <div class="changes-scroll">
@@ -165,8 +161,8 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Check, Search, Sort, Finished, FolderOpened, ArrowRight } from '@element-plus/icons-vue'
-import { permissionApi } from '@/api/modules/permission'
-import { roleApi } from '@/api/modules/role'
+import { permissionApi } from '@/api/modules/system/permission'
+import { roleApi } from '@/api/modules/system/role'
 import Permission from '@/components/Permission/index.vue'
 import authMenuList from '@/assets/json/authMenuList.json'
 
@@ -584,23 +580,7 @@ onMounted(loadData)
     }
 
     .banner-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 2px 10px;
-        border-radius: 999px;
-        background: rgba(0, 150, 136, 0.1);
-        color: var(--el-color-primary);
-        font-size: 12px;
-        font-weight: 500;
-        white-space: nowrap;
-
-        .badge-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--el-color-primary);
-        }
+        vertical-align: middle;
     }
 
     .banner-actions {
@@ -657,7 +637,7 @@ onMounted(loadData)
 }
 
 .changes-panel {
-    width: 320px;
+    width: 450px;
     flex-shrink: 0;
 }
 
@@ -690,27 +670,6 @@ onMounted(loadData)
         margin-right: 2px;
         font-size: 12px;
         color: var(--el-text-color-secondary);
-    }
-}
-
-.chip {
-    padding: 4px 10px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    background: var(--el-fill-color-light);
-    color: var(--el-text-color-regular);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-
-    &:hover {
-        background: var(--el-fill-color);
-    }
-
-    &.active {
-        background: var(--el-color-primary);
-        border-color: var(--el-color-primary);
-        color: #fff;
     }
 }
 
@@ -910,6 +869,9 @@ onMounted(loadData)
 }
 
 .btn-chip {
+    /* 固定宽度：跨行对齐成列（覆盖最长项“删除xx 高危”约 118px） */
+    width: 120px;
+    flex: none;
     margin-right: 0;
 
     :deep(.el-checkbox__label) {
@@ -918,6 +880,7 @@ onMounted(loadData)
         gap: 4px;
         padding-left: 6px;
         font-size: 13px;
+        white-space: nowrap;
     }
 
     &:has(.risk-tag) :deep(.el-checkbox__label) {
@@ -961,9 +924,9 @@ onMounted(loadData)
 
 .change-card {
     margin-bottom: 8px;
-    padding: 8px 10px;
+    padding: 8px 20px;
     border: 1px solid var(--el-border-color-lighter);
-    border-radius: 6px;
+    border-radius: var(--el-border-radius-base);
     background: #fff;
 
     .change-head {

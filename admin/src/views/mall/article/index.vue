@@ -155,8 +155,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
-import { mallArticleApi } from '@/api/modules/mallArticle'
-import { mallStoreApi } from '@/api/modules/mallStore'
+import { mallArticleApi } from '@/api/modules/mall/mallArticle'
+import { mallStoreApi } from '@/api/modules/mall/mallStore'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 

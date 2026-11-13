@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import { regionApi } from "@/api/modules/region";
+import { regionApi } from "@/api/modules/system/region";
 
 interface ChinaRegion {
   code: string;

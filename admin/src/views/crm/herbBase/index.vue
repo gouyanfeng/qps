@@ -257,8 +257,8 @@ import { Edit, Phone, Plus, QuestionFilled, View } from "@element-plus/icons-vue
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
-import ProductSelect from "@/components/ProductSelect/index.vue";
-import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
+import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
+import { crmHerbBaseApi } from "@/api/modules/crm/crmHerbBase";
 import Permission from "@/components/Permission/index.vue";
 import TransferDialog from "@/views/crm/components/transfer/Dialog.vue";
 import FollowDialog from "@/views/crm/components/follow/Dialog.vue";

@@ -14,6 +14,8 @@ public interface ISystemDbContext
     DbSet<SystemChinaRegion> SystemChinaRegions { get; }
     DbSet<SystemErrorLog> SystemErrorLogs { get; }
     DbSet<SystemOperationLog> SystemOperationLogs { get; }
+    DbSet<SystemMessage> SystemMessages { get; }
+    DbSet<SystemMessageRecipient> SystemMessageRecipients { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

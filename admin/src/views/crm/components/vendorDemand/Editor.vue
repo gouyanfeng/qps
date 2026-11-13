@@ -65,9 +65,9 @@ import { computed, reactive, ref, watch } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
-import ProductSelect from "@/components/ProductSelect/index.vue";
-import crmVendorDemandApi from "@/api/modules/crmVendorDemand";
-import { crmVendorApi } from "@/api/modules/crmVendor";
+import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
+import crmVendorDemandApi from "@/api/modules/crm/crmVendorDemand";
+import { crmVendorApi } from "@/api/modules/crm/crmVendor";
 
 const props = withDefaults(defineProps<{ modelValue: boolean; vendorId?: string; demand?: any; lockVendor?: boolean }>(), { vendorId: "", demand: null, lockVendor: false });
 const emit = defineEmits<{ "update:modelValue": [value: boolean]; saved: [] }>();

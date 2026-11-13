@@ -103,7 +103,7 @@
 <script setup lang="ts" name="mallReturnOrder">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { mallReturnApi } from '@/api/modules/mallReturn'
+import { mallReturnApi } from '@/api/modules/mall/mallReturn'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate, resolveFileUrl } from '@/utils'
 import Permission from "@/components/Permission/index.vue"

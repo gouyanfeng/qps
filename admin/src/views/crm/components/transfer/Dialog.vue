@@ -23,9 +23,9 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import { crmHerbBaseApi } from "@/api/modules/crmHerbBase";
-import { crmVendorApi } from "@/api/modules/crmVendor";
-import { userApi } from "@/api/modules/user";
+import { crmHerbBaseApi } from "@/api/modules/crm/crmHerbBase";
+import { crmVendorApi } from "@/api/modules/crm/crmVendor";
+import { userApi } from "@/api/modules/system/user";
 
 type CrmEntityType = "CRM_HERB_BASE_SUBJECT" | "CRM_VENDOR";
 type TransferMode = "ASSIGN" | "TRANSFER" | "RETURN";

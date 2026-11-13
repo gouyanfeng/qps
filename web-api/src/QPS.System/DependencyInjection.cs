@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using QPS.Shared.Contracts;
 using QPS.System.Application.Services;
 using QPS.System.Contracts;
+using QPS.System.Realtime;
 
 namespace QPS.System;
 
@@ -20,6 +21,9 @@ public static class DependencyInjection
 
         services.AddScoped<IPermissionChecker, PermissionChecker>();
         services.AddScoped<IErrorLogService, ErrorLogService>();
+
+        // 站内消息实时推送（SignalR Hub 端点由 Host 调用 MapQpsSystemRealtime 映射）
+        services.AddQpsSystemRealtime();
 
         mvcBuilder.ConfigureApplicationPartManager(manager =>
             manager.ApplicationParts.Add(new AssemblyPart(typeof(DependencyInjection).Assembly)));

@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { crmVendorApi } from "@/api/modules/crmVendor";
+import { crmVendorApi } from "@/api/modules/crm/crmVendor";
 
 const props = withDefaults(defineProps<{
   modelValue?: string | string[];

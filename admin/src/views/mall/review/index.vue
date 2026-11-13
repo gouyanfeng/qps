@@ -170,7 +170,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, ChatDotRound, Delete } from '@element-plus/icons-vue'
-import { mallReviewApi } from '@/api/modules/mallReview'
+import { mallReviewApi } from '@/api/modules/mall/mallReview'
 import { resolveFileUrl } from '@/utils'
 import QueryPage from '@/components/QueryPage/index.vue'
 import Permission from "@/components/Permission/index.vue"

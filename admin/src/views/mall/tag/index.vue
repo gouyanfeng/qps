@@ -126,7 +126,7 @@
 import { reactive, ref } from 'vue'
 import { CirclePlus, Delete, EditPen } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { mallTagApi } from '@/api/modules/mallTag'
+import { mallTagApi } from '@/api/modules/mall/mallTag'
 import QueryPage from '@/components/QueryPage/index.vue'
 import Permission from "@/components/Permission/index.vue"
 

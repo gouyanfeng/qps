@@ -33,14 +33,16 @@
 import { ref } from "vue";
 import { LOGIN_URL } from "@/config";
 import { useRouter } from "vue-router";
-import { logoutApi } from "@/api/modules/login";
+import { logoutApi } from "@/api/modules/system/login";
 import { useUserStore } from "@/stores/modules/user";
+import { useNoticeStore } from "@/stores/modules/notice";
 import { ElMessageBox, ElMessage } from "element-plus";
 import InfoDialog from "./InfoDialog.vue";
 import PasswordDialog from "./PasswordDialog.vue";
 
 const router = useRouter();
 const userStore = useUserStore();
+const noticeStore = useNoticeStore();
 
 // 退出登录
 const logout = () => {
@@ -54,6 +56,9 @@ const logout = () => {
 
     // 2.清除 Token
     userStore.setToken("");
+
+    // 2.1 断开实时推送连接并清理未读状态
+    noticeStore.reset();
 
     // 3.重定向到登陆页
     router.replace(LOGIN_URL);
