@@ -1,4 +1,29 @@
 services:
+  # nginx 网关：按域名分发（admin.yf365.top / h5.yf365.top / api.yf365.top），
+  # 80 端口统一入口；443/TLS 后续加证书时在 gateway.conf 增补 server 块。
+  # 各业务容器仍保留直连端口便于调试，收口后可删除对应 ports。
+  # 命名约定：服务名 = 容器名，统一 qps- 前缀（容器名宿主机全局唯一，防与其他项目撞车）。
+  qps-gateway:
+    image: nginx:alpine-slim
+    container_name: qps-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      qps-admin:
+        condition: service_healthy
+      qps-mobile:
+        condition: service_healthy
+      qps-api:
+        condition: service_healthy
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   qps-api:
     build:
       context: ./web-api
@@ -35,7 +60,7 @@ services:
       retries: 10
       start_period: 30s
 
-  admin:
+  qps-admin:
     build:
       context: ./admin
       dockerfile: Dockerfile
@@ -62,7 +87,7 @@ services:
       retries: 5
 
   # 移动端 H5：直接暴露宿主机 5174，按根路径托管纯静态站点；API 由前端直连 5000。
-  mobile:
+  qps-mobile:
     build:
       context: ./mobile
       dockerfile: Dockerfile
