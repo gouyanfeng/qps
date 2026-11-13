@@ -9,7 +9,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./deploy/nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       qps-admin:
         condition: service_healthy
