@@ -7,11 +7,16 @@ let loadingInstance: ReturnType<typeof ElLoading.service>;
  * @description 开启 Loading
  * */
 const startLoading = () => {
+  // 遮罩只盖内容区（el-main），不全屏挂 body：
+  // - fullscreen/lock 会在 body 上加 el-loading-parent--hidden（overflow:hidden），
+  //   切换菜单时滚动条消失/出现导致整页布局跳动，观感为"页面闪一下"
+  // - target 指向 el-main 后，relative/hidden class 加在 el-main 上，body 不受影响
+  const target = document.querySelector(".el-main") || document.body;
   loadingInstance = ElLoading.service({
-    fullscreen: true,
-    lock: true,
+    target,
+    lock: false,
     text: "Loading",
-    background: "rgba(0, 0, 0, 0.7)"
+    background: "var(--el-mask-color)"
   });
 };
 
