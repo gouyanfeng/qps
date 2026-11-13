@@ -178,7 +178,7 @@ const defaultForm = () => ({
   recipientIds: [] as string[],
   title: '',
   content: '',
-  window: [] as [Date | null, Date | null] | null,
+  window: null as [Date | null, Date | null] | null,
   isTop: false,
   sortOrder: 0,
   isPublished: true

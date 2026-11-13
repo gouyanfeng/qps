@@ -11,7 +11,7 @@ const startLoading = () => {
   // - fullscreen/lock 会在 body 上加 el-loading-parent--hidden（overflow:hidden），
   //   切换菜单时滚动条消失/出现导致整页布局跳动，观感为"页面闪一下"
   // - target 指向 el-main 后，relative/hidden class 加在 el-main 上，body 不受影响
-  const target = document.querySelector(".el-main") || document.body;
+  const target = (document.querySelector(".el-main") as HTMLElement | null) ?? document.body;
   loadingInstance = ElLoading.service({
     target,
     lock: false,

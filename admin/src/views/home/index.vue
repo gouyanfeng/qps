@@ -39,6 +39,7 @@ interface MenuLeaf {
   path: string;
   icon: string;
   group: string;
+  desc: string;
 }
 
 const router = useRouter();
