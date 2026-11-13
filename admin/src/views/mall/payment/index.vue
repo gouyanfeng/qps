@@ -69,8 +69,8 @@
 <script setup lang="ts" name="mallPayment">
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { mallPaymentApi } from '@/api/modules/mallPayment'
-import { mallOrderApi } from '@/api/modules/mallOrder'
+import { mallPaymentApi } from '@/api/modules/mall/mallPayment'
+import { mallOrderApi } from '@/api/modules/mall/mallOrder'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 

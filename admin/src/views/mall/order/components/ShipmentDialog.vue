@@ -29,7 +29,7 @@
 <script setup lang="ts" name="ShipmentDialog">
 import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { mallOrderApi } from '@/api/modules/mallOrder'
+import { mallOrderApi } from '@/api/modules/mall/mallOrder'
 
 const props = defineProps({
   modelValue: {

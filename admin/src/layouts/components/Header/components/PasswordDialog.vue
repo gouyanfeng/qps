@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref, reactive } from "vue";
 import { ElMessage, FormInstance, FormRules } from "element-plus";
-import { changePasswordApi } from "@/api/modules/login";
+import { changePasswordApi } from "@/api/modules/system/login";
 
 const dialogVisible = ref(false);
 const submitting = ref(false);

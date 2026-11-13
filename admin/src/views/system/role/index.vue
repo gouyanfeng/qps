@@ -57,7 +57,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete } from '@element-plus/icons-vue'
-import { roleApi } from '@/api/modules/role'
+import { roleApi } from '@/api/modules/system/role'
 import QueryPage from '@/components/QueryPage/index.vue'
 import Permission from '@/components/Permission/index.vue'
 

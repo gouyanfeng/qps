@@ -1,5 +1,5 @@
 import { ElMessage } from "element-plus"
-import { uploadImg } from "@/api/modules/upload"
+import { uploadImg } from "@/api/modules/system/upload"
 import { resolveFileUrl } from "@/utils"
 import {
   Document,

@@ -99,7 +99,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CirclePlus, EditPen, Delete, View, SwitchButton } from '@element-plus/icons-vue'
-import { mallStoreApi } from '@/api/modules/mallStore'
+import { mallStoreApi } from '@/api/modules/mall/mallStore'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 import Permission from "@/components/Permission/index.vue"

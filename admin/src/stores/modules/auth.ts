@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { AuthState } from "@/stores/interface";
-import { getAuthMenuListApi, getUserPermissionsApi } from "@/api/modules/login";
+import { getAuthMenuListApi, getUserPermissionsApi } from "@/api/modules/system/login";
 import { getFlatMenuList, getShowMenuList, getMenuPermissionMap, getAllBreadcrumbList } from "@/utils";
 
 export const useAuthStore = defineStore("qps-auth",{

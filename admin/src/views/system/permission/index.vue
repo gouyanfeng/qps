@@ -161,8 +161,8 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Check, Search, Sort, Finished, FolderOpened, ArrowRight } from '@element-plus/icons-vue'
-import { permissionApi } from '@/api/modules/permission'
-import { roleApi } from '@/api/modules/role'
+import { permissionApi } from '@/api/modules/system/permission'
+import { roleApi } from '@/api/modules/system/role'
 import Permission from '@/components/Permission/index.vue'
 import authMenuList from '@/assets/json/authMenuList.json'
 

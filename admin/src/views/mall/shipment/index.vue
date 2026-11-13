@@ -117,7 +117,7 @@
 import { ref, reactive, computed } from 'vue'
 import { Van, View, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { mallShipmentApi } from '@/api/modules/mallShipment'
+import { mallShipmentApi } from '@/api/modules/mall/mallShipment'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 import ShipmentDialog from '../order/components/ShipmentDialog.vue'

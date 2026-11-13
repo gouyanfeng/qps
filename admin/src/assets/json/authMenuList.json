@@ -32,6 +32,21 @@
       },
       "children": [
         {
+          "path": "/crm/dashboard",
+          "name": "crmDashboard",
+          "component": "/crm/dashboard/index",
+          "meta": {
+            "icon": "DataLine",
+            "title": "数据看板",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM"
+          }
+        },
+        {
           "path": "/crm/follow-tasks",
           "name": "followTask",
           "component": "/crm/followTask/index",

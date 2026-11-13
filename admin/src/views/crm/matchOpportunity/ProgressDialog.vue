@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import crmMatchOpportunityApi from "@/api/modules/crmMatchOpportunity";
+import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
 
 const props = defineProps<{ modelValue: boolean; opportunity?: any }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; submitted: [] }>();

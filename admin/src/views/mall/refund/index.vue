@@ -63,7 +63,7 @@
 <script setup lang="ts" name="mallRefund">
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { mallOrderApi } from '@/api/modules/mallOrder'
+import { mallOrderApi } from '@/api/modules/mall/mallOrder'
 import QueryPage from '@/components/QueryPage/index.vue'
 import { formatDate } from '@/utils'
 

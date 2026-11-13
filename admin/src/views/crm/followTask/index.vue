@@ -112,7 +112,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { Calendar, CircleCheckFilled, DocumentDelete, WarningFilled } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
-import { crmFollowTaskApi } from "@/api/modules/crmFollowTask";
+import { crmFollowTaskApi } from "@/api/modules/crm/crmFollowTask";
 import QueryPage from "@/components/QueryPage/index.vue";
 import Permission from "@/components/Permission/index.vue";
 import FollowDialog from "@/views/crm/components/follow/Dialog.vue";
