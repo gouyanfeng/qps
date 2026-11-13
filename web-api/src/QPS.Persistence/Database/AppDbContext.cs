@@ -28,6 +28,8 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
     public DbSet<SystemChinaRegion> SystemChinaRegions { get; set; }
     public DbSet<SystemErrorLog> SystemErrorLogs { get; set; }
     public DbSet<SystemOperationLog> SystemOperationLogs { get; set; }
+    public DbSet<SystemMessage> SystemMessages { get; set; }
+    public DbSet<SystemMessageRecipient> SystemMessageRecipients { get; set; }
 
     public DbSet<CrmHerbBaseSubject> CrmHerbBaseSubjects { get; set; }
     public DbSet<CrmHerbBase> CrmHerbBases { get; set; }

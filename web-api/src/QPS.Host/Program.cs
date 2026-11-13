@@ -13,6 +13,7 @@ using QPS.Shared;
 using QPS.Shared.Common;
 using QPS.Shared.Storage;
 using QPS.System;
+using QPS.System.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +64,9 @@ builder.Services.AddQpsPersistence(builder.Configuration);
 builder.Services.AddQpsSystem(mvcBuilder);
 builder.Services.AddQpsCrm(mvcBuilder);
 builder.Services.AddQpsMall(mvcBuilder);
+
+// 定时任务（Hangfire）：SQL Server 存储 + 进程内 Worker + 启动任务引导
+builder.Services.AddQpsHangfire(builder.Configuration);
 
 #endregion
 
@@ -150,6 +154,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 
+// Hangfire Dashboard：/jobs-dashboard，本机放行；远程凭 ?access_token= 的 admin JWT 访问（admin 内嵌 iframe）
+app.UseQpsHangfireDashboard();
+
 // 上传目录在启动时确保存在，避免 wwwroot 缺失导致静态文件提供器为空。
 var webRootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 Directory.CreateDirectory(webRootPath);
@@ -173,6 +180,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// 站内消息实时推送 Hub：/hubs/system-messages（浏览器 WebSocket 用 access_token 查询参数鉴权）
+app.MapQpsSystemRealtime();
 
 app.MapFallback(() => Results.NotFound()).AllowAnonymous();
 

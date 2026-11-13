@@ -33,7 +33,11 @@ public class AdminEndpointPermissionTests
     {
         ["AuthController.Logout"] = "注销当前会话：只结束登录态，不涉及业务功能",
         ["AuthController.GetUserPermissions"] = "读取当前登录用户自身的权限码，登录后即可调用",
-        ["AuthController.ChangePassword"] = "修改当前登录用户自己的密码，只作用于本人"
+        ["AuthController.ChangePassword"] = "修改当前登录用户自己的密码，只作用于本人",
+        ["SystemMessageController.GetMyMessages"] = "读取当前登录用户自己的消息列表，任何登录用户都应能看到自己的消息",
+        ["SystemMessageController.GetUnreadCount"] = "读取当前登录用户自己的未读数（铃铛角标）",
+        ["SystemMessageController.MarkRead"] = "把当前登录用户自己的消息置为已读",
+        ["SystemMessageController.MarkAllRead"] = "把当前登录用户自己的消息全部置为已读"
     };
 
     private static readonly Lazy<Dictionary<string, Type>> RequestTypesByName = new(BuildRequestTypeMap);

@@ -1,12 +1,12 @@
 ﻿# QPS 架构测试基线：管理端功能权限（规则 4）
 # 用途：记录引入护栏时尚未声明 [Permission] 的管理端端点，测试只拦截“新增且不在基线”的权限回退。
 # 判定：端点有 [Permission]（Controller / 方法 / 实际派发的 Command/Query 任一）→ 通过；否则必须命中本文件 → 通过；未命中 → 失败。
-# 条目总数：205
+# 条目总数：211
 # 生成日期：2026-11-07
 # 维护约定：只允许缩小（补齐权限后从基线删除）；改大需在 PR 说明理由，否则视为绕过护栏。
 # 格式：每行一个唯一键 Controller.Method；# 开头为注释，空行忽略。
 
-# ===== QPS.System（16 条）=====
+# ===== QPS.System（22 条）=====
 # --- DataDictionaryController（6 条）
 DataDictionaryController.CreateDataDictionary
 DataDictionaryController.DeleteDataDictionary
@@ -14,6 +14,13 @@ DataDictionaryController.GetDataDictionaries
 DataDictionaryController.GetDataDictionary
 DataDictionaryController.GetDataDictionaryTree
 DataDictionaryController.UpdateDataDictionary
+# --- SystemMessageController（6 条，消息模块当前仅 [Authorize]，与 System 模块其余端点一致）
+SystemMessageController.ChangePublishStatus
+SystemMessageController.CreateMessage
+SystemMessageController.DeleteMessage
+SystemMessageController.GetMessage
+SystemMessageController.GetMessages
+SystemMessageController.UpdateMessage
 # --- ErrorLogController（1 条）
 ErrorLogController.GetErrorLogs
 # --- OperationLogController（1 条）
