@@ -8,10 +8,7 @@
                     <el-option v-for="role in roleList" :key="role.code"
                         :label="`${role.name} (${role.code})`" :value="role.code" />
                 </el-select>
-                <span class="banner-badge">
-                    <span class="badge-dot" />
-                    已授权 {{ currentLeafCodes.length }} 项
-                </span>
+                <el-tag effect="light" size="small" class="banner-badge">已授权 {{ currentLeafCodes.length }} 项</el-tag>
             </div>
             <div class="banner-actions">
                 <el-button :icon="Refresh" @click="resetPerm">重置</el-button>
@@ -583,23 +580,7 @@ onMounted(loadData)
     }
 
     .banner-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 2px 10px;
-        border-radius: 999px;
-        background: rgba(0, 150, 136, 0.1);
-        color: var(--el-color-primary);
-        font-size: 12px;
-        font-weight: 500;
-        white-space: nowrap;
-
-        .badge-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--el-color-primary);
-        }
+        vertical-align: middle;
     }
 
     .banner-actions {

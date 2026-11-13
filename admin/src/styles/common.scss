@@ -44,20 +44,6 @@
   word-wrap: break-word;
 }
 
-/* fade-transform：丝滑淡入淡出（纯 opacity，退场快进场慢，空窗最短） */
-.fade-transform-leave-active {
-  transition: opacity 0.15s cubic-bezier(0.4, 0, 1, 1);
-}
-.fade-transform-enter-active {
-  transition: opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.fade-transform-enter-from {
-  opacity: 0;
-}
-.fade-transform-leave-to {
-  opacity: 0;
-}
-
 /* breadcrumb-transform */
 .breadcrumb-enter-active {
   transition: all 0.2s;
