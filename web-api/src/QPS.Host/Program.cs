@@ -81,9 +81,17 @@ var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLo
 
 if (await dbContext.Database.CanConnectAsync())
 {
-    // 数据库已存在：跳过建库与迁移，只补记初始迁移历史（幂等，便于后续增量迁移）。
-    logger.LogInformation("数据库已存在，跳过初始化。");
+    // 数据库已存在：先补记 InitialCreate 历史（幂等，防手工建库重放全量迁移），
+    // 再执行增量迁移 —— MigrateAsync 只应用 __EFMigrationsHistory 中缺失的迁移，
+    // 已全部应用的库此调用为空操作，新增迁移随镜像发布自动落地。
+    logger.LogInformation("数据库已存在，检查并应用增量迁移…");
     await DatabaseProvisioning.MarkInitialMigrationAppliedAsync(dbContext);
+    var strategy = dbContext.Database.CreateExecutionStrategy();
+    await strategy.ExecuteAsync(async () =>
+    {
+        await dbContext.Database.MigrateAsync();
+    });
+    logger.LogInformation("增量迁移检查完成。");
 }
 else
 {
