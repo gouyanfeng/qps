@@ -10,6 +10,8 @@
 ## 组件使用（强制执行）
 
 - **已有封装组件必须使用**：项目已有封装的业务组件（如 `List`、`DetailDrawer`、`QueryPage`、`CandidateSelector`、`ChinaRegionCascader`、`Editor`、图表组件等），新增或改造功能时**必须优先使用**已有封装，不得绕过已有组件自行重复实现搜索、表格、分页、详情抽屉等通用能力。
+- **有组件库就统一用组件库**：不得用原生 `<button>` / `<span>` / `<div>` 手写 UI 控件（按钮、标签、徽章、开关、tab 等）替代 Element Plus 组件；Element Plus 内置过渡（`el-fade-in-linear` / `el-zoom-in-*` 等）同理优先于手写 transition 类。
+- **主题变量禁止写死**：圆角、颜色一律引用 `--el-*` CSS 变量（圆角 = `var(--el-border-radius-base)`，由主题抽屉写入），不得出现 `border-radius: 4px` 这类写死的像素值。布局用途的 flex/grid 容器、原生 `<table>`（数据矩阵）不受此限。
 - **禁止修改基础组件与公共组件**：`src/components` 下的公共组件、`src/layout` 下的布局组件、以及项目共享的路由、权限、请求拦截器等基础设施，**严禁直接修改**。如需扩展或修改，必须先向负责人说明现有能力的不足、影响范围和拟议改动，**得到明确确认后才能修改**。未经确认的改动一律退回。
 - 未获确认时，只允许在业务页面内部完成实现，不得触碰共享层。
 

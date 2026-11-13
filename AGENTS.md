@@ -7,6 +7,7 @@
 | 文档 | 内容 | 标签 |
 |---|---|---|
 | [docs/operations/getting-started.md](docs/operations/getting-started.md) | 端口与启动、`dotnet build -m:1`、数据库迁移、IIS 发布、产物目录（`agent-temp` / `ui-tests`）、UTF-8 与 PowerShell 编码、常见故障排查 | **必读** |
+| [docs/operations/deployment.md](docs/operations/deployment.md) | Docker 部署形态（三服务直连端口）、环境变量构建期/运行期机制、CI 镜像构建、分支与发布流、服务器更新与回滚 | **必读** |
 | [docs/architecture/modular-monolith.md](docs/architecture/modular-monolith.md) | 六项目分层与依赖方向、模块启用方式、Pipeline 顺序、Handler 事务边界、共享层边界、协作约定（最小改动 / 不回退他人改动） | **必读** |
 | [docs/architecture/permissions.md](docs/architecture/permissions.md) | 权限码唯一判断依据、Menu/Button 权限清单、`[Permission]` 校验链路、前端 `Permission` 用法、`AdminEndpointPermissionTests` 护栏 | **必读** |
 | [docs/domain/entities.md](docs/domain/entities.md) | 实体归属、软删除、唯一索引需带 `IsDeleted`、订单读快照 | **必读** |
