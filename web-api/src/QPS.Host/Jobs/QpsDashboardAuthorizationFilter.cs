@@ -36,7 +36,10 @@ public sealed class QpsDashboardAuthorizationFilter(JwtOptions jwtOptions) : IDa
         try
         {
             // 校验规则与 API 主链路一致：只验签名与有效期，要求 admin 角色。
-            var principal = new JwtSecurityTokenHandler().ValidateToken(
+            // MapInboundClaims 必须关掉：默认映射会把 role 改写成 ClaimTypes.Role 长名，
+            // 导致 RoleClaimType="role" 匹配不到，远程访问恒 401。
+            var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
+            var principal = handler.ValidateToken(
                 accessToken,
                 new TokenValidationParameters
                 {
