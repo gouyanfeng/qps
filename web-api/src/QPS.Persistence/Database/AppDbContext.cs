@@ -43,6 +43,7 @@ public class AppDbContext : DbContext, ISystemDbContext, ICrmDbContext, IMallDbC
     public DbSet<CrmVendorDemandItem> CrmVendorDemandItems { get; set; }
     public DbSet<CrmMatchOpportunity> CrmMatchOpportunities { get; set; }
     public DbSet<CrmMatchCandidate> CrmMatchCandidates { get; set; }
+    public DbSet<CrmMatchOpportunityDemand> CrmMatchOpportunityDemands { get; set; }
     public DbSet<CrmBusinessActivity> CrmBusinessActivities { get; set; }
 
     public DbSet<MallStore> MallStores { get; set; }

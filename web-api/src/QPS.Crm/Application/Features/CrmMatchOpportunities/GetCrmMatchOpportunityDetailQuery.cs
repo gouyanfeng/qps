@@ -23,7 +23,28 @@ public class GetCrmMatchOpportunityActivitiesQuery : IRequest<List<CrmMatchOppor
 public class CrmMatchOpportunityDetailDto : CrmMatchOpportunityListDto
 {
     public List<CrmMatchOpportunityCandidateDto> Candidates { get; set; } = [];
+    public List<CrmMatchOpportunityDemandDto> Demands { get; set; } = [];
     public List<CrmMatchOpportunityActivityDto> Activities { get; set; } = [];
+}
+
+public class CrmMatchOpportunityDemandDto
+{
+    public Guid Id { get; set; }
+    public Guid? DemandItemId { get; set; }
+    public Guid VendorId { get; set; }
+    public string VendorName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public decimal? Quantity { get; set; }
+    public string QuantityUnit { get; set; } = string.Empty;
+    public string Specification { get; set; } = string.Empty;
+    public string QualityRequirement { get; set; } = string.Empty;
+    public decimal? TargetPrice { get; set; }
+    public string PriceUnit { get; set; } = string.Empty;
+    public DateTime? ExpectedDeliveryAt { get; set; }
+    public string DeliveryAddress { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string EliminationReason { get; set; } = string.Empty;
 }
 
 public class CrmMatchOpportunityCandidateDto
@@ -43,6 +64,7 @@ public class CrmMatchOpportunityCandidateDto
     public string PriceUnit { get; set; } = string.Empty;
     public string SupplyCycle { get; set; } = string.Empty;
     public DateTime? ValidUntil { get; set; }
+    public string Role { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string EliminationReason { get; set; } = string.Empty;
     public int SortOrder { get; set; }
@@ -87,6 +109,7 @@ public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
         var detail = await GetDetailAsync(request.Id, cancellationToken);
         await FillOwnerNameAsync(detail, cancellationToken);
         detail.Candidates = await GetCandidatesAsync(request.Id, cancellationToken);
+        detail.Demands = await GetDemandsAsync(request.Id, cancellationToken);
         detail.Activities = await CrmMatchOpportunityActivityQuery.GetAsync(dbContext, request.Id, cancellationToken);
         return detail;
     }
@@ -134,12 +157,41 @@ public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
                 NextActionAt = opportunity.NextActionAt,
                 CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,
+                Source = opportunity.Source,
                 CreatedAt = opportunity.CreatedAt,
                 UpdatedAt = opportunity.UpdatedAt
             })
             .FirstOrDefaultAsync(cancellationToken);
 
         return detail ?? throw new BusinessException(404, "撮合机会不存在");
+    }
+
+    private async Task<List<CrmMatchOpportunityDemandDto>> GetDemandsAsync(Guid opportunityId, CancellationToken cancellationToken)
+    {
+        return await dbContext.CrmMatchOpportunityDemands
+            .AsNoTracking()
+            .Where(item => item.OpportunityId == opportunityId)
+            .OrderBy(item => item.SortOrder)
+            .Select(item => new CrmMatchOpportunityDemandDto
+            {
+                Id = item.Id,
+                DemandItemId = item.DemandItemId,
+                VendorId = item.VendorId,
+                VendorName = item.VendorName,
+                ProductName = item.ProductName,
+                Quantity = item.Quantity,
+                QuantityUnit = item.QuantityUnit,
+                Specification = item.Specification,
+                QualityRequirement = item.QualityRequirement,
+                TargetPrice = item.TargetPrice,
+                PriceUnit = item.PriceUnit,
+                ExpectedDeliveryAt = item.ExpectedDeliveryAt,
+                DeliveryAddress = item.DeliveryAddress,
+                Role = item.Role,
+                Status = item.Status,
+                EliminationReason = item.EliminationReason
+            })
+            .ToListAsync(cancellationToken);
     }
 
     private async Task<List<CrmMatchOpportunityCandidateDto>> GetCandidatesAsync(Guid opportunityId, CancellationToken cancellationToken)
@@ -165,6 +217,7 @@ public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
                 PriceUnit = item.PriceUnit,
                 SupplyCycle = item.SupplyCycle,
                 ValidUntil = item.ValidUntil,
+                Role = item.Role,
                 Status = item.Status,
                 EliminationReason = item.EliminationReason,
                 SortOrder = item.SortOrder

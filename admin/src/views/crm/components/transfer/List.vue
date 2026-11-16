@@ -1,7 +1,10 @@
 <template>
   <section class="detail-card transfer-card">
     <div class="section-title section-title-first">
-      <h3>流转记录</h3>
+      <div class="section-heading">
+        <h3>流转记录</h3>
+        <el-tag size="small" effect="plain">{{ records.length }} 条</el-tag>
+      </div>
     </div>
     <el-timeline v-if="records.length">
       <el-timeline-item v-for="record in records" :key="record.id" :timestamp="formatDate(record.createdAt)" placement="top">
@@ -12,7 +15,7 @@
         </div>
       </el-timeline-item>
     </el-timeline>
-    <el-empty v-else description="暂无流转记录" />
+    <el-empty v-else description="暂无流转记录" class="compact-empty" :image-size="56" />
   </section>
 </template>
 
@@ -49,6 +52,12 @@ const formatDate = (value?: string | null) => {
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .section-title h3 {
   margin: 0;
   font-size: 16px;
@@ -70,5 +79,13 @@ const formatDate = (value?: string | null) => {
 .muted {
   color: var(--el-text-color-secondary);
   font-size: 12px;
+}
+
+.compact-empty {
+  padding: 12px 0;
+
+  :deep(.el-empty__description) {
+    margin-top: 6px;
+  }
 }
 </style>

@@ -36,10 +36,10 @@ public class CrmVendorDemand : BaseEntity
     }
     public void ChangeStatus(string targetStatus, string? closedReason)
     {
-        if (string.IsNullOrWhiteSpace(targetStatus)) throw new InvalidOperationException("请选择采购需求状态");
-        if (targetStatus is not (Pending or Active or Completed or Closed)) throw new InvalidOperationException("采购需求状态无效");
+        if (string.IsNullOrWhiteSpace(targetStatus)) throw new InvalidOperationException("请选择采购列表状态");
+        if (targetStatus is not (Pending or Active or Completed or Closed)) throw new InvalidOperationException("采购列表状态无效");
         if (targetStatus == Active && (Items.Count == 0 || Items.Any(item => !item.IsValidForActivation()))) throw new InvalidOperationException("转为有效前请补齐每条明细的品类、数量和单位");
-        if (targetStatus == Closed && string.IsNullOrWhiteSpace(closedReason)) throw new InvalidOperationException("关闭采购需求必须填写关闭原因");
+        if (targetStatus == Closed && string.IsNullOrWhiteSpace(closedReason)) throw new InvalidOperationException("关闭采购列表必须填写关闭原因");
         Status = targetStatus;
         ClosedReason = targetStatus == Closed ? closedReason!.Trim() : string.Empty;
     }

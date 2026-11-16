@@ -24,6 +24,7 @@ public class CrmMatchCandidate : BaseEntity
     public string PriceUnit { get; private set; } = string.Empty;
     public string SupplyCycle { get; private set; } = string.Empty;
     public DateTime? ValidUntil { get; private set; }
+    public string Role { get; private set; } = "candidate";
     public string Status { get; private set; } = PendingEvaluation;
     public string EliminationReason { get; private set; } = string.Empty;
     public int SortOrder { get; private set; }
@@ -48,7 +49,8 @@ public class CrmMatchCandidate : BaseEntity
         string priceUnit,
         string supplyCycle,
         DateTime? validUntil,
-        int sortOrder)
+        int sortOrder,
+        string role = "candidate")
     {
         if (matchOpportunityId == Guid.Empty)
         {
@@ -87,9 +89,36 @@ public class CrmMatchCandidate : BaseEntity
             PriceUnit = Trim(priceUnit),
             SupplyCycle = Trim(supplyCycle),
             ValidUntil = validUntil,
+            Role = role == "initiator" ? "initiator" : "candidate",
             Status = PendingEvaluation,
             SortOrder = sortOrder
         };
+    }
+
+    public void Update(
+        decimal? availableQuantity,
+        string specification,
+        string qualityRequirement,
+        decimal? expectedPrice,
+        string supplyCycle,
+        DateTime? validUntil)
+    {
+        if (availableQuantity.HasValue && availableQuantity.Value < 0)
+        {
+            throw new InvalidOperationException("可供量不能为负数");
+        }
+
+        if (expectedPrice.HasValue && expectedPrice.Value < 0)
+        {
+            throw new InvalidOperationException("预期价格不能为负数");
+        }
+
+        AvailableQuantity = availableQuantity;
+        Specification = Trim(specification);
+        QualityRequirement = Trim(qualityRequirement);
+        ExpectedPrice = expectedPrice;
+        SupplyCycle = Trim(supplyCycle);
+        ValidUntil = validUntil;
     }
 
     public void Keep()
@@ -113,6 +142,12 @@ public class CrmMatchCandidate : BaseEntity
 
         Status = Eliminated;
         EliminationReason = reason.Trim();
+    }
+
+    public void ResetToPending()
+    {
+        Status = PendingEvaluation;
+        EliminationReason = string.Empty;
     }
 
     private static string Trim(string? value) => value?.Trim() ?? string.Empty;

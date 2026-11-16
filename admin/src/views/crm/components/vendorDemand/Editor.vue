@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="form.id ? '编辑采购需求' : '新增采购需求'" width="min(1600px, calc(100vw - 48px))" destroy-on-close>
+  <el-dialog v-model="dialogVisible" :title="form.id ? '编辑采购列表' : '新增采购列表'" width="min(1600px, calc(100vw - 48px))" destroy-on-close>
     <el-form :model="form" label-width="116px">
       <el-row :gutter="16">
         <el-col :span="12">
@@ -17,7 +17,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="采购需求名称" required><el-input v-model="form.demandName" clearable /></el-form-item>
+          <el-form-item label="采购列表名称" required><el-input v-model="form.demandName" clearable /></el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="提出日期"><el-date-picker v-model="form.demandAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" /></el-form-item>
@@ -128,7 +128,7 @@ const reset = async () => {
   await loadContacts();
 };
   const save = async () => {
-    if (!form.vendorId || !form.demandName.trim()) { ElMessage.error("请选择需求方并填写采购需求名称"); return; }
+    if (!form.vendorId || !form.demandName.trim()) { ElMessage.error("请选择需求方并填写采购列表名称"); return; }
     const items = form.items
       .filter((item: any) =>
         Boolean(item.productName?.trim()) ||
@@ -146,7 +146,7 @@ const reset = async () => {
     try {
       const payload = { vendorId: form.vendorId, demandName: form.demandName.trim(), demandAt: form.demandAt, contactId: form.contactId || null, expectedDeliveryAt: form.expectedDeliveryAt || null, receivingAddress: form.receivingAddress, sourceUrl: form.sourceUrl, remark: form.remark, items };
     if (form.id) await crmVendorDemandApi.update(form.id, payload); else await crmVendorDemandApi.create(payload);
-    ElMessage.success("采购需求已保存"); dialogVisible.value = false; emit("saved");
+    ElMessage.success("采购列表已保存"); dialogVisible.value = false; emit("saved");
   } finally { saving.value = false; }
 };
 watch(() => props.modelValue, visible => { if (visible) void reset(); });

@@ -117,12 +117,12 @@ internal static class CrmMatchOpportunitySource
             .FirstOrDefaultAsync(item => item.Id == demandItemId, cancellationToken);
         if (demandItem?.VendorDemand == null)
         {
-            throw new BusinessException(404, "采购需求明细不存在");
+            throw new BusinessException(404, "采购列表明细不存在");
         }
 
         if (demandItem.VendorDemand.Status != CrmVendorDemand.Active)
         {
-            throw new BusinessException(400, "采购需求状态必须为有效");
+            throw new BusinessException(400, "采购列表状态必须为有效");
         }
 
         return demandItem;
@@ -196,7 +196,7 @@ internal static class CrmMatchOpportunitySource
             ? $"{nextAction}（{nextActionRemark}）"
             : nextAction;
 
-    public static CrmMatchCandidate CreateCandidate(CrmMatchOpportunity opportunity, CrmHerbBaseSupply supply, int sortOrder)
+    public static CrmMatchCandidate CreateCandidate(CrmMatchOpportunity opportunity, CrmHerbBaseSupply supply, int sortOrder, string role = "candidate")
     {
         var herbBase = supply.HerbBase!;
         return CrmMatchCandidate.Create(
@@ -215,7 +215,8 @@ internal static class CrmMatchOpportunitySource
             supply.PriceUnit,
             supply.SupplyCycle,
             supply.ValidUntil,
-            sortOrder);
+            sortOrder,
+            role);
     }
 
     public static CrmBusinessActivity CreateActivity(Guid opportunityId, string actionType, string content) =>

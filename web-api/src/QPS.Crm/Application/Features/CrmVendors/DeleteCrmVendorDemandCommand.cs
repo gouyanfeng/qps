@@ -26,7 +26,7 @@ public class DeleteCrmVendorDemandHandler : IRequestHandler<DeleteCrmVendorDeman
             .FirstOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
         if (plan == null)
         {
-            throw new BusinessException(404, "采购需求不存在");
+            throw new BusinessException(404, "采购列表不存在");
         }
         var vendor = await _dbContext.CrmVendors.FirstOrDefaultAsync(item => item.Id == plan.VendorId, cancellationToken)
             ?? throw new BusinessException(404, "厂商不存在");

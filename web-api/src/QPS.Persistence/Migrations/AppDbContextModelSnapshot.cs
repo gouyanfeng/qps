@@ -629,6 +629,13 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("candidate");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
@@ -704,7 +711,7 @@ namespace QPS.Persistence.Migrations
                     b.Property<Guid>("DemandId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("DemandItemId")
+                    b.Property<Guid?>("DemandItemId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("DemandProductName")
@@ -748,6 +755,13 @@ namespace QPS.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("demand");
+
                     b.Property<string>("Specification")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -777,11 +791,114 @@ namespace QPS.Persistence.Migrations
 
                     b.HasIndex("DemandItemId")
                         .IsUnique()
-                        .HasFilter("[Status] IN (N'推进中', N'暂停') AND [IsDeleted] = 0");
+                        .HasFilter("[DemandItemId] IS NOT NULL AND [Status] IN (N'推进中', N'暂停') AND [IsDeleted] = 0");
 
                     b.HasIndex("OwnerUserId", "NextActionAt");
 
                     b.ToTable("CrmMatchOpportunities", (string)null);
+                });
+
+            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunityDemand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("DemandItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EliminationReason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ExpectedDeliveryAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("OpportunityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PriceUnit")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("QualityRequirement")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Specification")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<decimal?>("TargetPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("VendorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VendorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OpportunityId");
+
+                    b.ToTable("CrmMatchOpportunityDemands", (string)null);
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmTransferRecord", b =>
@@ -3938,7 +4055,15 @@ namespace QPS.Persistence.Migrations
                     b.HasOne("QPS.Crm.Domain.Entities.CrmVendorDemandItem", null)
                         .WithMany()
                         .HasForeignKey("DemandItemId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunityDemand", b =>
+                {
+                    b.HasOne("QPS.Crm.Domain.Entities.CrmMatchOpportunity", null)
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

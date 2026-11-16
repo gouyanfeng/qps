@@ -110,6 +110,10 @@ public class CrmVendorDemandItemDto
     public string MatchOpportunityStatus { get; set; } = string.Empty;
     public int MatchCandidateCount { get; set; }
     public string MatchDisplayStatus { get; set; } = "待撮合";
+    /// <summary>已撮合成功（已采购）数量。</summary>
+    public decimal MatchedQuantity { get; set; }
+    /// <summary>剩余可继续撮合数量，需求全量完成时不再允许发起撮合。</summary>
+    public decimal RemainingQuantity { get; set; }
 }
 
 public class CrmVendorDemandMatchProgressDto
@@ -120,6 +124,7 @@ public class CrmVendorDemandMatchProgressDto
     public int InProgressItemCount { get; set; }
     public int PausedItemCount { get; set; }
     public int ClosedItemCount { get; set; }
+    public int CompletedItemCount { get; set; }
 }
 
 

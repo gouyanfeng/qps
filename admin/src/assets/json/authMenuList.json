@@ -107,12 +107,12 @@
           }
         },
         {
-          "path": "/crm/purchase-demand",
-          "name": "purchaseDemand",
-          "component": "/crm/purchaseDemand/index",
+          "path": "/crm/purchase",
+          "name": "purchase",
+          "component": "/crm/purchase/index",
           "meta": {
             "icon": "Tickets",
-            "title": "采购需求",
+            "title": "采购列表",
             "isLink": "",
             "isHide": false,
             "isFull": false,

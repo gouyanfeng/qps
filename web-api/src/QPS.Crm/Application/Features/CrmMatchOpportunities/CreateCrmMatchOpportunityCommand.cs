@@ -12,10 +12,14 @@ namespace QPS.Crm.Application.Features.CrmMatchOpportunities;
 public class CreateCrmMatchOpportunityCommand : IRequest<Guid>
 {
     public Guid DemandItemId { get; set; }
+    /// <summary>机会关联的药厂需求明细（支持多个药厂）；为空时回退到 DemandItemId。</summary>
+    public List<Guid> DemandItemIds { get; set; } = [];
     public List<Guid> SupplyIds { get; set; } = [];
     public string NextAction { get; set; } = string.Empty;
     public string NextActionRemark { get; set; } = string.Empty;
     public DateTime? NextActionAt { get; set; }
+    /// <summary>发起方向：demand=采购列表，supply=供应列表。</summary>
+    public string Source { get; set; } = "demand";
 }
 
 public class CreateCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IRequestHandler<CreateCrmMatchOpportunityCommand, Guid>
@@ -37,6 +41,19 @@ public class CreateCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IReques
         }
         var demandItem = await CrmMatchOpportunitySource.LoadDemandItemAsync(dbContext, request.DemandItemId, cancellationToken);
         var demand = demandItem.VendorDemand!;
+
+        // 只有需求数量未撮合满时才可以继续撮合剩余量；已采购完成不再允许发起。
+        var matchedQuantity = await dbContext.CrmMatchOpportunities
+            .Where(item => item.DemandItemId == demandItem.Id
+                && item.Status == CrmMatchOpportunity.Closed
+                && item.CloseResult == CrmMatchOpportunity.Matched)
+            .SumAsync(item => (decimal?)item.DemandQuantity, cancellationToken) ?? 0m;
+        var remainingQuantity = (demandItem.Quantity ?? 0m) - matchedQuantity;
+        if (remainingQuantity <= 0)
+        {
+            throw new BusinessException(400, "该采购明细已采购完成，无需继续撮合");
+        }
+
         if (await dbContext.CrmMatchOpportunities.AnyAsync(
                 item => item.DemandItemId == demandItem.Id &&
                     (item.Status == CrmMatchOpportunity.InProgress || item.Status == CrmMatchOpportunity.Paused),
@@ -54,7 +71,7 @@ public class CreateCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IReques
             demand.Id,
             demand.VendorId,
             demandItem.ProductName,
-            demandItem.Quantity,
+            remainingQuantity,
             demandItem.QuantityUnit,
             demandItem.Specification,
             demandItem.QualityRequirement,
@@ -63,18 +80,59 @@ public class CreateCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IReques
             vendor.OwnerUserId,
             request.NextAction,
             request.NextActionAt,
-            request.NextActionRemark);
+            request.NextActionRemark,
+            request.Source);
         dbContext.CrmMatchOpportunities.Add(opportunity);
 
+        // 多对多关联：药厂侧可挂多个需求明细，基地侧可挂多个候选供应。
+        var demandItemIds = (request.DemandItemIds.Count > 0 ? request.DemandItemIds : [demandItem.Id]).Distinct().ToList();
+        if (!demandItemIds.Contains(demandItem.Id)) demandItemIds.Insert(0, demandItem.Id);
+        var relatedDemandItems = await dbContext.CrmVendorDemandItems
+            .Include(item => item.VendorDemand)
+            .Where(item => demandItemIds.Contains(item.Id))
+            .ToListAsync(cancellationToken);
+        if (relatedDemandItems.Count != demandItemIds.Count)
+        {
+            throw new BusinessException(400, "关联采购列表明细不存在");
+        }
+        var vendorIds = relatedDemandItems.Select(item => item.VendorDemand!.VendorId).Distinct().ToList();
+        var vendors = await dbContext.CrmVendors
+            .Where(item => vendorIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        foreach (var (relatedItem, index) in demandItemIds
+            .Select(id => relatedDemandItems.First(item => item.Id == id))
+            .Select((item, index) => (item, index)))
+        {
+            var relatedDemand = relatedItem.VendorDemand!;
+            vendors.TryGetValue(relatedDemand.VendorId, out var relatedVendor);
+            dbContext.CrmMatchOpportunityDemands.Add(CrmMatchOpportunityDemand.Create(
+                opportunity.Id,
+                relatedItem.Id,
+                relatedDemand.VendorId,
+                relatedVendor?.VendorName ?? string.Empty,
+                relatedItem.ProductName,
+                relatedItem.Quantity,
+                relatedItem.QuantityUnit,
+                relatedItem.Specification,
+                relatedItem.QualityRequirement,
+                relatedItem.TargetPrice,
+                relatedItem.PriceUnit,
+                relatedItem.ExpectedDeliveryAt ?? relatedDemand.ExpectedDeliveryAt,
+                relatedDemand.ReceivingAddress,
+                request.Source == "supply" ? CrmMatchOpportunityDemand.Candidate : CrmMatchOpportunityDemand.Initiator,
+                index + 1));
+        }
+
+        var baseRole = request.Source == "supply" ? "initiator" : "candidate";
         foreach (var (supply, index) in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)).Select((item, index) => (item, index)))
         {
-            dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(opportunity, supply, index + 1));
+            dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(opportunity, supply, index + 1, baseRole));
         }
 
         dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
             opportunity.Id,
             "创建机会",
-            $"创建撮合机会：采购品类{demandItem.ProductName}；初始阶段：{opportunity.Stage}；下一步：{CrmMatchOpportunitySource.DescribeNextAction(opportunity.NextAction, opportunity.NextActionRemark)}；计划时间：{opportunity.NextActionAt:yyyy-MM-dd HH:mm}"));
+            $"创建撮合机会：采购品类{demandItem.ProductName}；发起方向：{(request.Source == "supply" ? "供应 → 需求" : "需求 → 供应")}；初始阶段：{opportunity.Stage}；下一步：{CrmMatchOpportunitySource.DescribeNextAction(opportunity.NextAction, opportunity.NextActionRemark)}；计划时间：{opportunity.NextActionAt:yyyy-MM-dd HH:mm}"));
         foreach (var supply in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)))
         {
             dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "加入候选", $"加入候选：{supply.HerbBase!.BaseName} - {supply.ProductName}"));
@@ -117,7 +175,11 @@ public class AddCrmMatchOpportunityCandidatesHandler(ICrmDbContext dbContext) : 
 
         foreach (var (supply, index) in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)).Select((item, index) => (item, index)))
         {
-            dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(opportunity, supply, startSortOrder + index + 1));
+            dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(
+                opportunity,
+                supply,
+                startSortOrder + index + 1,
+                opportunity.Source == "supply" ? "initiator" : "candidate"));
             dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "加入候选", $"加入候选：{supply.HerbBase!.BaseName} - {supply.ProductName}"));
         }
 

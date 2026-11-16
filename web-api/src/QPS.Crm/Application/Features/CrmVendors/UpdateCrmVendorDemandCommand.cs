@@ -37,13 +37,13 @@ public class UpdateCrmVendorDemandHandler : IRequestHandler<UpdateCrmVendorDeman
             .FirstOrDefaultAsync(item => item.Id == request.Id && item.VendorId == request.Request.VendorId, cancellationToken);
         if (plan == null)
         {
-            throw new BusinessException(404, "采购需求不存在");
+            throw new BusinessException(404, "采购列表不存在");
         }
 
         var demandName = request.Request.DemandName.Trim();
         if (string.IsNullOrWhiteSpace(demandName))
         {
-            throw new BusinessException(400, "请输入采购需求名称");
+            throw new BusinessException(400, "请输入采购列表名称");
         }
         if (request.Request.ContactId.HasValue && !await _dbContext.CrmContacts.AnyAsync(contact => contact.Id == request.Request.ContactId && contact.EntityType == CrmCodes.VendorEntityType && contact.EntityId == vendor.Id && contact.Status != "无效", cancellationToken)) throw new BusinessException(400, "联系人不属于该厂商或已失效");
         await CrmVendorDemands.EnsureUnclosedMatchOpportunitiesNotAffectedByUpdateAsync(
@@ -66,7 +66,7 @@ public class UpdateCrmVendorDemandHandler : IRequestHandler<UpdateCrmVendorDeman
 
             if (!existingItemsById.TryGetValue(item.Id.Value, out var currentItem))
             {
-                throw new BusinessException(400, "采购明细不存在或不属于当前采购需求");
+                throw new BusinessException(400, "采购明细不存在或不属于当前采购列表");
             }
 
             retainedItemIds.Add(currentItem.Id);

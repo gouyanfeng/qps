@@ -11,7 +11,7 @@ public class CrmMatchOpportunity : BaseEntity
     public const string NotMatched = "未成交";
     public const string DemandCancelled = "需求取消";
 
-    public Guid DemandItemId { get; private set; }
+    public Guid? DemandItemId { get; private set; }
     public Guid DemandId { get; private set; }
     public Guid VendorId { get; private set; }
     public string DemandProductName { get; private set; } = string.Empty;
@@ -29,13 +29,15 @@ public class CrmMatchOpportunity : BaseEntity
     public DateTime? NextActionAt { get; private set; }
     public string CloseResult { get; private set; } = string.Empty;
     public string ClosedReason { get; private set; } = string.Empty;
+    /// <summary>发起方向：demand=采购列表发起，supply=供应列表发起。</summary>
+    public string Source { get; private set; } = "demand";
 
     private CrmMatchOpportunity()
     {
     }
 
     public static CrmMatchOpportunity Create(
-        Guid demandItemId,
+        Guid? demandItemId,
         Guid demandId,
         Guid vendorId,
         string demandProductName,
@@ -48,19 +50,20 @@ public class CrmMatchOpportunity : BaseEntity
         Guid? ownerUserId,
         string nextAction,
         DateTime? nextActionAt,
-        string nextActionRemark = "")
+        string nextActionRemark = "",
+        string source = "demand")
     {
-        if (demandItemId == Guid.Empty)
+        if (!demandItemId.HasValue && source != "supply")
         {
             throw new InvalidOperationException("撮合机会需求明细不能为空");
         }
 
-        if (demandId == Guid.Empty)
+        if (demandId == Guid.Empty && source != "supply")
         {
             throw new InvalidOperationException("撮合机会需求不能为空");
         }
 
-        if (vendorId == Guid.Empty)
+        if (vendorId == Guid.Empty && source != "supply")
         {
             throw new InvalidOperationException("撮合机会需求厂商不能为空");
         }
@@ -89,7 +92,8 @@ public class CrmMatchOpportunity : BaseEntity
             Stage = CrmMatchOpportunityStage.MatchingVerification,
             NextAction = Trim(nextAction),
             NextActionRemark = Trim(nextActionRemark),
-            NextActionAt = nextActionAt
+            NextActionAt = nextActionAt,
+            Source = source == "supply" ? "supply" : "demand"
         };
     }
 

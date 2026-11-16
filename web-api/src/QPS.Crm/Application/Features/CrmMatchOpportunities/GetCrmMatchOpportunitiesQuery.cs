@@ -21,12 +21,13 @@ public class GetCrmMatchOpportunitiesQuery : PaginationRequest, IRequest<Paginat
     public DateTime? NextActionAtFrom { get; set; }
     public DateTime? NextActionAtTo { get; set; }
     public string? Keyword { get; set; }
+    public string? Source { get; set; }
 }
 
 public class CrmMatchOpportunityListDto
 {
     public Guid Id { get; set; }
-    public Guid DemandItemId { get; set; }
+    public Guid? DemandItemId { get; set; }
     public Guid DemandId { get; set; }
     public Guid VendorId { get; set; }
     public string VendorName { get; set; } = string.Empty;
@@ -46,6 +47,10 @@ public class CrmMatchOpportunityListDto
     public DateTime? NextActionAt { get; set; }
     public string CloseResult { get; set; } = string.Empty;
     public string ClosedReason { get; set; } = string.Empty;
+    /// <summary>发起方向：demand=需求 → 供应，supply=供应 → 需求。</summary>
+    public string Source { get; set; } = "demand";
+    /// <summary>发起方名称：供应侧为基地主体，需求侧为药厂。</summary>
+    public string InitiatorName { get; set; } = string.Empty;
     public int CandidateCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -96,6 +101,14 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                 NextActionAt = opportunity.NextActionAt,
                 CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,
+                Source = opportunity.Source,
+                InitiatorName = opportunity.Source == "supply"
+                    ? dbContext.CrmMatchCandidates
+                        .Where(candidate => candidate.MatchOpportunityId == opportunity.Id && candidate.Role == "initiator")
+                        .Select(candidate => candidate.SubjectName).FirstOrDefault() ?? string.Empty
+                    : dbContext.CrmMatchOpportunityDemands
+                        .Where(demand => demand.OpportunityId == opportunity.Id && demand.Role == "initiator")
+                        .Select(demand => demand.VendorName).FirstOrDefault() ?? string.Empty,
                 CandidateCount = dbContext.CrmMatchCandidates.Count(candidate => candidate.MatchOpportunityId == opportunity.Id),
                 CreatedAt = opportunity.CreatedAt,
                 UpdatedAt = opportunity.UpdatedAt
@@ -143,6 +156,12 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
         {
             var status = request.Status.Trim();
             opportunities = opportunities.Where(item => item.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Source))
+        {
+            var source = request.Source.Trim();
+            opportunities = opportunities.Where(item => item.Source == source);
         }
 
         if (!string.IsNullOrWhiteSpace(request.ProductName))

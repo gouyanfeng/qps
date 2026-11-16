@@ -36,7 +36,7 @@ internal static class CrmVendorDemands
         }
 
         var exists = await dbContext.CrmMatchOpportunities.AnyAsync(
-            opportunity => demandItemIds.Contains(opportunity.DemandItemId),
+            opportunity => opportunity.DemandItemId.HasValue && demandItemIds.Contains(opportunity.DemandItemId.Value),
             cancellationToken);
         if (exists)
         {
@@ -53,7 +53,8 @@ internal static class CrmVendorDemands
         var protectedItemIds = await dbContext.CrmMatchOpportunities
             .Where(opportunity => opportunity.DemandId == demand.Id &&
                 (opportunity.Status == CrmMatchOpportunity.InProgress || opportunity.Status == CrmMatchOpportunity.Paused))
-            .Select(opportunity => opportunity.DemandItemId)
+            .Where(opportunity => opportunity.DemandItemId.HasValue)
+            .Select(opportunity => opportunity.DemandItemId!.Value)
             .ToListAsync(cancellationToken);
         if (protectedItemIds.Count == 0)
         {

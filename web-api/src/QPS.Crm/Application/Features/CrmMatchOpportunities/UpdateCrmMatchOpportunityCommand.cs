@@ -29,7 +29,13 @@ public class UpdateCrmMatchCandidateStatusHandler(ICrmDbContext dbContext) : IRe
         var status = request.Status.Trim();
         string actionType;
         string content;
-        if (status == CrmMatchCandidate.Kept)
+        if (status == CrmMatchCandidate.PendingEvaluation)
+        {
+            candidate.ResetToPending();
+            actionType = "恢复候选";
+            content = $"恢复候选为待评估：{candidate.HerbBaseName} - {candidate.ProductName}";
+        }
+        else if (status == CrmMatchCandidate.Kept)
         {
             candidate.Keep();
             actionType = "保留候选";
@@ -60,10 +66,95 @@ public class UpdateCrmMatchCandidateStatusHandler(ICrmDbContext dbContext) : IRe
         }
         else
         {
-            throw new BusinessException(400, "候选状态仅支持保留、中选或淘汰");
+            throw new BusinessException(400, "候选状态仅支持待评估、保留、中选或淘汰");
         }
 
         dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, actionType, content));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
+[Permission(CrmPermissionCodes.CRM_MATCH_OPPORTUNITY_MANAGE)]
+public class UpdateCrmMatchCandidateCommand : IRequest<bool>
+{
+    public Guid OpportunityId { get; set; }
+    public Guid CandidateId { get; set; }
+    public decimal? AvailableQuantity { get; set; }
+    public string Specification { get; set; } = string.Empty;
+    public string QualityRequirement { get; set; } = string.Empty;
+    public decimal? ExpectedPrice { get; set; }
+    public string SupplyCycle { get; set; } = string.Empty;
+    public DateTime? ValidUntil { get; set; }
+}
+
+public class UpdateCrmMatchCandidateHandler(ICrmDbContext dbContext) : IRequestHandler<UpdateCrmMatchCandidateCommand, bool>
+{
+    public async Task<bool> Handle(UpdateCrmMatchCandidateCommand request, CancellationToken cancellationToken)
+    {
+        var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
+        CrmMatchOpportunityCommandGuards.EnsureInProgress(opportunity);
+        var candidate = await dbContext.CrmMatchCandidates.FirstOrDefaultAsync(
+            item => item.Id == request.CandidateId && item.MatchOpportunityId == opportunity.Id, cancellationToken)
+            ?? throw new BusinessException(404, "撮合候选不存在");
+
+        try
+        {
+            candidate.Update(
+                request.AvailableQuantity,
+                request.Specification,
+                request.QualityRequirement,
+                request.ExpectedPrice,
+                request.SupplyCycle,
+                request.ValidUntil);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new BusinessException(400, exception.Message);
+        }
+
+        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
+            opportunity.Id,
+            "修改候选",
+            $"修改候选：{candidate.HerbBaseName} - {candidate.ProductName}；可供量：{candidate.AvailableQuantity}{candidate.QuantityUnit}；规格：{candidate.Specification}；预期价格：{candidate.ExpectedPrice}{candidate.PriceUnit}"));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
+[Permission(CrmPermissionCodes.CRM_MATCH_OPPORTUNITY_MANAGE)]
+public class UpdateCrmMatchOpportunityDemandCommand : IRequest<bool>
+{
+    public Guid OpportunityId { get; set; }
+    public Guid DemandId { get; set; }
+    public decimal? Quantity { get; set; }
+    public string Specification { get; set; } = string.Empty;
+    public string QualityRequirement { get; set; } = string.Empty;
+    public decimal? TargetPrice { get; set; }
+    public DateTime? ExpectedDeliveryAt { get; set; }
+}
+
+public class UpdateCrmMatchOpportunityDemandHandler(ICrmDbContext dbContext) : IRequestHandler<UpdateCrmMatchOpportunityDemandCommand, bool>
+{
+    public async Task<bool> Handle(UpdateCrmMatchOpportunityDemandCommand request, CancellationToken cancellationToken)
+    {
+        var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
+        CrmMatchOpportunityCommandGuards.EnsureInProgress(opportunity);
+        var demand = await dbContext.CrmMatchOpportunityDemands.FirstOrDefaultAsync(
+            item => item.Id == request.DemandId && item.OpportunityId == opportunity.Id, cancellationToken)
+            ?? throw new BusinessException(404, "关联药厂需求不存在");
+        try
+        {
+            demand.Update(request.Quantity, request.Specification, request.QualityRequirement, request.TargetPrice, request.ExpectedDeliveryAt);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new BusinessException(400, exception.Message);
+        }
+        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
+            opportunity.Id,
+            "修改候选用药厂需求",
+            $"修改候选：{demand.VendorName} - {demand.ProductName}；需求数量：{demand.Quantity}{demand.QuantityUnit}；目标价：{demand.TargetPrice}{demand.PriceUnit}"));
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }

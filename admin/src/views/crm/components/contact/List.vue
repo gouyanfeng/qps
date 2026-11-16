@@ -21,7 +21,7 @@
       <el-table-column label="角色" width="130">
         <template #default="{ row }">{{ row.roleName || "-" }}</template>
       </el-table-column>
-      <el-table-column prop="remark" label="备注" min-width="180" />
+      <el-table-column prop="remark" label="备注" width="180" show-overflow-tooltip />
       <el-table-column label="状态" width="100">
         <template #default="{ row }">
           <el-tag size="small" :type="row.status === '无效' ? 'danger' : 'success'">{{ row.status || "-" }}</el-tag>

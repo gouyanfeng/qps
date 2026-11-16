@@ -31,7 +31,12 @@
           <el-table-column prop="candidateCount" label="候选次数" width="96" align="center" />
           <el-table-column label="占用状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="row.selectedCount ? 'danger' : 'success'">{{ row.selectedCount ? "已中选" : "未中选" }}</el-tag></template></el-table-column>
           <el-table-column prop="occupiedDemandSummary" label="占用需求" min-width="180" show-overflow-tooltip><template #default="{ row }">{{ row.occupiedDemandSummary || "-" }}</template></el-table-column>
-          <el-table-column label="操作" width="100" fixed="right" class-name="actions-column" header-class-name="actions-column"><template #default="{ row }"><el-button link type="primary" :disabled="!row.herbBaseSubjectId" @click="openHerbBase(row)">查看基地</el-button></template></el-table-column>
+          <el-table-column label="操作" width="180" fixed="right" class-name="actions-column" header-class-name="actions-column">
+            <template #default="{ row }">
+              <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canStartMatch(row)" link type="primary" @click="startMatch(row)">发起撮合</el-button></Permission>
+              <el-button link type="primary" :disabled="!row.herbBaseSubjectId" @click="openHerbBase(row)">查看基地</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </template>
     </QueryPage>
@@ -42,8 +47,11 @@
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import QueryPage from "@/components/QueryPage/index.vue";
+import Permission from "@/components/Permission/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
+import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const queryPageRef = ref();
@@ -55,6 +63,12 @@ const quantityLabel = (row: any) => row.availableQuantity === null || row.availa
 const regionLabel = (row: any) => [row.province, row.city, row.area].filter(Boolean).join(" / ") || "-";
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleDateString("zh-CN") : "-";
 const supplyStatusType = (status?: string) => ({ "有效": "success", "暂停": "warning", "已售罄": "info", "已失效": "danger" }[status || ""] || undefined);
+const canStartMatch = (row: any) => row.status === "有效";
+const startMatch = async (row: any) => {
+  const result = await crmMatchOpportunityApi.createEmpty({ source: "supply", supplyId: row.id });
+  ElMessage.success("已发起撮合，请在详情页选择候选药厂");
+  await router.replace({ name: "matchOpportunity", query: { detailId: result.data } });
+};
 const openHerbBase = (row: any) => router.push({ path: "/crm/herb-base", query: { detailId: row.herbBaseSubjectId } });
 const handleRegionChange = (regions: string[]) => {
   searchForm.region = regions.at(-1) || "";

@@ -11,7 +11,7 @@
             </el-tooltip>
           </div>
           <div class="head-meta">
-            <span>采购需求 {{ currentVendor.purchaseDemandCount || 0 }}</span>
+            <span>采购列表 {{ currentVendor.purchaseDemandCount || 0 }}</span>
             <span>品类 {{ currentVendor.productCount || 0 }}</span>
             <span>联系人 {{ currentVendor.contactCount || 0 }}</span>
           </div>
@@ -53,14 +53,14 @@
         <div class="detail-content">
           <section class="detail-card purchase-demand-card">
             <div class="section-title">
-              <h3>采购需求</h3>
-              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button type="primary" link :icon="Plus" @click="openPurchaseDemandDialog()">新增采购需求</el-button></Permission>
+              <h3>采购列表</h3>
+              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button type="primary" link :icon="Plus" @click="openPurchaseDemandDialog()">新增采购列表</el-button></Permission>
             </div>
             <el-table :data="purchaseDemands" v-loading="purchaseDemandLoading" border class="purchase-demand-table">
-              <el-table-column label="采购需求" min-width="230">
+              <el-table-column label="采购列表" min-width="230">
                 <template #default="{ row }">
                   <div class="demand-title-cell">
-                    <strong>{{ row.demandName || "未命名采购需求" }}</strong>
+                    <strong>{{ row.demandName || "未命名采购列表" }}</strong>
                     <span>{{ row.demandNo || "-" }}</span>
                   </div>
                 </template>
@@ -377,12 +377,12 @@ const changePurchaseDemandStatus = async (row: any, status: string) => {
 };
 
 const closePurchaseDemand = async (row: any) => {
-  const { value } = await ElMessageBox.prompt("关闭原因", "关闭采购需求", {
+  const { value } = await ElMessageBox.prompt("关闭原因", "关闭采购列表", {
     inputPattern: /.+/,
     inputErrorMessage: "请填写关闭原因",
   });
   await crmVendorDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
-  ElMessage.success("采购需求已关闭");
+  ElMessage.success("采购列表已关闭");
   await refreshDetail(false);
   notifyListChanged();
 };

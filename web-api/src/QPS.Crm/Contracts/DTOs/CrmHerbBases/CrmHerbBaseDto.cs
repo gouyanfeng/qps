@@ -27,6 +27,12 @@ public class CrmHerbBaseDto
     public List<CrmHerbBaseSupplyDto> Supplies { get; set; } = new();
 
     /// <summary>
+    /// 基地品类，来自 CrmBusinessEntityAttributes（EntityType=CRM_HERB_BASE，AttributeCode=CRM_HERB_BASE_PRODUCT）。
+    /// 与 Supplies 无关：没有供应记录的基地也可以有品类。
+    /// </summary>
+    public List<string> ProductNames { get; set; } = new();
+
+    /// <summary>
     /// 药材基地等级，例如高、中、低、无效。
     /// </summary>
     public string Grade { get; set; } = string.Empty;

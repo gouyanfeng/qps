@@ -70,6 +70,8 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/modules/auth";
 import Permission from "@/components/Permission/index.vue";
 import QueryPage from "@/components/QueryPage/index.vue";
+import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -87,19 +89,39 @@ const visibleDemandItems = (items: any[]) => {
 
 const hiddenDemandItemCount = (items: any[]) => items.length - visibleDemandItems(items).length;
 
-const getDemandItemsTooltip = (items: any[]) => `采购明细：${items.map(getDemandItemLabel).join("、")}`;
+const getDemandItemsTooltip = (items: any[]) =>
+  `采购明细：${items.map(item => {
+    const label = getDemandItemLabel(item);
+    if (!item.matchedQuantity) return label;
+    return `${label}（已采购 ${item.matchedQuantity}${item.quantityUnit || ""}，剩余 ${item.remainingQuantity ?? 0}${item.quantityUnit || ""}）`;
+  }).join("、")}`;
 
 const handleReset = () => {
   searchForm.keyword = "";
   searchForm.status = "";
 };
 
-const canStartMatch = (row: any) => row.status === "有效" && authStore.hasPermissionGet("CRM_MATCH_OPPORTUNITY_MANAGE");
-const startMatch = (row: any) => router.push({ path: "/crm/match-opportunity", query: { demandId: row.id } });
+const remainingOf = (item: any) => Number(item?.remainingQuantity ?? 0);
+// 有明确需求数量的明细撮合满了才算完成；历史明细数量为空时仍可发起撮合。
+const isItemCompleted = (item: any) => Number(item?.quantity || 0) > 0 && remainingOf(item) <= 0;
+const hasRemainingDemand = (row: any) => (row.items || []).some((item: any) => !isItemCompleted(item));
+const canStartMatch = (row: any) => row.status === "有效" && hasRemainingDemand(row) && authStore.hasPermissionGet("CRM_MATCH_OPPORTUNITY_MANAGE");
+const startMatch = async (row: any) => {
+  const demandItemId = row.items?.[0]?.id;
+  if (!demandItemId) {
+    ElMessage.warning("该采购列表没有明细，无法发起撮合");
+    return;
+  }
+  const result = await crmMatchOpportunityApi.createEmpty({ source: "demand", demandItemId });
+  ElMessage.success("已发起撮合，请在详情页选择候选基地");
+  await router.replace({ name: "matchOpportunity", query: { detailId: result.data } });
+};
 const matchProgressLabel = (row: any) => {
   const progress = row.matchProgress;
   if (!progress?.totalItemCount) return "暂无采购明细";
+  if (!hasRemainingDemand(row)) return `已采购完成 ${progress.totalItemCount}/${progress.totalItemCount}`;
   const segments = [`已发起 ${progress.startedItemCount}/${progress.totalItemCount}`];
+  if (progress.completedItemCount) segments.push(`${progress.completedItemCount} 已采购完成`);
   if (progress.inProgressItemCount) segments.push(`${progress.inProgressItemCount} 撮合中`);
   if (progress.pausedItemCount) segments.push(`${progress.pausedItemCount} 已暂停`);
   if (progress.closedItemCount) segments.push(`${progress.closedItemCount} 已结束`);

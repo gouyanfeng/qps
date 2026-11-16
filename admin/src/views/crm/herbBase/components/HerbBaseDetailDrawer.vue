@@ -3,7 +3,10 @@
     <div v-if="currentHerbBase" class="drawer-layout">
       <section class="drawer-head">
         <div class="head-main">
-          <div class="detail-kicker">基地主体详情</div>
+          <div class="head-top">
+            <el-button class="drawer-close-button" :icon="Close" circle title="关闭详情" @click="emit('update:modelValue', false)" />
+            <div class="detail-kicker">基地主体详情</div>
+          </div>
           <div class="title-row">
             <h2>{{ currentHerbBase.subjectName || "" }}</h2>
             <el-tag effect="dark">{{ currentHerbBase.status || "-" }}</el-tag>
@@ -14,9 +17,9 @@
             <span>评分 {{ currentHerbBase.score ?? 0 }}</span>
             <span>跟进人 {{ currentHerbBase.ownerUserName || "-" }}</span>
             <span :class="{ overdue: isOverdue(currentHerbBase.nextFollowAt) }">下次跟进 {{ formatDate(currentHerbBase.nextFollowAt) }}</span>
-            <span>{{ formatRegions(currentHerbBase.regions) }}</span>
+            <span :title="currentHerbBase.regions?.join(' / ') || ''">{{ formatRegions(currentHerbBase.regions) }}</span>
           </div>
-          <p v-if="currentHerbBase.remark" class="head-remark">{{ currentHerbBase.remark }}</p>
+          <div v-if="currentHerbBase.remark" class="head-remark" :title="currentHerbBase.remark">{{ currentHerbBase.remark }}</div>
         </div>
         <div class="head-actions">
           <Permission code="CRM_FOLLOW">
@@ -44,7 +47,6 @@
             <el-button type="danger" plain @click="markCustomerStatus('已流失')">标记流失</el-button>
           </Permission>
           <el-button :icon="Refresh" @click="refreshDetail()">刷新</el-button>
-          <el-button class="drawer-close-button" :icon="Close" circle title="关闭详情" @click="emit('update:modelValue', false)" />
         </div>
       </section>
       <section class="drawer-grid">
@@ -61,13 +63,15 @@
               </Permission>
             </div>
             <el-empty v-if="!currentHerbBase.herbBases?.length" description="暂无基地明细" />
-            <div v-else class="base-detail-cards">
-              <article v-for="base in currentHerbBase.herbBases" :key="base.id" class="base-detail-card">
+            <el-tabs v-else v-model="activeBaseId" type="border-card" class="base-detail-tabs">
+              <el-tab-pane v-for="base in currentHerbBase.herbBases" :key="base.id" :name="base.id">
+                <template #label>
+                  <span class="base-tab-label">{{ base.baseName || "未命名基地" }}</span>
+                  <span v-if="base.productNames?.length" class="base-tab-product">{{ base.productNames.join("、") }}</span>
+                  <span v-if="base.scale != null" class="base-tab-scale">{{ formatScale(base.scale) }} 亩</span>
+                </template>
                 <div class="base-card-head">
-                  <div>
-                    <strong>{{ base.baseName || "-" }}</strong>
-                    <div class="muted">{{ [base.province, base.city, base.area].filter(Boolean).join(" / ") || "-" }}　{{ base.address || "-" }}</div>
-                  </div>
+                  <div class="muted">{{ [base.province, base.city, base.area].filter(Boolean).join(" / ") || "-" }}　{{ base.address || "-" }}</div>
                   <div class="base-card-actions">
                     <Permission code="CRM_HERB_BASE_SUPPLY_MANAGE">
                       <el-button type="primary" link :icon="Plus" @click="openSupplyDialog(base)">新增供应</el-button>
@@ -80,7 +84,7 @@
                     </Permission>
                   </div>
                 </div>
-                <el-table :data="base.supplies || []" size="small" class="supply-table" empty-text="暂无供应信息">
+                <el-table :data="visibleSupplies(base)" size="small" class="supply-table" empty-text="暂无供应信息">
                   <el-table-column prop="productName" label="品类" min-width="120" />
                   <el-table-column label="可供量" width="130">
                     <template #default="{ row }">{{ row.availableQuantity ?? "-" }}{{ row.availableQuantity != null && row.quantityUnit ? ` ${row.quantityUnit}` : "" }}</template>
@@ -120,8 +124,8 @@
                     </template>
                   </el-table-column>
                 </el-table>
-              </article>
-            </div>
+              </el-tab-pane>
+            </el-tabs>
           </section>
           <ContactList
             :contacts="contacts"
@@ -134,6 +138,26 @@
           />
         </div>
         <div class="timeline-panel">
+          <section class="detail-card">
+            <div class="section-title">
+              <div class="section-heading">
+                <h3>成交记录</h3>
+                <el-tag size="small" effect="plain">{{ deals.length }} 条</el-tag>
+              </div>
+            </div>
+            <el-empty v-if="!deals.length" description="暂无成交记录" class="compact-empty" :image-size="56" />
+            <div v-else class="deal-list">
+              <article v-for="deal in deals" :key="deal.id" class="deal-item">
+                <div class="deal-head">
+                  <strong>{{ deal.productName || "-" }}</strong>
+                  <el-tag size="small" type="success" effect="plain">{{ deal.closeResult || "撮合成功" }}</el-tag>
+                </div>
+                <div class="deal-meta">采购方：{{ deal.vendorName || "-" }}</div>
+                <div class="deal-meta">供货基地：{{ deal.baseName || "-" }}</div>
+                <div class="deal-meta">{{ formatDate(deal.closedAt) }}</div>
+              </article>
+            </div>
+          </section>
           <FollowList :records="followRecords" add-permission="CRM_FOLLOW" @add="openFollowDialog" />
           <TransferList :records="transferRecords" />
         </div>
@@ -305,9 +329,11 @@ const authStore = useAuthStore();
 const userStore = useUserStore();
 
 const currentHerbBase = ref<HerbBaseSubjectDetail | null>(null);
+const activeBaseId = ref("");
 const contacts = ref<any[]>([]);
 const followRecords = ref<any[]>([]);
 const transferRecords = ref<any[]>([]);
+const deals = ref<any[]>([]);
 const subjectDialogVisible = ref(false);
 const dialogVisible = ref(false);
 const contactDialogVisible = ref(false);
@@ -384,12 +410,25 @@ const notifyListChanged = () => {
   emit("refresh-list");
 };
 
+// 基地 tab 默认选中第一个；刷新或删掉当前基地后自动回退，避免空白页
+watch(
+  () => currentHerbBase.value?.herbBases?.map((item: any) => item.id).join(",") || "",
+  () => {
+    const bases = currentHerbBase.value?.herbBases || [];
+    if (!bases.some((item: any) => item.id === activeBaseId.value)) {
+      activeBaseId.value = bases[0]?.id || "";
+    }
+  },
+  { immediate: true },
+);
+
 const loadCustomerDetail = async (herbBaseSubjectId: string) => {
   const response = await crmHerbBaseApi.getSubject(herbBaseSubjectId);
   currentHerbBase.value = response.data;
   contacts.value = response.data?.contacts || [];
   followRecords.value = response.data?.followRecords || [];
   transferRecords.value = response.data?.transferRecords || [];
+  deals.value = response.data?.deals || [];
 };
 
 const openDetail = async (herbBaseSubjectId: string) => {
@@ -397,6 +436,7 @@ const openDetail = async (herbBaseSubjectId: string) => {
   contacts.value = [];
   followRecords.value = [];
   transferRecords.value = [];
+  deals.value = [];
   await loadCustomerDetail(herbBaseSubjectId);
 };
 
@@ -672,7 +712,21 @@ const formatDate = (date?: string | null) => {
   return new Date(date).toLocaleString("zh-CN");
 };
 
-const formatRegions = (regions?: string[]) => regions?.filter(Boolean).join(" / ") || "-";
+const formatRegions = (regions?: string[]) => {
+  const list = (regions || []).filter(Boolean);
+  if (!list.length) return "-";
+  if (list.length <= 2) return list.join(" / ");
+  return `${list.slice(0, 2).join(" / ")} 等 ${list.length} 个地区`;
+};
+
+const formatScale = (value?: number | null) =>
+  value == null
+    ? "-"
+    : Number(value).toLocaleString("zh-CN", { maximumFractionDigits: 2 });
+
+// 历史成交初始化的供应已在「成交记录」卡片展示，基地明细里不再重复列出
+const visibleSupplies = (base: any) =>
+  (base?.supplies || []).filter((supply: any) => !(supply.remark || "").includes("历史成交初始化"));
 
 const isOverdue = (date?: string | null) => {
   if (!date) return false;
@@ -720,6 +774,12 @@ const isOverdue = (date?: string | null) => {
   gap: 8px;
 }
 
+.head-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .title-row h2 {
   margin: 0;
   font-size: 25px;
@@ -735,6 +795,14 @@ const isOverdue = (date?: string | null) => {
 
 .head-meta {
   margin-top: 10px;
+}
+
+.head-remark {
+  margin-top: 6px;
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .head-actions {
@@ -786,23 +854,56 @@ const isOverdue = (date?: string | null) => {
   font-size: 16px;
 }
 
-.base-detail-cards {
-  display: grid;
-  gap: 14px;
+.base-tab-label {
+  font-weight: 500;
 }
 
-.base-detail-card {
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+.base-tab-product {
+  margin-left: 6px;
+  color: var(--el-color-primary);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.base-tab-scale {
+  margin-left: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .base-card-head {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 18px;
-  padding: 15px 16px 13px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 2px 0 12px;
+}
+
+.deal-list {
+  display: grid;
+  gap: 8px;
+}
+
+.deal-item {
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.deal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deal-meta {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .overdue {
@@ -872,6 +973,14 @@ const isOverdue = (date?: string | null) => {
 
   .inline-field {
     grid-template-columns: minmax(0, 1fr) 84px;
+  }
+}
+
+.compact-empty {
+  padding: 12px 0;
+
+  :deep(.el-empty__description) {
+    margin-top: 6px;
   }
 }
 </style>

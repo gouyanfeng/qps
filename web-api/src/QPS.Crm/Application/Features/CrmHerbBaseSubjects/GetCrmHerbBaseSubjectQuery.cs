@@ -35,9 +35,11 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
         await FillOwnerNameAsync(subject, cancellationToken);
         subject.HerbBases = await GetHerbBasesAsync(subject.Id, cancellationToken);
         await FillSuppliesAsync(subject.HerbBases, cancellationToken);
+        await FillBaseProductNamesAsync(subject.HerbBases, cancellationToken);
         FillBaseSummary(subject);
         subject.Contacts = await GetContactsAsync(subject.Id, cancellationToken);
         subject.FollowRecords = await GetFollowRecordsAsync(subject.Id, cancellationToken);
+        subject.Deals = await GetDealsAsync(subject.Id, cancellationToken);
         subject.TransferRecords = await CrmTransferRecordQuery.GetAsync(
             _dbContext,
             CrmCodes.HerbBaseSubjectEntityType,
@@ -127,12 +129,41 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
         foreach (var herbBase in herbBases) herbBase.Supplies = grouped.GetValueOrDefault(herbBase.Id, []);
     }
 
+    /// <summary>
+    /// 填充基地品类，唯一来源是属性表（基地级 CRM_HERB_BASE_PRODUCT）。
+    /// </summary>
+    private async Task FillBaseProductNamesAsync(List<CrmHerbBaseDto> herbBases, CancellationToken cancellationToken)
+    {
+        var herbBaseIds = herbBases.Select(herbBase => herbBase.Id).ToList();
+        if (herbBaseIds.Count == 0) return;
+        var attributes = await _dbContext.CrmBusinessEntityAttributes
+            .Where(attribute =>
+                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
+                attribute.AttributeCode == CrmCodes.AttributeCodes.HerbBaseProduct &&
+                herbBaseIds.Contains(attribute.EntityId))
+            .Select(attribute => new { attribute.EntityId, attribute.AttributeValue, attribute.SortOrder })
+            .ToListAsync(cancellationToken);
+        var grouped = attributes
+            .GroupBy(attribute => attribute.EntityId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(attribute => attribute.SortOrder)
+                    .Select(attribute => attribute.AttributeValue)
+                    .ToList());
+        foreach (var herbBase in herbBases)
+        {
+            herbBase.ProductNames = grouped.GetValueOrDefault(herbBase.Id, []);
+        }
+    }
+
     private static void FillBaseSummary(CrmHerbBaseSubjectDetailDto subject)
     {
         subject.BaseCount = subject.HerbBases.Count;
+        // 品类以属性表为准；属性缺失时回退到供应表，兼容只录了供应的老数据
         subject.ProductName = subject.HerbBases
-            .SelectMany(herbBase => herbBase.Supplies)
-            .Select(supply => supply.ProductName)
+            .SelectMany(herbBase => herbBase.ProductNames.Count > 0
+                ? herbBase.ProductNames
+                : herbBase.Supplies.Select(supply => supply.ProductName))
             .Distinct()
             .ToList();
         subject.Regions = subject.HerbBases
@@ -140,6 +171,33 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
             .Where(region => !string.IsNullOrWhiteSpace(region))
             .Distinct()
             .ToList();
+    }
+
+    /// <summary>
+    /// 该主体作为供货方的历史成交：中选候选 -> 撮合机会 -> 采购方。
+    /// </summary>
+    private async Task<List<CrmSubjectDealDto>> GetDealsAsync(Guid subjectId, CancellationToken cancellationToken)
+    {
+        return await (
+            from candidate in _dbContext.CrmMatchCandidates
+            join supply in _dbContext.CrmHerbBaseSupplies on candidate.HerbBaseSupplyId equals supply.Id
+            join opportunity in _dbContext.CrmMatchOpportunities on candidate.MatchOpportunityId equals opportunity.Id
+            join vendor in _dbContext.CrmVendors on opportunity.VendorId equals vendor.Id
+            where supply.HerbBaseSubjectId == subjectId
+                  && candidate.Status == "中选"
+                  && !candidate.IsDeleted
+                  && !opportunity.IsDeleted
+            orderby opportunity.UpdatedAt descending
+            select new CrmSubjectDealDto
+            {
+                Id = opportunity.Id,
+                VendorName = vendor.VendorName,
+                ProductName = opportunity.DemandProductName,
+                BaseName = candidate.HerbBaseName,
+                CloseResult = opportunity.CloseResult,
+                ClosedReason = opportunity.ClosedReason,
+                ClosedAt = opportunity.UpdatedAt
+            }).ToListAsync(cancellationToken);
     }
 
     private async Task<List<CrmContactDto>> GetContactsAsync(Guid subjectId, CancellationToken cancellationToken)

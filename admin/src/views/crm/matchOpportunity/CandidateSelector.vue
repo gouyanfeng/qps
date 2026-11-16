@@ -1,13 +1,5 @@
 <template>
   <section class="candidate-selector">
-    <el-descriptions class="demand-summary" title="需求摘要" :column="4" border>
-      <el-descriptions-item label="品类">{{ demandItem?.productName || "-" }}</el-descriptions-item>
-      <el-descriptions-item label="数量">{{ quantityLabel }}</el-descriptions-item>
-      <el-descriptions-item label="规格">{{ demandItem?.specification || "-" }}</el-descriptions-item>
-      <el-descriptions-item label="质量">{{ demandItem?.qualityRequirement || "-" }}</el-descriptions-item>
-      <el-descriptions-item label="交期">{{ formatDate(demandItem?.expectedDeliveryAt) }}</el-descriptions-item>
-    </el-descriptions>
-
     <el-form :model="filters" inline class="filter-form">
       <el-form-item label="品类"><ProductSelect v-model="filters.productName" class="product-filter" placeholder="默认需求品类，可调整" /></el-form-item>
       <el-form-item label="地区"><el-input v-model="filters.region" clearable /></el-form-item>
@@ -19,7 +11,7 @@
       <el-form-item><el-button type="primary" @click="search">查询</el-button><el-button @click="reset">重置</el-button></el-form-item>
     </el-form>
 
-    <el-table :data="candidates" v-loading="loading" border row-key="herbBaseSupplyId" @selection-change="handleSelectionChange">
+    <el-table ref="supplyTableRef" :data="candidates" v-loading="loading" border row-key="herbBaseSupplyId" @selection-change="handleSelectionChange">
       <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-table-column type="selection" width="52" /></Permission>
       <el-table-column prop="productName" label="供应品类" min-width="130" show-overflow-tooltip />
       <el-table-column prop="subjectName" label="主体" min-width="180" show-overflow-tooltip />
@@ -31,32 +23,24 @@
       <el-table-column prop="supplyCycle" label="供货周期" min-width="130" show-overflow-tooltip />
       <el-table-column label="有效期" min-width="170"><template #default="{ row }">{{ formatDate(row.validUntil) }}</template></el-table-column>
     </el-table>
-    <el-form v-if="!opportunityId" :model="nextActionForm" class="next-action-form" label-width="108px">
-      <el-form-item label="下一步动作" required>
-        <el-select v-model="nextActionForm.nextAction" :loading="progressOptionsLoading" placeholder="请选择下一步动作">
-          <el-option v-for="action in initialNextActions" :key="action" :label="action" :value="action" />
-        </el-select>
-      </el-form-item>
-      <el-form-item v-if="nextActionForm.nextAction === otherAction" label="其他待办说明" required><el-input v-model="nextActionForm.nextActionRemark" maxlength="500" show-word-limit /></el-form-item>
-      <el-form-item label="计划时间" required><el-date-picker v-model="nextActionForm.nextActionAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" /></el-form-item>
-    </el-form>
     <div class="selector-footer">
       <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadCandidates" />
-      <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button type="primary" :disabled="selectedSupplyIds.length === 0" :loading="creating" @click="submit">{{ opportunityId ? "追加候选" : "创建撮合机会" }}</el-button></Permission>
+      <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button type="primary" :disabled="selectedSupplyIds.length === 0" :loading="creating" @click="submit">{{ opportunityId ? "确定" : "创建撮合机会" }}</el-button></Permission>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
 import Permission from "@/components/Permission/index.vue";
 import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
 
-const props = defineProps<{ demandItemId: string; demandItem?: any; opportunityId?: string }>();
+const props = defineProps<{ demandItemId: string; demandItem?: any; opportunityId?: string; preselectedSupplyIds?: string[]; demandItemIds?: string[]; source?: string; replace?: boolean }>();
 const emit = defineEmits<{ created: [opportunityId: string]; appended: [opportunityId: string] }>();
 
+const supplyTableRef = ref<any>();
 const loading = ref(false);
 const creating = ref(false);
 const candidates = ref<any[]>([]);
@@ -68,7 +52,13 @@ const progressOptionsLoading = ref(false);
 const progressOptions = ref<any>({ nextActionsByStage: {} });
 const nextActionForm = reactive({ nextAction: "", nextActionRemark: "", nextActionAt: "" });
 const filters = reactive<any>({ productName: props.demandItem?.productName || "", region: "", minAvailableQuantity: undefined, specification: "", qualityRequirement: "", supplyCycle: "", maxExpectedPrice: undefined });
+const summaryTitle = computed(() => props.source === "supply" ? "需求摘要（供应 → 需求）" : "需求摘要（需求 → 供应）");
 const quantityLabel = computed(() => props.demandItem?.quantity ? `${props.demandItem.quantity}${props.demandItem.quantityUnit || ""}` : "-");
+const remainingLabel = computed(() => {
+  if (!props.demandItem?.quantity) return "-";
+  const remaining = Number(props.demandItem.remainingQuantity ?? props.demandItem.quantity);
+  return `${remaining}${props.demandItem.quantityUnit || ""}`;
+});
 const initialStage = "匹配核实";
 const otherAction = "其他";
 const initialNextActions = computed(() => progressOptions.value.nextActionsByStage?.[initialStage] || []);
@@ -97,6 +87,12 @@ const loadCandidates = async () => {
     candidates.value = result.data?.list || [];
     total.value = result.data?.totalCount || 0;
     selectedSupplyIds.value = [];
+    if (props.preselectedSupplyIds?.length) {
+      const rows = candidates.value.filter((row: any) => props.preselectedSupplyIds!.includes(row.herbBaseSupplyId));
+      selectedSupplyIds.value = rows.map((row: any) => row.herbBaseSupplyId);
+      await nextTick();
+      rows.forEach((row: any) => supplyTableRef.value?.toggleRowSelection(row, true));
+    }
   } finally {
     loading.value = false;
   }
@@ -117,7 +113,11 @@ const submit = async () => {
   }
   creating.value = true;
   try {
-    if (props.opportunityId) {
+    if (props.opportunityId && props.replace) {
+      await crmMatchOpportunityApi.replaceCandidates(props.opportunityId, { supplyIds: selectedSupplyIds.value });
+      ElMessage.success("候选已重新选择");
+      emit("appended", props.opportunityId);
+    } else if (props.opportunityId) {
       await crmMatchOpportunityApi.addCandidates(props.opportunityId, { supplyIds: selectedSupplyIds.value });
       ElMessage.success("候选已追加");
       emit("appended", props.opportunityId);
@@ -126,7 +126,9 @@ const submit = async () => {
         supplyIds: selectedSupplyIds.value,
         nextAction: nextActionForm.nextAction,
         nextActionRemark: nextActionForm.nextActionRemark.trim(),
-        nextActionAt: nextActionForm.nextActionAt
+        nextActionAt: nextActionForm.nextActionAt,
+        source: props.source === "supply" ? "supply" : "demand",
+        demandItemIds: props.demandItemIds?.length ? props.demandItemIds : [props.demandItemId]
       });
       ElMessage.success("撮合机会已创建");
       emit("created", result.data);
@@ -144,11 +146,12 @@ watch(() => props.demandItemId, () => {
   candidates.value = [];
   selectedSupplyIds.value = [];
   Object.assign(nextActionForm, { nextAction: "", nextActionRemark: "", nextActionAt: "" });
+  void loadCandidates();
 });
 watch(() => nextActionForm.nextAction, action => {
   if (action !== otherAction) nextActionForm.nextActionRemark = "";
 });
-onMounted(() => { void loadProgressOptions(); });
+onMounted(() => { void loadProgressOptions(); void loadCandidates(); });
 </script>
 
 <style scoped>
