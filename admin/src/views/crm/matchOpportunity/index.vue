@@ -14,9 +14,11 @@
         :demand-item="selectedDemandItem"
         :opportunity-id="appendCandidateOpportunityId"
         :preselected-supply-ids="preselectedSupplyIds"
+        :preselected-demand-item-ids="preselectedDemandItemIds"
         :demand-item-ids="selectedDemandItems.map(item => item.id)"
-        :source="matchSource"
+        :source="candidateSource"
         :replace="replaceCandidateMode"
+        :supply-id="appendSupplyId"
         @created="handleOpportunityCreated"
         @appended="handleCandidatesAppended"
       />
@@ -60,16 +62,18 @@
 
       <template #table="{ tableData }">
         <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1410px" border>
-          <el-table-column prop="demandProductName" label="品类" min-width="130" show-overflow-tooltip />
+  
           <el-table-column label="发起方" min-width="220" show-overflow-tooltip>
-            <template #default="{ row }">
-              <span>{{ row.initiatorName || "-" }}</span>
-              <el-tag size="small" effect="dark" style="margin-left: 8px" :style="row.source === 'supply'
+            <template #default="{ row }">      
+               <el-tag size="small" effect="dark" style="margin-left: 8px" :style="row.source === 'supply'
                 ? { background: '#f59e0b', borderColor: '#f59e0b', color: '#fff' }
                 : { background: '#16a34a', borderColor: '#16a34a', color: '#fff' }">{{ directionLabel(row) }}</el-tag>
+              <span>{{ row.initiatorName || "-" }}</span>
+       
             </template>
           </el-table-column>
-          <el-table-column prop="vendorName" label="需求厂商" min-width="180" show-overflow-tooltip />
+                  <el-table-column prop="demandProductName" label="品类" min-width="130" show-overflow-tooltip />
+          <el-table-column prop="candidateNames" label="候选名单" min-width="220" show-overflow-tooltip />
           <el-table-column label="需求数量" width="130"><template #default="{ row }">{{ quantityLabel(row) }}</template></el-table-column>
           <el-table-column label="候选数" width="90" align="center"><template #default="{ row }">{{ row.candidateCount }}</template></el-table-column>
           <el-table-column label="状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="statusType(row)">{{ displayStatus(row) }}</el-tag></template></el-table-column>
@@ -129,6 +133,9 @@ const progressOpportunity = ref<any>(null);
 const appendCandidateOpportunityId = ref("");
 const replaceCandidateMode = ref(false);
 const preselectedSupplyIds = ref<string[]>([]);
+const preselectedDemandItemIds = ref<string[]>([]);
+const appendSupplyId = ref("");
+const candidateSource = ref("demand");
 const nextActionAtRange = ref<string[]>([]);
 const vendorOptions = ref<any[]>([]);
 const subjectOptions = ref<any[]>([]);
@@ -272,31 +279,43 @@ const handleCandidatesAppended = async (opportunityId: string) => {
   await reloadList();
   openDetail(opportunityId);
 };
+const buildSelectorDemandItem = (opportunity: any) => ({
+  id: opportunity.demandItemId,
+  productName: opportunity.demandProductName,
+  quantity: opportunity.demandQuantity,
+  remainingQuantity: opportunity.demandQuantity,
+  quantityUnit: opportunity.quantityUnit,
+  specification: opportunity.specification,
+  qualityRequirement: opportunity.qualityRequirement,
+});
 const openCandidateAppend = async (opportunity: any) => {
-  const result = await crmVendorDemandApi.getDetail(opportunity.demandId);
-  const demand = result.data?.list?.[0] || null;
-  const demandItem = demand?.items?.find((item: any) => item.id === opportunity.demandItemId);
-  if (!demandItem) return;
-
-  currentDemand.value = demand;
-  selectedDemandItem.value = demandItem;
+  // 追加不需要回溯采购单明细，直接用机会自带的品类信息构造筛选条件。
+  // 空机会没有 demandItemId/demandId，不能再去查采购单明细，否则弹窗打不开。
+  selectedDemandItem.value = buildSelectorDemandItem(opportunity);
+  selectedDemandItems.value = [];
+  preselectedSupplyIds.value = [];
+  preselectedDemandItemIds.value = [];
+  appendSupplyId.value = opportunity.candidates?.find((c: any) => c.role === "initiator")?.herbBaseSupplyId || "";
   appendCandidateOpportunityId.value = opportunity.id;
+  candidateSource.value = opportunity.source === "supply" ? "supply" : "demand";
+  replaceCandidateMode.value = false;
   candidateSelectorVisible.value = true;
 };
 const openCandidateReplace = (opportunity: any) => {
   currentOpportunityId.value = opportunity.id;
-  selectedDemandItem.value = {
-    id: opportunity.demandItemId,
-    productName: opportunity.demandProductName,
-    quantity: opportunity.demandQuantity,
-    remainingQuantity: opportunity.demandQuantity,
-    quantityUnit: opportunity.quantityUnit,
-    specification: opportunity.specification,
-    qualityRequirement: opportunity.qualityRequirement,
-  };
+  selectedDemandItem.value = buildSelectorDemandItem(opportunity);
   selectedDemandItems.value = [];
-  preselectedSupplyIds.value = [];
+  // 重选回显当前候选：需求侧带出候选基地供应，供应侧带出候选药厂需求明细
+  preselectedSupplyIds.value = (opportunity.candidates || [])
+    .filter((c: any) => c.role === "candidate")
+    .map((c: any) => c.herbBaseSupplyId);
+  preselectedDemandItemIds.value = (opportunity.demands || [])
+    .filter((d: any) => d.role === "candidate")
+    .map((d: any) => d.demandItemId);
+  appendSupplyId.value = (opportunity.candidates || [])
+    .find((c: any) => c.role === "initiator")?.herbBaseSupplyId || "";
   appendCandidateOpportunityId.value = opportunity.id;
+  candidateSource.value = opportunity.source === "supply" ? "supply" : "demand";
   replaceCandidateMode.value = true;
   candidateSelectorVisible.value = true;
 };

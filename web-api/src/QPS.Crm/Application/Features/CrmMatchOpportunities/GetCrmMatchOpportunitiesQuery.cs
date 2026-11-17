@@ -51,6 +51,8 @@ public class CrmMatchOpportunityListDto
     public string Source { get; set; } = "demand";
     /// <summary>发起方名称：供应侧为基地主体，需求侧为药厂。</summary>
     public string InitiatorName { get; set; } = string.Empty;
+    /// <summary>候选名单：供应侧为候选药厂，需求侧为候选基地，多个用「、」拼接。</summary>
+    public string CandidateNames { get; set; } = string.Empty;
     public int CandidateCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -109,7 +111,7 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                     : dbContext.CrmMatchOpportunityDemands
                         .Where(demand => demand.OpportunityId == opportunity.Id && demand.Role == "initiator")
                         .Select(demand => demand.VendorName).FirstOrDefault() ?? string.Empty,
-                CandidateCount = dbContext.CrmMatchCandidates.Count(candidate => candidate.MatchOpportunityId == opportunity.Id),
+                CandidateCount = 0,
                 CreatedAt = opportunity.CreatedAt,
                 UpdatedAt = opportunity.UpdatedAt
             })
@@ -118,7 +120,44 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
             .ToListAsync(cancellationToken);
 
         await FillOwnerNamesAsync(list, cancellationToken);
+        await FillCandidateNamesAsync(list, cancellationToken);
         return new PaginationResponse<CrmMatchOpportunityListDto>(list, totalCount, page, pageSize);
+    }
+
+    /// <summary>
+    /// 填充候选名单：供应侧机会展示候选药厂，需求侧机会展示候选基地，多个用「、」拼接。
+    /// </summary>
+    private async Task FillCandidateNamesAsync(List<CrmMatchOpportunityListDto> items, CancellationToken cancellationToken)
+    {
+        if (items.Count == 0)
+            return;
+
+        var ids = items.Select(item => item.Id).ToList();
+        var candidateVendors = await dbContext.CrmMatchOpportunityDemands
+            .Where(demand => ids.Contains(demand.OpportunityId) && demand.Role == "candidate")
+            .GroupBy(demand => demand.OpportunityId)
+            .ToDictionaryAsync(
+                group => group.Key,
+                group => group.Select(demand => demand.VendorName).ToList(),
+                cancellationToken);
+        var candidateBases = await dbContext.CrmMatchCandidates
+            .Where(candidate => ids.Contains(candidate.MatchOpportunityId) && candidate.Role == "candidate")
+            .GroupBy(candidate => candidate.MatchOpportunityId)
+            .ToDictionaryAsync(
+                group => group.Key,
+                group => group.Select(candidate => candidate.HerbBaseName).ToList(),
+                cancellationToken);
+
+        foreach (var item in items)
+        {
+            var names = (item.Source == "supply"
+                ? candidateVendors.GetValueOrDefault(item.Id)
+                : candidateBases.GetValueOrDefault(item.Id))
+                ?? [];
+            var distinctNames = names.Where(name => !string.IsNullOrWhiteSpace(name)).Distinct().ToList();
+            item.CandidateNames = string.Join("、", distinctNames);
+            item.CandidateCount = distinctNames.Count;
+        }
     }
 
     private async Task FillOwnerNamesAsync(List<CrmMatchOpportunityListDto> items, CancellationToken cancellationToken)

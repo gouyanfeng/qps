@@ -85,6 +85,17 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(command));
     }
 
+    [HttpPatch("match-opportunities/{id:guid}/demands/{demandId:guid}/status")]
+    public async Task<ActionResult<bool>> UpdateDemandStatus(
+        Guid id,
+        Guid demandId,
+        [FromBody] UpdateCrmMatchOpportunityDemandStatusCommand command)
+    {
+        command.OpportunityId = id;
+        command.DemandId = demandId;
+        return Ok(await mediator.Send(command));
+    }
+
     [HttpPatch("match-opportunities/{id:guid}/progress")]
     public async Task<ActionResult<bool>> Advance(
         Guid id,

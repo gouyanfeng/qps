@@ -162,6 +162,76 @@ internal static class CrmMatchOpportunitySource
         }
     }
 
+    public static void ValidateDemandItemIds(IReadOnlyCollection<Guid>? demandItemIds)
+    {
+        if (demandItemIds == null || demandItemIds.Count == 0)
+        {
+            throw new BusinessException(400, "请至少选择一条候选采购需求");
+        }
+
+        if (demandItemIds.Distinct().Count() != demandItemIds.Count)
+        {
+            throw new BusinessException(400, "候选采购需求存在重复");
+        }
+    }
+
+    public static async Task<List<CrmVendorDemandItem>> LoadEligibleDemandItemsAsync(
+        ICrmDbContext dbContext,
+        IReadOnlyCollection<Guid> demandItemIds,
+        CancellationToken cancellationToken)
+    {
+        var items = await dbContext.CrmVendorDemandItems
+            .Include(item => item.VendorDemand)
+            .Where(item => demandItemIds.Contains(item.Id))
+            .ToListAsync(cancellationToken);
+        if (items.Count != demandItemIds.Count || items.Any(item => item.VendorDemand == null))
+        {
+            throw new BusinessException(400, "采购需求不存在或不符合撮合候选条件");
+        }
+
+        var vendorIds = items.Select(item => item.VendorDemand!.VendorId).Distinct().ToList();
+        var vendors = await dbContext.CrmVendors
+            .Where(item => vendorIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+
+        foreach (var item in items)
+        {
+            if (!vendors.ContainsKey(item.VendorDemand!.VendorId))
+            {
+                throw new BusinessException(400, "采购需求对应的需求厂商不存在");
+            }
+        }
+
+        return items;
+    }
+
+    public static CrmMatchOpportunityDemand CreateDemand(
+        CrmMatchOpportunity opportunity,
+        CrmVendorDemandItem item,
+        IReadOnlyDictionary<Guid, CrmVendor> vendors,
+        string role,
+        int sortOrder)
+    {
+        var demand = item.VendorDemand!;
+        var vendor = vendors[demand.VendorId];
+        return CrmMatchOpportunityDemand.Create(
+            opportunity.Id,
+            item.Id,
+            demand.VendorId,
+            vendor.VendorName,
+            item.ProductName,
+            item.Quantity,
+            item.QuantityUnit,
+            item.Specification,
+            item.QualityRequirement,
+            item.TargetPrice,
+            item.PriceUnit,
+            item.ExpectedDeliveryAt ?? demand.ExpectedDeliveryAt,
+            demand.ReceivingAddress,
+            role,
+            sortOrder);
+    }
+
     public static void ValidateNextAction(string? nextAction, DateTime? nextActionAt)
     {
         if (string.IsNullOrWhiteSpace(nextAction) || !nextActionAt.HasValue)

@@ -148,13 +148,13 @@ public class AddCrmMatchOpportunityCandidatesCommand : IRequest<bool>
 {
     public Guid OpportunityId { get; set; }
     public List<Guid> SupplyIds { get; set; } = [];
+    public List<Guid> DemandItemIds { get; set; } = [];
 }
 
 public class AddCrmMatchOpportunityCandidatesHandler(ICrmDbContext dbContext) : IRequestHandler<AddCrmMatchOpportunityCandidatesCommand, bool>
 {
     public async Task<bool> Handle(AddCrmMatchOpportunityCandidatesCommand request, CancellationToken cancellationToken)
     {
-        CrmMatchOpportunitySource.ValidateSupplyIds(request.SupplyIds);
         var opportunity = await dbContext.CrmMatchOpportunities.FirstOrDefaultAsync(item => item.Id == request.OpportunityId, cancellationToken)
             ?? throw new BusinessException(404, "撮合机会不存在");
         if (opportunity.Status != CrmMatchOpportunity.InProgress)
@@ -162,6 +162,35 @@ public class AddCrmMatchOpportunityCandidatesHandler(ICrmDbContext dbContext) : 
             throw new BusinessException(400, opportunity.Status == CrmMatchOpportunity.Closed ? "已关闭撮合机会不可编辑" : "仅推进中的撮合机会可以追加候选");
         }
 
+        // 供应侧机会追加药厂候选
+        if (opportunity.Source == "supply")
+        {
+            CrmMatchOpportunitySource.ValidateDemandItemIds(request.DemandItemIds);
+            if (await dbContext.CrmMatchOpportunityDemands.AnyAsync(item => item.OpportunityId == opportunity.Id && request.DemandItemIds.Contains(item.DemandItemId), cancellationToken))
+            {
+                throw new BusinessException(400, "候选采购需求已存在");
+            }
+
+            var items = await CrmMatchOpportunitySource.LoadEligibleDemandItemsAsync(dbContext, request.DemandItemIds, cancellationToken);
+            var vendorIds = items.Select(item => item.VendorDemand!.VendorId).Distinct().ToList();
+            var vendors = await dbContext.CrmVendors.Where(item => vendorIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, cancellationToken);
+            var startOrder = await dbContext.CrmMatchOpportunityDemands
+                .Where(item => item.OpportunityId == opportunity.Id)
+                .Select(item => (int?)item.SortOrder).MaxAsync(cancellationToken) ?? 0;
+
+            foreach (var (item, index) in items.OrderBy(x => request.DemandItemIds.IndexOf(x.Id)).Select((item, index) => (item, index)))
+            {
+                dbContext.CrmMatchOpportunityDemands.Add(CrmMatchOpportunitySource.CreateDemand(
+                    opportunity, item, vendors, CrmMatchOpportunityDemand.Candidate, startOrder + index + 1));
+                dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "加入候选", $"加入候选：{vendors[item.VendorDemand!.VendorId].VendorName} - {item.ProductName}"));
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        // 需求侧机会追加基地供应候选
+        CrmMatchOpportunitySource.ValidateSupplyIds(request.SupplyIds);
         if (await dbContext.CrmMatchCandidates.AnyAsync(item => item.MatchOpportunityId == opportunity.Id && request.SupplyIds.Contains(item.HerbBaseSupplyId), cancellationToken))
         {
             throw new BusinessException(400, "候选供应信息已存在");
@@ -176,10 +205,7 @@ public class AddCrmMatchOpportunityCandidatesHandler(ICrmDbContext dbContext) : 
         foreach (var (supply, index) in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)).Select((item, index) => (item, index)))
         {
             dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(
-                opportunity,
-                supply,
-                startSortOrder + index + 1,
-                opportunity.Source == "supply" ? "initiator" : "candidate"));
+                opportunity, supply, startSortOrder + index + 1, CrmMatchCandidate.Candidate));
             dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, "加入候选", $"加入候选：{supply.HerbBase!.BaseName} - {supply.ProductName}"));
         }
 

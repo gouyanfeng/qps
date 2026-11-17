@@ -26,83 +26,99 @@
         <section class="detail-section detail-columns">
           <div class="detail-column">
             <div class="section-title"><h3>{{ leftTitle }}</h3></div>
-            <template v-if="isSupplySource">
-              <div v-for="row in initiatorBases" :key="row.id" class="entity-card candidate-base-card" :style="{ borderColor: opportunityStatusColor() }">
-                <el-descriptions :column="2" border>
-                  <el-descriptions-item label="基地" :span="2">{{ row.herbBaseName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="供应品类">{{ row.productName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="可供量">{{ quantityLabelOf(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="预期价格">{{ priceLabel(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="有效期">{{ formatDate(row.validUntil) }}</el-descriptions-item>
-                </el-descriptions>
-              </div>
-              <el-empty v-if="!initiatorBases.length" description="暂无发起基地" :image-size="60" />
-            </template>
-            <template v-else>
-              <div v-for="row in initiatorDemands" :key="row.id" class="entity-card candidate-base-card" :style="{ borderColor: opportunityStatusColor() }">
-                <el-descriptions :column="2" border>
-                  <el-descriptions-item label="发起药厂" :span="2">{{ row.vendorName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="品类">{{ row.productName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="需求数量">{{ quantityLabelOfDemand(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="目标价">{{ priceLabelOfDemand(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="期望到货">{{ formatDate(row.expectedDeliveryAt) }}</el-descriptions-item>
-                  <el-descriptions-item label="收货地址" :span="2">{{ row.deliveryAddress || "-" }}</el-descriptions-item>
-                </el-descriptions>
-              </div>
-              <el-empty v-if="!initiatorDemands.length" description="暂无发起药厂" :image-size="60" />
-            </template>
+            <div class="card-stack">
+              <template v-if="isSupplySource">
+                <EntityCard v-for="row in initiatorBases" :key="row.id" :border-color="initiatorBorderColor">
+                  <el-descriptions :column="2" border>
+                    <el-descriptions-item label="基地" :span="2">{{ row.herbBaseName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="供应品类">{{ row.productName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="可供量">{{ quantityLabelOf(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="预期价格">{{ priceLabel(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="有效期">{{ formatDate(row.validUntil) }}</el-descriptions-item>
+                  </el-descriptions>
+                </EntityCard>
+              </template>
+              <template v-else>
+                <EntityCard v-for="row in initiatorDemands" :key="row.id" :border-color="initiatorBorderColor">
+                  <el-descriptions :column="2" border>
+                    <el-descriptions-item label="发起药厂" :span="2">{{ row.vendorName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="品类">{{ row.productName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="需求数量">{{ quantityLabelOfDemand(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="目标价">{{ priceLabelOfDemand(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="期望到货">{{ formatDate(row.expectedDeliveryAt) }}</el-descriptions-item>
+                    <el-descriptions-item label="收货地址" :span="2">{{ row.deliveryAddress || "-" }}</el-descriptions-item>
+                  </el-descriptions>
+                </EntityCard>
+              </template>
+            </div>
+            <el-empty v-if="isSupplySource ? !initiatorBases.length : !initiatorDemands.length" :description="isSupplySource ? '暂无发起基地' : '暂无发起药厂'" :image-size="60" />
           </div>
 
           <div class="detail-column">
             <div class="section-title"><h3>{{ rightTitle }}</h3></div>
             <div class="card-row">
-            <template v-if="isSupplySource">
-              <div v-for="row in candidateDemands" :key="row.id" class="entity-card">
-                <el-descriptions :column="2" border>
-                  <el-descriptions-item label="候选药厂" :span="2">{{ row.vendorName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="需求品类">{{ row.productName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="需求数量">{{ quantityLabelOfDemand(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="目标价">{{ priceLabelOfDemand(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="规格">{{ row.specification || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="期望到货">{{ formatDate(row.expectedDeliveryAt) }}</el-descriptions-item>
-                  <el-descriptions-item label="状态">{{ row.status || "-" }}</el-descriptions-item>
-                </el-descriptions>
-                <div class="entity-card-actions">
-                  <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canMaintainCandidates" size="small" type="warning" @click="openDemandEdit(row)">修改</el-button></Permission>
-                </div>
-              </div>
-              <el-empty v-if="!candidateDemands.length" description="暂无候选药厂" :image-size="60" />
-            </template>
-            <template v-else>
-              <div v-for="row in candidateBases" :key="row.id" class="entity-card candidate-base-card" :style="{ borderColor: candidateStatusColor(row.status) }">
-                <el-descriptions :column="2" border>
-                  <el-descriptions-item label="基地" :span="2">{{ row.herbBaseName || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="可供量">{{ quantityLabelOf(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="预期价格">{{ priceLabel(row) }}</el-descriptions-item>
-                  <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
-                  <el-descriptions-item label="当前状态">{{ row.currentState || "已失效" }}</el-descriptions-item>
-                  <el-descriptions-item label="状态"><el-tag size="small" :type="candidateStatusType(row.status)">{{ row.status || "-" }}</el-tag></el-descriptions-item>
-                  <el-descriptions-item v-if="row.eliminationReason" label="淘汰原因" :span="2">{{ row.eliminationReason }}</el-descriptions-item>
-                </el-descriptions>
-                <div class="entity-card-actions">
-                  <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE">
-                    <el-button v-if="canMaintainCandidates" size="small" type="warning" @click="openCandidateEdit(row)">修改</el-button>
-                    <el-button v-if="canMaintainCandidates && row.status !== '保留'" size="small" type="success" @click="updateCandidateStatus(row, '保留')">保留</el-button>
-                    <el-button v-if="canMaintainCandidates && row.status !== '中选'" size="small" type="primary" :disabled="row.currentState === '已失效'" @click="updateCandidateStatus(row, '中选')">中选</el-button>
-                    <el-button v-if="canMaintainCandidates && row.status === '淘汰'" size="small" type="info" @click="updateCandidateStatus(row, '待评估')">恢复</el-button>
-                    <el-button v-if="canMaintainCandidates && row.status !== '淘汰'" size="small" type="danger" @click="eliminateCandidate(row)">淘汰</el-button>
-                  </Permission>
-                </div>
-              </div>
-              <el-empty v-if="!candidateBases.length" description="暂无候选基地" :image-size="60" />
-            </template>
+              <template v-if="isSupplySource">
+                <EntityCard v-for="row in candidateDemands" :key="row.id" :border-color="candidateStatusColor(row.status)">
+                  <el-descriptions :column="2" border>
+                    <el-descriptions-item label="候选药厂" :span="2">{{ row.vendorName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="需求品类">{{ row.productName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="需求数量">{{ quantityLabelOfDemand(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="目标价">{{ priceLabelOfDemand(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="规格">{{ row.specification || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="期望到货">{{ formatDate(row.expectedDeliveryAt) }}</el-descriptions-item>
+                    <el-descriptions-item label="状态">
+                      <el-tag size="small" :type="candidateStatusTagType(row.status)">{{ candidateStatusLabel(row.status) }}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="row.eliminationReason" label="淘汰原因" :span="2">{{ row.eliminationReason }}</el-descriptions-item>
+                  </el-descriptions>
+                  <template #actions>
+                    <CandidateActions
+                      v-if="canMaintainCandidates"
+                      :status="row.status"
+                      @edit="openDemandEdit(row)"
+                      @keep="updateDemandStatus(row, '保留')"
+                      @select="updateDemandStatus(row, '中选')"
+                      @restore="updateDemandStatus(row, '待评估')"
+                      @eliminate="eliminateDemand(row)"
+                    />
+                  </template>
+                </EntityCard>
+              </template>
+              <template v-else>
+                <EntityCard v-for="row in candidateBases" :key="row.id" :border-color="candidateStatusColor(row.status)">
+                  <el-descriptions :column="2" border>
+                    <el-descriptions-item label="基地" :span="2">{{ row.herbBaseName || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="可供量">{{ quantityLabelOf(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="预期价格">{{ priceLabel(row) }}</el-descriptions-item>
+                    <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
+                    <el-descriptions-item label="当前状态">{{ row.currentState || "已失效" }}</el-descriptions-item>
+                    <el-descriptions-item label="状态">
+                      <el-tag size="small" :type="candidateStatusTagType(row.status)">{{ candidateStatusLabel(row.status) }}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="row.eliminationReason" label="淘汰原因" :span="2">{{ row.eliminationReason }}</el-descriptions-item>
+                  </el-descriptions>
+                  <template #actions>
+                    <CandidateActions
+                      v-if="canMaintainCandidates"
+                      :status="row.status"
+                      :disabled="row.currentState === '已失效'"
+                      @edit="openCandidateEdit(row)"
+                      @keep="updateCandidateStatus(row, '保留')"
+                      @select="updateCandidateStatus(row, '中选')"
+                      @restore="updateCandidateStatus(row, '待评估')"
+                      @eliminate="eliminateCandidate(row)"
+                    />
+                  </template>
+                </EntityCard>
+              </template>
             </div>
+            <el-empty v-if="isSupplySource ? !candidateDemands.length : !candidateBases.length" :description="isSupplySource ? '暂无候选药厂' : '暂无候选基地'" :image-size="60" />
           </div>
         </section>
 
@@ -169,6 +185,9 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import http from "@/api";
 import Permission from "@/components/Permission/index.vue";
 import ProgressDialog from "./ProgressDialog.vue";
+import EntityCard from "./EntityCard.vue";
+import CandidateActions from "./CandidateActions.vue";
+import { candidateStatusColor, candidateStatusLabel, candidateStatusTagType, opportunityStatusColor } from "./matchStatus";
 
 const props = defineProps<{ modelValue: boolean; opportunityId?: string }>();
 const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": []; "append-candidates": [opportunity: any]; "replace-candidates": [opportunity: any] }>();
@@ -213,19 +232,8 @@ const displayStatus = (row: any) => isDeal(row) ? "已成交" : (row?.status || 
 const statusType = (row: any) => isDeal(row)
   ? "success"
   : ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[row?.status || ""] || "");
-const candidateStatusType = (status?: string) => ({ "保留": "success", "中选": "primary", "淘汰": "danger", "待评估": "warning" }[status || ""] || "");
-const candidateStatusColor = (status?: string) => ({
-  "保留": "#67c23a", "kept": "#67c23a",
-  "中选": "#409eff", "selected": "#409eff",
-  "淘汰": "#f56c6c", "eliminated": "#f56c6c",
-  "待评估": "#e6a23c", "pending": "#e6a23c"
-}[status || ""] || "var(--el-border-color-lighter)");
-// 发起方卡片按撮合机会整体状态上色：推进中绿、暂停橙、已关闭灰
-const opportunityStatusColor = () => {
-  const status = currentOpportunity.value?.status;
-  if (status === "已关闭") return isDeal(currentOpportunity.value) ? "#67c23a" : "#909399";
-  return ({ "推进中": "#67c23a", "暂停": "#e6a23c" }[status || ""] || "var(--el-border-color-lighter)");
-};
+// 发起方卡片按撮合机会整体状态上色
+const initiatorBorderColor = computed(() => opportunityStatusColor(currentOpportunity.value?.status, isDeal(currentOpportunity.value)));
 const reversedActivities = computed(() => [...(currentOpportunity.value?.activities || [])].reverse());
 
 const handleVisibleChange = (value: boolean) => emit("update:modelValue", value);
@@ -247,17 +255,29 @@ const refreshAfterOperation = async () => {
   await loadDetail();
   emit("refresh-list");
 };
-const updateCandidateStatus = async (candidate: any, status: string, eliminationReason = "") => {
+const STATUS_MESSAGES: Record<string, string> = {
+  "保留": "候选已保留",
+  "中选": "候选已中选",
+  "淘汰": "候选已淘汰",
+  "待评估": "候选已恢复为待评估"
+};
+const patchCandidateStatus = async (path: string, status: string, eliminationReason = "") => {
   if (!props.opportunityId) return;
   saving.value = true;
   try {
-    await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/candidates/${candidate.id}/status`, { status, eliminationReason });
-    ElMessage.success(status === "保留" ? "候选已保留" : status === "中选" ? "候选已中选" : "候选已淘汰");
+    await http.patch(path, { status, eliminationReason });
+    ElMessage.success(STATUS_MESSAGES[status] || "候选状态已更新");
     await refreshAfterOperation();
   } finally {
     saving.value = false;
   }
 };
+// 基地候选
+const updateCandidateStatus = (candidate: any, status: string, eliminationReason = "") =>
+  patchCandidateStatus(`/admin/crm/match-opportunities/${props.opportunityId}/candidates/${candidate.id}/status`, status, eliminationReason);
+// 药厂候选
+const updateDemandStatus = (demand: any, status: string, eliminationReason = "") =>
+  patchCandidateStatus(`/admin/crm/match-opportunities/${props.opportunityId}/demands/${demand.id}/status`, status, eliminationReason);
 const requestReplaceCandidates = () => {
   if (!currentOpportunity.value) return;
   if (currentOpportunity.value.status === "已关闭") {
@@ -321,6 +341,14 @@ const eliminateCandidate = async (candidate: any) => {
     if (error !== "cancel" && error !== "close") throw error;
   }
 };
+const eliminateDemand = async (demand: any) => {
+  try {
+    const { value } = await ElMessageBox.prompt("淘汰原因", "淘汰候选药厂", { inputPattern: /\S+/, inputErrorMessage: "请填写淘汰原因" });
+    await updateDemandStatus(demand, "淘汰", value);
+  } catch (error: any) {
+    if (error !== "cancel" && error !== "close") throw error;
+  }
+};
 const updateStatus = async (status: string) => {
   if (!props.opportunityId) return;
   saving.value = true;
@@ -376,20 +404,7 @@ watch(() => [props.modelValue, props.opportunityId], ([visible, opportunityId]) 
 .detail-columns { display: grid; grid-template-columns: 470px minmax(0, 1fr); gap: 20px; align-items: start; }
 .detail-column { min-width: 0; }
 .card-row { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; }
-.entity-card { flex: 0 0 430px; height: 290px; margin: 0; padding: 12px; border: 1px solid var(--el-border-color-lighter); border-radius: 8px; background: var(--el-bg-color); display: flex; flex-direction: column; }
-.candidate-base-card { border-width: 2px; }
-.entity-card :deep(.el-descriptions__body) { table-layout: fixed; width: 100%; }
-.entity-card :deep(.el-descriptions__label),
-.entity-card :deep(.el-descriptions__content) {
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: keep-all;
-}
-.entity-card :deep(.el-descriptions__label) { width: 88px; }
-.entity-card-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; padding-top: 8px; }
-.section-title { display: flex; align-items: center; gap: 12px; }
+.card-stack { display: flex; flex-direction: column; gap: 12px; }
 .section-title { display: flex; align-items: center; gap: 12px; }
 .section-title h3 { margin: 0 0 12px; font-size: 16px; }
 .activity-timeline { margin: 0; padding-left: 8px; }

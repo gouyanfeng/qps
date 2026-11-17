@@ -8,6 +8,8 @@ public class CrmMatchCandidate : BaseEntity
     public const string Kept = "保留";
     public const string Selected = "中选";
     public const string Eliminated = "淘汰";
+    public const string Initiator = "initiator";
+    public const string Candidate = "candidate";
 
     public Guid MatchOpportunityId { get; private set; }
     public Guid HerbBaseSupplyId { get; private set; }

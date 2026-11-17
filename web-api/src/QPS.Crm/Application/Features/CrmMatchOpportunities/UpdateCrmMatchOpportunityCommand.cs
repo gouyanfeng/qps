@@ -161,6 +161,77 @@ public class UpdateCrmMatchOpportunityDemandHandler(ICrmDbContext dbContext) : I
 }
 
 [Permission(CrmPermissionCodes.CRM_MATCH_OPPORTUNITY_MANAGE)]
+public class UpdateCrmMatchOpportunityDemandStatusCommand : IRequest<bool>
+{
+    public Guid OpportunityId { get; set; }
+    public Guid DemandId { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string EliminationReason { get; set; } = string.Empty;
+}
+
+public class UpdateCrmMatchOpportunityDemandStatusHandler(ICrmDbContext dbContext) : IRequestHandler<UpdateCrmMatchOpportunityDemandStatusCommand, bool>
+{
+    public async Task<bool> Handle(UpdateCrmMatchOpportunityDemandStatusCommand request, CancellationToken cancellationToken)
+    {
+        var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
+        CrmMatchOpportunityCommandGuards.EnsureInProgress(opportunity);
+        var demand = await dbContext.CrmMatchOpportunityDemands.FirstOrDefaultAsync(
+            item => item.Id == request.DemandId && item.OpportunityId == opportunity.Id, cancellationToken)
+            ?? throw new BusinessException(404, "关联药厂需求不存在");
+
+        var status = request.Status.Trim();
+        // 前端统一按中文状态提交，药厂候选落库用英文枚举，这里做一次归一
+        status = status switch
+        {
+            "保留" => CrmMatchOpportunityDemand.Kept,
+            "中选" => CrmMatchOpportunityDemand.Selected,
+            "淘汰" => CrmMatchOpportunityDemand.Eliminated,
+            "待评估" => CrmMatchOpportunityDemand.PendingEvaluation,
+            _ => status
+        };
+        string actionType;
+        string content;
+        if (status == CrmMatchOpportunityDemand.PendingEvaluation)
+        {
+            demand.ResetToPending();
+            actionType = "恢复候选药厂";
+            content = $"恢复候选药厂为待评估：{demand.VendorName} - {demand.ProductName}";
+        }
+        else if (status == CrmMatchOpportunityDemand.Kept)
+        {
+            demand.Keep();
+            actionType = "保留候选药厂";
+            content = $"保留候选药厂：{demand.VendorName} - {demand.ProductName}";
+        }
+        else if (status == CrmMatchOpportunityDemand.Selected)
+        {
+            demand.Select();
+            actionType = "中选候选药厂";
+            content = $"中选候选药厂：{demand.VendorName} - {demand.ProductName}";
+        }
+        else if (status == CrmMatchOpportunityDemand.Eliminated)
+        {
+            if (string.IsNullOrWhiteSpace(request.EliminationReason))
+            {
+                throw new BusinessException(400, "淘汰候选药厂必须填写淘汰原因");
+            }
+
+            demand.Eliminate(request.EliminationReason);
+            actionType = "淘汰候选药厂";
+            content = $"淘汰候选药厂：{demand.VendorName} - {demand.ProductName}，原因：{demand.EliminationReason}";
+        }
+        else
+        {
+            throw new BusinessException(400, "候选药厂状态仅支持待评估、保留、中选或淘汰");
+        }
+
+        dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(opportunity.Id, actionType, content));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
+[Permission(CrmPermissionCodes.CRM_MATCH_OPPORTUNITY_MANAGE)]
 public class AdvanceCrmMatchOpportunityCommand : IRequest<bool>
 {
     public Guid OpportunityId { get; set; }
@@ -264,24 +335,40 @@ public class UpdateCrmMatchOpportunityStatusHandler(ICrmDbContext dbContext) : I
                 .Where(item => item.MatchOpportunityId == opportunity.Id && item.Status == CrmMatchCandidate.Selected)
                 .Select(item => item.HerbBaseSupplyId)
                 .ToListAsync(cancellationToken);
+            var selectedDemandCount = await dbContext.CrmMatchOpportunityDemands
+                .CountAsync(
+                    item => item.OpportunityId == opportunity.Id
+                        && item.Role == CrmMatchOpportunityDemand.Candidate
+                        && item.Status == CrmMatchOpportunityDemand.Selected,
+                    cancellationToken);
             if (closeResult == CrmMatchOpportunity.Matched)
             {
-                if (selectedSupplyIds.Count == 0)
+                if (opportunity.Source == "supply")
                 {
-                    throw new BusinessException(400, "撮合成功必须至少中选一条候选供应信息");
+                    if (selectedDemandCount == 0)
+                    {
+                        throw new BusinessException(400, "撮合成功必须至少中选一条候选药厂需求");
+                    }
                 }
-
-                await CrmMatchOpportunitySource.LoadEligibleSuppliesAsync(dbContext, selectedSupplyIds, cancellationToken);
-                foreach (var supplyId in selectedSupplyIds)
+                else
                 {
-                    await CrmMatchOpportunitySource.EnsureSupplyNotSelectedElsewhereAsync(
-                        dbContext,
-                        supplyId,
-                        opportunity.Id,
-                        cancellationToken);
+                    if (selectedSupplyIds.Count == 0)
+                    {
+                        throw new BusinessException(400, "撮合成功必须至少中选一条候选供应信息");
+                    }
+
+                    await CrmMatchOpportunitySource.LoadEligibleSuppliesAsync(dbContext, selectedSupplyIds, cancellationToken);
+                    foreach (var supplyId in selectedSupplyIds)
+                    {
+                        await CrmMatchOpportunitySource.EnsureSupplyNotSelectedElsewhereAsync(
+                            dbContext,
+                            supplyId,
+                            opportunity.Id,
+                            cancellationToken);
+                    }
                 }
             }
-            else if (selectedSupplyIds.Count > 0)
+            else if (selectedSupplyIds.Count > 0 || selectedDemandCount > 0)
             {
                 throw new BusinessException(400, "未成交或需求取消前请先将中选候选改为保留");
             }

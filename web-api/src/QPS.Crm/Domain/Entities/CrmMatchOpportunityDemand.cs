@@ -90,6 +90,12 @@ public class CrmMatchOpportunityDemand : BaseEntity
         ExpectedDeliveryAt = expectedDeliveryAt;
     }
 
+    public void ResetToPending()
+    {
+        Status = PendingEvaluation;
+        EliminationReason = string.Empty;
+    }
+
     public void Keep()
     {
         Status = Kept;

@@ -18,6 +18,7 @@ public class CreateEmptyCrmMatchOpportunityCommand : IRequest<Guid>
     public string Source { get; set; } = "demand";
     public Guid? DemandItemId { get; set; }
     public Guid? SupplyId { get; set; }
+    public string NextActionRemark { get; set; } = string.Empty;
 }
 
 public class CreateEmptyCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IRequestHandler<CreateEmptyCrmMatchOpportunityCommand, Guid>
@@ -26,6 +27,9 @@ public class CreateEmptyCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IR
     {
         var source = request.Source == "supply" ? "supply" : "demand";
         var nextActionAt = DateTime.Today.AddDays(3);
+        var nextActionRemark = string.IsNullOrWhiteSpace(request.NextActionRemark)
+            ? (source == "supply" ? "待选择候选采购需求" : "待选择候选基地")
+            : request.NextActionRemark.Trim();
         CrmMatchOpportunity opportunity;
         string initiatorName;
         string activity;
@@ -53,7 +57,7 @@ public class CreateEmptyCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IR
                 null,
                 "核实数量",
                 nextActionAt,
-                "待选择候选采购需求",
+                nextActionRemark,
                 source);
             dbContext.CrmMatchOpportunities.Add(opportunity);
             dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(
@@ -82,7 +86,7 @@ public class CreateEmptyCrmMatchOpportunityHandler(ICrmDbContext dbContext) : IR
                 vendor.OwnerUserId,
                 "核实数量",
                 nextActionAt,
-                "待选择候选基地",
+                nextActionRemark,
                 source);
             dbContext.CrmMatchOpportunities.Add(opportunity);
             dbContext.CrmMatchOpportunityDemands.Add(CrmMatchOpportunityDemand.Create(
@@ -116,6 +120,7 @@ public class ReplaceCrmMatchOpportunityCandidatesCommand : IRequest<bool>
 {
     public Guid OpportunityId { get; set; }
     public List<Guid> SupplyIds { get; set; } = [];
+    public List<Guid> DemandItemIds { get; set; } = [];
 }
 
 public class ReplaceCrmMatchOpportunityCandidatesHandler(ICrmDbContext dbContext) : IRequestHandler<ReplaceCrmMatchOpportunityCandidatesCommand, bool>
@@ -124,20 +129,48 @@ public class ReplaceCrmMatchOpportunityCandidatesHandler(ICrmDbContext dbContext
     {
         var opportunity = await CrmMatchOpportunityCommandGuards.FindOpportunityAsync(dbContext, request.OpportunityId, cancellationToken);
         CrmMatchOpportunityCommandGuards.EnsureInProgress(opportunity);
+
+        // 供应侧机会的候选是药厂需求；需求侧机会的候选是基地供应。
+        if (opportunity.Source == "supply")
+        {
+            CrmMatchOpportunitySource.ValidateDemandItemIds(request.DemandItemIds);
+            var items = await CrmMatchOpportunitySource.LoadEligibleDemandItemsAsync(dbContext, request.DemandItemIds, cancellationToken);
+            var vendorIds = items.Select(item => item.VendorDemand!.VendorId).Distinct().ToList();
+            var vendors = await dbContext.CrmVendors.Where(item => vendorIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, cancellationToken);
+
+            var existingDemands = await dbContext.CrmMatchOpportunityDemands
+                .Where(item => item.OpportunityId == opportunity.Id)
+                .ToListAsync(cancellationToken);
+            var initiatorCount = existingDemands.Count(item => item.Role == "initiator");
+            dbContext.CrmMatchOpportunityDemands.RemoveRange(existingDemands.Where(item => item.Role != "initiator"));
+
+            foreach (var (item, index) in items.OrderBy(x => request.DemandItemIds.IndexOf(x.Id)).Select((item, index) => (item, index)))
+            {
+                dbContext.CrmMatchOpportunityDemands.Add(CrmMatchOpportunitySource.CreateDemand(
+                    opportunity, item, vendors, CrmMatchOpportunityDemand.Candidate, initiatorCount + index + 1));
+            }
+
+            dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
+                opportunity.Id,
+                "重新选择候选",
+                $"重新选择候选：{string.Join("、", items.Select(item => vendors[item.VendorDemand!.VendorId].VendorName + " - " + item.ProductName))}"));
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
         CrmMatchOpportunitySource.ValidateSupplyIds(request.SupplyIds);
         var supplies = await CrmMatchOpportunitySource.LoadEligibleSuppliesAsync(dbContext, request.SupplyIds, cancellationToken);
 
         var existing = await dbContext.CrmMatchCandidates
             .Where(item => item.MatchOpportunityId == opportunity.Id)
             .ToListAsync(cancellationToken);
-        var initiatorCount = existing.Count(item => item.Role == "initiator");
+        var baseInitiatorCount = existing.Count(item => item.Role == "initiator");
         dbContext.CrmMatchCandidates.RemoveRange(existing.Where(item => item.Role != "initiator"));
 
-        var role = opportunity.Source == "supply" ? "candidate" : "candidate";
         foreach (var (supply, index) in supplies.OrderBy(item => request.SupplyIds.IndexOf(item.Id)).Select((item, index) => (item, index)))
         {
             dbContext.CrmMatchCandidates.Add(CrmMatchOpportunitySource.CreateCandidate(
-                opportunity, supply, initiatorCount + index + 1, role));
+                opportunity, supply, baseInitiatorCount + index + 1, CrmMatchCandidate.Candidate));
         }
 
         dbContext.CrmBusinessActivities.Add(CrmMatchOpportunitySource.CreateActivity(
