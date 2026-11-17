@@ -28,6 +28,12 @@ public class CrmHerbBaseUpdateRequest
     public decimal? Scale { get; set; }
 
     /// <summary>
+    /// 基地品类，写入 CrmBusinessEntityAttributes（CRM_HERB_BASE_PRODUCT）。
+    /// 传入时按全量覆盖处理，null 表示不修改品类。
+    /// </summary>
+    public List<string>? ProductNames { get; set; }
+
+    /// <summary>
     /// 省份。
     /// </summary>
     public string Province { get; set; } = string.Empty;

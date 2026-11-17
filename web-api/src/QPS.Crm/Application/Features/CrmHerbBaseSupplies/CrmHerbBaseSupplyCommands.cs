@@ -30,6 +30,7 @@ public class CreateCrmHerbBaseSupplyHandler(ICrmDbContext dbContext, IDomainEven
     {
         var herbBase = await dbContext.CrmHerbBases.FirstOrDefaultAsync(item => item.Id == command.HerbBaseId, cancellationToken) ?? throw new BusinessException(404, "药材基地不存在");
         var request = command.Request;
+        await CrmHerbBaseProductSync.AppendAsync(dbContext, herbBase.Id, request.ProductName, cancellationToken);
         dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(herbBase.Id, herbBase.HerbBaseSubjectId, request.ProductName, request.AvailableQuantity, request.QuantityUnit, request.Specification, request.QualityRequirement, request.HarvestSeason, request.ExpectedPrice, request.PriceUnit, request.SupplyCycle, request.ConfirmedAt, request.ValidUntil, request.Remark));
         await dbContext.SaveChangesAsync(cancellationToken);
         await CrmHerbBaseSupplyScoreNotifier.PublishAsync(dispatcher, herbBase.HerbBaseSubjectId, cancellationToken);
@@ -44,6 +45,7 @@ public class UpdateCrmHerbBaseSupplyHandler(ICrmDbContext dbContext, IDomainEven
         var supply = await dbContext.CrmHerbBaseSupplies.FirstOrDefaultAsync(item => item.Id == command.Id, cancellationToken) ?? throw new BusinessException(404, "供应信息不存在");
         var request = command.Request;
         supply.Update(request.ProductName, request.AvailableQuantity, request.QuantityUnit, request.Specification, request.QualityRequirement, request.HarvestSeason, request.ExpectedPrice, request.PriceUnit, request.SupplyCycle, request.ConfirmedAt, request.ValidUntil, request.Remark);
+        await CrmHerbBaseProductSync.AppendAsync(dbContext, supply.HerbBaseId, request.ProductName, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await CrmHerbBaseSupplyScoreNotifier.PublishAsync(dispatcher, supply.HerbBaseSubjectId, cancellationToken);
         return true;

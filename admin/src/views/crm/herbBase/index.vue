@@ -209,6 +209,9 @@
         <el-form-item label="规模(亩)">
           <el-input-number v-model="form.scale" :min="0" :precision="2" />
         </el-form-item>
+        <el-form-item label="供应品类">
+          <ProductSelect v-model="form.productNames" multiple collapse-tags placeholder="请选择品类" />
+        </el-form-item>
         <el-form-item label="地区">
           <ChinaRegionCascader v-model="regionPath" @change="handleRegionChange" />
         </el-form-item>
@@ -331,6 +334,7 @@ const form = reactive({
   herbBaseSubjectId: undefined as string | undefined,
   subjectName: "",
   scale: undefined as number | undefined,
+  productNames: [] as string[],
   province: "",
   city: "",
   area: "",
