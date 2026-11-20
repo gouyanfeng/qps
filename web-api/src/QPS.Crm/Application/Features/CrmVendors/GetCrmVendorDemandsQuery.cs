@@ -17,7 +17,6 @@ public class GetCrmVendorDemandsQuery : PaginationRequest, IRequest<PaginationRe
     public Guid? Id { get; set; }
     public Guid? VendorId { get; set; }
     public Guid? OwnerUserId { get; set; }
-    public string? Status { get; set; }
     public string? ProductName { get; set; }
     public string? Keyword { get; set; }
     /// <summary>撮合状态筛选：空闲 / 撮合中 / 成交。</summary>
@@ -52,9 +51,8 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
         if (request.Id.HasValue) query = query.Where(plan => plan.Id == request.Id);
         if (request.VendorId.HasValue) query = query.Where(plan => plan.VendorId == request.VendorId);
         if (request.OwnerUserId.HasValue) query = query.Where(plan => plan.Vendor!.OwnerUserId == request.OwnerUserId);
-        if (!string.IsNullOrWhiteSpace(request.Status)) query = query.Where(plan => plan.Status == request.Status);
-        if (!string.IsNullOrWhiteSpace(request.ProductName)) query = query.Where(plan => plan.Items.Any(item => item.ProductName == request.ProductName));
         if (!string.IsNullOrWhiteSpace(request.Keyword)) query = query.Where(plan => plan.DemandNo.Contains(request.Keyword) || plan.DemandName.Contains(request.Keyword) || plan.Vendor!.VendorName.Contains(request.Keyword));
+        if (!string.IsNullOrWhiteSpace(request.ProductName)) query = query.Where(plan => plan.Items.Any(item => item.ProductName == request.ProductName));
         if (request.DemandAtFrom.HasValue) query = query.Where(plan => plan.DemandAt >= request.DemandAtFrom);
         if (request.DemandAtTo.HasValue) query = query.Where(plan => plan.DemandAt <= request.DemandAtTo);
         if (request.ExpectedDeliveryAtFrom.HasValue) query = query.Where(plan => plan.ExpectedDeliveryAt >= request.ExpectedDeliveryAtFrom);
@@ -107,7 +105,6 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
                 DemandNo = plan.DemandNo,
                 DemandName = plan.DemandName,
                 DemandAt = plan.DemandAt,
-                Status = plan.Status,
                 SourceType = plan.SourceType,
                 ContactId = plan.ContactId,
                 ContactName = string.Empty,
@@ -116,7 +113,6 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
                 ReceivingAddress = plan.ReceivingAddress,
                 SourceUrl = plan.SourceUrl,
                 Remark = plan.Remark,
-                ClosedReason = plan.ClosedReason,
                 CreatedAt = plan.CreatedAt,
                 UpdatedAt = plan.UpdatedAt
             })

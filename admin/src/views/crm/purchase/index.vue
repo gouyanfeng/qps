@@ -6,11 +6,6 @@
           <el-form-item label="关键词">
             <el-input v-model="searchForm.keyword" clearable placeholder="编号 / 需求名称 / 厂商" />
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="searchForm.status" clearable placeholder="全部状态">
-              <el-option v-for="status in statuses" :key="status" :label="status" :value="status" />
-            </el-select>
-          </el-form-item>
           <el-form-item label="撮合状态">
             <el-select v-model="searchForm.matchStatus" clearable placeholder="全部状态">
               <el-option label="空闲" value="空闲" />
@@ -38,9 +33,6 @@
           </el-table-column>
           <el-table-column prop="demand.receivingAddress" label="收货地" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ row.demand.receivingAddress || "-" }}</template>
-          </el-table-column>
-          <el-table-column prop="demand.status" label="状态" min-width="100">
-            <template #default="{ row }"><el-tag size="small">{{ row.demand.status }}</el-tag></template>
           </el-table-column>
           <el-table-column prop="demand.sourceType" label="来源" min-width="100">
             <template #default="{ row }">{{ row.demand.sourceType || "-" }}</template>
@@ -100,11 +92,10 @@ import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
 
 const queryPageRef = ref();
 const reloadList = () => queryPageRef.value?.getTableList?.();
-const statuses = ["待确认", "有效", "已完成", "已关闭"];
-const searchForm = reactive({ keyword: "", status: "", matchStatus: "" });
+const searchForm = reactive({ keyword: "", matchStatus: "" });
 
 // 采购明细是撮合的最小单位：接口直接按明细返回，一个品类一行；单据级字段在同一采购单内合并单元格
-const mergedColumns = new Set(["demand.demandNo", "demand.demandName", "demand.demandAt", "demand.receivingAddress", "demand.status", "demand.sourceType", "demand.matchProgress"]);
+const mergedColumns = new Set(["demand.demandNo", "demand.demandName", "demand.demandAt", "demand.receivingAddress", "demand.sourceType", "demand.matchProgress"]);
 const mergeDemandCell = ({ row, column, rowIndex }: any, rows: any[]) => {
   if (!mergedColumns.has(column.property)) return undefined;
   const key = row.demand.id;
@@ -131,7 +122,6 @@ const hasOpportunity = (row: any) =>
   !!row.item && (row.item.matchStatus || "空闲") !== "空闲" && !!row.item.matchOpportunityId;
 // 空闲且有剩余量才可发起（撮合失败关闭后仍可重新发起）
 const canStartMatch = (row: any) => !!row.item
-  && row.demand.status === "有效"
   && (row.item.matchStatus || "空闲") === "空闲"
   && (Number(row.item.quantity || 0) <= 0 || remainingOf(row.item) > 0);
 
@@ -147,7 +137,6 @@ const startMatch = async (row: any) => {
 
 const handleReset = () => {
   searchForm.keyword = "";
-  searchForm.status = "";
   searchForm.matchStatus = "";
 };
 

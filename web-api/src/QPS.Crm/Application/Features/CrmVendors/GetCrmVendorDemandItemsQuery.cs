@@ -15,7 +15,6 @@ public class GetCrmVendorDemandItemsQuery : PaginationRequest, IRequest<Paginati
 {
     public Guid? DemandId { get; set; }
     public Guid? VendorId { get; set; }
-    public string? Status { get; set; }
     public string? Keyword { get; set; }
     /// <summary>撮合状态筛选：空闲 / 撮合中 / 成交。</summary>
     public string? MatchStatus { get; set; }
@@ -44,7 +43,6 @@ public class GetCrmVendorDemandItemsHandler : IRequestHandler<GetCrmVendorDemand
         var query = _dbContext.CrmVendorDemandItems.AsQueryable();
         if (request.DemandId.HasValue) query = query.Where(item => item.VendorDemandId == request.DemandId);
         if (request.VendorId.HasValue) query = query.Where(item => item.VendorDemand!.VendorId == request.VendorId);
-        if (!string.IsNullOrWhiteSpace(request.Status)) query = query.Where(item => item.VendorDemand!.Status == request.Status);
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = request.Keyword.Trim();
@@ -138,7 +136,6 @@ public class GetCrmVendorDemandItemsHandler : IRequestHandler<GetCrmVendorDemand
                         DemandNo = demand.DemandNo,
                         DemandName = demand.DemandName,
                         DemandAt = demand.DemandAt,
-                        Status = demand.Status,
                         SourceType = demand.SourceType,
                         ExpectedDeliveryAt = demand.ExpectedDeliveryAt,
                         ReceivingAddress = demand.ReceivingAddress,

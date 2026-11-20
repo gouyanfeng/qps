@@ -25,4 +25,3 @@ public class CrmVendorDemandItemRequest
     public DateTime? ExpectedDeliveryAt { get; set; }
     public string Remark { get; set; } = string.Empty;
 }
-public class CrmVendorDemandStatusRequest { public string Status { get; set; } = string.Empty; public string ClosedReason { get; set; } = string.Empty; }

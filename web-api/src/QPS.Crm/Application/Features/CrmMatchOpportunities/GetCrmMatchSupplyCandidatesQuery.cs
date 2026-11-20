@@ -141,11 +141,6 @@ internal static class CrmMatchOpportunitySource
             throw new BusinessException(404, "采购列表明细不存在");
         }
 
-        if (demandItem.VendorDemand.Status != CrmVendorDemand.Active)
-        {
-            throw new BusinessException(400, "采购列表状态必须为有效");
-        }
-
         return demandItem;
     }
 

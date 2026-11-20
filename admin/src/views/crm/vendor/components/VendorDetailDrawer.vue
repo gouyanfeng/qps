@@ -66,14 +66,21 @@
               </el-table-column>
               <el-table-column label="提出日期" width="84"><template #default="{ row }">{{ formatDate(row.demandAt) }}</template></el-table-column>
               <el-table-column label="期望到货" width="84"><template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template></el-table-column>
+              <el-table-column label="状态" width="90" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="getPurchaseDemandStatusType(row.status)" size="small" effect="light">{{ row.status || "-" }}</el-tag>
+                </template>
+              </el-table-column>
               <el-table-column label="撮合进度" width="220">
                 <template #default="{ row }">{{ matchProgressLabel(row.matchProgress) }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="130" fixed="right">
+              <el-table-column label="操作" width="190" fixed="right">
                 <template #default="{ row }">
                   <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
                     <div class="demand-actions">
                       <el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">详情</el-button>
+                      <el-button v-if="row.status === '待确认'" type="success" link @click="changePurchaseDemandStatus(row, '有效')">确认有效</el-button>
+                      <el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" type="danger" link @click="closePurchaseDemand(row)">关闭</el-button>
                     </div>
                   </Permission>
                 </template>
@@ -374,17 +381,6 @@ const openPurchaseDemandDialog = (row?: any) => {
 
 const handlePurchaseDemandSaved = async () => {
   purchaseDemandPage.value = 1;
-  await refreshDetail(false);
-  notifyListChanged();
-};
-
-const closePurchaseDemand = async (row: any) => {
-  const { value } = await ElMessageBox.prompt("关闭原因", "关闭采购列表", {
-    inputPattern: /.+/,
-    inputErrorMessage: "请填写关闭原因",
-  });
-  await crmVendorDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
-  ElMessage.success("采购列表已关闭");
   await refreshDetail(false);
   notifyListChanged();
 };

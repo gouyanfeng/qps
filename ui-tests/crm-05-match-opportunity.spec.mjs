@@ -76,11 +76,21 @@ const fillDateTimeByLabel = async (scope, label, value) => {
   await expect(input).not.toHaveValue("");
 };
 
-// 单位已封装为可搜索下拉（UnitSelect / el-select allow-create）：输入后必须回车确认
-const fillUnitByLabel = async (scope, label, unit) => {
-  const input = formItemByLabel(scope, label).locator(".el-select input").first();
+// 单位已封装为可搜索下拉（UnitSelect / el-select allow-create）：输入过滤后必须点中下拉项，回车不一定命中选项
+const fillUnitByLabel = async (page, scope, label, unit) => {
+  const item = formItemByLabel(scope, label);
+  const input = item.locator(".el-select input").first();
+  await item.locator(".el-select").first().click();
   await input.fill(unit);
-  await input.press("Enter");
+  await page.waitForTimeout(600);
+  await page
+    .locator(".el-select-dropdown:visible")
+    .last()
+    .locator(".el-select-dropdown__item")
+    .filter({ hasText: new RegExp(`^\\s*${unit.replace("/", "\\/")}\\s*$`) })
+    .first()
+    .click();
+  await expect(item).toContainText(unit);
 };
 
 const chooseProductInCell = async (page, cell, productName) => {
@@ -116,20 +126,42 @@ const chooseRemoteSelectByLabel = async (page, scope, label, keyword, optionText
 
 const demandItemProducts = ["黄芪", "当归", "党参"];
 
+// 采购明细表格会随业务新增列（如“撮合状态”），按表头文字定位列，避免硬编码列序号漂移
+const demandColumnIndex = async (dialog, label) => {
+  const headers = dialog.locator(".item-table .el-table__header-wrapper thead tr").first().locator("th");
+  const count = await headers.count();
+  for (let index = 0; index < count; index += 1) {
+    const text = (await headers.nth(index).innerText()).trim();
+    if (text === label) return index;
+  }
+  throw new Error(`采购明细表格未找到列：${label}`);
+};
+
 const fillDemandItem = async (page, dialog, quantity) => {
+  const columns = {
+    product: await demandColumnIndex(dialog, "采购品类"),
+    quantity: await demandColumnIndex(dialog, "数量"),
+    quantityUnit: await demandColumnIndex(dialog, "单位"),
+    specification: await demandColumnIndex(dialog, "规格要求"),
+    quality: await demandColumnIndex(dialog, "质量要求"),
+    targetPrice: await demandColumnIndex(dialog, "目标价格"),
+    priceUnit: await demandColumnIndex(dialog, "价格单位"),
+    deliveryAt: await demandColumnIndex(dialog, "明细交期"),
+    remark: await demandColumnIndex(dialog, "明细备注"),
+  };
   for (let index = 0; index < demandItemProducts.length; index += 1) {
     if (index > 0) await dialog.getByRole("button", { name: "新增明细" }).click();
     const product = demandItemProducts[index];
     const cells = dialog.locator(".item-table .el-table__body-wrapper tbody tr").nth(index).locator("td");
-    await chooseProductInCell(page, cells.nth(0), product);
-    await cells.nth(1).locator("input:not([type='hidden'])").first().fill(String(quantity + index * 10));
-    await chooseSelectInCell(page, cells.nth(2), "公斤");
-    await cells.nth(3).locator("input:not([type='hidden'])").first().fill(data.specification);
-    await cells.nth(4).locator("input:not([type='hidden'])").first().fill(data.quality);
-    await cells.nth(5).locator("input:not([type='hidden'])").first().fill("35");
-    await chooseSelectInCell(page, cells.nth(6), "元/公斤");
-    await fillDateTime(cells.nth(7).locator(".el-date-editor input").first(), "2026-12-30T15:00:00");
-    await cells.nth(8).locator("input:not([type='hidden'])").first().fill(`${prefix}_采购明细_${product}`);
+    await chooseProductInCell(page, cells.nth(columns.product), product);
+    await cells.nth(columns.quantity).locator("input:not([type='hidden'])").first().fill(String(quantity + index * 10));
+    await chooseSelectInCell(page, cells.nth(columns.quantityUnit), "公斤");
+    await cells.nth(columns.specification).locator("input:not([type='hidden'])").first().fill(data.specification);
+    await cells.nth(columns.quality).locator("input:not([type='hidden'])").first().fill(data.quality);
+    await cells.nth(columns.targetPrice).locator("input:not([type='hidden'])").first().fill("35");
+    await chooseSelectInCell(page, cells.nth(columns.priceUnit), "元/公斤");
+    await fillDateTime(cells.nth(columns.deliveryAt).locator(".el-date-editor input").first(), "2026-12-30T15:00:00");
+    await cells.nth(columns.remark).locator("input:not([type='hidden'])").first().fill(`${prefix}_采购明细_${product}`);
   }
 };
 
@@ -167,7 +199,6 @@ const runSupplyAction = async (page, pane, index, label) => {
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: /^(供应)?操作$/ }).click();
   await page.getByRole("menuitem", { name: label }).last().click();
-  await waitIdle(page);
 };
 
 const addActiveSupply = async (page, pane, index, product = data.productName) => {
@@ -176,9 +207,9 @@ const addActiveSupply = async (page, pane, index, product = data.productName) =>
   await expect(dialog).toBeVisible();
   await chooseSelectByLabel(page, dialog, "品类", product);
   await fillByLabel(dialog, "可供量", `${data.quantities[index]}`);
-  await fillUnitByLabel(dialog, "可供量", "公斤");
+  await fillUnitByLabel(page, dialog, "可供量", "公斤");
   await fillByLabel(dialog, "预期价格", `${30 + index}`);
-  await fillUnitByLabel(dialog, "预期价格", "元/公斤");
+  await fillUnitByLabel(page, dialog, "预期价格", "元/公斤");
   await fillByLabel(dialog, "规格", data.specification);
   await fillByLabel(dialog, "质量要求", data.quality);
   await fillByLabel(dialog, "产新期", "9月-11月");

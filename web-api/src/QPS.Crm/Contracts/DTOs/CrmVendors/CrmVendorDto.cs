@@ -78,7 +78,6 @@ public class CrmVendorDemandDto
     public string DemandNo { get; set; } = string.Empty;
     public string DemandName { get; set; } = string.Empty;
     public DateTime DemandAt { get; set; }
-    public string Status { get; set; } = string.Empty;
     public string SourceType { get; set; } = string.Empty;
     public Guid? ContactId { get; set; }
     public string ContactName { get; set; } = string.Empty;
@@ -89,7 +88,6 @@ public class CrmVendorDemandDto
     public string SourceUrl { get; set; } = string.Empty;
 
     public string Remark { get; set; } = string.Empty;
-    public string ClosedReason { get; set; } = string.Empty;
     public CrmVendorDemandMatchProgressDto MatchProgress { get; set; } = new();
     public List<CrmVendorDemandItemDto> Items { get; set; } = new();
 
@@ -153,7 +151,6 @@ public class CrmVendorDemandBriefDto
     public string DemandNo { get; set; } = string.Empty;
     public string DemandName { get; set; } = string.Empty;
     public DateTime DemandAt { get; set; }
-    public string Status { get; set; } = string.Empty;
     public string SourceType { get; set; } = string.Empty;
     public DateTime? ExpectedDeliveryAt { get; set; }
     public string ReceivingAddress { get; set; } = string.Empty;

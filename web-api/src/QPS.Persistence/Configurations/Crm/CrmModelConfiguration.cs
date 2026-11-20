@@ -110,13 +110,12 @@ public static class CrmModelConfiguration
             entity.ToTable("CrmVendorDemands");
             entity.Property(demand => demand.DemandNo).HasMaxLength(64);
             entity.Property(demand => demand.DemandName).HasMaxLength(500);
-            entity.Property(demand => demand.Status).HasMaxLength(32);
             entity.Property(demand => demand.SourceType).HasMaxLength(32);
             entity.Property(demand => demand.SourceUrl).HasMaxLength(500);
             entity.HasIndex(demand => demand.DemandNo)
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
-            entity.HasIndex(demand => new { demand.VendorId, demand.Status, demand.DemandAt });
+            entity.HasIndex(demand => new { demand.VendorId, demand.DemandAt });
             entity.HasIndex(demand => demand.ContactId);
             entity.HasOne(demand => demand.Vendor).WithMany(vendor => vendor.VendorDemands).HasForeignKey(demand => demand.VendorId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(demand => demand.Contact).WithMany().HasForeignKey(demand => demand.ContactId).OnDelete(DeleteBehavior.Restrict);
