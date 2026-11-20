@@ -5,6 +5,7 @@ namespace QPS.Crm.Contracts.Permissions;
 /// </summary>
 public static class CrmPermissionCodes
 {
+    public const string CRM_PURCHASE_DEMAND_VIEW = "CRM_PURCHASE_DEMAND_VIEW";
     public const string CRM_MATCH_OPPORTUNITY_VIEW = "CRM_MATCH_OPPORTUNITY_VIEW";
     public const string CRM_MATCH_OPPORTUNITY_MANAGE = "CRM_MATCH_OPPORTUNITY_MANAGE";
 }

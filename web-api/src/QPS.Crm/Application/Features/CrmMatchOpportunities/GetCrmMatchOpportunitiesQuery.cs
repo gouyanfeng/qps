@@ -27,17 +27,6 @@ public class GetCrmMatchOpportunitiesQuery : PaginationRequest, IRequest<Paginat
 public class CrmMatchOpportunityListDto
 {
     public Guid Id { get; set; }
-    public Guid? DemandItemId { get; set; }
-    public Guid DemandId { get; set; }
-    public Guid VendorId { get; set; }
-    public string VendorName { get; set; } = string.Empty;
-    public string DemandProductName { get; set; } = string.Empty;
-    public decimal? DemandQuantity { get; set; }
-    public string QuantityUnit { get; set; } = string.Empty;
-    public string Specification { get; set; } = string.Empty;
-    public string QualityRequirement { get; set; } = string.Empty;
-    public DateTime? ExpectedDeliveryAt { get; set; }
-    public string DeliveryAddress { get; set; } = string.Empty;
     public Guid? OwnerUserId { get; set; }
     public string OwnerUserName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
@@ -51,7 +40,12 @@ public class CrmMatchOpportunityListDto
     public string Source { get; set; } = "demand";
     /// <summary>发起方名称：供应侧为基地主体，需求侧为药厂。</summary>
     public string InitiatorName { get; set; } = string.Empty;
-    /// <summary>候选名单：供应侧为候选药厂，需求侧为候选基地，多个用「、」拼接。</summary>
+    /// <summary>发起方品类（实时取原明细）。</summary>
+    public string ProductName { get; set; } = string.Empty;
+    /// <summary>发起方数量（实时取原明细）。</summary>
+    public decimal? Quantity { get; set; }
+    public string QuantityUnit { get; set; } = string.Empty;
+    /// <summary>候选名单，多个用「、」拼接。</summary>
     public string CandidateNames { get; set; } = string.Empty;
     public int CandidateCount { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -61,9 +55,6 @@ public class CrmMatchOpportunityListDto
 public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
     : IRequestHandler<GetCrmMatchOpportunitiesQuery, PaginationResponse<CrmMatchOpportunityListDto>>
 {
-    /// <summary>
-    /// 编排撮合机会工作台列表查询。
-    /// </summary>
     public async Task<PaginationResponse<CrmMatchOpportunityListDto>> Handle(
         GetCrmMatchOpportunitiesQuery request,
         CancellationToken cancellationToken)
@@ -73,109 +64,168 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
         var page = Math.Max(request.Page, 1);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        var list = await (
-            from opportunity in opportunities
-            join vendor in dbContext.CrmVendors on opportunity.VendorId equals vendor.Id into vendorGroup
-            from vendor in vendorGroup.DefaultIfEmpty()
-            orderby opportunity.Status == CrmMatchOpportunity.InProgress descending,
-                opportunity.NextActionAt == null,
-                opportunity.NextActionAt,
-                opportunity.UpdatedAt descending
-            select new CrmMatchOpportunityListDto
-            {
-                Id = opportunity.Id,
-                DemandItemId = opportunity.DemandItemId,
-                DemandId = opportunity.DemandId,
-                VendorId = opportunity.VendorId,
-                VendorName = vendor == null ? string.Empty : vendor.VendorName,
-                DemandProductName = opportunity.DemandProductName,
-                DemandQuantity = opportunity.DemandQuantity,
-                QuantityUnit = opportunity.QuantityUnit,
-                Specification = opportunity.Specification,
-                QualityRequirement = opportunity.QualityRequirement,
-                ExpectedDeliveryAt = opportunity.ExpectedDeliveryAt,
-                DeliveryAddress = opportunity.DeliveryAddress,
-                OwnerUserId = opportunity.OwnerUserId,
-                Status = opportunity.Status,
-                Stage = opportunity.Stage,
-                NextAction = opportunity.NextAction,
-                NextActionRemark = opportunity.NextActionRemark,
-                NextActionAt = opportunity.NextActionAt,
-                CloseResult = opportunity.CloseResult,
-                ClosedReason = opportunity.ClosedReason,
-                Source = opportunity.Source,
-                InitiatorName = opportunity.Source == "supply"
-                    ? dbContext.CrmMatchCandidates
-                        .Where(candidate => candidate.MatchOpportunityId == opportunity.Id && candidate.Role == "initiator")
-                        .Select(candidate => candidate.SubjectName).FirstOrDefault() ?? string.Empty
-                    : dbContext.CrmMatchOpportunityDemands
-                        .Where(demand => demand.OpportunityId == opportunity.Id && demand.Role == "initiator")
-                        .Select(demand => demand.VendorName).FirstOrDefault() ?? string.Empty,
-                CandidateCount = 0,
-                CreatedAt = opportunity.CreatedAt,
-                UpdatedAt = opportunity.UpdatedAt
-            })
+        // 一次性取本页机会的发起方名称与品类，避免 N+1
+        var pageIds = await opportunities
+            .OrderBy(opportunity => opportunity.Status == CrmMatchOpportunity.InProgress ? 0 : 1)
+            .ThenBy(opportunity => opportunity.NextActionAt == null ? 1 : 0)
+            .ThenBy(opportunity => opportunity.NextActionAt)
+            .ThenByDescending(opportunity => opportunity.UpdatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(opportunity => opportunity.Id)
             .ToListAsync(cancellationToken);
 
+        var initiatorInfo = await LoadInitiatorInfoAsync(pageIds, cancellationToken);
+        var candidateNames = await LoadCandidateNamesAsync(pageIds, cancellationToken);
+
+        var opportunityRows = await dbContext.CrmMatchOpportunities
+            .AsNoTracking()
+            .Where(opportunity => pageIds.Contains(opportunity.Id))
+            .ToListAsync(cancellationToken);
+        var orderMap = pageIds.Select((id, index) => (id, index)).ToDictionary(x => x.id, x => x.index);
+
+        var list = opportunityRows
+            .OrderBy(opportunity => orderMap[opportunity.Id])
+            .Select(opportunity =>
+            {
+                initiatorInfo.TryGetValue(opportunity.Id, out var info);
+                candidateNames.TryGetValue(opportunity.Id, out var names);
+                var distinctNames = (names ?? []).Where(name => !string.IsNullOrWhiteSpace(name)).Distinct().ToList();
+                return new CrmMatchOpportunityListDto
+                {
+                    Id = opportunity.Id,
+                    OwnerUserId = opportunity.OwnerUserId,
+                    Status = opportunity.Status,
+                    Stage = opportunity.Stage,
+                    NextAction = opportunity.NextAction,
+                    NextActionRemark = opportunity.NextActionRemark,
+                    NextActionAt = opportunity.NextActionAt,
+                    CloseResult = opportunity.CloseResult,
+                    ClosedReason = opportunity.ClosedReason,
+                    Source = opportunity.Source,
+                    InitiatorName = info?.Name ?? string.Empty,
+                    ProductName = info?.ProductName ?? string.Empty,
+                    Quantity = info?.Quantity,
+                    QuantityUnit = info?.QuantityUnit ?? string.Empty,
+                    CandidateNames = string.Join("、", distinctNames),
+                    CandidateCount = distinctNames.Count,
+                    CreatedAt = opportunity.CreatedAt,
+                    UpdatedAt = opportunity.UpdatedAt
+                };
+            })
+            .ToList();
+
         await FillOwnerNamesAsync(list, cancellationToken);
-        await FillCandidateNamesAsync(list, cancellationToken);
         return new PaginationResponse<CrmMatchOpportunityListDto>(list, totalCount, page, pageSize);
     }
 
-    /// <summary>
-    /// 填充候选名单：供应侧机会展示候选药厂，需求侧机会展示候选基地，多个用「、」拼接。
-    /// </summary>
-    private async Task FillCandidateNamesAsync(List<CrmMatchOpportunityListDto> items, CancellationToken cancellationToken)
+    private sealed record InitiatorInfo(string Name, string ProductName, decimal? Quantity, string QuantityUnit);
+
+    /// <summary>发起方名称与品类：supply 机会取发起基地供应，demand 机会取发起采购明细+药厂。</summary>
+    private async Task<Dictionary<Guid, InitiatorInfo>> LoadInitiatorInfoAsync(
+        List<Guid> ids, CancellationToken cancellationToken)
     {
-        if (items.Count == 0)
-            return;
+        if (ids.Count == 0) return new();
+        var result = new Dictionary<Guid, InitiatorInfo>();
 
-        var ids = items.Select(item => item.Id).ToList();
-        var candidateVendors = await dbContext.CrmMatchOpportunityDemands
-            .Where(demand => ids.Contains(demand.OpportunityId) && demand.Role == "candidate")
-            .GroupBy(demand => demand.OpportunityId)
-            .ToDictionaryAsync(
-                group => group.Key,
-                group => group.Select(demand => demand.VendorName).ToList(),
-                cancellationToken);
-        var candidateBases = await dbContext.CrmMatchCandidates
-            .Where(candidate => ids.Contains(candidate.MatchOpportunityId) && candidate.Role == "candidate")
-            .GroupBy(candidate => candidate.MatchOpportunityId)
-            .ToDictionaryAsync(
-                group => group.Key,
-                group => group.Select(candidate => candidate.HerbBaseName).ToList(),
-                cancellationToken);
-
-        foreach (var item in items)
+        var supplyInitiators = await (
+                from item in dbContext.CrmMatchOpportunityItems.AsNoTracking()
+                join supply in dbContext.CrmHerbBaseSupplies.AsNoTracking().IgnoreQueryFilters() on item.EntityId equals supply.Id
+                join herbBase in dbContext.CrmHerbBases.AsNoTracking().IgnoreQueryFilters() on supply.HerbBaseId equals herbBase.Id into hbGroup
+                from herbBase in hbGroup.DefaultIfEmpty()
+                where ids.Contains(item.OpportunityId) &&
+                    item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply &&
+                    item.Role == CrmMatchOpportunityItem.Initiator
+                select new
+                {
+                    item.OpportunityId,
+                    Name = herbBase == null ? string.Empty : herbBase.SubjectName,
+                    supply.ProductName,
+                    supply.AvailableQuantity,
+                    supply.QuantityUnit
+                })
+            .ToListAsync(cancellationToken);
+        foreach (var row in supplyInitiators)
         {
-            var names = (item.Source == "supply"
-                ? candidateVendors.GetValueOrDefault(item.Id)
-                : candidateBases.GetValueOrDefault(item.Id))
-                ?? [];
-            var distinctNames = names.Where(name => !string.IsNullOrWhiteSpace(name)).Distinct().ToList();
-            item.CandidateNames = string.Join("、", distinctNames);
-            item.CandidateCount = distinctNames.Count;
+            result[row.OpportunityId] = new InitiatorInfo(row.Name, row.ProductName, row.AvailableQuantity, row.QuantityUnit);
         }
+
+        var demandInitiators = await (
+                from item in dbContext.CrmMatchOpportunityItems.AsNoTracking()
+                join demandItem in dbContext.CrmVendorDemandItems.AsNoTracking() on item.EntityId equals demandItem.Id
+                join demand in dbContext.CrmVendorDemands.AsNoTracking().IgnoreQueryFilters() on demandItem.VendorDemandId equals demand.Id
+                join vendor in dbContext.CrmVendors.AsNoTracking().IgnoreQueryFilters() on demand.VendorId equals vendor.Id into vGroup
+                from vendor in vGroup.DefaultIfEmpty()
+                where ids.Contains(item.OpportunityId) &&
+                    item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand &&
+                    item.Role == CrmMatchOpportunityItem.Initiator
+                select new
+                {
+                    item.OpportunityId,
+                    Name = vendor == null ? string.Empty : vendor.VendorName,
+                    demandItem.ProductName,
+                    demandItem.Quantity,
+                    demandItem.QuantityUnit
+                })
+            .ToListAsync(cancellationToken);
+        foreach (var row in demandInitiators)
+        {
+            result[row.OpportunityId] = new InitiatorInfo(row.Name, row.ProductName, row.Quantity, row.QuantityUnit);
+        }
+
+        return result;
+    }
+
+    private async Task<Dictionary<Guid, List<string>>> LoadCandidateNamesAsync(List<Guid> ids, CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0) return new();
+        var result = new Dictionary<Guid, List<string>>();
+
+        var demandCandidates = await (
+                from item in dbContext.CrmMatchOpportunityItems.AsNoTracking()
+                join demandItem in dbContext.CrmVendorDemandItems.AsNoTracking() on item.EntityId equals demandItem.Id
+                join demand in dbContext.CrmVendorDemands.AsNoTracking().IgnoreQueryFilters() on demandItem.VendorDemandId equals demand.Id
+                join vendor in dbContext.CrmVendors.AsNoTracking().IgnoreQueryFilters() on demand.VendorId equals vendor.Id into vGroup
+                from vendor in vGroup.DefaultIfEmpty()
+                where ids.Contains(item.OpportunityId) &&
+                    item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand &&
+                    item.Role == CrmMatchOpportunityItem.Candidate
+                select new { item.OpportunityId, Name = vendor == null ? string.Empty : vendor.VendorName })
+            .ToListAsync(cancellationToken);
+        foreach (var row in demandCandidates)
+        {
+            if (!result.TryGetValue(row.OpportunityId, out var list)) result[row.OpportunityId] = list = new();
+            list.Add(row.Name);
+        }
+
+        var supplyCandidates = await (
+                from item in dbContext.CrmMatchOpportunityItems.AsNoTracking()
+                join supply in dbContext.CrmHerbBaseSupplies.AsNoTracking().IgnoreQueryFilters() on item.EntityId equals supply.Id
+                join herbBase in dbContext.CrmHerbBases.AsNoTracking().IgnoreQueryFilters() on supply.HerbBaseId equals herbBase.Id into hbGroup
+                from herbBase in hbGroup.DefaultIfEmpty()
+                where ids.Contains(item.OpportunityId) &&
+                    item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply &&
+                    item.Role == CrmMatchOpportunityItem.Candidate
+                select new { item.OpportunityId, Name = herbBase == null ? string.Empty : herbBase.SubjectName })
+            .ToListAsync(cancellationToken);
+        foreach (var row in supplyCandidates)
+        {
+            if (!result.TryGetValue(row.OpportunityId, out var list)) result[row.OpportunityId] = list = new();
+            list.Add(row.Name);
+        }
+
+        return result;
     }
 
     private async Task FillOwnerNamesAsync(List<CrmMatchOpportunityListDto> items, CancellationToken cancellationToken)
     {
-        var ownerIds = items
-            .Where(item => item.OwnerUserId.HasValue)
-            .Select(item => item.OwnerUserId!.Value)
-            .Distinct()
-            .ToList();
-        if (ownerIds.Count == 0)
-            return;
-
+        var ownerIds = items.Where(item => item.OwnerUserId.HasValue)
+            .Select(item => item.OwnerUserId!.Value).Distinct().ToList();
+        if (ownerIds.Count == 0) return;
         var users = await CrmUserNames.GetAsync(dbContext, ownerIds, cancellationToken);
-
         foreach (var item in items)
         {
-            if (item.OwnerUserId.HasValue &&
-                users.TryGetValue(item.OwnerUserId.Value, out var owner))
+            if (item.OwnerUserId.HasValue && users.TryGetValue(item.OwnerUserId.Value, out var owner))
             {
                 item.OwnerUserName = CrmUserNames.DisplayName(owner.Username, owner.RealName);
             }
@@ -188,7 +238,11 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
 
         if (request.DemandItemId.HasValue)
         {
-            opportunities = opportunities.Where(item => item.DemandItemId == request.DemandItemId.Value);
+            var demandItemId = request.DemandItemId.Value;
+            opportunities = opportunities.Where(opportunity => dbContext.CrmMatchOpportunityItems.Any(item =>
+                item.OpportunityId == opportunity.Id &&
+                item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand &&
+                item.EntityId == demandItemId));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Status))
@@ -206,19 +260,32 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
         if (!string.IsNullOrWhiteSpace(request.ProductName))
         {
             var productName = request.ProductName.Trim();
-            opportunities = opportunities.Where(item => item.DemandProductName.Contains(productName));
+            opportunities = opportunities.Where(opportunity => dbContext.CrmMatchOpportunityItems.Any(item =>
+                item.OpportunityId == opportunity.Id && item.Role == CrmMatchOpportunityItem.Initiator &&
+                ((item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand &&
+                    dbContext.CrmVendorDemandItems.Any(d => d.Id == item.EntityId && d.ProductName.Contains(productName))) ||
+                 (item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply &&
+                    dbContext.CrmHerbBaseSupplies.Any(s => s.Id == item.EntityId && s.ProductName.Contains(productName))))));
         }
 
         if (request.VendorId.HasValue)
         {
-            opportunities = opportunities.Where(item => item.VendorId == request.VendorId.Value);
+            var vendorId = request.VendorId.Value;
+            opportunities = opportunities.Where(opportunity => dbContext.CrmMatchOpportunityItems.Any(item =>
+                item.OpportunityId == opportunity.Id &&
+                item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand &&
+                dbContext.CrmVendorDemandItems.Any(d =>
+                    d.Id == item.EntityId &&
+                    dbContext.CrmVendorDemands.Any(dm => dm.Id == d.VendorDemandId && dm.VendorId == vendorId))));
         }
 
         if (request.HerbBaseSubjectId.HasValue)
         {
             var subjectId = request.HerbBaseSubjectId.Value;
-            opportunities = opportunities.Where(opportunity => dbContext.CrmMatchCandidates
-                .Any(candidate => candidate.MatchOpportunityId == opportunity.Id && candidate.HerbBaseSubjectId == subjectId));
+            opportunities = opportunities.Where(opportunity => dbContext.CrmMatchOpportunityItems.Any(item =>
+                item.OpportunityId == opportunity.Id &&
+                item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply &&
+                dbContext.CrmHerbBaseSupplies.Any(s => s.Id == item.EntityId && s.HerbBaseSubjectId == subjectId)));
         }
 
         if (request.OwnerUserId.HasValue)
@@ -240,12 +307,16 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
         {
             var keyword = request.Keyword.Trim();
             opportunities = opportunities.Where(opportunity =>
-                opportunity.DemandProductName.Contains(keyword) ||
-                opportunity.DeliveryAddress.Contains(keyword) ||
                 opportunity.NextAction.Contains(keyword) ||
-                dbContext.CrmMatchCandidates.Any(candidate =>
-                    candidate.MatchOpportunityId == opportunity.Id &&
-                    (candidate.SubjectName.Contains(keyword) || candidate.HerbBaseName.Contains(keyword))));
+                opportunity.ClosedReason.Contains(keyword) ||
+                dbContext.CrmMatchOpportunityItems.Any(item =>
+                    item.OpportunityId == opportunity.Id &&
+                    ((item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand &&
+                        dbContext.CrmVendorDemandItems.Any(d => d.Id == item.EntityId && d.ProductName.Contains(keyword))) ||
+                     (item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply &&
+                        (dbContext.CrmHerbBaseSupplies.Any(s => s.Id == item.EntityId && s.ProductName.Contains(keyword)) ||
+                         dbContext.CrmHerbBases.Any(h => dbContext.CrmHerbBaseSupplies.Any(s => s.Id == item.EntityId && s.HerbBaseId == h.Id) &&
+                            (h.SubjectName.Contains(keyword) || h.BaseName.Contains(keyword))))))));
         }
 
         return opportunities;

@@ -125,6 +125,7 @@
 | `SYSTEM_PERMISSION` | `GetPermissionTreeQuery`、`GetRolePermissionsQuery` |
 | `SYSTEM_PERMISSION_EDIT` | `UpdateRolePermissionsCommand` |
 | `CRM_MATCH_OPPORTUNITY_VIEW` | 撮合机会列表与详情查询 |
+| `CRM_PURCHASE_DEMAND_VIEW` | 采购列表查询（`GET /api/admin/crm/purchase-demands/items`） |
 | `CRM_MATCH_OPPORTUNITY_MANAGE` | 撮合机会创建、更新、进度选项查询 |
 | `CRM_TRANSFER` | `ChangeCrmOwnerCommand` 内的 `TransferPermissionCode` 常量 |
 

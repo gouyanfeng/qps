@@ -1,6 +1,8 @@
 using QPS.Crm.Contracts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Crm.Application.Features.CrmMatchOpportunities;
+using QPS.Crm.Domain.Entities;
 using QPS.Shared.Contracts;
 using QPS.Shared.Exceptions;
 
@@ -32,6 +34,13 @@ public class DeleteCrmVendorDemandHandler : IRequestHandler<DeleteCrmVendorDeman
             ?? throw new BusinessException(404, "厂商不存在");
 
         await CrmVendorDemands.EnsureNoUnclosedMatchOpportunitiesAsync(_dbContext, plan.Id, cancellationToken);
+        // 成交冻结：该单任一明细被成交机会引用则禁止删除
+        var itemIds = await _dbContext.CrmVendorDemandItems
+            .Where(item => item.VendorDemandId == plan.Id)
+            .Select(item => item.Id)
+            .ToListAsync(cancellationToken);
+        await CrmMatchOpportunitySource.EnsureEntitiesNotLockedByDealAsync(
+            _dbContext, CrmMatchOpportunityItem.EntityTypeDemand, itemIds, cancellationToken);
         plan.SoftDelete();
         await CrmVendorDemands.RefreshLatestAsync(_dbContext, vendor, cancellationToken, excludedPlanId: plan.Id);
         await _dbContext.SaveChangesAsync(cancellationToken);

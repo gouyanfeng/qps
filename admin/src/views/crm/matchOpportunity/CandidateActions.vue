@@ -1,11 +1,8 @@
 <template>
   <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE">
     <div class="candidate-actions">
-      <el-button size="small" type="warning" @click="emit('edit')">修改</el-button>
-      <el-button v-if="label !== '保留'" size="small" type="success" @click="emit('keep')">保留</el-button>
       <el-button v-if="label !== '中选'" size="small" type="primary" :disabled="disabled" @click="emit('select')">中选</el-button>
-      <el-button v-if="label === '淘汰'" size="small" type="info" @click="emit('restore')">恢复</el-button>
-      <el-button v-if="label !== '淘汰'" size="small" type="danger" @click="emit('eliminate')">淘汰</el-button>
+      <el-button size="small" type="danger" plain @click="emit('remove')">移除</el-button>
     </div>
   </Permission>
 </template>
@@ -20,11 +17,8 @@ const props = withDefaults(defineProps<{ status?: string | null; disabled?: bool
   disabled: false
 });
 const emit = defineEmits<{
-  edit: [];
-  keep: [];
   select: [];
-  restore: [];
-  eliminate: [];
+  remove: [];
 }>();
 
 // 基地候选存中文、药厂候选存英文，按钮显隐统一按中文标签判断

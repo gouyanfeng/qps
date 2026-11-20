@@ -9,6 +9,7 @@ using QPS.Crm.Contracts.DTOs.CrmHerbBases;
 using QPS.Crm.Application.Features.CrmTransfers;
 using QPS.Shared.Contracts;
 using QPS.Crm.Application.Features.CrmHerbBaseSupplies;
+using QPS.Crm.Domain.Entities;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Crm.Application.Features.CrmHerbBaseSubjects;
@@ -174,26 +175,36 @@ public class GetCrmHerbBaseSubjectHandler : IRequestHandler<GetCrmHerbBaseSubjec
     }
 
     /// <summary>
-    /// 该主体作为供货方的历史成交：中选候选 -> 撮合机会 -> 采购方。
+    /// 该主体作为供货方的历史成交：中选/发起供应 item -> 撮合机会 -> 采购方（实时取原明细）。
     /// </summary>
     private async Task<List<CrmSubjectDealDto>> GetDealsAsync(Guid subjectId, CancellationToken cancellationToken)
     {
         return await (
-            from candidate in _dbContext.CrmMatchCandidates
-            join supply in _dbContext.CrmHerbBaseSupplies on candidate.HerbBaseSupplyId equals supply.Id
-            join opportunity in _dbContext.CrmMatchOpportunities on candidate.MatchOpportunityId equals opportunity.Id
-            join vendor in _dbContext.CrmVendors on opportunity.VendorId equals vendor.Id
-            where supply.HerbBaseSubjectId == subjectId
-                  && candidate.Status == "中选"
-                  && !candidate.IsDeleted
+            from item in _dbContext.CrmMatchOpportunityItems
+            join supply in _dbContext.CrmHerbBaseSupplies on item.EntityId equals supply.Id
+            join opportunity in _dbContext.CrmMatchOpportunities on item.OpportunityId equals opportunity.Id
+            join herbBase in _dbContext.CrmHerbBases on supply.HerbBaseId equals herbBase.Id
+            where item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply
+                  && supply.HerbBaseSubjectId == subjectId
+                  && opportunity.Status == CrmMatchOpportunity.Closed
+                  && opportunity.CloseResult == CrmMatchOpportunity.Matched
+                  && (item.Status == CrmMatchOpportunityItem.Selected || item.Role == CrmMatchOpportunityItem.Initiator)
+                  && !item.IsDeleted
                   && !opportunity.IsDeleted
             orderby opportunity.UpdatedAt descending
             select new CrmSubjectDealDto
             {
                 Id = opportunity.Id,
-                VendorName = vendor.VendorName,
-                ProductName = opportunity.DemandProductName,
-                BaseName = candidate.HerbBaseName,
+                VendorName = (
+                    from demandItemRow in _dbContext.CrmMatchOpportunityItems
+                    where demandItemRow.OpportunityId == opportunity.Id &&
+                        demandItemRow.EntityType == CrmMatchOpportunityItem.EntityTypeDemand
+                    from di in _dbContext.CrmVendorDemandItems.Where(d => d.Id == demandItemRow.EntityId).Take(1)
+                    from dm in _dbContext.CrmVendorDemands.Where(d => d.Id == di.VendorDemandId).Take(1)
+                    from v in _dbContext.CrmVendors.Where(v => v.Id == dm.VendorId).Take(1)
+                    select v.VendorName).FirstOrDefault() ?? string.Empty,
+                ProductName = supply.ProductName,
+                BaseName = herbBase.BaseName,
                 CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,
                 ClosedAt = opportunity.UpdatedAt

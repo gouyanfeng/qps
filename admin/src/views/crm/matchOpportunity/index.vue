@@ -2,7 +2,7 @@
   <div class="match-opportunity-page">
     <el-dialog
       :model-value="candidateSelectorVisible"
-      :title="replaceCandidateMode ? '重新选择候选' : '候选筛选'"
+      title="候选筛选"
       width="1200px"
       top="6vh"
       destroy-on-close
@@ -17,7 +17,6 @@
         :preselected-demand-item-ids="preselectedDemandItemIds"
         :demand-item-ids="selectedDemandItems.map(item => item.id)"
         :source="candidateSource"
-        :replace="replaceCandidateMode"
         :supply-id="appendSupplyId"
         @created="handleOpportunityCreated"
         @appended="handleCandidatesAppended"
@@ -72,8 +71,20 @@
        
             </template>
           </el-table-column>
-                  <el-table-column prop="demandProductName" label="品类" min-width="130" show-overflow-tooltip />
-          <el-table-column prop="candidateNames" label="候选名单" min-width="220" show-overflow-tooltip />
+                  <el-table-column label="品类" min-width="130">
+                    <template #default="{ row }">
+                      <el-tag v-if="row.productName" size="small" type="info" effect="plain">{{ row.productName }}</el-tag>
+                      <span v-else>-</span>
+                    </template>
+                  </el-table-column>
+          <el-table-column label="候选名单" min-width="220">
+            <template #default="{ row }">
+              <div v-if="candidateNamesOf(row).length" class="candidate-name-wrap">
+                <el-tag v-for="(name, index) in candidateNamesOf(row)" :key="`${name}-${index}`" size="small" effect="plain">{{ name }}</el-tag>
+              </div>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column label="需求数量" width="130"><template #default="{ row }">{{ quantityLabel(row) }}</template></el-table-column>
           <el-table-column label="候选数" width="90" align="center"><template #default="{ row }">{{ row.candidateCount }}</template></el-table-column>
           <el-table-column label="状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="statusType(row)">{{ displayStatus(row) }}</el-tag></template></el-table-column>
@@ -98,7 +109,7 @@
     </QueryPage>
 
     <DemandItemPickerDialog v-model="demandItemPickerVisible" :demand="currentDemand" :source="matchSource" @confirm="handleDemandItemSelected" />
-    <DetailDrawer v-model="detailDrawerVisible" :opportunity-id="currentOpportunityId" @refresh-list="reloadList" @append-candidates="openCandidateAppend" @replace-candidates="openCandidateReplace" />
+    <DetailDrawer ref="detailDrawerRef" v-model="detailDrawerVisible" :opportunity-id="currentOpportunityId" @refresh-list="reloadList" @append-candidates="openCandidateAppend" />
     <ProgressDialog v-model="progressDialogVisible" :opportunity="progressOpportunity" @submitted="reloadList" />
   </div>
 </template>
@@ -121,6 +132,7 @@ import ProgressDialog from "./ProgressDialog.vue";
 const route = useRoute();
 const router = useRouter();
 const queryPageRef = ref();
+const detailDrawerRef = ref<any>();
 const demandItemPickerVisible = ref(false);
 const candidateSelectorVisible = ref(false);
 const detailDrawerVisible = ref(false);
@@ -131,7 +143,6 @@ const selectedDemandItems = ref<any[]>([]);
 const currentOpportunityId = ref("");
 const progressOpportunity = ref<any>(null);
 const appendCandidateOpportunityId = ref("");
-const replaceCandidateMode = ref(false);
 const preselectedSupplyIds = ref<string[]>([]);
 const preselectedDemandItemIds = ref<string[]>([]);
 const appendSupplyId = ref("");
@@ -146,7 +157,8 @@ const searchForm = reactive<any>({ status: "", source: "", productName: "", vend
 let loadingDemandKey = "";
 
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
-const quantityLabel = (row: any) => row.demandQuantity === null || row.demandQuantity === undefined ? "-" : `${row.demandQuantity}${row.quantityUnit || ""}`;
+const candidateNamesOf = (row: any): string[] => String(row.candidateNames || "").split("、").map((name: string) => name.trim()).filter(Boolean);
+const quantityLabel = (row: any) => row.quantity === null || row.quantity === undefined ? "-" : `${row.quantity}${row.quantityUnit || ""}`;
 const directionLabel = (row: any) => row?.source === "supply" ? "基地" : "药厂";
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
 // 已关闭 + 撮合成功 展示为「已成交」，避免把成交数据看成失败关闭
@@ -179,6 +191,7 @@ const loadDemandFromRoute = async () => {
     selectedDemandItem.value = null;
     candidateSelectorVisible.value = false;
     appendCandidateOpportunityId.value = "";
+    appendSupplyId.value = "";
     preselectedSupplyIds.value = [];
     return;
   }
@@ -191,6 +204,8 @@ const loadDemandFromRoute = async () => {
   selectedDemandItem.value = null;
   candidateSelectorVisible.value = false;
   appendCandidateOpportunityId.value = "";
+  appendSupplyId.value = supplyId;
+  candidateSource.value = supplyId ? "supply" : "demand";
   preselectedSupplyIds.value = supplyId ? [supplyId] : [];
   try {
     if (supplyId) {
@@ -243,6 +258,7 @@ const handleDemandItemSelected = (items: any | any[]) => {
 
   selectedDemandItems.value = list;
   selectedDemandItem.value = list[0];
+  preselectedDemandItemIds.value = list.map(item => item.id);
   candidateSelectorVisible.value = true;
 };
 const closeCandidateSelector = async () => {
@@ -252,7 +268,6 @@ const closeCandidateSelector = async () => {
   if (appendCandidateOpportunityId.value) {
     const opportunityId = appendCandidateOpportunityId.value;
     appendCandidateOpportunityId.value = "";
-    replaceCandidateMode.value = false;
     openDetail(opportunityId);
     return;
   }
@@ -275,19 +290,25 @@ const handleCandidatesAppended = async (opportunityId: string) => {
   selectedDemandItems.value = [];
   candidateSelectorVisible.value = false;
   appendCandidateOpportunityId.value = "";
-  replaceCandidateMode.value = false;
   await reloadList();
   openDetail(opportunityId);
+  // 同一机会的详情抽屉一直开着，props 未变化不会触发重新加载，需主动重拉
+  await detailDrawerRef.value?.reload();
 };
-const buildSelectorDemandItem = (opportunity: any) => ({
-  id: opportunity.demandItemId,
-  productName: opportunity.demandProductName,
-  quantity: opportunity.demandQuantity,
-  remainingQuantity: opportunity.demandQuantity,
-  quantityUnit: opportunity.quantityUnit,
-  specification: opportunity.specification,
-  qualityRequirement: opportunity.qualityRequirement,
-});
+const buildSelectorDemandItem = (opportunity: any) => {
+  // 详情/列表统一从发起方 item 取业务字段（原明细实时值）
+  const initiator = (opportunity.items || []).find((i: any) => i.role === "initiator" && i.itemType === "demand")
+    || (opportunity.items || []).find((i: any) => i.role === "initiator");
+  return {
+    id: initiator?.entityId || initiator?.demandItemId,
+    productName: initiator?.productName || opportunity.productName,
+    quantity: initiator?.quantity,
+    remainingQuantity: initiator?.quantity,
+    quantityUnit: initiator?.quantityUnit,
+    specification: initiator?.specification,
+    qualityRequirement: initiator?.qualityRequirement,
+  };
+};
 const openCandidateAppend = async (opportunity: any) => {
   // 追加不需要回溯采购单明细，直接用机会自带的品类信息构造筛选条件。
   // 空机会没有 demandItemId/demandId，不能再去查采购单明细，否则弹窗打不开。
@@ -295,28 +316,9 @@ const openCandidateAppend = async (opportunity: any) => {
   selectedDemandItems.value = [];
   preselectedSupplyIds.value = [];
   preselectedDemandItemIds.value = [];
-  appendSupplyId.value = opportunity.candidates?.find((c: any) => c.role === "initiator")?.herbBaseSupplyId || "";
+  appendSupplyId.value = (opportunity.items || []).find((c: any) => c.role === "initiator" && c.itemType === "supply")?.entityId || "";
   appendCandidateOpportunityId.value = opportunity.id;
   candidateSource.value = opportunity.source === "supply" ? "supply" : "demand";
-  replaceCandidateMode.value = false;
-  candidateSelectorVisible.value = true;
-};
-const openCandidateReplace = (opportunity: any) => {
-  currentOpportunityId.value = opportunity.id;
-  selectedDemandItem.value = buildSelectorDemandItem(opportunity);
-  selectedDemandItems.value = [];
-  // 重选回显当前候选：需求侧带出候选基地供应，供应侧带出候选药厂需求明细
-  preselectedSupplyIds.value = (opportunity.candidates || [])
-    .filter((c: any) => c.role === "candidate")
-    .map((c: any) => c.herbBaseSupplyId);
-  preselectedDemandItemIds.value = (opportunity.demands || [])
-    .filter((d: any) => d.role === "candidate")
-    .map((d: any) => d.demandItemId);
-  appendSupplyId.value = (opportunity.candidates || [])
-    .find((c: any) => c.role === "initiator")?.herbBaseSupplyId || "";
-  appendCandidateOpportunityId.value = opportunity.id;
-  candidateSource.value = opportunity.source === "supply" ? "supply" : "demand";
-  replaceCandidateMode.value = true;
   candidateSelectorVisible.value = true;
 };
 const openDetail = (opportunityId: string) => {
@@ -359,4 +361,5 @@ onMounted(() => { void loadVendorOptions(); void loadSubjectOptions(); void load
 .candidate-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-weight: 600; }
 .candidate-direction { display: inline-flex; align-items: center; gap: 8px; }
 .next-action-time { display: block; margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; }
+.candidate-name-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
 </style>

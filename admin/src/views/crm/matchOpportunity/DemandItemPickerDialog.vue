@@ -3,11 +3,16 @@
     <el-table :data="demand?.items || []" border highlight-current-row :row-class-name="rowClassName" @current-change="handleCurrentChange" @selection-change="handleSelectionChange">
       <el-table-column v-if="isMulti" type="selection" width="52" :selectable="rowSelectable" />
       <el-table-column prop="demandName" label="采购列表" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="productName" label="品类" min-width="120" />
+      <el-table-column label="品类" min-width="120">
+        <template #default="{ row }">
+          <el-tag v-if="row.productName" size="small" type="info" effect="plain">{{ row.productName }}</el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="需求数量" min-width="100">
         <template #default="{ row }">{{ row.quantity || "-" }}{{ row.quantity ? row.quantityUnit || "" : "" }}</template>
       </el-table-column>
-      <el-table-column label="已采购 / 待撮合" min-width="140">
+      <el-table-column label="已中选 / 待撮合" min-width="140">
         <template #default="{ row }">
           <template v-if="hasQuantity(row)">
             <span class="matched">{{ row.matchedQuantity || 0 }}</span> / <span :class="{ 'no-remaining': remainingOf(row) <= 0 }">{{ remainingOf(row) }}</span>{{ row.quantityUnit || "" }}
@@ -19,6 +24,9 @@
       <el-table-column prop="qualityRequirement" label="质量" min-width="130" show-overflow-tooltip />
       <el-table-column label="撮合状态" min-width="100" align="center">
         <template #default="{ row }"><el-tag size="small" :type="statusType(row.matchDisplayStatus)">{{ row.matchDisplayStatus || "待撮合" }}</el-tag></template>
+      </el-table-column>
+      <el-table-column label="占用状态" min-width="100" align="center">
+        <template #default="{ row }"><el-tag size="small" :type="row.isOccupied ? 'danger' : 'success'">{{ row.occupancyStatus || "空闲" }}</el-tag></template>
       </el-table-column>
       <el-table-column label="交期" min-width="150">
         <template #default="{ row }">{{ formatDate(row.expectedDeliveryAt || demand?.expectedDeliveryAt) }}</template>
@@ -43,7 +51,10 @@ const selectedItems = ref<any[]>([]);
 const dialogTitle = computed(() => props.source === "supply" ? "选择采购列表明细（供应 → 需求）" : "选择采购明细（需求 → 供应）");
 const selectedItem = ref<any>(null);
 const hasQuantity = (item: any) => Number(item?.quantity || 0) > 0;
-const remainingOf = (item: any) => hasQuantity(item) ? Number(item?.remainingQuantity ?? 0) : 1;
+// 待撮合 = 需求数量 - 已中选；无明确数量的明细视为可选（返回 1）
+const remainingOf = (item: any) => hasQuantity(item)
+  ? Number(item?.quantity ?? 0) - Number(item?.matchedQuantity ?? 0)
+  : 1;
 const isCompleted = (item: any) => hasQuantity(item) && remainingOf(item) <= 0;
 const rowClassName = ({ row }: any) => isCompleted(row) ? "completed-demand-item" : "";
 const confirmLabel = computed(() => {

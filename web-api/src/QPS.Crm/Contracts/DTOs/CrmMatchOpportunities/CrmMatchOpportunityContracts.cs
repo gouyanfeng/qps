@@ -19,4 +19,5 @@ public class CrmMatchSupplyCandidateDto
     public string PriceUnit { get; set; } = string.Empty;
     public string SupplyCycle { get; set; } = string.Empty;
     public DateTime? ValidUntil { get; set; }
+    public string OccupancyStatus { get; set; } = "空闲";
 }

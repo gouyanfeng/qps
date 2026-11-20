@@ -8,6 +8,7 @@ using QPS.Shared.Extensions;
 using QPS.Shared.Contracts;
 using QPS.Crm.Domain.Entities;
 using QPS.Shared.Exceptions;
+using QPS.Crm.Application.Features.CrmMatchOpportunities;
 
 namespace QPS.Crm.Application.Features.CrmVendors;
 
@@ -19,6 +20,8 @@ public class GetCrmVendorDemandsQuery : PaginationRequest, IRequest<PaginationRe
     public string? Status { get; set; }
     public string? ProductName { get; set; }
     public string? Keyword { get; set; }
+    /// <summary>撮合状态筛选：空闲 / 撮合中 / 成交。</summary>
+    public string? MatchStatus { get; set; }
     public DateTime? DemandAtFrom { get; set; }
     public DateTime? DemandAtTo { get; set; }
     public DateTime? ExpectedDeliveryAtFrom { get; set; }
@@ -56,6 +59,19 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
         if (request.DemandAtTo.HasValue) query = query.Where(plan => plan.DemandAt <= request.DemandAtTo);
         if (request.ExpectedDeliveryAtFrom.HasValue) query = query.Where(plan => plan.ExpectedDeliveryAt >= request.ExpectedDeliveryAtFrom);
         if (request.ExpectedDeliveryAtTo.HasValue) query = query.Where(plan => plan.ExpectedDeliveryAt <= request.ExpectedDeliveryAtTo);
+        if (request.MatchStatus is "成交" or "撮合中" or "空闲")
+        {
+            var occupiedItemIds = CrmMatchOpportunitySource.OccupiedDemandItemIds(_dbContext);
+            var matchedItemIds = CrmMatchOpportunitySource.MatchedDemandItemIds(_dbContext);
+            query = request.MatchStatus switch
+            {
+                "成交" => query.Where(plan => plan.Items.Any(item => matchedItemIds.Contains(item.Id))),
+                "撮合中" => query.Where(plan => plan.Items.Any(item =>
+                    occupiedItemIds.Contains(item.Id) && !matchedItemIds.Contains(item.Id))),
+                _ => query.Where(plan => !plan.Items.Any(item => occupiedItemIds.Contains(item.Id)) &&
+                    !plan.Items.Any(item => matchedItemIds.Contains(item.Id)))
+            };
+        }
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -117,113 +133,17 @@ public class GetCrmVendorDemandsHandler : IRequestHandler<GetCrmVendorDemandsQue
             .ToListAsync(cancellationToken);
 
         var itemIds = items.Select(item => item.Id).ToList();
-        var latestOpportunities = await _dbContext.CrmMatchOpportunities
-            .AsNoTracking()
-            .Where(opportunity => opportunity.DemandItemId.HasValue && itemIds.Contains(opportunity.DemandItemId.Value))
-            .OrderByDescending(opportunity => opportunity.CreatedAt)
-            .Select(opportunity => new MatchOpportunitySummary
-            {
-                Id = opportunity.Id,
-                DemandItemId = opportunity.DemandItemId!.Value,
-                Status = opportunity.Status
-            })
-            .ToListAsync(cancellationToken);
-        var latestOpportunityByItemId = latestOpportunities
-            .GroupBy(opportunity => opportunity.DemandItemId)
-            .ToDictionary(group => group.Key, group => group.First());
-        var latestOpportunityIds = latestOpportunityByItemId.Values.Select(opportunity => opportunity.Id).ToList();
-        var candidateCounts = await _dbContext.CrmMatchCandidates
-            .Where(candidate => latestOpportunityIds.Contains(candidate.MatchOpportunityId))
-            .GroupBy(candidate => candidate.MatchOpportunityId)
-            .Select(group => new { OpportunityId = group.Key, Count = group.Count() })
-            .ToDictionaryAsync(item => item.OpportunityId, item => item.Count, cancellationToken);
-
-        // 已采购完成的数量按「撮合成功关闭的机会」累计；剩余数量不足时仍可继续撮合，完成则不再允许发起。
-        var matchedQuantities = await _dbContext.CrmMatchOpportunities
-            .Where(opportunity => opportunity.DemandItemId.HasValue
-                && itemIds.Contains(opportunity.DemandItemId.Value)
-                && opportunity.Status == CrmMatchOpportunity.Closed
-                && opportunity.CloseResult == CrmMatchOpportunity.Matched)
-            .GroupBy(opportunity => opportunity.DemandItemId)
-            .Select(group => new { DemandItemId = group.Key!.Value, Quantity = group.Sum(opportunity => opportunity.DemandQuantity) })
-            .ToDictionaryAsync(item => item.DemandItemId, item => item.Quantity ?? 0m, cancellationToken);
+        var matchContext = await CrmVendorDemands.LoadItemMatchContextAsync(_dbContext, itemIds, cancellationToken);
 
         foreach (var plan in plans)
         {
             plan.Items = items
                 .Where(item => item.VendorDemandId == plan.Id)
-                .Select(item => ToItemDto(item, latestOpportunityByItemId, candidateCounts, matchedQuantities))
+                .Select(item => CrmVendorDemands.ToItemDto(item, matchContext))
                 .ToList();
-            plan.MatchProgress = BuildMatchProgress(plan.Items);
+            plan.MatchProgress = CrmVendorDemands.BuildMatchProgress(plan.Items);
         }
 
         return new PaginationResponse<CrmVendorDemandDto>(plans, totalCount, page, pageSize);
-    }
-
-    private static CrmVendorDemandItemDto ToItemDto(
-        CrmVendorDemandItem item,
-        IReadOnlyDictionary<Guid, MatchOpportunitySummary> latestOpportunityByItemId,
-        IReadOnlyDictionary<Guid, int> candidateCounts,
-        IReadOnlyDictionary<Guid, decimal> matchedQuantities)
-    {
-        latestOpportunityByItemId.TryGetValue(item.Id, out var latestOpportunity);
-        var status = latestOpportunity?.Status ?? string.Empty;
-        var matchedQuantity = matchedQuantities.GetValueOrDefault(item.Id);
-        var hasQuantity = item.Quantity.HasValue && item.Quantity.Value > 0;
-        var remainingQuantity = hasQuantity ? Math.Max(0m, item.Quantity!.Value - matchedQuantity) : 0m;
-        return new CrmVendorDemandItemDto
-        {
-            Id = item.Id,
-            ProductName = item.ProductName,
-            Quantity = item.Quantity,
-            QuantityUnit = item.QuantityUnit,
-            Specification = item.Specification,
-            QualityRequirement = item.QualityRequirement,
-            TargetPrice = item.TargetPrice,
-            PriceUnit = item.PriceUnit,
-            ExpectedDeliveryAt = item.ExpectedDeliveryAt,
-            Remark = item.Remark,
-            SortOrder = item.SortOrder,
-            MatchOpportunityId = latestOpportunity?.Id,
-            MatchOpportunityStatus = status,
-            MatchCandidateCount = latestOpportunity == null || !candidateCounts.TryGetValue(latestOpportunity.Id, out var count) ? 0 : count,
-            MatchDisplayStatus = GetDisplayStatus(status, remainingQuantity, hasQuantity),
-            MatchedQuantity = matchedQuantity,
-            RemainingQuantity = remainingQuantity
-        };
-    }
-
-    private static CrmVendorDemandMatchProgressDto BuildMatchProgress(IEnumerable<CrmVendorDemandItemDto> items)
-    {
-        var values = items.ToList();
-        return new CrmVendorDemandMatchProgressDto
-        {
-            TotalItemCount = values.Count,
-            StartedItemCount = values.Count(item => item.MatchOpportunityId.HasValue),
-            PendingItemCount = values.Count(item => item.MatchDisplayStatus == "待撮合"),
-            InProgressItemCount = values.Count(item => item.MatchDisplayStatus == "撮合中"),
-            PausedItemCount = values.Count(item => item.MatchDisplayStatus == "已暂停"),
-            ClosedItemCount = values.Count(item => item.MatchDisplayStatus == "已结束"),
-            CompletedItemCount = values.Count(item => item.MatchDisplayStatus == "已采购完成")
-        };
-    }
-
-    private static string GetDisplayStatus(string status, decimal remainingQuantity, bool hasQuantity)
-    {
-        if (hasQuantity && remainingQuantity <= 0) return "已采购完成";
-        return status switch
-        {
-            CrmMatchOpportunity.InProgress => "撮合中",
-            CrmMatchOpportunity.Paused => "已暂停",
-            CrmMatchOpportunity.Closed => "已结束",
-            _ => "待撮合"
-        };
-    }
-
-    private sealed class MatchOpportunitySummary
-    {
-        public Guid Id { get; init; }
-        public Guid DemandItemId { get; init; }
-        public string Status { get; init; } = string.Empty;
     }
 }

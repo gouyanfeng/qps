@@ -85,7 +85,12 @@
                   </div>
                 </div>
                 <el-table :data="visibleSupplies(base)" size="small" class="supply-table" empty-text="暂无供应信息">
-                  <el-table-column prop="productName" label="品类" min-width="120" />
+                  <el-table-column label="品类" min-width="120">
+                    <template #default="{ row }">
+                      <el-tag v-if="row.productName" size="small" type="info" effect="plain">{{ row.productName }}</el-tag>
+                      <span v-else>-</span>
+                    </template>
+                  </el-table-column>
                   <el-table-column label="可供量" width="130">
                     <template #default="{ row }">{{ row.availableQuantity ?? "-" }}{{ row.availableQuantity != null && row.quantityUnit ? ` ${row.quantityUnit}` : "" }}</template>
                   </el-table-column>
@@ -97,6 +102,9 @@
                   <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
                   <el-table-column label="状态" width="100">
                     <template #default="{ row }"><el-tag size="small">{{ row.isExpired ? "已过期" : row.status || "-" }}</el-tag></template>
+                  </el-table-column>
+                  <el-table-column label="核实日期" width="120">
+                    <template #default="{ row }">{{ formatDate(row.confirmedAt) }}</template>
                   </el-table-column>
                   <el-table-column label="有效期" width="150">
                     <template #default="{ row }">{{ formatDate(row.validUntil) }}</template>
@@ -233,13 +241,13 @@
         <el-form-item label="可供量">
           <div class="inline-field">
             <el-input-number v-model="supplyForm.availableQuantity" :min="0" controls-position="right" placeholder="数量" />
-            <el-input v-model="supplyForm.quantityUnit" placeholder="单位" />
+            <UnitSelect v-model="supplyForm.quantityUnit" type="quantity" />
           </div>
         </el-form-item>
         <el-form-item label="预期价格">
           <div class="inline-field">
             <el-input-number v-model="supplyForm.expectedPrice" :min="0" controls-position="right" placeholder="价格" />
-            <el-input v-model="supplyForm.priceUnit" placeholder="单位" />
+            <UnitSelect v-model="supplyForm.priceUnit" type="price" />
           </div>
         </el-form-item>
         <el-form-item label="规格"><el-input v-model="supplyForm.specification" placeholder="如：统货、选货、干品" /></el-form-item>
@@ -287,6 +295,7 @@ import { ArrowDown, Close, Delete, Edit, Phone, Plus, Refresh } from "@element-p
 import { ElMessage, ElMessageBox } from "element-plus";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
+import UnitSelect from "@/views/crm/components/UnitSelect/index.vue";
 import Permission from "@/components/Permission/index.vue";
 import { crmHerbBaseApi } from "@/api/modules/crm/crmHerbBase";
 import ContactList from "@/views/crm/components/contact/List.vue";
@@ -630,6 +639,10 @@ const submitSupply = async () => {
     ElMessage.error("请选择品类");
     return;
   }
+  if (supplyForm.confirmedAt && supplyForm.validUntil && supplyForm.confirmedAt > supplyForm.validUntil) {
+    ElMessage.error("核实日期不能晚于有效截止日，请修正后再保存");
+    return;
+  }
 
   const request = { ...supplyForm, confirmedAt: supplyForm.confirmedAt || null, validUntil: supplyForm.validUntil || null };
   delete (request as any).id;
@@ -660,7 +673,12 @@ const deleteSupply = async (supply: any) => {
 };
 
 const changeSupplyStatus = async (supply: any, status: string) => {
-  await crmHerbBaseApi.changeSupplyStatus(supply.id, { status });
+  try {
+    await crmHerbBaseApi.changeSupplyStatus(supply.id, { status });
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || error?.message || "供应信息状态更新失败");
+    return;
+  }
   ElMessage.success("供应信息状态已更新");
   await refreshDetail(false);
   notifyListChanged();
@@ -676,7 +694,30 @@ const handleSupplyAction = async (base: any, supply: any, command: string) => {
     return;
   }
   if (command.startsWith("status:")) {
-    await changeSupplyStatus(supply, command.replace("status:", ""));
+    const status = command.replace("status:", "");
+    if (status === "有效") {
+      const missing: string[] = [];
+      if (!supply.productName) missing.push("品类");
+      if (supply.availableQuantity == null || Number(supply.availableQuantity) <= 0) missing.push("可供量");
+      if (!supply.quantityUnit) missing.push("单位");
+      if (!supply.confirmedAt) missing.push("核实日期");
+      if (!supply.validUntil) missing.push("有效截止日");
+      if (missing.length) {
+        ElMessage.warning(`设为有效前需补齐：${missing.join("、")}`);
+        openSupplyDialog(base, supply);
+        return;
+      }
+      const confirmedDay = new Date(supply.confirmedAt);
+      const validDay = new Date(supply.validUntil);
+      confirmedDay.setHours(0, 0, 0, 0);
+      validDay.setHours(0, 0, 0, 0);
+      if (confirmedDay > validDay) {
+        ElMessage.warning("核实日期晚于有效截止日，请修正后再设为有效");
+        openSupplyDialog(base, supply);
+        return;
+      }
+    }
+    await changeSupplyStatus(supply, status);
   }
 };
 

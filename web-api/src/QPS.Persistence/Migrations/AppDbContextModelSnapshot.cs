@@ -563,123 +563,6 @@ namespace QPS.Persistence.Migrations
                     b.ToTable("CrmHerbBaseSupplies");
                 });
 
-            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchCandidate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal?>("AvailableQuantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EliminationReason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal?>("ExpectedPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("HerbBaseId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("HerbBaseName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<Guid?>("HerbBaseSubjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("HerbBaseSupplyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("MatchOpportunityId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PriceUnit")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("QualityRequirement")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("QuantityUnit")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)")
-                        .HasDefaultValue("candidate");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Specification")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("SubjectName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("SupplyCycle")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ValidUntil")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HerbBaseSupplyId");
-
-                    b.HasIndex("MatchOpportunityId", "HerbBaseSupplyId")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.ToTable("CrmMatchCandidates", (string)null);
-                });
-
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -703,29 +586,6 @@ namespace QPS.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DeliveryAddress")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("DemandId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("DemandItemId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("DemandProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal?>("DemandQuantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("ExpectedDeliveryAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -745,27 +605,12 @@ namespace QPS.Persistence.Migrations
                     b.Property<Guid?>("OwnerUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("QualityRequirement")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("QuantityUnit")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
                     b.Property<string>("Source")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)")
                         .HasDefaultValue("demand");
-
-                    b.Property<string>("Specification")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Stage")
                         .IsRequired()
@@ -784,21 +629,14 @@ namespace QPS.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("VendorId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("DemandItemId")
-                        .IsUnique()
-                        .HasFilter("[DemandItemId] IS NOT NULL AND [Status] IN (N'推进中', N'暂停') AND [IsDeleted] = 0");
 
                     b.HasIndex("OwnerUserId", "NextActionAt");
 
                     b.ToTable("CrmMatchOpportunities", (string)null);
                 });
 
-            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunityDemand", b =>
+            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunityItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -811,21 +649,18 @@ namespace QPS.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DeliveryAddress")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("DemandItemId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("EliminationReason")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<DateTime?>("ExpectedDeliveryAt")
-                        .HasColumnType("datetime2");
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -833,51 +668,22 @@ namespace QPS.Persistence.Migrations
                     b.Property<Guid>("OpportunityId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("PriceUnit")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("QualityRequirement")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal?>("Quantity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("QuantityUnit")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
                     b.Property<string>("Role")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("candidate");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<string>("Specification")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<string>("Status")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<decimal?>("TargetPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("pending");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -886,19 +692,17 @@ namespace QPS.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("VendorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("VendorName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("OpportunityId");
+                    b.HasIndex("OpportunityId")
+                        .IsUnique()
+                        .HasFilter("[Role] = 'initiator' AND [IsDeleted] = 0");
 
-                    b.ToTable("CrmMatchOpportunityDemands", (string)null);
+                    b.HasIndex("OpportunityId", "EntityType", "EntityId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("CrmMatchOpportunityItems", (string)null);
                 });
 
             modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmTransferRecord", b =>
@@ -4035,30 +3839,7 @@ namespace QPS.Persistence.Migrations
                     b.Navigation("HerbBase");
                 });
 
-            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchCandidate", b =>
-                {
-                    b.HasOne("QPS.Crm.Domain.Entities.CrmHerbBaseSupply", null)
-                        .WithMany()
-                        .HasForeignKey("HerbBaseSupplyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("QPS.Crm.Domain.Entities.CrmMatchOpportunity", null)
-                        .WithMany()
-                        .HasForeignKey("MatchOpportunityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunity", b =>
-                {
-                    b.HasOne("QPS.Crm.Domain.Entities.CrmVendorDemandItem", null)
-                        .WithMany()
-                        .HasForeignKey("DemandItemId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunityDemand", b =>
+            modelBuilder.Entity("QPS.Crm.Domain.Entities.CrmMatchOpportunityItem", b =>
                 {
                     b.HasOne("QPS.Crm.Domain.Entities.CrmMatchOpportunity", null)
                         .WithMany()

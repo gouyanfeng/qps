@@ -49,8 +49,25 @@ public class GetCrmFollowTasksHandler : IRequestHandler<GetCrmFollowTasksQuery, 
             {
                 EntityId = x.Id,
                 EntityType = MatchOpportunityType,
-                EntityName = _dbContext.CrmVendors.Where(v => v.Id == x.VendorId).Select(v => v.VendorName).FirstOrDefault() ?? string.Empty,
-                EntitySubtitle = x.DemandProductName,
+                // 发起方名称与品类实时取子表关联的原明细
+                EntityName = x.Source == "supply"
+                    ? (_dbContext.CrmMatchOpportunityItems
+                        .Where(i => i.OpportunityId == x.Id && i.EntityType == CrmMatchOpportunityItem.EntityTypeSupply && i.Role == CrmMatchOpportunityItem.Initiator)
+                        .SelectMany(i => _dbContext.CrmHerbBaseSupplies.Where(s => s.Id == i.EntityId)
+                            .SelectMany(s => _dbContext.CrmHerbBases.Where(h => h.Id == s.HerbBaseId).Select(h => h.SubjectName)))
+                        .FirstOrDefault() ?? string.Empty)
+                    : (_dbContext.CrmMatchOpportunityItems
+                        .Where(i => i.OpportunityId == x.Id && i.EntityType == CrmMatchOpportunityItem.EntityTypeDemand && i.Role == CrmMatchOpportunityItem.Initiator)
+                        .SelectMany(i => _dbContext.CrmVendorDemandItems.Where(d => d.Id == i.EntityId)
+                            .SelectMany(d => _dbContext.CrmVendorDemands.Where(dm => dm.Id == d.VendorDemandId)
+                                .SelectMany(dm => _dbContext.CrmVendors.Where(v => v.Id == dm.VendorId).Select(v => v.VendorName))))
+                        .FirstOrDefault() ?? string.Empty),
+                EntitySubtitle = _dbContext.CrmMatchOpportunityItems
+                    .Where(i => i.OpportunityId == x.Id && i.Role == CrmMatchOpportunityItem.Initiator)
+                    .SelectMany(i => i.EntityType == CrmMatchOpportunityItem.EntityTypeSupply
+                        ? _dbContext.CrmHerbBaseSupplies.Where(s => s.Id == i.EntityId).Select(s => s.ProductName)
+                        : _dbContext.CrmVendorDemandItems.Where(d => d.Id == i.EntityId).Select(d => d.ProductName))
+                    .FirstOrDefault() ?? string.Empty,
                 LastFollowResult = x.Stage,
                 Stage = x.Stage,
                 TaskContent = string.IsNullOrWhiteSpace(x.NextActionRemark) ? x.NextAction : $"{x.NextAction}（{x.NextActionRemark}）",

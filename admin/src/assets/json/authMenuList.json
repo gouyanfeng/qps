@@ -77,6 +77,21 @@
           }
         },
         {
+          "path": "/crm/herb-base-map",
+          "name": "herbBaseMap",
+          "component": "/crm/herbBaseMap/index",
+          "meta": {
+            "icon": "MapLocation",
+            "title": "基地地图",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "CRM_HERB_BASE"
+          }
+        },
+        {
           "path": "/crm/vendor",
           "name": "vendor",
           "component": "/crm/vendor/index",

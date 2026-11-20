@@ -60,6 +60,13 @@ public class CrmHerbBaseSupply : BaseEntity
         if (Status == Active) EnsureValidForActivation();
     }
 
+    /// <summary>撮合成交拆分：把可供量扣减为实际成交量，剩余量另起一条空闲供应。</summary>
+    public void SetAvailableQuantity(decimal? quantity)
+    {
+        if (quantity.HasValue && quantity.Value < 0) throw new InvalidOperationException("可供量不能为负数");
+        AvailableQuantity = quantity;
+    }
+
     public void ChangeStatus(string status)
     {
         status = status?.Trim() ?? string.Empty;

@@ -2,6 +2,10 @@ using QPS.Shared.Common;
 
 namespace QPS.Crm.Domain.Entities;
 
+/// <summary>
+/// 撮合机会主表：只存一次撮合的流程数据。
+/// 发起方与候选统一放在 CrmMatchOpportunityItem 子表，业务字段不存副本。
+/// </summary>
 public class CrmMatchOpportunity : BaseEntity
 {
     public const string InProgress = "推进中";
@@ -11,16 +15,6 @@ public class CrmMatchOpportunity : BaseEntity
     public const string NotMatched = "未成交";
     public const string DemandCancelled = "需求取消";
 
-    public Guid? DemandItemId { get; private set; }
-    public Guid DemandId { get; private set; }
-    public Guid VendorId { get; private set; }
-    public string DemandProductName { get; private set; } = string.Empty;
-    public decimal? DemandQuantity { get; private set; }
-    public string QuantityUnit { get; private set; } = string.Empty;
-    public string Specification { get; private set; } = string.Empty;
-    public string QualityRequirement { get; private set; } = string.Empty;
-    public DateTime? ExpectedDeliveryAt { get; private set; }
-    public string DeliveryAddress { get; private set; } = string.Empty;
     public Guid? OwnerUserId { get; private set; }
     public string Status { get; private set; } = InProgress;
     public string Stage { get; private set; } = CrmMatchOpportunityStage.MatchingVerification;
@@ -37,63 +31,28 @@ public class CrmMatchOpportunity : BaseEntity
     }
 
     public static CrmMatchOpportunity Create(
-        Guid? demandItemId,
-        Guid demandId,
-        Guid vendorId,
-        string demandProductName,
-        decimal? demandQuantity,
-        string quantityUnit,
-        string specification,
-        string qualityRequirement,
-        DateTime? expectedDeliveryAt,
-        string deliveryAddress,
         Guid? ownerUserId,
         string nextAction,
         DateTime? nextActionAt,
         string nextActionRemark = "",
         string source = "demand")
     {
-        if (!demandItemId.HasValue && source != "supply")
+        if (source != "supply" && source != "demand")
         {
-            throw new InvalidOperationException("撮合机会需求明细不能为空");
-        }
-
-        if (demandId == Guid.Empty && source != "supply")
-        {
-            throw new InvalidOperationException("撮合机会需求不能为空");
-        }
-
-        if (vendorId == Guid.Empty && source != "supply")
-        {
-            throw new InvalidOperationException("撮合机会需求厂商不能为空");
-        }
-
-        if (string.IsNullOrWhiteSpace(demandProductName))
-        {
-            throw new InvalidOperationException("撮合机会需求品类不能为空");
+            throw new InvalidOperationException("撮合发起方向无效");
         }
 
         EnsureNextAction(nextAction, nextActionAt);
 
         return new CrmMatchOpportunity
         {
-            DemandItemId = demandItemId,
-            DemandId = demandId,
-            VendorId = vendorId,
-            DemandProductName = Trim(demandProductName),
-            DemandQuantity = demandQuantity,
-            QuantityUnit = Trim(quantityUnit),
-            Specification = Trim(specification),
-            QualityRequirement = Trim(qualityRequirement),
-            ExpectedDeliveryAt = expectedDeliveryAt,
-            DeliveryAddress = Trim(deliveryAddress),
             OwnerUserId = ownerUserId,
             Status = InProgress,
             Stage = CrmMatchOpportunityStage.MatchingVerification,
             NextAction = Trim(nextAction),
             NextActionRemark = Trim(nextActionRemark),
             NextActionAt = nextActionAt,
-            Source = source == "supply" ? "supply" : "demand"
+            Source = source
         };
     }
 

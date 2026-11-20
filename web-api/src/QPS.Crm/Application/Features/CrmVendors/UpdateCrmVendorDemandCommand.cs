@@ -3,6 +3,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Crm.Contracts.DTOs;
 using QPS.Crm.Contracts.DTOs.CrmVendors;
+using QPS.Crm.Application.Features.CrmMatchOpportunities;
+using QPS.Crm.Domain.Entities;
 using QPS.Shared.Contracts;
 using QPS.Shared.Exceptions;
 
@@ -73,6 +75,9 @@ public class UpdateCrmVendorDemandHandler : IRequestHandler<UpdateCrmVendorDeman
             currentItem.Update(item.ProductName.Trim(), item.Quantity, item.QuantityUnit.Trim(), item.Specification.Trim(), item.QualityRequirement.Trim(), item.TargetPrice, item.PriceUnit.Trim(), item.ExpectedDeliveryAt, item.Remark.Trim(), index + 1);
             return currentItem;
         }).ToList();
+        // 成交冻结：保留的已有明细若已成交锁定，禁止随单修改
+        await CrmMatchOpportunitySource.EnsureEntitiesNotLockedByDealAsync(
+            _dbContext, CrmMatchOpportunityItem.EntityTypeDemand, retainedItemIds.ToList(), cancellationToken);
         await CrmHerbProductDictionary.ValidateActiveNamesAsync(_dbContext, items.Select(item => item.ProductName), cancellationToken);
         var removedItems = existingItems.Where(item => !retainedItemIds.Contains(item.Id)).ToList();
         await CrmVendorDemands.EnsureItemsNotReferencedByMatchOpportunityAsync(

@@ -6,14 +6,13 @@
           <div>
             <div class="detail-kicker">撮合机会详情</div>
             <div class="title-row">
-              <h2>{{ currentOpportunity.demandProductName || "撮合机会" }}</h2>
+              <h2>{{ currentOpportunity.productName || "撮合机会" }}</h2>
               <el-tag :type="statusType(currentOpportunity)">{{ displayStatus(currentOpportunity) }}</el-tag>
               <el-tag effect="plain" :type="currentOpportunity.source === 'supply' ? 'warning' : 'primary'">{{ directionLabel }}</el-tag>
             </div>
-            <div class="head-meta"><span>需求厂商 {{ currentOpportunity.vendorName || "-" }}</span><span>跟进人 {{ currentOpportunity.ownerUserName || "-" }}</span></div>
+            <div class="head-meta"><span>{{ isSupplySource ? '发起基地' : '需求厂商' }} {{ currentOpportunity.initiatorName || "-" }}</span><span>跟进人 {{ currentOpportunity.ownerUserName || "-" }}</span></div>
           </div>
           <div class="head-actions">
-            <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canMaintainCandidates" @click="requestReplaceCandidates">重新选择候选</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canMaintainCandidates" @click="emit('append-candidates', currentOpportunity)">追加候选</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="canAdvance" type="primary" @click="progressDialogVisible = true">推进机会</el-button></Permission>
             <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-button v-if="currentOpportunity.status === '推进中'" type="warning" @click="updateStatus('暂停')">暂停</el-button></Permission>
@@ -80,11 +79,8 @@
                     <CandidateActions
                       v-if="canMaintainCandidates"
                       :status="row.status"
-                      @edit="openDemandEdit(row)"
-                      @keep="updateDemandStatus(row, '保留')"
-                      @select="updateDemandStatus(row, '中选')"
-                      @restore="updateDemandStatus(row, '待评估')"
-                      @eliminate="eliminateDemand(row)"
+                      @select="updateItemStatus(row, '中选')"
+                      @remove="removeItem(row)"
                     />
                   </template>
                 </EntityCard>
@@ -97,7 +93,6 @@
                     <el-descriptions-item label="预期价格">{{ priceLabel(row) }}</el-descriptions-item>
                     <el-descriptions-item label="规格" :span="2">{{ row.specification || "-" }}</el-descriptions-item>
                     <el-descriptions-item label="质量" :span="2">{{ row.qualityRequirement || "-" }}</el-descriptions-item>
-                    <el-descriptions-item label="当前状态">{{ row.currentState || "已失效" }}</el-descriptions-item>
                     <el-descriptions-item label="状态">
                       <el-tag size="small" :type="candidateStatusTagType(row.status)">{{ candidateStatusLabel(row.status) }}</el-tag>
                     </el-descriptions-item>
@@ -107,12 +102,8 @@
                     <CandidateActions
                       v-if="canMaintainCandidates"
                       :status="row.status"
-                      :disabled="row.currentState === '已失效'"
-                      @edit="openCandidateEdit(row)"
-                      @keep="updateCandidateStatus(row, '保留')"
-                      @select="updateCandidateStatus(row, '中选')"
-                      @restore="updateCandidateStatus(row, '待评估')"
-                      @eliminate="eliminateCandidate(row)"
+                      @select="updateItemStatus(row, '中选')"
+                      @remove="removeItem(row)"
                     />
                   </template>
                 </EntityCard>
@@ -153,29 +144,6 @@
     </el-form>
     <template #footer><el-button @click="closeDialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveCloseOpportunity">确认关闭</el-button></template>
   </el-dialog>
-
-  <el-dialog v-model="candidateEditVisible" title="修改候选" width="560px" destroy-on-close>
-    <el-form :model="candidateEditForm" label-width="100px">
-      <el-form-item label="可供量"><el-input-number v-model="candidateEditForm.availableQuantity" :min="0" controls-position="right" style="width: 100%" /></el-form-item>
-      <el-form-item label="规格"><el-input v-model="candidateEditForm.specification" clearable /></el-form-item>
-      <el-form-item label="质量"><el-input v-model="candidateEditForm.qualityRequirement" clearable /></el-form-item>
-      <el-form-item label="预期价格"><el-input-number v-model="candidateEditForm.expectedPrice" :min="0" controls-position="right" style="width: 100%" /></el-form-item>
-      <el-form-item label="供货周期"><el-input v-model="candidateEditForm.supplyCycle" clearable /></el-form-item>
-      <el-form-item label="有效期"><el-date-picker v-model="candidateEditForm.validUntil" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" /></el-form-item>
-    </el-form>
-    <template #footer><el-button @click="candidateEditVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveCandidateEdit">保存</el-button></template>
-  </el-dialog>
-
-  <el-dialog v-model="demandEditVisible" title="修改候选药厂需求" width="560px" destroy-on-close>
-    <el-form :model="demandEditForm" label-width="100px">
-      <el-form-item label="需求数量"><el-input-number v-model="demandEditForm.quantity" :min="0" controls-position="right" style="width: 100%" /></el-form-item>
-      <el-form-item label="规格"><el-input v-model="demandEditForm.specification" clearable /></el-form-item>
-      <el-form-item label="质量"><el-input v-model="demandEditForm.qualityRequirement" clearable /></el-form-item>
-      <el-form-item label="目标价"><el-input-number v-model="demandEditForm.targetPrice" :min="0" controls-position="right" style="width: 100%" /></el-form-item>
-      <el-form-item label="期望到货"><el-date-picker v-model="demandEditForm.expectedDeliveryAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" /></el-form-item>
-    </el-form>
-    <template #footer><el-button @click="demandEditVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveDemandEdit">保存</el-button></template>
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -190,49 +158,38 @@ import CandidateActions from "./CandidateActions.vue";
 import { candidateStatusColor, candidateStatusLabel, candidateStatusTagType, opportunityStatusColor } from "./matchStatus";
 
 const props = defineProps<{ modelValue: boolean; opportunityId?: string }>();
-const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": []; "append-candidates": [opportunity: any]; "replace-candidates": [opportunity: any] }>();
+const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": []; "append-candidates": [opportunity: any] }>();
 const currentOpportunity = ref<any>(null);
 const loading = ref(false);
 const saving = ref(false);
 const progressDialogVisible = ref(false);
 const closeDialogVisible = ref(false);
 const closeForm = reactive({ closeResult: "", closedReason: "" });
-const candidateEditVisible = ref(false);
-const editingCandidate = ref<any>(null);
-const candidateEditForm = reactive<any>({
-  availableQuantity: null, specification: "", qualityRequirement: "", expectedPrice: null, supplyCycle: "", validUntil: "",
-});
-const demandEditVisible = ref(false);
-const editingDemand = ref<any>(null);
-const demandEditForm = reactive<any>({ quantity: null, specification: "", qualityRequirement: "", targetPrice: null, expectedDeliveryAt: "" });
 const canMaintainCandidates = computed(() => currentOpportunity.value?.status === "推进中");
 const canAdvance = computed(() => currentOpportunity.value?.status !== "已关闭");
-const quantityLabel = computed(() => quantityLabelOf(currentOpportunity.value));
 const directionLabel = computed(() => currentOpportunity.value?.source === "supply" ? "供应 → 需求" : "需求 → 供应");
 const isSupplySource = computed(() => currentOpportunity.value?.source === "supply");
 const leftTitle = computed(() => isSupplySource.value ? "供给信息" : "需求信息");
 const rightTitle = computed(() => isSupplySource.value ? "候选药厂" : "候选基地");
-const candidatesOf = (role: string) => (currentOpportunity.value?.candidates || []).filter((item: any) => (item.role || "candidate") === role);
-const demandsOf = (role: string) => (currentOpportunity.value?.demands || []).filter((item: any) => item.role === role);
-const initiatorBases = computed(() => candidatesOf("initiator"));
-const candidateBases = computed(() => candidatesOf("candidate"));
-const initiatorDemands = computed(() => demandsOf("initiator"));
-const candidateDemands = computed(() => demandsOf("candidate"));
+
+// 统一子表：items 按 itemType(supply/demand) + role 分组
+const itemsOf = (itemType: string, role: string) =>
+  (currentOpportunity.value?.items || []).filter((item: any) => item.itemType === itemType && item.role === role);
+const initiatorBases = computed(() => itemsOf("supply", "initiator"));
+const candidateBases = computed(() => itemsOf("supply", "candidate"));
+const initiatorDemands = computed(() => itemsOf("demand", "initiator"));
+const candidateDemands = computed(() => itemsOf("demand", "candidate"));
 
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
-const quantityLabelOf = (row?: any) => row?.demandQuantity === null || row?.demandQuantity === undefined
-  ? row?.availableQuantity === null || row?.availableQuantity === undefined ? "-" : `${row.availableQuantity}${row.quantityUnit || ""}`
-  : `${row.demandQuantity}${row.quantityUnit || ""}`;
+const quantityLabelOf = (row?: any) => row?.availableQuantity === null || row?.availableQuantity === undefined ? "-" : `${row.availableQuantity}${row.quantityUnit || ""}`;
 const priceLabel = (row: any) => row.expectedPrice === null || row.expectedPrice === undefined ? "-" : `${row.expectedPrice}${row.priceUnit || ""}`;
 const quantityLabelOfDemand = (row: any) => row?.quantity === null || row?.quantity === undefined ? "-" : `${row.quantity}${row.quantityUnit || ""}`;
 const priceLabelOfDemand = (row: any) => row?.targetPrice === null || row?.targetPrice === undefined ? "-" : `${row.targetPrice}${row.priceUnit || ""}`;
-// 已关闭 + 撮合成功 展示为「已成交」
 const isDeal = (row: any) => row?.status === "已关闭" && row?.closeResult === "撮合成功";
 const displayStatus = (row: any) => isDeal(row) ? "已成交" : (row?.status || "-");
 const statusType = (row: any) => isDeal(row)
   ? "success"
   : ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[row?.status || ""] || "");
-// 发起方卡片按撮合机会整体状态上色
 const initiatorBorderColor = computed(() => opportunityStatusColor(currentOpportunity.value?.status, isDeal(currentOpportunity.value)));
 const reversedActivities = computed(() => [...(currentOpportunity.value?.activities || [])].reverse());
 
@@ -255,98 +212,31 @@ const refreshAfterOperation = async () => {
   await loadDetail();
   emit("refresh-list");
 };
-const STATUS_MESSAGES: Record<string, string> = {
-  "保留": "候选已保留",
-  "中选": "候选已中选",
-  "淘汰": "候选已淘汰",
-  "待评估": "候选已恢复为待评估"
-};
-const patchCandidateStatus = async (path: string, status: string, eliminationReason = "") => {
+const updateItemStatus = async (item: any, status: string) => {
   if (!props.opportunityId) return;
   saving.value = true;
   try {
-    await http.patch(path, { status, eliminationReason });
-    ElMessage.success(STATUS_MESSAGES[status] || "候选状态已更新");
+    await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/items/${item.id}/status`, { status });
+    ElMessage.success(status === "中选" ? "候选已中选" : "候选状态已更新");
     await refreshAfterOperation();
   } finally {
     saving.value = false;
   }
 };
-// 基地候选
-const updateCandidateStatus = (candidate: any, status: string, eliminationReason = "") =>
-  patchCandidateStatus(`/admin/crm/match-opportunities/${props.opportunityId}/candidates/${candidate.id}/status`, status, eliminationReason);
-// 药厂候选
-const updateDemandStatus = (demand: any, status: string, eliminationReason = "") =>
-  patchCandidateStatus(`/admin/crm/match-opportunities/${props.opportunityId}/demands/${demand.id}/status`, status, eliminationReason);
-const requestReplaceCandidates = () => {
-  if (!currentOpportunity.value) return;
-  if (currentOpportunity.value.status === "已关闭") {
-    ElMessage.warning("已关闭的撮合机会不能重新选择候选");
+const removeItem = async (item: any) => {
+  if (!props.opportunityId) return;
+  try {
+    await ElMessageBox.confirm("确认移除该候选？移除后该明细可重新参与其他撮合。", "移除候选", { type: "warning" });
+  } catch {
     return;
   }
-  emit("replace-candidates", currentOpportunity.value);
-};
-const openCandidateEdit = (candidate: any) => {
-  editingCandidate.value = candidate;
-  Object.assign(candidateEditForm, {
-    availableQuantity: candidate.availableQuantity ?? null,
-    specification: candidate.specification || "",
-    qualityRequirement: candidate.qualityRequirement || "",
-    expectedPrice: candidate.expectedPrice ?? null,
-    supplyCycle: candidate.supplyCycle || "",
-    validUntil: candidate.validUntil || "",
-  });
-  candidateEditVisible.value = true;
-};
-const saveCandidateEdit = async () => {
-  if (!props.opportunityId || !editingCandidate.value) return;
   saving.value = true;
   try {
-    await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/candidates/${editingCandidate.value.id}`, { ...candidateEditForm });
-    ElMessage.success("候选已修改");
-    candidateEditVisible.value = false;
+    await http.delete(`/admin/crm/match-opportunities/${props.opportunityId}/items/${item.id}`);
+    ElMessage.success("候选已移除");
     await refreshAfterOperation();
   } finally {
     saving.value = false;
-  }
-};
-const openDemandEdit = (row: any) => {
-  editingDemand.value = row;
-  Object.assign(demandEditForm, {
-    quantity: row.quantity ?? null,
-    specification: row.specification || "",
-    qualityRequirement: row.qualityRequirement || "",
-    targetPrice: row.targetPrice ?? null,
-    expectedDeliveryAt: row.expectedDeliveryAt || "",
-  });
-  demandEditVisible.value = true;
-};
-const saveDemandEdit = async () => {
-  if (!props.opportunityId || !editingDemand.value) return;
-  saving.value = true;
-  try {
-    await http.patch(`/admin/crm/match-opportunities/${props.opportunityId}/demands/${editingDemand.value.id}`, { ...demandEditForm });
-    ElMessage.success("候选药厂需求已修改");
-    demandEditVisible.value = false;
-    await refreshAfterOperation();
-  } finally {
-    saving.value = false;
-  }
-};
-const eliminateCandidate = async (candidate: any) => {
-  try {
-    const { value } = await ElMessageBox.prompt("淘汰原因", "淘汰候选", { inputPattern: /\S+/, inputErrorMessage: "请填写淘汰原因" });
-    await updateCandidateStatus(candidate, "淘汰", value);
-  } catch (error: any) {
-    if (error !== "cancel" && error !== "close") throw error;
-  }
-};
-const eliminateDemand = async (demand: any) => {
-  try {
-    const { value } = await ElMessageBox.prompt("淘汰原因", "淘汰候选药厂", { inputPattern: /\S+/, inputErrorMessage: "请填写淘汰原因" });
-    await updateDemandStatus(demand, "淘汰", value);
-  } catch (error: any) {
-    if (error !== "cancel" && error !== "close") throw error;
   }
 };
 const updateStatus = async (status: string) => {
@@ -390,6 +280,8 @@ const saveCloseOpportunity = async () => {
 watch(() => [props.modelValue, props.opportunityId], ([visible, opportunityId]) => {
   if (visible && opportunityId) void loadDetail();
 }, { immediate: true });
+
+defineExpose({ reload: loadDetail });
 </script>
 
 <style scoped>
@@ -409,5 +301,4 @@ watch(() => [props.modelValue, props.opportunityId], ([visible, opportunityId]) 
 .section-title h3 { margin: 0 0 12px; font-size: 16px; }
 .activity-timeline { margin: 0; padding-left: 8px; }
 .activity-timeline small { display: block; margin-top: 4px; color: var(--el-text-color-secondary); }
-.current-supply { margin-top: 8px; color: var(--el-text-color-secondary); }
 </style>

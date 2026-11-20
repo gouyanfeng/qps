@@ -14,7 +14,12 @@
     <!-- 需求侧机会：候选是基地供应 -->
     <el-table v-if="!isSupply" ref="supplyTableRef" :data="candidates" v-loading="loading" border row-key="herbBaseSupplyId" @selection-change="handleSelectionChange">
       <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-table-column type="selection" width="52" /></Permission>
-      <el-table-column prop="productName" label="供应品类" min-width="130" show-overflow-tooltip />
+      <el-table-column label="供应品类" min-width="130">
+        <template #default="{ row }">
+          <el-tag v-if="row.productName" size="small" type="info" effect="plain">{{ row.productName }}</el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="subjectName" label="主体" min-width="180" show-overflow-tooltip />
       <el-table-column prop="herbBaseName" label="基地" min-width="160" show-overflow-tooltip />
       <el-table-column label="可供量" min-width="120"><template #default="{ row }">{{ row.availableQuantity }}{{ row.quantityUnit || "" }}</template></el-table-column>
@@ -23,6 +28,7 @@
       <el-table-column label="预期价格" min-width="130"><template #default="{ row }">{{ row.expectedPrice }}{{ row.priceUnit || "" }}</template></el-table-column>
       <el-table-column prop="supplyCycle" label="供货周期" min-width="130" show-overflow-tooltip />
       <el-table-column label="有效期" min-width="170"><template #default="{ row }">{{ formatDate(row.validUntil) }}</template></el-table-column>
+      <el-table-column label="占用状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="row.occupancyStatus === '占用' ? 'danger' : 'success'">{{ row.occupancyStatus || "空闲" }}</el-tag></template></el-table-column>
     </el-table>
 
     <!-- 供应侧机会：候选是药厂采购需求 -->
@@ -30,12 +36,18 @@
       <Permission code="CRM_MATCH_OPPORTUNITY_MANAGE"><el-table-column type="selection" width="52" :selectable="rowSelectable" /></Permission>
       <el-table-column prop="vendorName" label="需求药厂" min-width="200" show-overflow-tooltip />
       <el-table-column prop="demandName" label="采购单" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="productName" label="需求品类" min-width="120" show-overflow-tooltip />
+      <el-table-column label="需求品类" min-width="120">
+        <template #default="{ row }">
+          <el-tag v-if="row.productName" size="small" type="info" effect="plain">{{ row.productName }}</el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="需求数量" min-width="120"><template #default="{ row }">{{ row.quantity }}{{ row.quantityUnit || "" }}</template></el-table-column>
       <el-table-column label="目标价" min-width="120"><template #default="{ row }">{{ row.targetPrice }}{{ row.priceUnit || "" }}</template></el-table-column>
       <el-table-column prop="specification" label="规格" min-width="140" show-overflow-tooltip />
       <el-table-column prop="qualityRequirement" label="质量" min-width="140" show-overflow-tooltip />
       <el-table-column label="期望到货" min-width="170"><template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template></el-table-column>
+      <el-table-column label="占用状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="row.occupancyStatus === '占用' ? 'danger' : 'success'">{{ row.occupancyStatus || "空闲" }}</el-tag></template></el-table-column>
     </el-table>
     <div class="selector-footer">
       <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadCandidates" />
@@ -80,6 +92,8 @@ const pageSize = ref(10);
 const total = ref(0);
 const vendorNames = ref<Record<string, string>>({});
 const nextActionForm = reactive({ nextAction: "", nextActionRemark: "", nextActionAt: "" });
+// 创建弹窗不收集下一步时，按既有默认值补齐，避免后端必填校验拦截
+const defaultNextActionAt = () => new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 const filters = reactive<any>({ productName: props.demandItem?.productName || "", region: "", minAvailableQuantity: undefined, specification: "", qualityRequirement: "", supplyCycle: "", maxExpectedPrice: undefined });
 const otherAction = "其他";
 
@@ -95,7 +109,9 @@ const loadVendorNames = async (ids: string[]) => {
   const results = await Promise.all(missing.map(id => crmVendorApi.getVendor(id).catch(() => null)));
   const map = { ...vendorNames.value };
   missing.forEach((id, index) => {
-    const data = (results[index] as any)?.data;
+    // http 封装已返回业务体，兼容 data 再包一层的情况
+    const payload = results[index] as any;
+    const data = payload?.data ?? payload;
     if (data) map[id] = data.vendorName || data.name || "";
   });
   vendorNames.value = { ...map };
@@ -109,6 +125,8 @@ const loadSupplyCandidates = async () => {
     ...params,
     // 重新选择时要看得到当前候选以便回显；追加时排除已有候选
     ...(props.opportunityId && !props.replace ? { excludeOpportunityId: props.opportunityId } : {}),
+    // 当前机会自己的候选允许回显，其他机会占用的由后端排除
+    ...(props.opportunityId ? { currentOpportunityId: props.opportunityId } : {}),
     page: page.value,
     pageSize: pageSize.value
   });
@@ -147,16 +165,22 @@ const loadDemandCandidates = async () => {
       });
     }
   }
+  // 进候选即占用：排除被其他未关闭机会占用的明细，当前机会自己的候选保留回显
+  const visibleRows = rows.filter(row => {
+    const occupied = (row.occupiedOpportunityIds || []).map(String);
+    if (!occupied.length) return true;
+    return !!props.opportunityId && occupied.every((id: string) => id === String(props.opportunityId));
+  });
   // 采购列表按单分页，明细展开后条数可能超过 pageSize，前端不再二次分页
-  candidates.value = rows;
-  await loadVendorNames(rows.map(row => row.vendorId).filter(Boolean));
-  rows.forEach(row => { if (vendorNames.value[row.vendorId]) row.vendorName = vendorNames.value[row.vendorId]; });
+  candidates.value = visibleRows;
+  await loadVendorNames(visibleRows.map(row => row.vendorId).filter(Boolean));
+  visibleRows.forEach(row => { if (vendorNames.value[row.vendorId]) row.vendorName = vendorNames.value[row.vendorId]; });
 
   const preselect = (props.preselectedDemandItemIds || []).map(String);
-  selectedDemandItemIds.value = rows.filter(row => preselect.includes(String(row.demandItemId))).map(row => row.demandItemId);
+  selectedDemandItemIds.value = visibleRows.filter(row => preselect.includes(String(row.demandItemId))).map(row => row.demandItemId);
   if (preselect.length) {
     await nextTick();
-    rows.forEach((row: any) => demandTableRef.value?.toggleRowSelection(row, preselect.includes(String(row.demandItemId))));
+    visibleRows.forEach((row: any) => demandTableRef.value?.toggleRowSelection(row, preselect.includes(String(row.demandItemId))));
   }
 };
 
@@ -193,14 +217,23 @@ const submit = async () => {
         : { supplyIds: selectedSupplyIds.value });
       ElMessage.success("候选已追加");
       emit("appended", props.opportunityId);
+    } else if (isSupply.value) {
+      const result = await crmMatchOpportunityApi.createFromSupply(props.supplyId || "", {
+        demandItemIds: selectedDemandItemIds.value,
+        nextAction: nextActionForm.nextAction || "核实数量",
+        nextActionRemark: nextActionForm.nextActionRemark.trim(),
+        nextActionAt: nextActionForm.nextActionAt || defaultNextActionAt()
+      });
+      ElMessage.success("撮合机会已创建");
+      emit("created", result.data);
     } else {
       const result = await crmMatchOpportunityApi.create(props.demandItemId, {
         supplyIds: selectedSupplyIds.value,
-        nextAction: nextActionForm.nextAction,
+        nextAction: nextActionForm.nextAction || "核实数量",
         nextActionRemark: nextActionForm.nextActionRemark.trim(),
-        nextActionAt: nextActionForm.nextActionAt,
-        source: isSupply.value ? "supply" : "demand",
-        demandItemIds: isSupply.value ? selectedDemandItemIds.value : (props.demandItemIds?.length ? props.demandItemIds : [props.demandItemId])
+        nextActionAt: nextActionForm.nextActionAt || defaultNextActionAt(),
+        source: "demand",
+        demandItemIds: props.demandItemIds?.length ? props.demandItemIds : [props.demandItemId]
       });
       ElMessage.success("撮合机会已创建");
       emit("created", result.data);
