@@ -23,7 +23,7 @@
         </section>
 
         <section class="flow-section">
-          <el-steps :active="flowActive" :status="flowStatus" align-center finish-status="success">
+          <el-steps :active="flowActive" process-status="process" align-center finish-status="success">
             <el-step title="发起撮合" :description="flowDescriptionOf(0)" />
             <el-step v-for="(stage, index) in flowStages" :key="stage" :title="stage" :description="flowDescriptionOf(index + 1)" />
             <el-step :title="flowCloseTitle" :description="flowDescriptionOf(flowStages.length + 1)" />
@@ -207,7 +207,6 @@ const flowStageIndex = computed(() => flowStages.indexOf(currentOpportunity.valu
 const flowClosed = computed(() => currentOpportunity.value?.status === "已关闭");
 // active = 已完成步骤数（0 起算的当前步骤索引）；关闭时等于总步数，全部显示完成
 const flowActive = computed(() => flowClosed.value ? flowStepCount : Math.max(1, flowStageIndex.value + 1));
-const flowStatus = computed(() => flowClosed.value ? "finish" : "process");
 const flowCloseTitle = computed(() => flowClosed.value ? (currentOpportunity.value?.closeResult || "已关闭") : "关闭机会");
 const flowDescriptionOf = (index: number) => {
   const opportunity = currentOpportunity.value;
