@@ -22,6 +22,14 @@
           </div>
         </section>
 
+        <section class="flow-section">
+          <el-steps :active="flowActive" :status="flowStatus" align-center finish-status="success">
+            <el-step title="发起撮合" :description="flowDescriptionOf(0)" />
+            <el-step v-for="(stage, index) in flowStages" :key="stage" :title="stage" :description="flowDescriptionOf(index + 1)" />
+            <el-step :title="flowCloseTitle" :description="flowDescriptionOf(flowStages.length + 1)" />
+          </el-steps>
+        </section>
+
         <section class="detail-body">
           <section class="detail-card">
             <div class="section-title"><div class="section-heading"><h3>{{ leftTitle }}</h3></div></div>
@@ -192,6 +200,28 @@ const statusType = (row: any) => isDeal(row)
   : ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[row?.status || ""] || "");
 const reversedActivities = computed(() => [...(currentOpportunity.value?.activities || [])].reverse());
 
+// 详情顶部横向流程：发起 -> 三阶段 -> 关闭，按机会状态高亮当前节点
+const flowStages = ["匹配核实", "商务沟通", "意向确认"];
+const flowStepCount = flowStages.length + 2; // 发起撮合 + 三阶段 + 关闭
+const flowStageIndex = computed(() => flowStages.indexOf(currentOpportunity.value?.stage));
+const flowClosed = computed(() => currentOpportunity.value?.status === "已关闭");
+// active = 已完成步骤数（0 起算的当前步骤索引）；关闭时等于总步数，全部显示完成
+const flowActive = computed(() => flowClosed.value ? flowStepCount : Math.max(1, flowStageIndex.value + 1));
+const flowStatus = computed(() => flowClosed.value ? "finish" : "process");
+const flowCloseTitle = computed(() => flowClosed.value ? (currentOpportunity.value?.closeResult || "已关闭") : "关闭机会");
+const flowDescriptionOf = (index: number) => {
+  const opportunity = currentOpportunity.value;
+  if (!opportunity) return "";
+  if (index === 0) {
+    const initiator = itemsOf(isSupplySource.value ? "supply" : "demand", "initiator")[0];
+    return opportunity.initiatorName || initiator?.herbBaseName || initiator?.vendorName || "";
+  }
+  if (index === flowStages.length + 1) return flowClosed.value ? (opportunity.closedReason || "") : "";
+  if (index !== flowStageIndex.value + 1) return "";
+  if (opportunity.status === "暂停") return "已暂停";
+  return opportunity.nextAction || "";
+};
+
 const handleVisibleChange = (value: boolean) => emit("update:modelValue", value);
 const loadDetail = async () => {
   if (!props.opportunityId) return;
@@ -291,6 +321,8 @@ defineExpose({ reload: loadDetail });
 .title-row h2 { margin: 6px 0; font-size: 22px; }
 .head-meta { color: var(--el-text-color-secondary); font-size: 14px; }
 .head-actions { flex-wrap: wrap; justify-content: flex-end; }
+.flow-section { margin-bottom: 20px; padding: 12px 20px 4px; border: 1px solid var(--el-border-color-light); }
+.flow-section :deep(.el-step__description) { min-height: 18px; font-size: 12px; }
 .detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .detail-card { min-width: 0; padding: 16px; border: 1px solid var(--el-border-color-light); border-radius: 8px; }
 .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 -16px 18px; padding: 0 16px 12px; border-bottom: 1px solid var(--el-border-color-lighter); }

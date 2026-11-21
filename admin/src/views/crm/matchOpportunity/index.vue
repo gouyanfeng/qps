@@ -60,14 +60,14 @@
       </template>
 
       <template #table="{ tableData }">
-        <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1410px" border>
+        <el-table :data="tableData" :row-key="'id'" class="wide-list-table" style="--table-min-width: 1320px" border>
   
           <el-table-column label="发起方" min-width="220" show-overflow-tooltip>
             <template #default="{ row }">      
                <el-tag size="small" effect="dark" style="margin-left: 8px" :style="row.source === 'supply'
                 ? { background: '#f59e0b', borderColor: '#f59e0b', color: '#fff' }
                 : { background: '#16a34a', borderColor: '#16a34a', color: '#fff' }">{{ directionLabel(row) }}</el-tag>
-              <span>{{ row.initiatorName || "-" }}</span>
+              <span style="margin-left: 8px">{{ row.initiatorName || "-" }}</span>
        
             </template>
           </el-table-column>
@@ -79,14 +79,19 @@
                   </el-table-column>
           <el-table-column label="候选名单" min-width="220">
             <template #default="{ row }">
-              <div v-if="candidateNamesOf(row).length" class="candidate-name-wrap">
-                <el-tag v-for="(name, index) in candidateNamesOf(row)" :key="`${name}-${index}`" size="small" effect="plain">{{ name }}</el-tag>
+              <div v-if="candidateListOf(row).length" class="candidate-name-wrap">
+                <el-button
+                  v-for="(candidate, index) in candidateListOf(row)"
+                  :key="`${candidate.entityId}-${index}`"
+                  link
+                  type="primary"
+                  @click="openCandidate(candidate)"
+                >{{ candidate.name }}</el-button>
               </div>
               <span v-else>-</span>
             </template>
           </el-table-column>
           <el-table-column label="需求数量" width="130"><template #default="{ row }">{{ quantityLabel(row) }}</template></el-table-column>
-          <el-table-column label="候选数" width="90" align="center"><template #default="{ row }">{{ row.candidateCount }}</template></el-table-column>
           <el-table-column label="状态" width="100" align="center"><template #default="{ row }"><el-tag size="small" :type="statusType(row)">{{ displayStatus(row) }}</el-tag></template></el-table-column>
           <el-table-column prop="stage" label="撮合阶段" width="120" show-overflow-tooltip />
           <el-table-column prop="ownerUserName" label="撮合跟进人" width="120" show-overflow-tooltip />
@@ -111,6 +116,8 @@
     <DemandItemPickerDialog v-model="demandItemPickerVisible" :demand="currentDemand" :source="matchSource" @confirm="handleDemandItemSelected" />
     <DetailDrawer ref="detailDrawerRef" v-model="detailDrawerVisible" :opportunity-id="currentOpportunityId" @refresh-list="reloadList" @append-candidates="openCandidateAppend" />
     <ProgressDialog v-model="progressDialogVisible" :opportunity="progressOpportunity" @submitted="reloadList" />
+    <HerbBaseDetailDrawer v-model="candidateBaseDrawerVisible" :subject-id="candidateBaseSubjectId" @refresh-list="reloadList" />
+    <VendorDetailDrawer v-model="candidateVendorDrawerVisible" :vendor-id="candidateVendorId" @refresh-list="reloadList" />
   </div>
 </template>
 
@@ -128,6 +135,8 @@ import DemandItemPickerDialog from "./DemandItemPickerDialog.vue";
 import CandidateSelector from "./CandidateSelector.vue";
 import DetailDrawer from "./DetailDrawer.vue";
 import ProgressDialog from "./ProgressDialog.vue";
+import HerbBaseDetailDrawer from "@/views/crm/herbBase/components/HerbBaseDetailDrawer.vue";
+import VendorDetailDrawer from "@/views/crm/vendor/components/VendorDetailDrawer.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -147,6 +156,10 @@ const preselectedSupplyIds = ref<string[]>([]);
 const preselectedDemandItemIds = ref<string[]>([]);
 const appendSupplyId = ref("");
 const candidateSource = ref("demand");
+const candidateBaseDrawerVisible = ref(false);
+const candidateBaseSubjectId = ref("");
+const candidateVendorDrawerVisible = ref(false);
+const candidateVendorId = ref("");
 const nextActionAtRange = ref<string[]>([]);
 const vendorOptions = ref<any[]>([]);
 const subjectOptions = ref<any[]>([]);
@@ -157,7 +170,24 @@ const searchForm = reactive<any>({ status: "", source: "", productName: "", vend
 let loadingDemandKey = "";
 
 const getUserDisplayName = (user: any) => user.realName || user.username || user.name || "-";
-const candidateNamesOf = (row: any): string[] => String(row.candidateNames || "").split("、").map((name: string) => name.trim()).filter(Boolean);
+// 候选列表优先用接口返回的带 id 明细，缺失时退回 candidateNames 字符串展示
+const candidateListOf = (row: any): any[] => {
+  if (Array.isArray(row?.candidates) && row.candidates.length) return row.candidates;
+  return String(row?.candidateNames || "").split("、").map((name: string) => name.trim())
+    .filter(Boolean).map((name: string) => ({ name }));
+};
+// 点击候选：供应候选打开基地主体详情，采购候选打开厂商详情，均不跳转路由
+const openCandidate = (candidate: any) => {
+  if (candidate?.itemType === "supply" && candidate.herbBaseSubjectId) {
+    candidateBaseSubjectId.value = candidate.herbBaseSubjectId;
+    candidateBaseDrawerVisible.value = true;
+    return;
+  }
+  if (candidate?.vendorId) {
+    candidateVendorId.value = candidate.vendorId;
+    candidateVendorDrawerVisible.value = true;
+  }
+};
 const quantityLabel = (row: any) => row.quantity === null || row.quantity === undefined ? "-" : `${row.quantity}${row.quantityUnit || ""}`;
 const directionLabel = (row: any) => row?.source === "supply" ? "基地" : "药厂";
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString("zh-CN") : "-";
@@ -361,5 +391,6 @@ onMounted(() => { void loadVendorOptions(); void loadSubjectOptions(); void load
 .candidate-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-weight: 600; }
 .candidate-direction { display: inline-flex; align-items: center; gap: 8px; }
 .next-action-time { display: block; margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; }
-.candidate-name-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
+.candidate-name-wrap { display: flex; flex-wrap: wrap; align-items: center; }
+.candidate-name-wrap :deep(.el-button + .el-button) { margin-left: 0px; }
 </style>

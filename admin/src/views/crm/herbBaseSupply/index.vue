@@ -52,22 +52,24 @@
       </template>
     </QueryPage>
     <MatchOpportunityDetailDialog ref="matchDetailDialogRef" @refresh="reloadList" />
+    <HerbBaseDetailDrawer v-model="detailDrawerVisible" :subject-id="currentHerbBaseSubjectId" @refresh-list="reloadList" />
   </div>
 </template>
 
 <script setup lang="ts" name="herbBaseSupply">
 import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import QueryPage from "@/components/QueryPage/index.vue";
 import Permission from "@/components/Permission/index.vue";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
 import MatchOpportunityDetailDialog from "@/views/crm/matchOpportunity/MatchOpportunityDetailDialog.vue";
+import HerbBaseDetailDrawer from "@/views/crm/herbBase/components/HerbBaseDetailDrawer.vue";
 import crmMatchOpportunityApi from "@/api/modules/crm/crmMatchOpportunity";
 
-const router = useRouter();
 const queryPageRef = ref();
+const detailDrawerVisible = ref(false);
+const currentHerbBaseSubjectId = ref("");
 const reloadList = () => queryPageRef.value?.getTableList?.();
 const supplyStatuses = ["待确认", "有效", "暂停", "已售罄", "已失效"];
 const searchForm = reactive({ productName: "", herbBaseName: "", region: "", status: "", matchStatus: "" });
@@ -105,7 +107,11 @@ const startMatch = async (row: any) => {
   matchDetailDialogRef.value?.open(result.data);
   reloadList();
 };
-const openHerbBase = (row: any) => router.push({ path: "/crm/herb-base", query: { detailId: row.herbBaseSubjectId } });
+// 点击基地直接弹基地主体详情抽屉，不再跳转基地列表页
+const openHerbBase = (row: any) => {
+  currentHerbBaseSubjectId.value = row.herbBaseSubjectId;
+  detailDrawerVisible.value = true;
+};
 const handleRegionChange = (regions: string[]) => {
   searchForm.region = regions.at(-1) || "";
 };

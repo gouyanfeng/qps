@@ -48,8 +48,22 @@ public class CrmMatchOpportunityListDto
     /// <summary>候选名单，多个用「、」拼接。</summary>
     public string CandidateNames { get; set; } = string.Empty;
     public int CandidateCount { get; set; }
+    /// <summary>候选明细：供应候选指向基地主体，采购候选指向厂商，供前端点击名称打开详情。</summary>
+    public List<CrmMatchOpportunityCandidateDto> Candidates { get; set; } = [];
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>候选摘要：supply=供应明细（关联基地主体），demand=采购明细（关联厂商）。</summary>
+public class CrmMatchOpportunityCandidateDto
+{
+    public string ItemType { get; set; } = string.Empty;
+    public Guid EntityId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    /// <summary>供应候选所属基地主体，用于打开基地主体详情。</summary>
+    public Guid? HerbBaseSubjectId { get; set; }
+    /// <summary>采购候选所属厂商，用于打开厂商详情。</summary>
+    public Guid? VendorId { get; set; }
 }
 
 public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
@@ -82,7 +96,9 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
         {
             initiatorInfo.TryGetValue(opportunity.Id, out var info);
             candidateNames.TryGetValue(opportunity.Id, out var names);
-            var candidateNameList = (names ?? []).Where(name => !string.IsNullOrWhiteSpace(name)).ToList();
+            var candidateList = names ?? [];
+            var candidateNameList = candidateList.Select(candidate => candidate.Name)
+                .Where(name => !string.IsNullOrWhiteSpace(name)).ToList();
             list.Add(new CrmMatchOpportunityListDto
             {
                 Id = opportunity.Id,
@@ -101,6 +117,7 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                 QuantityUnit = info?.QuantityUnit ?? string.Empty,
                 CandidateNames = string.Join("、", candidateNameList),
                 CandidateCount = candidateNameList.Count,
+                Candidates = candidateList,
                 CreatedAt = opportunity.CreatedAt,
                 UpdatedAt = opportunity.UpdatedAt
             });
@@ -116,11 +133,11 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
     /// 一次加载发起方信息与候选名单：机会项查一次，supply/demand 明细各批量 join 一次。
     /// 发起方 supply 取 SubjectName，候选 supply 取 BaseName。
     /// </summary>
-    private async Task<(Dictionary<Guid, InitiatorInfo> Initiators, Dictionary<Guid, List<string>> Candidates)>
+    private async Task<(Dictionary<Guid, InitiatorInfo> Initiators, Dictionary<Guid, List<CrmMatchOpportunityCandidateDto>> Candidates)>
         LoadOpportunityNamesAsync(List<Guid> ids, CancellationToken cancellationToken)
     {
         var initiators = new Dictionary<Guid, InitiatorInfo>();
-        var candidates = new Dictionary<Guid, List<string>>();
+        var candidates = new Dictionary<Guid, List<CrmMatchOpportunityCandidateDto>>();
         if (ids.Count == 0) return (initiators, candidates);
 
         // 本页所有机会项（发起方 + 候选）一次取出，全局软删过滤器排除已删行
@@ -142,6 +159,8 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                     select new
                     {
                         supply.Id,
+                        supply.HerbBaseSubjectId,
+                        HerbBaseSubjectIdFromBase = herbBase == null ? (Guid?)null : herbBase.HerbBaseSubjectId,
                         SubjectName = herbBase == null ? string.Empty : herbBase.SubjectName,
                         BaseName = herbBase == null ? string.Empty : herbBase.BaseName,
                         supply.ProductName,
@@ -161,7 +180,13 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                 {
                     if (string.IsNullOrWhiteSpace(supply.BaseName)) continue;
                     if (!candidates.TryGetValue(item.OpportunityId, out var list)) candidates[item.OpportunityId] = list = new();
-                    list.Add(supply.BaseName);
+                    list.Add(new CrmMatchOpportunityCandidateDto
+                    {
+                        ItemType = CrmMatchOpportunityItem.EntityTypeSupply,
+                        EntityId = item.EntityId,
+                        Name = supply.BaseName,
+                        HerbBaseSubjectId = supply.HerbBaseSubjectId ?? supply.HerbBaseSubjectIdFromBase
+                    });
                 }
             }
         }
@@ -180,6 +205,7 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                     select new
                     {
                         demandItem.Id,
+                        demand.VendorId,
                         VendorName = vendor == null ? string.Empty : vendor.VendorName,
                         demandItem.ProductName,
                         demandItem.Quantity,
@@ -198,7 +224,13 @@ public class GetCrmMatchOpportunitiesHandler(ICrmDbContext dbContext)
                 {
                     if (string.IsNullOrWhiteSpace(demand.VendorName)) continue;
                     if (!candidates.TryGetValue(item.OpportunityId, out var list)) candidates[item.OpportunityId] = list = new();
-                    list.Add(demand.VendorName);
+                    list.Add(new CrmMatchOpportunityCandidateDto
+                    {
+                        ItemType = CrmMatchOpportunityItem.EntityTypeDemand,
+                        EntityId = item.EntityId,
+                        Name = demand.VendorName,
+                        VendorId = demand.VendorId
+                    });
                 }
             }
         }
