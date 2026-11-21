@@ -1,14 +1,13 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace QPS.Persistence.Migrations
+namespace QPS.Persistence.src.QPS.Persistence.Migrations
 {
-    /// <summary>
-    /// 删除采购单单据级 Status 和 ClosedReason 字段，该功能已由明细级 MatchStatus（空闲/撮合中/成交）完全替代。
-    /// </summary>
+    /// <inheritdoc />
     public partial class DropDemandStatus : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
@@ -16,11 +15,11 @@ namespace QPS.Persistence.Migrations
                 table: "CrmVendorDemands");
 
             migrationBuilder.DropColumn(
-                name: "Status",
+                name: "ClosedReason",
                 table: "CrmVendorDemands");
 
             migrationBuilder.DropColumn(
-                name: "ClosedReason",
+                name: "Status",
                 table: "CrmVendorDemands");
 
             migrationBuilder.CreateIndex(
@@ -29,6 +28,7 @@ namespace QPS.Persistence.Migrations
                 columns: new[] { "VendorId", "DemandAt" });
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
@@ -36,17 +36,17 @@ namespace QPS.Persistence.Migrations
                 table: "CrmVendorDemands");
 
             migrationBuilder.AddColumn<string>(
+                name: "ClosedReason",
+                table: "CrmVendorDemands",
+                type: "nvarchar(max)",
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.AddColumn<string>(
                 name: "Status",
                 table: "CrmVendorDemands",
                 type: "nvarchar(32)",
                 maxLength: 32,
-                nullable: false,
-                defaultValue: "待确认");
-
-            migrationBuilder.AddColumn<string>(
-                name: "ClosedReason",
-                table: "CrmVendorDemands",
-                type: "nvarchar(max)",
                 nullable: false,
                 defaultValue: "");
 
