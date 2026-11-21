@@ -66,21 +66,14 @@
               </el-table-column>
               <el-table-column label="提出日期" width="84"><template #default="{ row }">{{ formatDate(row.demandAt) }}</template></el-table-column>
               <el-table-column label="期望到货" width="84"><template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template></el-table-column>
-              <el-table-column label="状态" width="90" align="center">
-                <template #default="{ row }">
-                  <el-tag :type="getPurchaseDemandStatusType(row.status)" size="small" effect="light">{{ row.status || "-" }}</el-tag>
-                </template>
-              </el-table-column>
               <el-table-column label="撮合进度" width="220">
                 <template #default="{ row }">{{ matchProgressLabel(row.matchProgress) }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="190" fixed="right">
+              <el-table-column label="操作" width="130" fixed="right">
                 <template #default="{ row }">
                   <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
                     <div class="demand-actions">
                       <el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">详情</el-button>
-                      <el-button v-if="row.status === '待确认'" type="success" link @click="changePurchaseDemandStatus(row, '有效')">确认有效</el-button>
-                      <el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" type="danger" link @click="closePurchaseDemand(row)">关闭</el-button>
                     </div>
                   </Permission>
                 </template>

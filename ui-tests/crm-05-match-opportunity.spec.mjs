@@ -416,11 +416,9 @@ const addPurchaseDemand = async (page, vendorName, demandName, quantity) => {
 
   let demandRow = purchaseSection.locator(".purchase-demand-table .el-table__body-wrapper tbody tr").filter({ hasText: demandName }).first();
   await expect(demandRow).toBeVisible();
-  await demandRow.getByRole("button", { name: "确认有效" }).click();
-  await expectToast(page, "状态已更新");
-  await waitIdle(page);
-  demandRow = purchaseSection.locator(".purchase-demand-table .el-table__body-wrapper tbody tr").filter({ hasText: demandName }).first();
-  await expect(demandRow).toContainText("有效");
+  // 采购列表已取消单据级状态：保存后明细直接可参与撮合，无需「确认有效」
+  await expect(demandRow).toContainText("空闲");
+  await expect(demandRow.getByRole("button", { name: "确认有效" })).toHaveCount(0);
   await vendorDrawer.locator("button[title='关闭详情']").click();
   await vendorDrawer.waitFor({ state: "hidden" });
   await waitIdle(page);

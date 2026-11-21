@@ -22,12 +22,12 @@
           </div>
         </section>
 
-        <section class="detail-section detail-columns">
-          <div class="detail-column">
-            <div class="section-title"><h3>{{ leftTitle }}</h3></div>
+        <section class="detail-body">
+          <section class="detail-card">
+            <div class="section-title"><div class="section-heading"><h3>{{ leftTitle }}</h3></div></div>
             <div class="card-stack">
               <template v-if="isSupplySource">
-                <EntityCard v-for="row in initiatorBases" :key="row.id" :border-color="initiatorBorderColor">
+                <EntityCard v-for="row in initiatorBases" :key="row.id">
                   <el-descriptions :column="2" border>
                     <el-descriptions-item label="基地" :span="2">{{ row.herbBaseName || "-" }}</el-descriptions-item>
                     <el-descriptions-item label="供应品类">{{ row.productName || "-" }}</el-descriptions-item>
@@ -40,7 +40,7 @@
                 </EntityCard>
               </template>
               <template v-else>
-                <EntityCard v-for="row in initiatorDemands" :key="row.id" :border-color="initiatorBorderColor">
+                <EntityCard v-for="row in initiatorDemands" :key="row.id">
                   <el-descriptions :column="2" border>
                     <el-descriptions-item label="发起药厂" :span="2">{{ row.vendorName || "-" }}</el-descriptions-item>
                     <el-descriptions-item label="品类">{{ row.productName || "-" }}</el-descriptions-item>
@@ -53,15 +53,15 @@
                   </el-descriptions>
                 </EntityCard>
               </template>
+              <el-empty v-if="isSupplySource ? !initiatorBases.length : !initiatorDemands.length" :description="isSupplySource ? '暂无发起基地' : '暂无发起药厂'" :image-size="60" />
             </div>
-            <el-empty v-if="isSupplySource ? !initiatorBases.length : !initiatorDemands.length" :description="isSupplySource ? '暂无发起基地' : '暂无发起药厂'" :image-size="60" />
-          </div>
+          </section>
 
-          <div class="detail-column">
-            <div class="section-title"><h3>{{ rightTitle }}</h3></div>
+          <section class="detail-card">
+            <div class="section-title"><div class="section-heading"><h3>{{ rightTitle }}</h3></div></div>
             <div class="card-row">
               <template v-if="isSupplySource">
-                <EntityCard v-for="row in candidateDemands" :key="row.id" :border-color="candidateStatusColor(row.status)">
+                <EntityCard v-for="row in candidateDemands" :key="row.id">
                   <el-descriptions :column="2" border>
                     <el-descriptions-item label="候选药厂" :span="2">{{ row.vendorName || "-" }}</el-descriptions-item>
                     <el-descriptions-item label="需求品类">{{ row.productName || "-" }}</el-descriptions-item>
@@ -86,7 +86,7 @@
                 </EntityCard>
               </template>
               <template v-else>
-                <EntityCard v-for="row in candidateBases" :key="row.id" :border-color="candidateStatusColor(row.status)">
+                <EntityCard v-for="row in candidateBases" :key="row.id">
                   <el-descriptions :column="2" border>
                     <el-descriptions-item label="基地" :span="2">{{ row.herbBaseName || "-" }}</el-descriptions-item>
                     <el-descriptions-item label="可供量">{{ quantityLabelOf(row) }}</el-descriptions-item>
@@ -110,19 +110,19 @@
               </template>
             </div>
             <el-empty v-if="isSupplySource ? !candidateDemands.length : !candidateBases.length" :description="isSupplySource ? '暂无候选药厂' : '暂无候选基地'" :image-size="60" />
-          </div>
-        </section>
+          </section>
 
-        <section class="detail-section">
-          <div class="section-title"><h3>过程时间线</h3></div>
-          <el-timeline v-if="reversedActivities.length" class="activity-timeline">
-            <el-timeline-item v-for="activity in reversedActivities" :key="activity.id" :timestamp="formatDate(activity.createdAt)" placement="top">
-              <strong>{{ activity.actionType }}</strong>
-              <div>{{ activity.content }}</div>
-              <small>{{ activity.createdBy || "-" }}</small>
-            </el-timeline-item>
-          </el-timeline>
-          <el-empty v-else description="暂无过程记录" :image-size="72" />
+          <section class="detail-card">
+            <div class="section-title"><div class="section-heading"><h3>过程时间线</h3></div></div>
+            <el-timeline v-if="reversedActivities.length" class="activity-timeline">
+              <el-timeline-item v-for="activity in reversedActivities" :key="activity.id" :timestamp="formatDate(activity.createdAt)" placement="top">
+                <strong>{{ activity.actionType }}</strong>
+                <div>{{ activity.content }}</div>
+                <small>{{ activity.createdBy || "-" }}</small>
+              </el-timeline-item>
+            </el-timeline>
+            <el-empty v-else description="暂无过程记录" :image-size="72" />
+          </section>
         </section>
       </template>
     </div>
@@ -155,7 +155,7 @@ import Permission from "@/components/Permission/index.vue";
 import ProgressDialog from "./ProgressDialog.vue";
 import EntityCard from "./EntityCard.vue";
 import CandidateActions from "./CandidateActions.vue";
-import { candidateStatusColor, candidateStatusLabel, candidateStatusTagType, opportunityStatusColor } from "./matchStatus";
+import { candidateStatusLabel, candidateStatusTagType } from "./matchStatus";
 
 const props = defineProps<{ modelValue: boolean; opportunityId?: string }>();
 const emit = defineEmits<{ "update:modelValue": [value: boolean]; "refresh-list": []; "append-candidates": [opportunity: any] }>();
@@ -190,7 +190,6 @@ const displayStatus = (row: any) => isDeal(row) ? "已成交" : (row?.status || 
 const statusType = (row: any) => isDeal(row)
   ? "success"
   : ({ "推进中": "success", "暂停": "warning", "已关闭": "info" }[row?.status || ""] || "");
-const initiatorBorderColor = computed(() => opportunityStatusColor(currentOpportunity.value?.status, isDeal(currentOpportunity.value)));
 const reversedActivities = computed(() => [...(currentOpportunity.value?.activities || [])].reverse());
 
 const handleVisibleChange = (value: boolean) => emit("update:modelValue", value);
@@ -292,13 +291,13 @@ defineExpose({ reload: loadDetail });
 .title-row h2 { margin: 6px 0; font-size: 22px; }
 .head-meta { color: var(--el-text-color-secondary); font-size: 14px; }
 .head-actions { flex-wrap: wrap; justify-content: flex-end; }
-.detail-section { margin-top: 24px; }
-.detail-columns { display: grid; grid-template-columns: 470px minmax(0, 1fr); gap: 20px; align-items: start; }
-.detail-column { min-width: 0; }
-.card-row { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; }
+.detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.detail-card { min-width: 0; padding: 16px; border: 1px solid var(--el-border-color-light); border-radius: 8px; }
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 -16px 18px; padding: 0 16px 12px; border-bottom: 1px solid var(--el-border-color-lighter); }
+.section-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.section-title h3 { margin: 0; font-size: 16px; }
+.card-row { display: flex; flex-wrap: wrap; gap: 12px; }
 .card-stack { display: flex; flex-direction: column; gap: 12px; }
-.section-title { display: flex; align-items: center; gap: 12px; }
-.section-title h3 { margin: 0 0 12px; font-size: 16px; }
 .activity-timeline { margin: 0; padding-left: 8px; }
 .activity-timeline small { display: block; margin-top: 4px; color: var(--el-text-color-secondary); }
 </style>
