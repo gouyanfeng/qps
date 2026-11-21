@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using QPS.System.Contracts;
 using QPS.System.Domain.Entities;
@@ -6,12 +7,14 @@ namespace QPS.System.Application.Services;
 
 public class ErrorLogService : IErrorLogService
 {
-    private readonly ISystemDbContext _dbContext;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ErrorLogService> _logger;
 
-    public ErrorLogService(ISystemDbContext dbContext, ILogger<ErrorLogService> logger)
+    public ErrorLogService(
+        IServiceScopeFactory scopeFactory,
+        ILogger<ErrorLogService> logger)
     {
-        _dbContext = dbContext;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -28,6 +31,12 @@ public class ErrorLogService : IErrorLogService
     {
         try
         {
+            // Resolve DbContext from a brand-new DI scope so we get a fresh
+            // instance with a clean ChangeTracker — isolated from any dirty
+            // entities left over by the failing request path.
+            using var scope = _scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ISystemDbContext>();
+
             var errorLog = new SystemErrorLog(
                 exception.GetType().FullName ?? "Unknown",
                 exception.Message,
@@ -41,8 +50,8 @@ public class ErrorLogService : IErrorLogService
                 userAgent,
                 httpStatusCode);
 
-            await _dbContext.SystemErrorLogs.AddAsync(errorLog);
-            await _dbContext.SaveChangesAsync();
+            await dbContext.SystemErrorLogs.AddAsync(errorLog);
+            await dbContext.SaveChangesAsync();
         }
         catch (Exception logException)
         {
