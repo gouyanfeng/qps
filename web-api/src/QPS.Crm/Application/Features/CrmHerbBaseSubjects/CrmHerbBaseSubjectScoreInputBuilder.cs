@@ -32,13 +32,16 @@ public static class CrmHerbBaseSubjectScoreInputBuilder
             .ToListAsync(cancellationToken);
 
         var baseIds = bases.Select(item => item.Id).ToList();
+        // 品类数按属性表口径统计（基地级 CRM_HERB_BASE_PRODUCT），与列表品类列保持一致
         var supplyProductCount = baseIds.Count == 0
             ? 0
-            : await dbContext.CrmHerbBaseSupplies
+            : await dbContext.CrmBusinessEntityAttributes
                 .Where(item =>
-                    baseIds.Contains(item.HerbBaseId) &&
-                    !string.IsNullOrWhiteSpace(item.ProductName))
-                .Select(item => item.ProductName)
+                    item.EntityType == CrmCodes.HerbBaseEntityType &&
+                    item.AttributeCode == CrmCodes.AttributeCodes.HerbBaseProduct &&
+                    baseIds.Contains(item.EntityId) &&
+                    !string.IsNullOrWhiteSpace(item.AttributeValue))
+                .Select(item => item.AttributeValue)
                 .Distinct()
                 .CountAsync(cancellationToken);
 

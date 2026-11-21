@@ -19,7 +19,7 @@ public interface ICrmDbContext
     DbSet<CrmVendorDemand> CrmVendorDemands { get; }
     DbSet<CrmVendorDemandItem> CrmVendorDemandItems { get; }
     DbSet<CrmMatchOpportunity> CrmMatchOpportunities { get; }
-    DbSet<CrmMatchCandidate> CrmMatchCandidates { get; }
+    DbSet<CrmMatchOpportunityItem> CrmMatchOpportunityItems { get; }
     DbSet<CrmBusinessActivity> CrmBusinessActivities { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

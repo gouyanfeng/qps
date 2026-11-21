@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="form.id ? '编辑采购需求' : '新增采购需求'" width="min(1600px, calc(100vw - 48px))" destroy-on-close>
+  <el-dialog v-model="dialogVisible" :title="form.id ? '编辑采购列表' : '新增采购列表'" width="min(1600px, calc(100vw - 48px))" destroy-on-close>
     <el-form :model="form" label-width="116px">
       <el-row :gutter="16">
         <el-col :span="12">
@@ -17,7 +17,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="采购需求名称" required><el-input v-model="form.demandName" clearable /></el-form-item>
+          <el-form-item label="采购列表名称" required><el-input v-model="form.demandName" clearable /></el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="提出日期"><el-date-picker v-model="form.demandAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" /></el-form-item>
@@ -40,20 +40,26 @@
         <el-button type="primary" link :icon="Plus" @click="addItem">新增明细</el-button>
       </div>
       <el-table :data="form.items" border size="small" class="item-table">
-        <el-table-column label="采购品类" min-width="90">
+        <el-table-column label="撮合状态" width="90" align="center">
           <template #default="{ row }">
-            <ProductSelect v-model="row.productName" />
+            <el-tag v-if="row.matchStatus" size="small" :type="itemMatchStatusType(row.matchStatus)">{{ row.matchStatus }}</el-tag>
+            <span v-else class="muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="数量" width="150"><template #default="{ row }"><el-input-number v-model="row.quantity" :min="0" /></template></el-table-column>
-        <el-table-column label="单位" width="100"><template #default="{ row }"><el-select v-model="row.quantityUnit" clearable><el-option v-for="unit in quantityUnitOptions" :key="unit" :label="unit" :value="unit" /></el-select></template></el-table-column>
-        <el-table-column label="规格要求" min-width="75"><template #default="{ row }"><el-input v-model="row.specification" /></template></el-table-column>
-        <el-table-column label="质量要求" min-width="75"><template #default="{ row }"><el-input v-model="row.qualityRequirement" /></template></el-table-column>
-        <el-table-column label="目标价格" width="190"><template #default="{ row }"><el-input-number v-model="row.targetPrice" :min="0" :precision="2" /></template></el-table-column>
-        <el-table-column label="价格单位" width="120"><template #default="{ row }"><el-select v-model="row.priceUnit" clearable><el-option v-for="unit in priceUnitOptions" :key="unit" :label="unit" :value="unit" /></el-select></template></el-table-column>
-        <el-table-column label="明细交期" width="180"><template #default="{ row }"><el-date-picker v-model="row.expectedDeliveryAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" clearable /></template></el-table-column>
-        <el-table-column label="明细备注" min-width="75"><template #default="{ row }"><el-input v-model="row.remark" /></template></el-table-column>
-        <el-table-column label="操作" width="60"><template #default="{ $index }"><el-button type="danger" link @click="removeItem($index)">删除</el-button></template></el-table-column>
+        <el-table-column label="采购品类" min-width="90">
+          <template #default="{ row }">
+            <ProductSelect v-model="row.productName" :disabled="isItemLocked(row)" />
+          </template>
+        </el-table-column>
+        <el-table-column label="数量" width="150"><template #default="{ row }"><el-input-number v-model="row.quantity" :min="0" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="单位" width="100"><template #default="{ row }"><UnitSelect v-model="row.quantityUnit" type="quantity" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="规格要求" min-width="75"><template #default="{ row }"><el-input v-model="row.specification" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="质量要求" min-width="75"><template #default="{ row }"><el-input v-model="row.qualityRequirement" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="目标价格" width="190"><template #default="{ row }"><el-input-number v-model="row.targetPrice" :min="0" :precision="2" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="价格单位" width="120"><template #default="{ row }"><UnitSelect v-model="row.priceUnit" type="price" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="明细交期" width="180"><template #default="{ row }"><el-date-picker v-model="row.expectedDeliveryAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" clearable :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="明细备注" min-width="75"><template #default="{ row }"><el-input v-model="row.remark" :disabled="isItemLocked(row)" /></template></el-table-column>
+        <el-table-column label="操作" width="72"><template #default="{ $index, row }"><el-button type="danger" link :disabled="isItemLocked(row)" @click="removeItem($index)">删除</el-button></template></el-table-column>
       </el-table>
     </el-form>
     <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存</el-button></template>
@@ -66,6 +72,7 @@ import { Plus } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import ChinaRegionCascader from "@/components/ChinaRegionCascader/index.vue";
 import ProductSelect from "@/views/crm/components/ProductSelect/index.vue";
+import UnitSelect from "@/views/crm/components/UnitSelect/index.vue";
 import crmVendorDemandApi from "@/api/modules/crm/crmVendorDemand";
 import { crmVendorApi } from "@/api/modules/crm/crmVendor";
 
@@ -77,8 +84,6 @@ const vendorOptions = ref<any[]>([]);
 const saving = ref(false);
 const receivingRegionPath = ref<string[]>([]);
 const detailedAddress = ref("");
-const quantityUnitOptions = ["吨", "公斤", "克", "件", "批"];
-const priceUnitOptions = ["元/公斤", "元/克", "元/吨", "元/件", "元/批"];
 const createItem = () => ({ productName: "", quantity: undefined as number | undefined, quantityUnit: "", specification: "", qualityRequirement: "", targetPrice: undefined as number | undefined, priceUnit: "", expectedDeliveryAt: "", remark: "" });
 const form = reactive<any>({ id: "", vendorId: "", demandName: "", demandAt: "", contactId: undefined, expectedDeliveryAt: "", receivingAddress: "", sourceUrl: "", remark: "", items: [] });
 const toDateTimeInputValue = (value?: string | Date | null) => {
@@ -112,6 +117,9 @@ const handleReceivingRegionChange = (regions: string[]) => {
   receivingRegionPath.value = regions;
   composeReceivingAddress();
 };
+const isItemLocked = (row: any) => row?.matchStatus === "成交";
+const itemMatchStatusType = (status?: string | null) =>
+  ({ 成交: "info", 撮合中: "warning", 空闲: "success" }[status || ""] || undefined);
 const addItem = () => form.items.push(createItem());
 const removeItem = (index: number) => form.items.splice(index, 1);
 const reset = async () => {
@@ -128,8 +136,9 @@ const reset = async () => {
   await loadContacts();
 };
   const save = async () => {
-    if (!form.vendorId || !form.demandName.trim()) { ElMessage.error("请选择需求方并填写采购需求名称"); return; }
+    if (!form.vendorId || !form.demandName.trim()) { ElMessage.error("请选择需求方并填写采购列表名称"); return; }
     const items = form.items
+      .filter((item: any) => item.matchStatus !== "成交")
       .filter((item: any) =>
         Boolean(item.productName?.trim()) ||
         item.quantity !== undefined && item.quantity !== null ||
@@ -146,7 +155,7 @@ const reset = async () => {
     try {
       const payload = { vendorId: form.vendorId, demandName: form.demandName.trim(), demandAt: form.demandAt, contactId: form.contactId || null, expectedDeliveryAt: form.expectedDeliveryAt || null, receivingAddress: form.receivingAddress, sourceUrl: form.sourceUrl, remark: form.remark, items };
     if (form.id) await crmVendorDemandApi.update(form.id, payload); else await crmVendorDemandApi.create(payload);
-    ElMessage.success("采购需求已保存"); dialogVisible.value = false; emit("saved");
+    ElMessage.success("采购列表已保存"); dialogVisible.value = false; emit("saved");
   } finally { saving.value = false; }
 };
 watch(() => props.modelValue, visible => { if (visible) void reset(); });
@@ -156,4 +165,5 @@ watch(() => props.modelValue, visible => { if (visible) void reset(); });
 .item-header { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 12px; font-weight: 600; }
 .item-table :deep(.el-input-number), .item-table :deep(.el-select), .item-table :deep(.el-date-editor) { width: 100%; }
 .el-form :deep(.el-form-item__label) { white-space: nowrap; }
+.muted { color: var(--el-text-color-placeholder); }
 </style>

@@ -43,6 +43,9 @@ export const crmHerbBaseApi = {
   getHerbBaseList: (params: any) => {
     return http.get<any>("/admin/crm/herb-bases", params);
   },
+  getHerbBaseMap: () => {
+    return http.get<any[]>("/admin/crm/herb-bases/map");
+  },
   getHerbBase: (id: string) => {
     return http.get<any>(`/admin/crm/herb-bases/${id}`);
   },
@@ -76,6 +79,3 @@ export const crmHerbBaseApi = {
 };
 
 export default crmHerbBaseApi;
-
-
-

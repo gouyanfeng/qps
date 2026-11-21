@@ -110,13 +110,12 @@ public static class CrmModelConfiguration
             entity.ToTable("CrmVendorDemands");
             entity.Property(demand => demand.DemandNo).HasMaxLength(64);
             entity.Property(demand => demand.DemandName).HasMaxLength(500);
-            entity.Property(demand => demand.Status).HasMaxLength(32);
             entity.Property(demand => demand.SourceType).HasMaxLength(32);
             entity.Property(demand => demand.SourceUrl).HasMaxLength(500);
             entity.HasIndex(demand => demand.DemandNo)
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
-            entity.HasIndex(demand => new { demand.VendorId, demand.Status, demand.DemandAt });
+            entity.HasIndex(demand => new { demand.VendorId, demand.DemandAt });
             entity.HasIndex(demand => demand.ContactId);
             entity.HasOne(demand => demand.Vendor).WithMany(vendor => vendor.VendorDemands).HasForeignKey(demand => demand.VendorId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(demand => demand.Contact).WithMany().HasForeignKey(demand => demand.ContactId).OnDelete(DeleteBehavior.Restrict);
@@ -134,54 +133,35 @@ public static class CrmModelConfiguration
         modelBuilder.Entity<CrmMatchOpportunity>(entity =>
         {
             entity.ToTable("CrmMatchOpportunities");
-            entity.Property(opportunity => opportunity.DemandProductName).HasMaxLength(200);
-            entity.Property(opportunity => opportunity.DemandQuantity).HasPrecision(18, 2);
-            entity.Property(opportunity => opportunity.QuantityUnit).HasMaxLength(32);
-            entity.Property(opportunity => opportunity.Specification).HasMaxLength(200);
-            entity.Property(opportunity => opportunity.QualityRequirement).HasMaxLength(500);
-            entity.Property(opportunity => opportunity.DeliveryAddress).HasMaxLength(500);
             entity.Property(opportunity => opportunity.Status).HasMaxLength(32);
             entity.Property(opportunity => opportunity.Stage).HasMaxLength(32);
             entity.Property(opportunity => opportunity.NextAction).HasMaxLength(500);
             entity.Property(opportunity => opportunity.NextActionRemark).HasMaxLength(500);
             entity.Property(opportunity => opportunity.CloseResult).HasMaxLength(32);
             entity.Property(opportunity => opportunity.ClosedReason).HasMaxLength(500);
-            entity.HasIndex(opportunity => opportunity.DemandItemId)
-                .IsUnique()
-                .HasFilter("[Status] IN (N'推进中', N'暂停') AND [IsDeleted] = 0");
+            entity.Property(opportunity => opportunity.Source).HasMaxLength(16).HasDefaultValue("demand");
             entity.HasIndex(opportunity => new { opportunity.OwnerUserId, opportunity.NextActionAt });
-            entity.HasOne<CrmVendorDemandItem>()
-                .WithMany()
-                .HasForeignKey(opportunity => opportunity.DemandItemId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<CrmMatchCandidate>(entity =>
+        modelBuilder.Entity<CrmMatchOpportunityItem>(entity =>
         {
-            entity.ToTable("CrmMatchCandidates");
-            entity.Property(candidate => candidate.SubjectName).HasMaxLength(200);
-            entity.Property(candidate => candidate.HerbBaseName).HasMaxLength(200);
-            entity.Property(candidate => candidate.ProductName).HasMaxLength(200);
-            entity.Property(candidate => candidate.AvailableQuantity).HasPrecision(18, 2);
-            entity.Property(candidate => candidate.QuantityUnit).HasMaxLength(32);
-            entity.Property(candidate => candidate.Specification).HasMaxLength(200);
-            entity.Property(candidate => candidate.QualityRequirement).HasMaxLength(500);
-            entity.Property(candidate => candidate.ExpectedPrice).HasPrecision(18, 2);
-            entity.Property(candidate => candidate.PriceUnit).HasMaxLength(32);
-            entity.Property(candidate => candidate.SupplyCycle).HasMaxLength(100);
-            entity.Property(candidate => candidate.Status).HasMaxLength(32);
-            entity.Property(candidate => candidate.EliminationReason).HasMaxLength(500);
-            entity.HasIndex(candidate => new { candidate.MatchOpportunityId, candidate.HerbBaseSupplyId })
+            entity.ToTable("CrmMatchOpportunityItems");
+            entity.Property(item => item.EntityType).HasMaxLength(16);
+            entity.Property(item => item.Role).HasMaxLength(16).HasDefaultValue("candidate");
+            entity.Property(item => item.Status).HasMaxLength(16).HasDefaultValue("pending");
+            entity.Property(item => item.EliminationReason).HasMaxLength(500);
+            // 同一机会里同一条原明细只允许出现一次（软删行不参与）
+            entity.HasIndex(item => new { item.OpportunityId, item.EntityType, item.EntityId })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
+            // 一个机会只允许一个发起方（软删行不参与）
+            entity.HasIndex(item => item.OpportunityId)
+                .IsUnique()
+                .HasFilter("[Role] = 'initiator' AND [IsDeleted] = 0");
             entity.HasOne<CrmMatchOpportunity>()
                 .WithMany()
-                .HasForeignKey(candidate => candidate.MatchOpportunityId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<CrmHerbBaseSupply>()
-                .WithMany()
-                .HasForeignKey(candidate => candidate.HerbBaseSupplyId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(item => item.OpportunityId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CrmBusinessActivity>(entity =>

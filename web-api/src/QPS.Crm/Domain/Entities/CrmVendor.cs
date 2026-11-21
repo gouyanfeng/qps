@@ -28,7 +28,7 @@ public class CrmVendor : BaseEntity
     public DateTime? LatestPurchaseTime { get; private set; }
 
     /// <summary>
-    /// 最近采购需求名称。
+    /// 最近采购列表名称。
     /// </summary>
     public string LatestPurchaseDemandName { get; private set; } = string.Empty;
 
@@ -91,7 +91,7 @@ public class CrmVendor : BaseEntity
     }
 
     /// <summary>
-    /// 由采购需求子表刷新最近采购汇总。
+    /// 由采购列表子表刷新最近采购汇总。
     /// </summary>
     public void UpdateLatestPurchaseDemandSummary(DateTime? latestPurchaseTime, string latestPurchaseDemandName)
     {

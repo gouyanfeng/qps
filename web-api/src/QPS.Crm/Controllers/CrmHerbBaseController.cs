@@ -167,6 +167,16 @@ public class CrmHerbBaseController : ControllerBase
     }
 
     /// <summary>
+    /// 获取全部有坐标的药材基地（地图专用，不分页）
+    /// </summary>
+    [HttpGet("map")]
+    public async Task<ActionResult<List<CrmHerbBaseMapDto>>> GetMap()
+    {
+        var result = await _mediator.Send(new GetCrmHerbBasesMapQuery());
+        return Ok(result);
+    }
+
+    /// <summary>
     /// 获取药材基地列表
     /// </summary>
     [HttpGet]
@@ -215,7 +225,7 @@ public class CrmHerbBaseController : ControllerBase
     /// <summary>
     /// 获取药材基地详情
     /// </summary>
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public async Task<ActionResult<CrmHerbBaseDto>> GetCustomer(Guid id)
     {
         var query = new GetCrmHerbBaseQuery { Id = id };
@@ -293,7 +303,3 @@ public class CrmHerbBaseController : ControllerBase
         };
     }
 }
-
-
-
-

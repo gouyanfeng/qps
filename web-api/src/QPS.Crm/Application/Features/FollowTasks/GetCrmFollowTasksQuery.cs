@@ -43,20 +43,58 @@ public class GetCrmFollowTasksHandler : IRequestHandler<GetCrmFollowTasksQuery, 
             .Select(x => new CrmFollowTaskDto { EntityId = x.Id, EntityType = SubjectType, EntityName = x.SubjectName ?? string.Empty, ContactName = x.PrimaryContactName ?? string.Empty, ContactPhone = x.PrimaryContactPhone ?? string.Empty, LastFollowAt = x.LastFollowAt, LastFollowResult = x.LastFollowResult ?? string.Empty, NextFollowAt = x.NextFollowAt }).ToListAsync(cancellationToken);
         var vendors = await _dbContext.CrmVendors.Where(x => x.OwnerUserId == ownerId)
             .Select(x => new CrmFollowTaskDto { EntityId = x.Id, EntityType = VendorType, EntityName = x.VendorName, ContactName = _dbContext.CrmContacts.Where(c => c.EntityType == VendorType && c.EntityId == x.Id && c.Status != "无效").OrderByDescending(c => c.IsPrimary).ThenBy(c => c.CreatedAt).Select(c => c.ContactName).FirstOrDefault() ?? string.Empty, ContactPhone = _dbContext.CrmContacts.Where(c => c.EntityType == VendorType && c.EntityId == x.Id && c.Status != "无效").OrderByDescending(c => c.IsPrimary).ThenBy(c => c.CreatedAt).Select(c => c.Phone).FirstOrDefault() ?? string.Empty, LastFollowAt = x.LastFollowAt, LastFollowResult = x.LastFollowResult, NextFollowAt = x.NextFollowAt }).ToListAsync(cancellationToken);
-        var opportunities = await _dbContext.CrmMatchOpportunities
+        var opportunityRows = await _dbContext.CrmMatchOpportunities
             .Where(x => x.OwnerUserId == ownerId && x.Status == CrmMatchOpportunity.InProgress)
-            .Select(x => new CrmFollowTaskDto
-            {
-                EntityId = x.Id,
-                EntityType = MatchOpportunityType,
-                EntityName = _dbContext.CrmVendors.Where(v => v.Id == x.VendorId).Select(v => v.VendorName).FirstOrDefault() ?? string.Empty,
-                EntitySubtitle = x.DemandProductName,
-                LastFollowResult = x.Stage,
-                Stage = x.Stage,
-                TaskContent = string.IsNullOrWhiteSpace(x.NextActionRemark) ? x.NextAction : $"{x.NextAction}（{x.NextActionRemark}）",
-                NextFollowAt = x.NextActionAt
-            })
+            .Select(x => new { x.Id, x.Source, x.Stage, x.NextAction, x.NextActionRemark, x.NextActionAt })
             .ToListAsync(cancellationToken);
+
+        var opportunityIds = opportunityRows.Select(x => x.Id).ToList();
+
+        // 发起方名称与品类实时取子表关联的原明细：按实体类型分开取，避免条件分支无法翻译成 SQL
+        var supplyInitiators = new Dictionary<Guid, (string SubjectName, string ProductName)>();
+        var demandInitiators = new Dictionary<Guid, (string VendorName, string ProductName)>();
+        if (opportunityIds.Count > 0)
+        {
+            var supplyRows = await _dbContext.CrmMatchOpportunityItems
+                .Where(i => i.Role == CrmMatchOpportunityItem.Initiator && i.EntityType == CrmMatchOpportunityItem.EntityTypeSupply)
+                .Where(i => opportunityIds.Contains(i.OpportunityId))
+                .Join(_dbContext.CrmHerbBaseSupplies, i => i.EntityId, s => s.Id, (i, s) => new { i.OpportunityId, s.ProductName, s.HerbBaseId })
+                .Join(_dbContext.CrmHerbBases, x => x.HerbBaseId, h => h.Id, (x, h) => new { x.OpportunityId, x.ProductName, h.SubjectName })
+                .ToListAsync(cancellationToken);
+            supplyInitiators = supplyRows
+                .GroupBy(x => x.OpportunityId)
+                .ToDictionary(g => g.Key, g => (g.First().SubjectName, g.First().ProductName));
+
+            var demandRows = await _dbContext.CrmMatchOpportunityItems
+                .Where(i => i.Role == CrmMatchOpportunityItem.Initiator && i.EntityType == CrmMatchOpportunityItem.EntityTypeDemand)
+                .Where(i => opportunityIds.Contains(i.OpportunityId))
+                .Join(_dbContext.CrmVendorDemandItems, i => i.EntityId, d => d.Id, (i, d) => new { i.OpportunityId, d.ProductName, d.VendorDemandId })
+                .Join(_dbContext.CrmVendorDemands, x => x.VendorDemandId, dm => dm.Id, (x, dm) => new { x.OpportunityId, x.ProductName, dm.VendorId })
+                .Join(_dbContext.CrmVendors, x => x.VendorId, v => v.Id, (x, v) => new { x.OpportunityId, x.ProductName, v.VendorName })
+                .ToListAsync(cancellationToken);
+            demandInitiators = demandRows
+                .GroupBy(x => x.OpportunityId)
+                .ToDictionary(g => g.Key, g => (g.First().VendorName, g.First().ProductName));
+        }
+
+        var opportunities = opportunityRows
+            .Select(x =>
+            {
+                supplyInitiators.TryGetValue(x.Id, out var supplyInitiator);
+                demandInitiators.TryGetValue(x.Id, out var demandInitiator);
+                return new CrmFollowTaskDto
+                {
+                    EntityId = x.Id,
+                    EntityType = MatchOpportunityType,
+                    EntityName = (x.Source == "supply" ? supplyInitiator.SubjectName : demandInitiator.VendorName) ?? string.Empty,
+                    EntitySubtitle = (supplyInitiator.ProductName ?? demandInitiator.ProductName) ?? string.Empty,
+                    LastFollowResult = x.Stage,
+                    Stage = x.Stage,
+                    TaskContent = string.IsNullOrWhiteSpace(x.NextActionRemark) ? x.NextAction : $"{x.NextAction}（{x.NextActionRemark}）",
+                    NextFollowAt = x.NextActionAt
+                };
+            })
+            .ToList();
         var tasks = subjects.Concat(vendors).Concat(opportunities).Select(x => { x.Category = GetCategory(x.NextFollowAt, now, today, tomorrow); return x; }).ToList();
         IEnumerable<CrmFollowTaskDto> query = tasks;
         if (!string.IsNullOrWhiteSpace(request.Category)) query = query.Where(x => x.Category == request.Category);

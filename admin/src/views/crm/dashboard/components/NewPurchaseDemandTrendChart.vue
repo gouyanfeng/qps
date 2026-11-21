@@ -1,9 +1,9 @@
 <template>
   <div class="chart-block">
     <div class="block-header">
-      <h2>近 7 天新增采购需求</h2>
+      <h2>近 7 天新增采购列表</h2>
     </div>
-    <el-empty v-if="isEmpty" description="暂无新增采购需求" :image-size="72" />
+    <el-empty v-if="isEmpty" description="暂无新增采购列表" :image-size="72" />
     <VChart v-else class="chart" :option="option" autoresize />
   </div>
 </template>
@@ -35,7 +35,7 @@ const option = computed(() => ({
   yAxis: { type: "value", minInterval: 1 },
   series: [
     {
-      name: "新增采购需求",
+      name: "新增采购列表",
       type: "bar",
       barMaxWidth: 28,
       data: props.items.map(item => item.newPurchaseDemandCount),

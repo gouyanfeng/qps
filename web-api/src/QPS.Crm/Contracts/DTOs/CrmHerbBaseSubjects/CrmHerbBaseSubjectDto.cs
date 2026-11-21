@@ -29,10 +29,22 @@ public class CrmHerbBaseSubjectDto
     public DateTime UpdatedAt { get; set; }
 }
 
+public class CrmSubjectDealDto
+{
+    public Guid Id { get; set; }
+    public string VendorName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public string BaseName { get; set; } = string.Empty;
+    public string CloseResult { get; set; } = string.Empty;
+    public string ClosedReason { get; set; } = string.Empty;
+    public DateTime ClosedAt { get; set; }
+}
+
 public class CrmHerbBaseSubjectDetailDto : CrmHerbBaseSubjectDto
 {
     public List<CrmHerbBaseDto> HerbBases { get; set; } = new();
     public List<CrmContactDto> Contacts { get; set; } = new();
     public List<CrmFollowRecordDto> FollowRecords { get; set; } = new();
     public List<CrmTransferRecordDto> TransferRecords { get; set; } = new();
+    public List<CrmSubjectDealDto> Deals { get; set; } = new();
 }

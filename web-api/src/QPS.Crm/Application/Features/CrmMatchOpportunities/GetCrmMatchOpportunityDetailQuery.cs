@@ -22,47 +22,46 @@ public class GetCrmMatchOpportunityActivitiesQuery : IRequest<List<CrmMatchOppor
 
 public class CrmMatchOpportunityDetailDto : CrmMatchOpportunityListDto
 {
-    public List<CrmMatchOpportunityCandidateDto> Candidates { get; set; } = [];
+    public List<CrmMatchOpportunityItemDto> Items { get; set; } = [];
     public List<CrmMatchOpportunityActivityDto> Activities { get; set; } = [];
 }
 
-public class CrmMatchOpportunityCandidateDto
+/// <summary>统一的机会明细 DTO：供应侧与需求侧字段合并，业务字段实时取原明细当前值。</summary>
+public class CrmMatchOpportunityItemDto
 {
     public Guid Id { get; set; }
+    /// <summary>supply=供应明细，demand=采购明细。</summary>
+    public string ItemType { get; set; } = string.Empty;
+    public Guid EntityId { get; set; }
+    public string Role { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string EliminationReason { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+
+    // 采购明细字段（ItemType=demand 时有效）
+    public Guid? DemandItemId { get; set; }
+    public Guid VendorId { get; set; }
+    public string VendorName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public decimal? Quantity { get; set; }
+    public string QuantityUnit { get; set; } = string.Empty;
+    public string Specification { get; set; } = string.Empty;
+    public string QualityRequirement { get; set; } = string.Empty;
+    public decimal? TargetPrice { get; set; }
+    public string PriceUnit { get; set; } = string.Empty;
+    public DateTime? ExpectedDeliveryAt { get; set; }
+    public string DeliveryAddress { get; set; } = string.Empty;
+
+    // 供应明细字段（ItemType=supply 时有效）
     public Guid HerbBaseSupplyId { get; set; }
     public Guid HerbBaseId { get; set; }
     public Guid? HerbBaseSubjectId { get; set; }
     public string SubjectName { get; set; } = string.Empty;
     public string HerbBaseName { get; set; } = string.Empty;
-    public string ProductName { get; set; } = string.Empty;
     public decimal? AvailableQuantity { get; set; }
-    public string QuantityUnit { get; set; } = string.Empty;
-    public string Specification { get; set; } = string.Empty;
-    public string QualityRequirement { get; set; } = string.Empty;
     public decimal? ExpectedPrice { get; set; }
-    public string PriceUnit { get; set; } = string.Empty;
     public string SupplyCycle { get; set; } = string.Empty;
     public DateTime? ValidUntil { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string EliminationReason { get; set; } = string.Empty;
-    public int SortOrder { get; set; }
-    public string CurrentState { get; set; } = "已失效";
-    public List<string> CurrentChangedFields { get; set; } = [];
-    public CrmMatchCurrentSupplyDto? CurrentSupply { get; set; }
-}
-
-public class CrmMatchCurrentSupplyDto
-{
-    public string ProductName { get; set; } = string.Empty;
-    public decimal? AvailableQuantity { get; set; }
-    public string QuantityUnit { get; set; } = string.Empty;
-    public string Specification { get; set; } = string.Empty;
-    public string QualityRequirement { get; set; } = string.Empty;
-    public decimal? ExpectedPrice { get; set; }
-    public string PriceUnit { get; set; } = string.Empty;
-    public string SupplyCycle { get; set; } = string.Empty;
-    public DateTime? ValidUntil { get; set; }
-    public string Status { get; set; } = string.Empty;
 }
 
 public class CrmMatchOpportunityActivityDto
@@ -77,27 +76,20 @@ public class CrmMatchOpportunityActivityDto
 public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
     : IRequestHandler<GetCrmMatchOpportunityDetailQuery, CrmMatchOpportunityDetailDto>
 {
-    /// <summary>
-    /// 编排撮合机会详情及其候选、活动查询。
-    /// </summary>
     public async Task<CrmMatchOpportunityDetailDto> Handle(
         GetCrmMatchOpportunityDetailQuery request,
         CancellationToken cancellationToken)
     {
         var detail = await GetDetailAsync(request.Id, cancellationToken);
         await FillOwnerNameAsync(detail, cancellationToken);
-        detail.Candidates = await GetCandidatesAsync(request.Id, cancellationToken);
+        detail.Items = await GetItemsAsync(request.Id, cancellationToken);
         detail.Activities = await CrmMatchOpportunityActivityQuery.GetAsync(dbContext, request.Id, cancellationToken);
         return detail;
     }
 
     private async Task FillOwnerNameAsync(CrmMatchOpportunityDetailDto detail, CancellationToken cancellationToken)
     {
-        if (!detail.OwnerUserId.HasValue)
-        {
-            return;
-        }
-
+        if (!detail.OwnerUserId.HasValue) return;
         var users = await CrmUserNames.GetAsync(dbContext, [detail.OwnerUserId.Value], cancellationToken);
         if (users.TryGetValue(detail.OwnerUserId.Value, out var owner))
         {
@@ -109,23 +101,10 @@ public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
     {
         var detail = await (
             from opportunity in dbContext.CrmMatchOpportunities.AsNoTracking()
-            join vendor in dbContext.CrmVendors on opportunity.VendorId equals vendor.Id into vendorGroup
-            from vendor in vendorGroup.DefaultIfEmpty()
             where opportunity.Id == opportunityId
             select new CrmMatchOpportunityDetailDto
             {
                 Id = opportunity.Id,
-                DemandItemId = opportunity.DemandItemId,
-                DemandId = opportunity.DemandId,
-                VendorId = opportunity.VendorId,
-                VendorName = vendor == null ? string.Empty : vendor.VendorName,
-                DemandProductName = opportunity.DemandProductName,
-                DemandQuantity = opportunity.DemandQuantity,
-                QuantityUnit = opportunity.QuantityUnit,
-                Specification = opportunity.Specification,
-                QualityRequirement = opportunity.QualityRequirement,
-                ExpectedDeliveryAt = opportunity.ExpectedDeliveryAt,
-                DeliveryAddress = opportunity.DeliveryAddress,
                 OwnerUserId = opportunity.OwnerUserId,
                 Status = opportunity.Status,
                 Stage = opportunity.Stage,
@@ -134,6 +113,7 @@ public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
                 NextActionAt = opportunity.NextActionAt,
                 CloseResult = opportunity.CloseResult,
                 ClosedReason = opportunity.ClosedReason,
+                Source = opportunity.Source,
                 CreatedAt = opportunity.CreatedAt,
                 UpdatedAt = opportunity.UpdatedAt
             })
@@ -142,104 +122,130 @@ public class GetCrmMatchOpportunityDetailHandler(ICrmDbContext dbContext)
         return detail ?? throw new BusinessException(404, "撮合机会不存在");
     }
 
-    private async Task<List<CrmMatchOpportunityCandidateDto>> GetCandidatesAsync(Guid opportunityId, CancellationToken cancellationToken)
+    /// <summary>
+    /// 明细实时 join 原明细：供应侧取 CrmHerbBaseSupplies + CrmHerbBases，
+    /// 需求侧取 CrmVendorDemandItems + CrmVendorDemands + CrmVendors。
+    /// </summary>
+    private async Task<List<CrmMatchOpportunityItemDto>> GetItemsAsync(Guid opportunityId, CancellationToken cancellationToken)
     {
-        var candidates = await dbContext.CrmMatchCandidates
+        var items = await dbContext.CrmMatchOpportunityItems
             .AsNoTracking()
-            .Where(item => item.MatchOpportunityId == opportunityId)
+            .Where(item => item.OpportunityId == opportunityId)
             .OrderBy(item => item.SortOrder)
-            .Select(item => new CrmMatchOpportunityCandidateDto
+            .ToListAsync(cancellationToken);
+
+        var result = new List<CrmMatchOpportunityItemDto>();
+        var supplyIds = items.Where(x => x.EntityType == CrmMatchOpportunityItem.EntityTypeSupply).Select(x => x.EntityId).Distinct().ToList();
+        var demandIds = items.Where(x => x.EntityType == CrmMatchOpportunityItem.EntityTypeDemand).Select(x => x.EntityId).Distinct().ToList();
+
+        var supplies = await (
+                from supply in dbContext.CrmHerbBaseSupplies.AsNoTracking().IgnoreQueryFilters()
+                join herbBase in dbContext.CrmHerbBases.AsNoTracking().IgnoreQueryFilters()
+                    on supply.HerbBaseId equals herbBase.Id into herbBaseGroup
+                from herbBase in herbBaseGroup.DefaultIfEmpty()
+                where supplyIds.Contains(supply.Id)
+                select new
+                {
+                    supply.Id,
+                    supply.HerbBaseId,
+                    supply.HerbBaseSubjectId,
+                    supply.ProductName,
+                    supply.AvailableQuantity,
+                    supply.QuantityUnit,
+                    supply.Specification,
+                    supply.QualityRequirement,
+                    supply.ExpectedPrice,
+                    supply.PriceUnit,
+                    supply.SupplyCycle,
+                    supply.ValidUntil,
+                    SubjectName = herbBase == null ? string.Empty : herbBase.SubjectName,
+                    HerbBaseName = herbBase == null ? string.Empty : herbBase.BaseName
+                })
+            .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+        var demandRows = await (
+                from item in dbContext.CrmVendorDemandItems.AsNoTracking()
+                join demand in dbContext.CrmVendorDemands.AsNoTracking().IgnoreQueryFilters() on item.VendorDemandId equals demand.Id
+                join vendor in dbContext.CrmVendors.AsNoTracking().IgnoreQueryFilters() on demand.VendorId equals vendor.Id into vendorGroup
+                from vendor in vendorGroup.DefaultIfEmpty()
+                where demandIds.Contains(item.Id)
+                select new
+                {
+                    item.Id,
+                    VendorId = demand.VendorId,
+                    VendorName = vendor == null ? string.Empty : vendor.VendorName,
+                    item.ProductName,
+                    item.Quantity,
+                    item.QuantityUnit,
+                    item.Specification,
+                    item.QualityRequirement,
+                    item.TargetPrice,
+                    item.PriceUnit,
+                    item.ExpectedDeliveryAt,
+                    DeliveryAddress = demand.ReceivingAddress
+                })
+            .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+        foreach (var item in items)
+        {
+            var dto = new CrmMatchOpportunityItemDto
             {
                 Id = item.Id,
-                HerbBaseSupplyId = item.HerbBaseSupplyId,
-                HerbBaseId = item.HerbBaseId,
-                HerbBaseSubjectId = item.HerbBaseSubjectId,
-                SubjectName = item.SubjectName,
-                HerbBaseName = item.HerbBaseName,
-                ProductName = item.ProductName,
-                AvailableQuantity = item.AvailableQuantity,
-                QuantityUnit = item.QuantityUnit,
-                Specification = item.Specification,
-                QualityRequirement = item.QualityRequirement,
-                ExpectedPrice = item.ExpectedPrice,
-                PriceUnit = item.PriceUnit,
-                SupplyCycle = item.SupplyCycle,
-                ValidUntil = item.ValidUntil,
+                ItemType = item.EntityType,
+                EntityId = item.EntityId,
+                Role = item.Role,
                 Status = item.Status,
                 EliminationReason = item.EliminationReason,
                 SortOrder = item.SortOrder
-            })
-            .ToListAsync(cancellationToken);
-
-        var supplyIds = candidates.Select(item => item.HerbBaseSupplyId).ToList();
-        var supplies = await dbContext.CrmHerbBaseSupplies
-            .IgnoreQueryFilters()
-            .Where(item => supplyIds.Contains(item.Id))
-            .ToDictionaryAsync(item => item.Id, cancellationToken);
-        foreach (var candidate in candidates)
-        {
-            if (!supplies.TryGetValue(candidate.HerbBaseSupplyId, out var supply))
-            {
-                candidate.CurrentState = "已失效";
-                continue;
-            }
-
-            candidate.CurrentSupply = new CrmMatchCurrentSupplyDto
-            {
-                ProductName = supply.ProductName,
-                AvailableQuantity = supply.AvailableQuantity,
-                QuantityUnit = supply.QuantityUnit,
-                Specification = supply.Specification,
-                QualityRequirement = supply.QualityRequirement,
-                ExpectedPrice = supply.ExpectedPrice,
-                PriceUnit = supply.PriceUnit,
-                SupplyCycle = supply.SupplyCycle,
-                ValidUntil = supply.ValidUntil,
-                Status = supply.Status
             };
-            if (supply.IsDeleted || !supply.IsEffectiveOn(DateTime.Today))
+            if (item.EntityType == CrmMatchOpportunityItem.EntityTypeSupply)
             {
-                candidate.CurrentState = "已失效";
-                continue;
+                if (supplies.TryGetValue(item.EntityId, out var supply))
+                {
+                    dto.HerbBaseSupplyId = supply.Id;
+                    dto.HerbBaseId = supply.HerbBaseId;
+                    dto.HerbBaseSubjectId = supply.HerbBaseSubjectId;
+                    dto.SubjectName = supply.SubjectName;
+                    dto.HerbBaseName = supply.HerbBaseName;
+                    dto.ProductName = supply.ProductName;
+                    dto.AvailableQuantity = supply.AvailableQuantity;
+                    dto.QuantityUnit = supply.QuantityUnit;
+                    dto.Specification = supply.Specification;
+                    dto.QualityRequirement = supply.QualityRequirement;
+                    dto.ExpectedPrice = supply.ExpectedPrice;
+                    dto.PriceUnit = supply.PriceUnit;
+                    dto.SupplyCycle = supply.SupplyCycle;
+                    dto.ValidUntil = supply.ValidUntil;
+                }
             }
-
-            candidate.CurrentChangedFields = GetChangedFields(candidate, supply);
-            candidate.CurrentState = candidate.CurrentChangedFields.Count == 0 ? "当前正常" : "条件已变更";
+            else
+            {
+                dto.DemandItemId = item.EntityId;
+                if (demandRows.TryGetValue(item.EntityId, out var demand))
+                {
+                    dto.VendorId = demand.VendorId;
+                    dto.VendorName = demand.VendorName;
+                    dto.ProductName = demand.ProductName;
+                    dto.Quantity = demand.Quantity;
+                    dto.QuantityUnit = demand.QuantityUnit;
+                    dto.Specification = demand.Specification;
+                    dto.QualityRequirement = demand.QualityRequirement;
+                    dto.TargetPrice = demand.TargetPrice;
+                    dto.PriceUnit = demand.PriceUnit;
+                    dto.ExpectedDeliveryAt = demand.ExpectedDeliveryAt;
+                    dto.DeliveryAddress = demand.DeliveryAddress;
+                }
+            }
+            result.Add(dto);
         }
 
-        return candidates;
-    }
-
-    private static List<string> GetChangedFields(CrmMatchOpportunityCandidateDto candidate, CrmHerbBaseSupply supply)
-    {
-        var changedFields = new List<string>();
-        AddIfChanged(changedFields, "品类", candidate.ProductName, supply.ProductName);
-        AddIfChanged(changedFields, "可供量", candidate.AvailableQuantity, supply.AvailableQuantity);
-        AddIfChanged(changedFields, "数量单位", candidate.QuantityUnit, supply.QuantityUnit);
-        AddIfChanged(changedFields, "规格", candidate.Specification, supply.Specification);
-        AddIfChanged(changedFields, "质量要求", candidate.QualityRequirement, supply.QualityRequirement);
-        AddIfChanged(changedFields, "预期价格", candidate.ExpectedPrice, supply.ExpectedPrice);
-        AddIfChanged(changedFields, "价格单位", candidate.PriceUnit, supply.PriceUnit);
-        AddIfChanged(changedFields, "供货周期", candidate.SupplyCycle, supply.SupplyCycle);
-        AddIfChanged(changedFields, "有效期", candidate.ValidUntil?.Date, supply.ValidUntil?.Date);
-        return changedFields;
-    }
-
-    private static void AddIfChanged<T>(List<string> changedFields, string name, T expected, T actual)
-    {
-        if (!EqualityComparer<T>.Default.Equals(expected, actual))
-        {
-            changedFields.Add(name);
-        }
+        return result;
     }
 }
 
 public class GetCrmMatchOpportunityActivitiesHandler(ICrmDbContext dbContext)
     : IRequestHandler<GetCrmMatchOpportunityActivitiesQuery, List<CrmMatchOpportunityActivityDto>>
 {
-    /// <summary>
-    /// 查询一个撮合机会的活动时间线。
-    /// </summary>
     public async Task<List<CrmMatchOpportunityActivityDto>> Handle(
         GetCrmMatchOpportunityActivitiesQuery request,
         CancellationToken cancellationToken)
@@ -248,7 +254,6 @@ public class GetCrmMatchOpportunityActivitiesHandler(ICrmDbContext dbContext)
         {
             throw new BusinessException(404, "撮合机会不存在");
         }
-
         return await CrmMatchOpportunityActivityQuery.GetAsync(dbContext, request.OpportunityId, cancellationToken);
     }
 }
@@ -286,7 +291,6 @@ internal static class CrmMatchOpportunityActivityQuery
         }
 
         var users = await CrmUserNames.GetAsync(dbContext, userIds, cancellationToken);
-
         foreach (var activity in activities)
         {
             if (Guid.TryParse(activity.CreatedBy, out var userId) &&
@@ -295,7 +299,6 @@ internal static class CrmMatchOpportunityActivityQuery
                 activity.CreatedBy = CrmUserNames.DisplayName(user.Username, user.RealName);
             }
         }
-
         return activities;
     }
 }

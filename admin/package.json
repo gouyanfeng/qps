@@ -15,6 +15,8 @@
     "echarts": "^6.0.0",
     "element-plus": "^2.7.6",
     "element-tiptap": "^2.2.1",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "md5": "^2.3.0",
     "nprogress": "^0.2.0",
     "pinia": "^3.0.4",
@@ -28,6 +30,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@types/leaflet.markercluster": "^1.5.6",
     "@types/md5": "^2.3.6",
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.5",

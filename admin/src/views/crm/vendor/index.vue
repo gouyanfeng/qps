@@ -108,7 +108,7 @@
           <el-table-column label="最近采购时间" width="150">
             <template #default="{ row }">{{ formatDate(row.latestPurchaseTime) }}</template>
           </el-table-column>
-          <el-table-column label="最近采购需求" min-width="280" show-overflow-tooltip>
+          <el-table-column label="最近采购列表" min-width="280" show-overflow-tooltip>
             <template #default="{ row }">{{ row.latestPurchaseDemandName || "-" }}</template>
           </el-table-column>
           <el-table-column prop="updatedAt" label="更新时间" width="150" sortable="custom">

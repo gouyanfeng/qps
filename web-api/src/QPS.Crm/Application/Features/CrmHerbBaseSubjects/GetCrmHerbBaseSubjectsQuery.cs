@@ -208,10 +208,12 @@ public class GetCrmHerbBaseSubjectsHandler : IRequestHandler<GetCrmHerbBaseSubje
         var productNames = NormalizeProductNames(request.ProductName);
         if (productNames.Count > 0)
         {
-            query = query.Where(subject => subject.HerbBases.Any(herbBase =>
-                _dbContext.CrmHerbBaseSupplies.Any(supply =>
-                    supply.HerbBaseId == herbBase.Id &&
-                    productNames.Contains(supply.ProductName))));
+            // 品类唯一来源：CrmBusinessEntityAttributes（基地级 CRM_HERB_BASE_PRODUCT）
+            query = query.Where(subject => _dbContext.CrmBusinessEntityAttributes.Any(attribute =>
+                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
+                attribute.AttributeCode == CrmCodes.AttributeCodes.HerbBaseProduct &&
+                productNames.Contains(attribute.AttributeValue) &&
+                subject.HerbBases.Any(herbBase => herbBase.Id == attribute.EntityId)));
         }
 
         return query;
@@ -239,13 +241,23 @@ public class GetCrmHerbBaseSubjectsHandler : IRequestHandler<GetCrmHerbBaseSubje
             .ToListAsync(cancellationToken);
 
         var baseIds = bases.Select(herbBase => herbBase.Id).ToList();
-        var supplies = await _dbContext.CrmHerbBaseSupplies
-            .Where(supply => baseIds.Contains(supply.HerbBaseId))
-            .Select(supply => new { supply.HerbBaseId, supply.ProductName })
+
+        // 品类读属性表（基地级），不再从供应表反推：
+        // 供应只是「已挂出的货」，没有供应记录的基地照样有品类。
+        var attributes = await _dbContext.CrmBusinessEntityAttributes
+            .Where(attribute =>
+                attribute.EntityType == CrmCodes.HerbBaseEntityType &&
+                attribute.AttributeCode == CrmCodes.AttributeCodes.HerbBaseProduct &&
+                baseIds.Contains(attribute.EntityId))
+            .Select(attribute => new { attribute.EntityId, attribute.AttributeValue, attribute.SortOrder })
             .ToListAsync(cancellationToken);
-        var productsByBase = supplies
-            .GroupBy(supply => supply.HerbBaseId)
-            .ToDictionary(group => group.Key, group => group.Select(supply => supply.ProductName).ToList());
+        var productsByBase = attributes
+            .GroupBy(attribute => attribute.EntityId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(attribute => attribute.SortOrder)
+                    .Select(attribute => attribute.AttributeValue)
+                    .ToList());
         var summaries = bases
             .GroupBy(herbBase => herbBase.SubjectId)
             .ToDictionary(

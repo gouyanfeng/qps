@@ -3,9 +3,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QPS.Crm.Contracts.DTOs;
 using QPS.Crm.Contracts.DTOs.CrmContacts;
+using QPS.Crm.Contracts.DTOs.CrmHerbBaseSubjects;
 using QPS.Crm.Contracts.DTOs.CrmVendors;
 using QPS.Crm.Application.Features.CrmTransfers;
 using QPS.Crm.Application.Features;
+using QPS.Crm.Domain.Entities;
 using QPS.Shared.Contracts;
 using QPS.Shared.Exceptions;
 
@@ -74,6 +76,8 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             vendor.Id,
             cancellationToken);
 
+        var deals = await GetDealsAsync(vendor.Id, vendor.VendorName, cancellationToken);
+
         var dto = new CrmVendorDto
         {
             Id = vendor.Id,
@@ -96,11 +100,55 @@ public class GetCrmVendorHandler : IRequestHandler<GetCrmVendorQuery, CrmVendorD
             UpdatedAt = vendor.UpdatedAt,
             Contacts = contacts,
             Products = products,
-            TransferRecords = transferRecords
+            TransferRecords = transferRecords,
+            Deals = deals
         };
 
         await CrmVendorOwners.FillAsync(_dbContext, new List<CrmVendorDto> { dto }, cancellationToken);
         return dto;
+    }
+
+    /// <summary>
+    /// 该厂商作为采购方的历史成交：中选/发起需求 item -> 撮合机会 -> 供货方（实时取原明细）。
+    /// </summary>
+    private async Task<List<CrmSubjectDealDto>> GetDealsAsync(Guid vendorId, string vendorName, CancellationToken cancellationToken)
+    {
+        var deals = await (
+            from item in _dbContext.CrmMatchOpportunityItems
+            join demandItem in _dbContext.CrmVendorDemandItems on item.EntityId equals demandItem.Id
+            join demand in _dbContext.CrmVendorDemands on demandItem.VendorDemandId equals demand.Id
+            join opportunity in _dbContext.CrmMatchOpportunities on item.OpportunityId equals opportunity.Id
+            where item.EntityType == CrmMatchOpportunityItem.EntityTypeDemand
+                  && demand.VendorId == vendorId
+                  && opportunity.Status == CrmMatchOpportunity.Closed
+                  && opportunity.CloseResult == CrmMatchOpportunity.Matched
+                  && (item.Status == CrmMatchOpportunityItem.Selected || item.Role == CrmMatchOpportunityItem.Initiator)
+                  && !item.IsDeleted
+                  && !opportunity.IsDeleted
+            orderby opportunity.UpdatedAt descending
+            select new CrmSubjectDealDto
+            {
+                Id = opportunity.Id,
+                VendorName = vendorName,
+                ProductName = (
+                    from supplyItemRow in _dbContext.CrmMatchOpportunityItems
+                    where supplyItemRow.OpportunityId == opportunity.Id &&
+                        supplyItemRow.EntityType == CrmMatchOpportunityItem.EntityTypeSupply
+                    from s in _dbContext.CrmHerbBaseSupplies.Where(s => s.Id == supplyItemRow.EntityId).Take(1)
+                    select s.ProductName).FirstOrDefault() ?? demandItem.ProductName,
+                BaseName = (
+                    from supplyItemRow in _dbContext.CrmMatchOpportunityItems
+                    where supplyItemRow.OpportunityId == opportunity.Id &&
+                        supplyItemRow.EntityType == CrmMatchOpportunityItem.EntityTypeSupply
+                    from s in _dbContext.CrmHerbBaseSupplies.Where(s => s.Id == supplyItemRow.EntityId).Take(1)
+                    from hb in _dbContext.CrmHerbBases.Where(h => h.Id == s.HerbBaseId).Take(1)
+                    select hb.BaseName).FirstOrDefault() ?? string.Empty,
+                CloseResult = opportunity.CloseResult,
+                ClosedReason = opportunity.ClosedReason,
+                ClosedAt = opportunity.UpdatedAt
+            }).ToListAsync(cancellationToken);
+
+        return deals.DistinctBy(deal => deal.Id).ToList();
     }
 }
 

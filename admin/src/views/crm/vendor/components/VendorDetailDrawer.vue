@@ -11,7 +11,7 @@
             </el-tooltip>
           </div>
           <div class="head-meta">
-            <span>采购需求 {{ currentVendor.purchaseDemandCount || 0 }}</span>
+            <span>采购列表 {{ currentVendor.purchaseDemandCount || 0 }}</span>
             <span>品类 {{ currentVendor.productCount || 0 }}</span>
             <span>联系人 {{ currentVendor.contactCount || 0 }}</span>
           </div>
@@ -29,43 +29,23 @@
         </div>
       </section>
 
-      <section class="summary-band">
-        <div><span>采购概况</span><strong>{{ currentVendor.purchaseDemandCount || 0 }} 条需求</strong><span>品类 {{ currentVendor.productCount || 0 }} · 联系人 {{ currentVendor.contactCount || 0 }}</span></div>
-        <div><span>主联系人</span><strong>{{ currentVendor.primaryContactName || "-" }}</strong><span>{{ currentVendor.primaryContactPhone || "-" }}</span></div>
-        <div><span>最近采购</span><strong>{{ formatDate(currentVendor.latestPurchaseTime) }}</strong><span>{{ currentVendor.latestPurchaseDemandName || "-" }}</span></div>
-        <div><span>更新时间</span><strong>{{ formatDate(currentVendor.updatedAt) }}</strong><span>{{ currentVendor.remark || "-" }}</span></div>
-      </section>
-
-      <section class="detail-grid">
-        <ContactList
-          :contacts="currentVendor.contacts || []"
-          add-permission="CRM_VENDOR_EDIT"
-          edit-permission="CRM_VENDOR_EDIT"
-          primary-permission="CRM_VENDOR_EDIT"
-          status-permission="CRM_VENDOR_EDIT"
-          show-status-action
-          @add="openContactDialog()"
-          @edit="openContactDialog"
-          @set-primary="setPrimaryContact"
-          @toggle-status="toggleContactStatus"
-        />
-
-        <div class="detail-content">
+      <section class="drawer-grid">
+        <div class="profile-panel">
           <section class="detail-card purchase-demand-card">
             <div class="section-title">
-              <h3>采购需求</h3>
-              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button type="primary" link :icon="Plus" @click="openPurchaseDemandDialog()">新增采购需求</el-button></Permission>
+              <h3>采购列表</h3>
+              <Permission code="CRM_PURCHASE_DEMAND_MANAGE"><el-button type="primary" link :icon="Plus" @click="openPurchaseDemandDialog()">新增采购列表</el-button></Permission>
             </div>
             <el-table :data="purchaseDemands" v-loading="purchaseDemandLoading" border class="purchase-demand-table">
-              <el-table-column label="采购需求" min-width="230">
+              <el-table-column label="采购列表" min-width="130">
                 <template #default="{ row }">
                   <div class="demand-title-cell">
-                    <strong>{{ row.demandName || "未命名采购需求" }}</strong>
+                    <strong>{{ row.demandName || "未命名采购列表" }}</strong>
                     <span>{{ row.demandNo || "-" }}</span>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="采购明细" width="280">
+              <el-table-column label="采购明细" width="120">
                 <template #default="{ row }">
                   <el-tooltip
                     v-if="row.items?.length"
@@ -84,21 +64,16 @@
                   <span v-else class="empty-value">-</span>
                 </template>
               </el-table-column>
-              <el-table-column label="提出日期" width="164"><template #default="{ row }">{{ formatDate(row.demandAt) }}</template></el-table-column>
-              <el-table-column label="期望到货" width="164"><template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template></el-table-column>
-              <el-table-column prop="receivingAddress" label="收货地" min-width="180" show-overflow-tooltip />
-              <el-table-column label="状态" width="100" align="center">
-                <template #default="{ row }">
-                  <el-tag :type="getPurchaseDemandStatusType(row.status)" size="small" effect="light">{{ row.status || "-" }}</el-tag>
-                </template>
+              <el-table-column label="提出日期" width="84"><template #default="{ row }">{{ formatDate(row.demandAt) }}</template></el-table-column>
+              <el-table-column label="期望到货" width="84"><template #default="{ row }">{{ formatDate(row.expectedDeliveryAt) }}</template></el-table-column>
+              <el-table-column label="撮合进度" width="220">
+                <template #default="{ row }">{{ matchProgressLabel(row.matchProgress) }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="190" fixed="right">
+              <el-table-column label="操作" width="130" fixed="right">
                 <template #default="{ row }">
                   <Permission code="CRM_PURCHASE_DEMAND_MANAGE">
                     <div class="demand-actions">
-                      <el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">编辑</el-button>
-                      <el-button v-if="row.status === '待确认'" type="success" link @click="changePurchaseDemandStatus(row, '有效')">确认有效</el-button>
-                      <el-button v-if="row.status !== '已完成' && row.status !== '已关闭'" type="danger" link @click="closePurchaseDemand(row)">关闭</el-button>
+                      <el-button type="primary" link :icon="Edit" @click="openPurchaseDemandDialog(row)">详情</el-button>
                     </div>
                   </Permission>
                 </template>
@@ -110,7 +85,7 @@
                 :page-size="purchaseDemandPageSize"
                 :page-sizes="[5, 10, 20, 50, 100]"
                 :total="purchaseDemandTotal"
-                layout="total, sizes, prev, pager, next, jumper"
+                layout="total, prev, pager, next"
                 background
                 @size-change="handlePurchaseDemandSizeChange"
                 @current-change="handlePurchaseDemandPageChange"
@@ -118,10 +93,42 @@
             </div>
           </section>
 
-          <div class="activity-row">
-            <FollowList :records="followRecords" add-permission="CRM_FOLLOW" @add="openFollowDialog" />
-            <TransferList :records="currentVendor.transferRecords || []" />
-          </div>
+          <ContactList
+            :contacts="currentVendor.contacts || []"
+            add-permission="CRM_VENDOR_EDIT"
+            edit-permission="CRM_VENDOR_EDIT"
+            primary-permission="CRM_VENDOR_EDIT"
+            status-permission="CRM_VENDOR_EDIT"
+            show-status-action
+            @add="openContactDialog()"
+            @edit="openContactDialog"
+            @set-primary="setPrimaryContact"
+            @toggle-status="toggleContactStatus"
+          />
+        </div>
+
+        <div class="timeline-panel">
+          <section class="detail-card">
+            <div class="section-title">
+              <div class="section-heading">
+                <h3>成交记录</h3>
+                <el-tag size="small" effect="plain">{{ dealRecords.length }} 条</el-tag>
+              </div>
+            </div>
+            <el-empty v-if="!dealRecords.length" description="暂无成交记录" class="compact-empty" :image-size="56" />
+            <div v-else class="deal-list">
+              <article v-for="deal in dealRecords" :key="deal.id" class="deal-item">
+                <div class="deal-head">
+                  <strong>{{ deal.productName || "-" }}</strong>
+                  <el-tag size="small" type="success" effect="plain">{{ deal.closeResult || "撮合成功" }}</el-tag>
+                </div>
+                <div class="deal-meta">供货基地：{{ deal.baseName || "-" }}</div>
+                <div class="deal-meta">{{ formatDate(deal.closedAt) }}</div>
+              </article>
+            </div>
+          </section>
+          <FollowList :records="followRecords" add-permission="CRM_FOLLOW" @add="openFollowDialog" />
+          <TransferList :records="currentVendor.transferRecords || []" />
         </div>
       </section>
     </div>
@@ -217,6 +224,7 @@ interface VendorDetail {
   updatedAt: string;
   contacts: any[];
   transferRecords: any[];
+  deals?: any[];
 }
 
 const props = defineProps<{
@@ -246,6 +254,7 @@ const purchaseDemandPage = ref(1);
 const purchaseDemandPageSize = ref(5);
 const purchaseDemandTotal = ref(0);
 const followRecords = ref<any[]>([]);
+const dealRecords = computed(() => currentVendor.value?.deals || []);
 
 const vendorForm = reactive({
   id: "",
@@ -369,24 +378,6 @@ const handlePurchaseDemandSaved = async () => {
   notifyListChanged();
 };
 
-const changePurchaseDemandStatus = async (row: any, status: string) => {
-  await crmVendorDemandApi.changeStatus(row.id, { status });
-  ElMessage.success("状态已更新");
-  await refreshDetail(false);
-  notifyListChanged();
-};
-
-const closePurchaseDemand = async (row: any) => {
-  const { value } = await ElMessageBox.prompt("关闭原因", "关闭采购需求", {
-    inputPattern: /.+/,
-    inputErrorMessage: "请填写关闭原因",
-  });
-  await crmVendorDemandApi.changeStatus(row.id, { status: "已关闭", closedReason: value });
-  ElMessage.success("采购需求已关闭");
-  await refreshDetail(false);
-  notifyListChanged();
-};
-
 const openFollowDialog = () => {
   if (!currentVendor.value) return;
   followDialogVisible.value = true;
@@ -444,13 +435,6 @@ const getPriorityType = (value?: string | null) => {
   return "";
 };
 
-const getPurchaseDemandStatusType = (value?: string | null) => {
-  if (value === "有效" || value === "已完成") return "success";
-  if (value === "待确认") return "warning";
-  if (value === "已关闭") return "info";
-  return "";
-};
-
 const maxDemandItemCount = 8;
 
 const getDemandItemLabel = (item: any) => `${item.productName || "未填写品类"}${item.quantity ? ` ${item.quantity}${item.quantityUnit || ""}` : ""}`;
@@ -467,6 +451,18 @@ const getDemandItemsTooltip = (items: any[]) => `采购明细：${items.map(getD
 const canReturn = (row?: Partial<VendorDetail> | null) =>
   !!row?.ownerUserId && row.ownerUserId === userStore.userInfo.userId;
 
+const matchProgressLabel = (progress: any) => {
+  if (!progress?.totalItemCount) return "暂无采购明细";
+  if (progress.completedItemCount >= progress.totalItemCount) return `已成交 ${progress.totalItemCount}/${progress.totalItemCount}`;
+  const segments = [`已发起 ${progress.startedItemCount}/${progress.totalItemCount}`];
+  if (progress.completedItemCount) segments.push(`${progress.completedItemCount} 已成交`);
+  if (progress.inProgressItemCount) segments.push(`${progress.inProgressItemCount} 撮合中`);
+  if (progress.pausedItemCount) segments.push(`${progress.pausedItemCount} 已暂停`);
+  if (progress.closedItemCount) segments.push(`${progress.closedItemCount} 已结束`);
+  if (progress.pendingItemCount) segments.push(`${progress.pendingItemCount} 空闲`);
+  return segments.join(" · ");
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -478,5 +474,5 @@ const formatDate = (value?: string | null) => {
 </script>
 
 <style scoped lang="scss">
-.drawer-layout { min-height: 100%; background: #fff; }.drawer-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; padding:22px 0 18px; border-bottom:1px solid var(--el-border-color-light); }.detail-kicker, .head-meta, .summary-band span, .follow-item span, .demand-title-cell span, .empty-value { color:var(--el-text-color-secondary); font-size:13px; }.title-row, .head-meta, .head-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }.title-row h2 { margin:0; font-size:25px; }.head-meta { margin-top:10px; }.head-actions { justify-content:flex-end; }.summary-band { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:14px 0; }.summary-band > div, .detail-card { display:flex; flex-direction:column; gap:5px; padding:16px; border:1px solid var(--el-border-color-light); border-radius:8px; }.detail-grid { display:grid; grid-template-columns:minmax(360px,.9fr) minmax(0,1.75fr); gap:16px; }.detail-content { display:grid; gap:16px; }.section-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -16px 14px; padding:0 16px 10px; border-bottom:1px solid var(--el-border-color-lighter); }.section-title h3 { margin:0; font-size:16px; }.activity-row { display:flex; gap:16px; }.activity-row > .detail-card { flex:1; min-width:0; }.follow-item p { margin:6px 0; }.item-tag,.ml8 { margin-right:4px; }.purchase-demand-card { gap:0; }.purchase-demand-table :deep(.el-table__cell) { padding:11px 0; }.purchase-demand-table :deep(.el-table__header th) { background:#fafcfc; color:var(--el-text-color-secondary); font-weight:500; }.demand-title-cell { display:grid; gap:5px; line-height:1.35; }.demand-title-cell strong { color:var(--el-text-color-primary); font-weight:600; }.demand-item-list, .demand-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }.demand-item-list--compact .demand-item-tag { display:inline-flex; justify-content:center; white-space:nowrap; }.demand-item-tag { margin:0; border-color:#bfe7e2; background:#f0fbf9; color:#177f78; }.demand-item-tag span { white-space:nowrap; }.demand-item-tag b { margin-left:5px; color:#0f766e; font-weight:600; }.demand-actions { flex-wrap:nowrap; white-space:nowrap; }.table-footer { display:flex; justify-content:flex-end; padding-top:12px; } @media(max-width:1200px){.summary-band,.detail-grid{grid-template-columns:1fr}.activity-row{flex-direction:column}}
+.drawer-layout { min-height: 100%; background: #fff; }.drawer-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; padding:22px 0 18px; border-bottom:1px solid var(--el-border-color-light); }.detail-kicker, .head-meta, .follow-item span, .demand-title-cell span, .empty-value { color:var(--el-text-color-secondary); font-size:13px; }.title-row, .head-meta, .head-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }.title-row h2 { margin:0; font-size:25px; }.head-meta { margin-top:10px; }.head-actions { justify-content:flex-end; }.detail-card { display:flex; flex-direction:column; gap:5px; min-width:0; padding:16px; border:1px solid var(--el-border-color-light); border-radius:8px; }.drawer-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,.42fr); gap:16px; padding:16px 0 24px; }.profile-panel, .timeline-panel { display:grid; gap:14px; align-content:start; min-width:0; }.section-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 -16px 14px; padding:0 16px 10px; border-bottom:1px solid var(--el-border-color-lighter); }.section-title h3 { margin:0; font-size:16px; }.section-heading { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }.deal-list { display:grid; gap:8px; }.deal-item { padding:8px 10px; border:1px solid var(--el-border-color-lighter); border-radius:6px; }.deal-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }.deal-meta { margin-top:4px; color:var(--el-text-color-secondary); font-size:12px; }.compact-empty { padding:12px 0; }.compact-empty :deep(.el-empty__description) { margin-top:6px; }.follow-item p { margin:6px 0; }.item-tag,.ml8 { margin-right:4px; }.purchase-demand-card { gap:0; min-width:0; }.purchase-demand-table { min-width:0; }.purchase-demand-table :deep(.el-table__cell) { padding:11px 0; }.purchase-demand-table :deep(.el-table__header th) { background:#fafcfc; color:var(--el-text-color-secondary); font-weight:500; }.demand-title-cell { display:grid; gap:5px; line-height:1.35; }.demand-title-cell strong { color:var(--el-text-color-primary); font-weight:600; }.demand-item-list, .demand-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }.demand-item-list--compact .demand-item-tag { display:inline-flex; justify-content:center; white-space:nowrap; }.demand-item-tag { margin:0; border-color:#bfe7e2; background:#f0fbf9; color:#177f78; }.demand-item-tag span { white-space:nowrap; }.demand-item-tag b { margin-left:5px; color:#0f766e; font-weight:600; }.demand-actions { flex-wrap:wrap; }.table-footer { display:flex; justify-content:flex-end; padding-top:12px; } @media(max-width:1000px){.drawer-grid{grid-template-columns:1fr}}
 </style>

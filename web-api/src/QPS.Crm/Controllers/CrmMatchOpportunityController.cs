@@ -16,6 +16,17 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<object>> GetProgressOptions()
         => Ok(await mediator.Send(new GetCrmMatchOpportunityProgressOptionsQuery()));
 
+    [HttpPost("match-opportunities/empty")]
+    public async Task<ActionResult<Guid>> CreateEmpty([FromBody] CreateEmptyCrmMatchOpportunityCommand command)
+        => Ok(await mediator.Send(command));
+
+    [HttpPatch("match-opportunities/{id:guid}/candidates/replace")]
+    public async Task<ActionResult<bool>> ReplaceCandidates(Guid id, [FromBody] ReplaceCrmMatchOpportunityCandidatesCommand command)
+    {
+        command.OpportunityId = id;
+        return Ok(await mediator.Send(command));
+    }
+
     [HttpGet("match-opportunities/{id:guid}")]
     public async Task<ActionResult<object>> GetDetail(Guid id)
         => Ok(await mediator.Send(new GetCrmMatchOpportunityDetailQuery { Id = id }));
@@ -34,6 +45,13 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(command));
     }
 
+    [HttpPost("herb-base-supplies/{supplyId:guid}/match-opportunities")]
+    public async Task<ActionResult<Guid>> CreateFromSupply(Guid supplyId, [FromBody] CreateSupplyMatchOpportunityCommand command)
+    {
+        command.SupplyId = supplyId;
+        return Ok(await mediator.Send(command));
+    }
+
     [HttpPost("match-opportunities/{id:guid}/candidates")]
     public async Task<ActionResult<bool>> AddCandidates(Guid id, [FromBody] AddCrmMatchOpportunityCandidatesCommand command)
     {
@@ -41,16 +59,20 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
         return Ok(await mediator.Send(command));
     }
 
-    [HttpPatch("match-opportunities/{id:guid}/candidates/{candidateId:guid}/status")]
-    public async Task<ActionResult<bool>> UpdateCandidateStatus(
+    [HttpPatch("match-opportunities/{id:guid}/items/{itemId:guid}/status")]
+    public async Task<ActionResult<bool>> UpdateItemStatus(
         Guid id,
-        Guid candidateId,
-        [FromBody] UpdateCrmMatchCandidateStatusCommand command)
+        Guid itemId,
+        [FromBody] UpdateCrmMatchOpportunityItemStatusCommand command)
     {
         command.OpportunityId = id;
-        command.CandidateId = candidateId;
+        command.ItemId = itemId;
         return Ok(await mediator.Send(command));
     }
+
+    [HttpDelete("match-opportunities/{id:guid}/items/{itemId:guid}")]
+    public async Task<ActionResult<bool>> RemoveItem(Guid id, Guid itemId)
+        => Ok(await mediator.Send(new RemoveCrmMatchOpportunityItemCommand { OpportunityId = id, ItemId = itemId }));
 
     [HttpPatch("match-opportunities/{id:guid}/progress")]
     public async Task<ActionResult<bool>> Advance(

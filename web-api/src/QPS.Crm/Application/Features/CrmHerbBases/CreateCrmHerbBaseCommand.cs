@@ -53,6 +53,10 @@ public class CreateCrmHerbBaseHandler : IRequestHandler<CreateCrmHerbBaseCommand
         }
 
         _dbContext.CrmHerbBases.Add(herbBase);
+        if (request.Request.ProductNames is { Count: > 0 })
+        {
+            await CrmHerbBaseProductSync.ReplaceAsync(_dbContext, herbBase.Id, request.Request.ProductNames, cancellationToken);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (herbBase.HerbBaseSubjectId.HasValue)
         {

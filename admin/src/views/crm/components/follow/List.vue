@@ -1,7 +1,10 @@
 <template>
   <section class="detail-card follow-card">
     <div class="section-title section-title-first">
-      <h3>沟通记录</h3>
+      <div class="section-heading">
+        <h3>沟通记录</h3>
+        <el-tag size="small" effect="plain">{{ records.length }} 条</el-tag>
+      </div>
       <Permission v-if="addPermission" :code="addPermission">
         <el-button type="primary" link :icon="Phone" @click="$emit('add')">记录</el-button>
       </Permission>
@@ -18,7 +21,7 @@
         </div>
       </el-timeline-item>
     </el-timeline>
-    <el-empty v-else description="暂无沟通记录" />
+    <el-empty v-else description="暂无沟通记录" class="compact-empty" :image-size="56" />
   </section>
 </template>
 
@@ -63,6 +66,12 @@ const formatDate = (value?: string | null) => {
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .section-title h3 {
   margin: 0;
   font-size: 16px;
@@ -90,5 +99,13 @@ const formatDate = (value?: string | null) => {
 .muted {
   color: var(--el-text-color-secondary);
   font-size: 12px;
+}
+
+.compact-empty {
+  padding: 12px 0;
+
+  :deep(.el-empty__description) {
+    margin-top: 6px;
+  }
 }
 </style>

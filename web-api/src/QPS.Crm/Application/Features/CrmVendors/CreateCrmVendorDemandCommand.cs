@@ -35,7 +35,7 @@ public class CreateCrmVendorDemandHandler : IRequestHandler<CreateCrmVendorDeman
         var demandName = request.Request.DemandName.Trim();
         if (string.IsNullOrWhiteSpace(demandName))
         {
-            throw new BusinessException(400, "请输入采购需求名称");
+            throw new BusinessException(400, "请输入采购列表名称");
         }
         if (request.Request.ContactId.HasValue && !await _dbContext.CrmContacts.AnyAsync(contact => contact.Id == request.Request.ContactId && contact.EntityType == CrmCodes.VendorEntityType && contact.EntityId == vendor.Id && contact.Status != "无效", cancellationToken)) throw new BusinessException(400, "联系人不属于该厂商或已失效");
         var items = request.Request.Items.Select((item, index) => new CrmVendorDemandItem(item.ProductName.Trim(), item.Quantity, item.QuantityUnit.Trim(), item.Specification.Trim(), item.QualityRequirement.Trim(), item.TargetPrice, item.PriceUnit.Trim(), item.ExpectedDeliveryAt, item.Remark.Trim(), index + 1)).ToList();

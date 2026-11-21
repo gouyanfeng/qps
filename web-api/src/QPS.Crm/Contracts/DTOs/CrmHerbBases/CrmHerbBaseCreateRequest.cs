@@ -30,6 +30,11 @@ public class CrmHerbBaseCreateRequest
     public decimal? Scale { get; set; }
 
     /// <summary>
+    /// 基地品类，写入 CrmBusinessEntityAttributes（CRM_HERB_BASE_PRODUCT）。
+    /// </summary>
+    public List<string>? ProductNames { get; set; }
+
+    /// <summary>
     /// 省份。
     /// </summary>
     public string Province { get; set; } = string.Empty;

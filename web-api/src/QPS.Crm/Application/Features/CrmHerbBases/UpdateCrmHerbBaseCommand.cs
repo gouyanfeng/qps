@@ -38,6 +38,11 @@ public class UpdateCrmHerbBaseHandler : IRequestHandler<UpdateCrmHerbBaseCommand
 
         await SyncSubjectScaleAsync(customer, cancellationToken);
 
+        if (request.Request.ProductNames != null)
+        {
+            await CrmHerbBaseProductSync.ReplaceAsync(_dbContext, customer.Id, request.Request.ProductNames, cancellationToken);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
         if (customer.HerbBaseSubjectId.HasValue)
         {
