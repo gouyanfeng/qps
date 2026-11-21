@@ -137,11 +137,11 @@ const redrawMarkers = () => {
   markerLayer.clearLayers();
   markerIndex.clear();
 
-  const bounds: L.LatLngExpression[] = [];
+  const bounds: L.LatLngTuple[] = [];
   const markers: L.Marker[] = [];
 
   bases.value.forEach(b => {
-    const latLng: L.LatLngExpression = [b.lat, b.lng];
+    const latLng: L.LatLngTuple = [b.lat, b.lng];
     bounds.push(latLng);
 
     const icon = L.divIcon({

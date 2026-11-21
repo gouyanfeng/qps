@@ -105,18 +105,24 @@
       :opportunity="progressOpportunity"
       @submitted="handleProgressSubmitted"
     />
+
+    <MatchOpportunityDetailDialog ref="opportunityDetailRef" @refresh="handleDetailChanged" />
+    <VendorDetailDrawer v-model="vendorDetailVisible" :vendor-id="vendorDetailId" @refresh-list="handleDetailChanged" />
+    <HerbBaseDetailDrawer v-model="herbBaseDetailVisible" :subject-id="herbBaseDetailId" @refresh-list="handleDetailChanged" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { Calendar, CircleCheckFilled, DocumentDelete, WarningFilled } from "@element-plus/icons-vue";
-import { useRouter } from "vue-router";
 import { crmFollowTaskApi } from "@/api/modules/crm/crmFollowTask";
 import QueryPage from "@/components/QueryPage/index.vue";
 import Permission from "@/components/Permission/index.vue";
 import FollowDialog from "@/views/crm/components/follow/Dialog.vue";
 import ProgressDialog from "@/views/crm/matchOpportunity/ProgressDialog.vue";
+import MatchOpportunityDetailDialog from "@/views/crm/matchOpportunity/MatchOpportunityDetailDialog.vue";
+import VendorDetailDrawer from "@/views/crm/vendor/components/VendorDetailDrawer.vue";
+import HerbBaseDetailDrawer from "@/views/crm/herbBase/components/HerbBaseDetailDrawer.vue";
 
 interface FollowTask {
   entityId: string;
@@ -140,12 +146,16 @@ interface FollowTaskOverview {
   completedLast7DaysCount: number;
 }
 
-const router = useRouter();
 const queryPageRef = ref<InstanceType<typeof QueryPage>>();
 const followDialogVisible = ref(false);
 const followTarget = ref<FollowTask>();
 const progressDialogVisible = ref(false);
 const progressOpportunity = ref<any>();
+const opportunityDetailRef = ref<InstanceType<typeof MatchOpportunityDetailDialog>>();
+const vendorDetailVisible = ref(false);
+const vendorDetailId = ref("");
+const herbBaseDetailVisible = ref(false);
+const herbBaseDetailId = ref("");
 const overview = ref<FollowTaskOverview>({
   overdueCount: 0,
   todayCount: 0,
@@ -189,16 +199,22 @@ const entityTypeLabels: Record<string, string> = {
 
 const entityTypeText = (entityType: string) => entityTypeLabels[entityType] || entityType;
 
-const detailRoutes: Record<string, string> = {
-  CRM_MATCH_OPPORTUNITY: "/crm/match-opportunity",
-  CRM_VENDOR: "/crm/vendor",
-  CRM_HERB_BASE_SUBJECT: "/crm/herb-base",
+// 详情直接在当前页弹抽屉，不跳转列表页
+const detail = (row: FollowTask) => {
+  if (row.entityType === "CRM_MATCH_OPPORTUNITY") {
+    opportunityDetailRef.value?.open(row.entityId);
+  } else if (row.entityType === "CRM_VENDOR") {
+    vendorDetailId.value = row.entityId;
+    vendorDetailVisible.value = true;
+  } else if (row.entityType === "CRM_HERB_BASE_SUBJECT") {
+    herbBaseDetailId.value = row.entityId;
+    herbBaseDetailVisible.value = true;
+  }
 };
 
-const detail = (row: FollowTask) => {
-  const path = detailRoutes[row.entityType];
-  if (!path) throw new Error(`未知的 entityType: ${row.entityType}`);
-  router.push({ path, query: { detailId: row.entityId } });
+const handleDetailChanged = () => {
+  reloadList();
+  void loadOverview();
 };
 
 const advance = (row: FollowTask) => {
