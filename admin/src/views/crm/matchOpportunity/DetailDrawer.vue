@@ -320,7 +320,12 @@ defineExpose({ reload: loadDetail });
 .title-row h2 { margin: 6px 0; font-size: 22px; }
 .head-meta { color: var(--el-text-color-secondary); font-size: 14px; }
 .head-actions { flex-wrap: wrap; justify-content: flex-end; }
-.flow-section { margin-bottom: 20px; padding: 12px 20px 4px; border: 1px solid var(--el-border-color-light); }
+/* 当前步骤 is-process 的圆圈/标题默认取 --el-text-color-primary（深色），此处局部改成蓝色；已完成绿勾、未到灰色不受影响 */
+.flow-section { --flow-active-color: #409eff; margin-bottom: 20px; padding: 12px 20px 4px; border: 1px solid var(--el-border-color-light); }
+.flow-section :deep(.el-step__head.is-process) { color: var(--flow-active-color); border-color: var(--flow-active-color); }
+.flow-section :deep(.el-step__title.is-process) { color: var(--flow-active-color); }
+/* 已完成节点的连线底色设为绿色（Element Plus 默认是灰色 --el-text-color-placeholder） */
+.flow-section :deep(.el-step__head.is-success .el-step__line) { background-color: var(--el-color-success) !important; }
 .flow-section :deep(.el-step__description) { min-height: 18px; font-size: 12px; }
 .detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .detail-card { min-width: 0; padding: 16px; border: 1px solid var(--el-border-color-light); border-radius: 8px; }
