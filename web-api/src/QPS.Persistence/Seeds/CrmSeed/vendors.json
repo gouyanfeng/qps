@@ -1,0 +1,45 @@
+{
+  "vendors": [
+    {
+      "key": "VENDOR-01",
+      "vendorName": "甘肃岷海制药有限责任公司",
+      "priorityLevel": "高",
+      "remark": "本地饮片厂，当归与黄芪需求稳定。",
+      "owner": "admin",
+      "products": ["当归", "黄芪", "党参"],
+      "lastFollowDaysAgo": 2,
+      "lastFollowResult": "有意向",
+      "nextFollowDaysAhead": 3
+    },
+    {
+      "key": "VENDOR-02",
+      "vendorName": "广州白云山中药饮片有限公司",
+      "priorityLevel": "高",
+      "remark": "华南大型饮片企业，三七与金银花常年采购。",
+      "owner": "admin",
+      "products": ["三七", "金银花"],
+      "lastFollowDaysAgo": 5,
+      "lastFollowResult": "已接通",
+      "nextFollowDaysAhead": 7
+    },
+    {
+      "key": "VENDOR-03",
+      "vendorName": "北京同仁堂健康药业股份有限公司",
+      "priorityLevel": "中",
+      "remark": "对品规与检测报告要求较高。",
+      "owner": "user",
+      "products": ["白术"],
+      "lastFollowDaysAgo": 8,
+      "lastFollowResult": "已接通",
+      "nextFollowDaysAhead": 4
+    },
+    {
+      "key": "VENDOR-04",
+      "vendorName": "安徽亳州济仁堂中药饮片有限公司",
+      "priorityLevel": "低",
+      "remark": "小批量试单为主，价格敏感。",
+      "owner": "user",
+      "products": ["白芍"]
+    }
+  ]
+}

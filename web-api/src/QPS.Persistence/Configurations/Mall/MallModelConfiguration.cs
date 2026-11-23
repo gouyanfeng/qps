@@ -115,7 +115,7 @@ public static class MallModelConfiguration
             entity.Property(review => review.IsFeatured).IsRequired().HasDefaultValue(false);
             entity.Property(review => review.SortOrder).IsRequired().HasDefaultValue(0);
             entity.Property(review => review.ReviewTime).IsRequired();
-            entity.Property(review => review.AuditStatus).IsRequired().HasDefaultValue(MallProductReview.AuditStatusApproved);
+            entity.Property(review => review.AuditStatus).IsRequired().HasDefaultValue(MallProductReview.AuditStatusPending);
             entity.Property(review => review.ReplyContent).HasMaxLength(500).IsRequired().HasDefaultValue(string.Empty);
             entity.HasIndex(review => new { review.ProductId, review.ReviewTime });
             entity.HasIndex(review => review.OrderItemId)

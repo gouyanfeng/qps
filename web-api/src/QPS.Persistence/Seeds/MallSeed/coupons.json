@@ -1,0 +1,28 @@
+{
+  "coupons": [
+    {
+      "code": "SEED-COUPON-NEW10",
+      "name": "新客首单立减 10 元",
+      "couponType": "fixed",
+      "thresholdAmount": 99.00,
+      "discountAmount": 10.00,
+      "maxDiscount": null,
+      "totalCount": 500,
+      "perLimit": 1,
+      "validDays": 30,
+      "scopeType": "all"
+    },
+    {
+      "code": "SEED-COUPON-299-90",
+      "name": "满 299 元享 9 折",
+      "couponType": "percent",
+      "thresholdAmount": 299.00,
+      "discountAmount": 0.90,
+      "maxDiscount": 80.00,
+      "totalCount": 300,
+      "perLimit": 2,
+      "validDays": 15,
+      "scopeType": "all"
+    }
+  ]
+}

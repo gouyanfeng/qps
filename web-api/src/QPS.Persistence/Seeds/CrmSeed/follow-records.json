@@ -1,0 +1,70 @@
+{
+  "followRecords": [
+    {
+      "entityType": "subject",
+      "entityKey": "SUB-01",
+      "contactKey": "CT-SUB-01",
+      "followType": "电话",
+      "followResult": "有意向",
+      "intentLevel": "A",
+      "content": "合作社确认当归全归片可供 5000 公斤，报价 18.5 元/公斤，愿按批次签订供货协议。",
+      "nextFollowDaysAhead": 2,
+      "operator": "admin"
+    },
+    {
+      "entityType": "subject",
+      "entityKey": "SUB-02",
+      "contactKey": "CT-SUB-02",
+      "followType": "微信",
+      "followResult": "已接通",
+      "intentLevel": "B",
+      "content": "已发送黄芪样品照片，对方要求补充含水率检测报告后再议价。",
+      "nextFollowDaysAhead": 5,
+      "operator": "admin"
+    },
+    {
+      "entityType": "subject",
+      "entityKey": "SUB-03",
+      "contactKey": "CT-SUB-03",
+      "followType": "电话",
+      "followResult": "已接通",
+      "intentLevel": "B",
+      "content": "三七种植户说明 20 头规格现货 1200 公斤，需安排实地看货。",
+      "nextFollowDaysAhead": 1,
+      "operator": "user"
+    },
+    {
+      "entityType": "subject",
+      "entityKey": "SUB-05",
+      "contactKey": "CT-SUB-05",
+      "followType": "电话",
+      "followResult": "已接通",
+      "intentLevel": "C",
+      "content": "首次接通，对方表示金银花头茬已基本售完，二茬需等到新季。",
+      "nextFollowDaysAhead": 6,
+      "operator": "admin"
+    },
+    {
+      "entityType": "vendor",
+      "entityKey": "VENDOR-01",
+      "contactKey": "CT-VENDOR-01",
+      "followType": "拜访",
+      "followResult": "有意向",
+      "intentLevel": "A",
+      "content": "上门拜访岷海制药采购部，确认 12 月当归 5000 公斤、黄芪 3000 公斤采购计划。",
+      "nextFollowDaysAhead": 3,
+      "operator": "admin"
+    },
+    {
+      "entityType": "vendor",
+      "entityKey": "VENDOR-02",
+      "contactKey": "CT-VENDOR-02",
+      "followType": "电话",
+      "followResult": "已接通",
+      "intentLevel": "B",
+      "content": "白云山采购确认冬季三七备货 800 公斤，要求随货附检测报告。",
+      "nextFollowDaysAhead": 7,
+      "operator": "admin"
+    }
+  ]
+}
