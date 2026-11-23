@@ -9,7 +9,17 @@
             </el-select>
           </el-form-item>
           <el-form-item label="位置">
-            <el-input v-model="searchForm.position" placeholder="如 HomeTop" clearable />
+            <el-select
+              v-model="searchForm.position"
+              placeholder="全部位置"
+              clearable
+              filterable
+              allow-create
+              default-first-option
+              style="width: 180px"
+            >
+              <el-option v-for="item in bannerPositionOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.isActive" placeholder="全部">
@@ -33,7 +43,9 @@
               <el-image :src="resolveFileUrl(row.imageUrl)" :preview-src-list="[resolveFileUrl(row.imageUrl)]" style="width: 60px; height: 36px; object-fit: cover" fit="cover" preview-teleported />
             </template>
           </el-table-column>
-          <el-table-column prop="position" label="位置" width="120" />
+          <el-table-column label="位置" width="120">
+            <template #default="{ row }">{{ positionLabel(row.position) }}</template>
+          </el-table-column>
           <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
           <el-table-column label="跳转" width="180">
             <template #default="{ row }">
@@ -79,7 +91,16 @@
           </el-select>
         </el-form-item>
         <el-form-item label="展示位置" required>
-          <el-input v-model="form.position" placeholder="如 HomeTop / HomeMiddle / Category_xxx" maxlength="50" />
+          <el-select
+            v-model="form.position"
+            placeholder="请选择展示位置"
+            filterable
+            allow-create
+            default-first-option
+            style="width: 100%"
+          >
+            <el-option v-for="item in bannerPositionOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="Banner图片" required>
           <UploadImg v-model:imageUrl="imageUrlModel" scene="banner" :width="'240px'" :height="'100px'">
@@ -136,7 +157,7 @@
       <div v-else>
         <div v-for="item in sortList" :key="item.id" class="sort-item">
           <el-image :src="resolveFileUrl(item.imageUrl)" style="width: 40px; height: 24px; object-fit: cover; margin-right: 8px" fit="cover" />
-          <span class="sort-title">{{ item.title || item.position }}</span>
+          <span class="sort-title">{{ item.title || positionLabel(item.position) }}</span>
           <el-input-number v-model="item.sortOrder" :min="0" :max="9999" size="small" />
         </div>
       </div>
@@ -161,6 +182,14 @@ import { formatDate, resolveFileUrl, toRelativeFileUrl } from '@/utils'
 import Permission from "@/components/Permission/index.vue"
 
 const linkTypeMap: Record<number, string> = { 0: '商品', 1: '分类', 2: '页面', 3: '外链', 6: '专题活动' }
+
+const bannerPositionOptions = [
+  { label: '首页轮播', value: 'home' },
+  { label: '首页节气横幅', value: 'home-solar' }
+]
+
+const positionLabel = (value: string) =>
+  bannerPositionOptions.find((item) => item.value === value)?.label || value
 
 const queryPageRef = ref()
 const dialogVisible = ref(false)

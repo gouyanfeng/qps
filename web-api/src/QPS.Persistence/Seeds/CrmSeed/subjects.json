@@ -1,0 +1,79 @@
+{
+  "subjects": [
+    {
+      "key": "SUB-01",
+      "subjectName": "岷县当归种植农民专业合作社",
+      "subjectType": "合作社",
+      "owner": "admin",
+      "status": "有意向",
+      "grade": "高",
+      "score": 88,
+      "scale": 1200,
+      "remark": "岷县当归核心产区，自有加工车间，可稳定供货全归片与归头。",
+      "primaryContactName": "张建国",
+      "primaryContactPhone": "13809321234",
+      "lastFollowDaysAgo": 6,
+      "lastFollowResult": "有意向",
+      "nextFollowDaysAhead": 2
+    },
+    {
+      "key": "SUB-02",
+      "subjectName": "陇西县黄芪产业农民专业合作社",
+      "subjectType": "合作社",
+      "owner": "admin",
+      "status": "跟进中",
+      "grade": "高",
+      "score": 79,
+      "scale": 2100,
+      "remark": "黄芪、党参双品类种植，与多家饮片厂长期合作。",
+      "primaryContactName": "李长顺",
+      "primaryContactPhone": "13993287788",
+      "lastFollowDaysAgo": 3,
+      "lastFollowResult": "已接通",
+      "nextFollowDaysAhead": 5
+    },
+    {
+      "key": "SUB-03",
+      "subjectName": "文山三七种植家庭农场",
+      "subjectType": "家庭农场",
+      "owner": "user",
+      "status": "跟进中",
+      "grade": "中",
+      "score": 66,
+      "scale": 800,
+      "remark": "三七主产区家庭农场，20 头与 40 头规格均可供。",
+      "primaryContactName": "王秀芬",
+      "primaryContactPhone": "13887654321",
+      "lastFollowDaysAgo": 9,
+      "lastFollowResult": "已接通",
+      "nextFollowDaysAhead": 1
+    },
+    {
+      "key": "SUB-04",
+      "subjectName": "磐安县白术种植有限公司",
+      "subjectType": "企业",
+      "owner": "user",
+      "status": "待联系",
+      "grade": "中",
+      "score": 58,
+      "scale": 1500,
+      "remark": "白术、白芍种植为主，尚需核实可稳定供货的批量。"
+    },
+    {
+      "key": "SUB-05",
+      "subjectName": "平邑县金银花种植专业合作社",
+      "subjectType": "合作社",
+      "owner": "admin",
+      "status": "待联系",
+      "grade": "低",
+      "score": 42,
+      "scale": 900,
+      "remark": "金银花种植合作社，联系电话需二次确认。",
+      "primaryContactName": "孙立国",
+      "primaryContactPhone": "13954981234",
+      "lastFollowDaysAgo": 11,
+      "lastFollowResult": "已接通",
+      "nextFollowDaysAhead": 6
+    }
+  ]
+}

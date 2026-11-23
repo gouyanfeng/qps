@@ -1,0 +1,36 @@
+{
+  "templates": [
+    {
+      "name": "全国默认运费模板",
+      "billingType": "Weight",
+      "isDefault": true,
+      "isActive": true,
+      "regions": [
+        {
+          "regionName": "默认区域",
+          "provinceNames": "",
+          "cityNames": null,
+          "firstValue": 1000,
+          "firstFee": 8.00,
+          "stepValue": 1000,
+          "stepFee": 4.00,
+          "freeShippingAmount": 199.00,
+          "freeShippingQuantity": null,
+          "isDefaultRegion": true
+        },
+        {
+          "regionName": "新疆、西藏、内蒙古",
+          "provinceNames": "新疆维吾尔自治区,西藏自治区,内蒙古自治区",
+          "cityNames": null,
+          "firstValue": 1000,
+          "firstFee": 15.00,
+          "stepValue": 1000,
+          "stepFee": 8.00,
+          "freeShippingAmount": 399.00,
+          "freeShippingQuantity": null,
+          "isDefaultRegion": false
+        }
+      ]
+    }
+  ]
+}

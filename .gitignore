@@ -6,7 +6,12 @@ test-results/
 /.workbuddy/
 /.worktrees/
 /agent-temp/
-/ui-tests/
+/ui-tests/*
+!/ui-tests/full-flow/
+!/ui-tests/crm-flow-helpers.mjs
+!/ui-tests/playwright.config.ts
+!/ui-tests/package.json
+!/ui-tests/package-lock.json
 
 
 # Stitch MCP design cache

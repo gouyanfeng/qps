@@ -1,0 +1,36 @@
+{
+  "banners": [
+    {
+      "id": "banner-001",
+      "position": "home",
+      "image": "/uploads/banner/202610/b0a230796d9fea32b9cd6b9998db342d.png",
+      "title": "道地药材 产地直供",
+      "linkType": "InternalCategory",
+      "categoryId": "cat-001"
+    },
+    {
+      "id": "banner-002",
+      "position": "home",
+      "image": "/uploads/banner/202610/f278f479ae38bfe0a84337757a0f3d4a.png",
+      "title": "秋冬滋补 精选好礼",
+      "linkType": "InternalProduct",
+      "productId": "prod-101"
+    },
+    {
+      "id": "banner-003",
+      "position": "home",
+      "image": "/uploads/banner/202610/38117bb98f271bb23f00622ad8f66635.png",
+      "title": "宁夏枸杞 头茬上新",
+      "linkType": "InternalProduct",
+      "productId": "prod-103"
+    },
+    {
+      "id": "banner-004",
+      "position": "home-solar",
+      "image": "/uploads/banner/202610/39de716db572185637193c47a68f4ef7.png",
+      "title": "小雪养生 · 温补有道",
+      "linkType": "InternalCategory",
+      "categoryId": "cat-004"
+    }
+  ]
+}

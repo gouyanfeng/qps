@@ -2465,7 +2465,7 @@ namespace QPS.Persistence.Migrations
                     b.Property<int>("AuditStatus")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(1);
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Content")
                         .IsRequired()

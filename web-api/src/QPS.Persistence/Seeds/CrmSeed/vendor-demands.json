@@ -1,0 +1,136 @@
+{
+  "demands": [
+    {
+      "vendorKey": "VENDOR-01",
+      "demandNo": "PD202612010001",
+      "demandName": "2026年12月当归黄芪采购",
+      "demandDaysAgo": 4,
+      "expectedDeliveryDaysAhead": 30,
+      "receivingAddress": "甘肃省定西市岷县工业园区 1 号",
+      "remark": "",
+      "items": [
+        {
+          "productName": "当归",
+          "quantity": 5000,
+          "quantityUnit": "公斤",
+          "specification": "全归片，无硫",
+          "qualityRequirement": "无霉变、含水率≤13%",
+          "targetPrice": 18,
+          "priceUnit": "元/公斤",
+          "sortOrder": 0,
+          "remark": "分批到货"
+        },
+        {
+          "productName": "黄芪",
+          "quantity": 3000,
+          "quantityUnit": "公斤",
+          "specification": "条芪，长 30cm 以上",
+          "qualityRequirement": "无霉变、含水率≤12%",
+          "targetPrice": 12.5,
+          "priceUnit": "元/公斤",
+          "sortOrder": 1,
+          "remark": ""
+        }
+      ]
+    },
+    {
+      "vendorKey": "VENDOR-01",
+      "demandNo": "PD202701050002",
+      "demandName": "2027年1月党参补货",
+      "demandDaysAgo": 2,
+      "expectedDeliveryDaysAhead": 30,
+      "receivingAddress": "甘肃省定西市岷县工业园区 1 号",
+      "remark": "",
+      "items": [
+        {
+          "productName": "党参",
+          "quantity": 2000,
+          "quantityUnit": "公斤",
+          "specification": "白条党参，统货",
+          "qualityRequirement": "无硫、无虫蛀",
+          "targetPrice": 21,
+          "priceUnit": "元/公斤",
+          "sortOrder": 0,
+          "remark": "春节前到货"
+        }
+      ]
+    },
+    {
+      "vendorKey": "VENDOR-02",
+      "demandNo": "PD202611200003",
+      "demandName": "冬季三七金银花备货",
+      "demandDaysAgo": 7,
+      "expectedDeliveryDaysAhead": 30,
+      "receivingAddress": "广东省广州市白云区石井街潭村",
+      "remark": "",
+      "items": [
+        {
+          "productName": "三七",
+          "quantity": 800,
+          "quantityUnit": "公斤",
+          "specification": "20 头，滑头七",
+          "qualityRequirement": "无霉变、含水率≤14%",
+          "targetPrice": 125,
+          "priceUnit": "元/公斤",
+          "sortOrder": 0,
+          "remark": ""
+        },
+        {
+          "productName": "金银花",
+          "quantity": 500,
+          "quantityUnit": "公斤",
+          "specification": "头茬一级",
+          "qualityRequirement": "色泽青绿、无枝叶",
+          "targetPrice": 95,
+          "priceUnit": "元/公斤",
+          "sortOrder": 1,
+          "remark": "需附检测报告"
+        }
+      ]
+    },
+    {
+      "vendorKey": "VENDOR-03",
+      "demandNo": "PD202611150004",
+      "demandName": "白术年度框架采购",
+      "demandDaysAgo": 11,
+      "expectedDeliveryDaysAhead": 30,
+      "receivingAddress": "北京市大兴区生物医药基地",
+      "remark": "",
+      "items": [
+        {
+          "productName": "白术",
+          "quantity": 1000,
+          "quantityUnit": "公斤",
+          "specification": "统货，个头均匀",
+          "qualityRequirement": "无硫、无杂质",
+          "targetPrice": 45,
+          "priceUnit": "元/公斤",
+          "sortOrder": 0,
+          "remark": "需 GAP 溯源"
+        }
+      ]
+    },
+    {
+      "vendorKey": "VENDOR-04",
+      "demandNo": "PD202611080005",
+      "demandName": "白芍试单采购",
+      "demandDaysAgo": 16,
+      "expectedDeliveryDaysAhead": 30,
+      "receivingAddress": "安徽省亳州市谯城区药都大道",
+      "remark": "",
+      "items": [
+        {
+          "productName": "白芍",
+          "quantity": 800,
+          "quantityUnit": "公斤",
+          "specification": "条直，去皮统货",
+          "qualityRequirement": "无硫、无霉变",
+          "targetPrice": 37,
+          "priceUnit": "元/公斤",
+          "sortOrder": 0,
+          "remark": "首批试单"
+        }
+      ]
+    }
+  ]
+}

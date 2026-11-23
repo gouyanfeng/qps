@@ -124,27 +124,12 @@ else
     logger.LogInformation("数据库创建完成。");
 }
 
-if (app.Environment.IsDevelopment())
-{
-    var workspaceDirectory = new DirectoryInfo(app.Environment.ContentRootPath);
-    while (workspaceDirectory is not null &&
-           !Directory.Exists(Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock")))
-    {
-        workspaceDirectory = workspaceDirectory.Parent;
-    }
+// 商城种子数据：与 System 基线数据同一策略，首次运行（库内无商城数据）时自动写入，
+// 数据随程序集内嵌发布，开发与生产环境行为一致。
+await MallMockDataSeeder.SeedAsync(dbContext, logger);
 
-    var mockPath = workspaceDirectory is null
-        ? string.Empty
-        : Path.Combine(workspaceDirectory.FullName, "mobile", "src", "mock");
-    if (Directory.Exists(mockPath))
-    {
-        await MallMockDataSeeder.SeedAsync(dbContext, logger, mockPath);
-    }
-    else
-    {
-        logger.LogWarning("⚠️  Mock 数据目录不存在: {Path}", mockPath);
-    }
-}
+// CRM 种子数据：同一策略，首次运行（库内无 CRM 数据）时写入示例基地/厂商/采购/联系人数据。
+await CrmMockDataSeeder.SeedAsync(dbContext, logger);
 
 #endregion
 

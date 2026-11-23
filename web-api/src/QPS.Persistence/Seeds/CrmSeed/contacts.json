@@ -1,0 +1,121 @@
+{
+  "contacts": [
+    {
+      "key": "CT-SUB-01",
+      "entityType": "subject",
+      "entityKey": "SUB-01",
+      "contactName": "张建国",
+      "phone": "13809321234",
+      "phoneType": "手机",
+      "wechat": "zhangjg_mx",
+      "roleName": "合作社负责人",
+      "isPrimary": true,
+      "status": "已验证",
+      "remark": "合作社理事长，可直接决策。"
+    },
+    {
+      "key": "CT-SUB-02",
+      "entityType": "subject",
+      "entityKey": "SUB-02",
+      "contactName": "李长顺",
+      "phone": "13993287788",
+      "phoneType": "手机",
+      "wechat": "lichsh_lx",
+      "roleName": "合作社负责人",
+      "isPrimary": true,
+      "status": "已验证",
+      "remark": "黄芪、党参双品类负责人。"
+    },
+    {
+      "key": "CT-SUB-03",
+      "entityType": "subject",
+      "entityKey": "SUB-03",
+      "contactName": "王秀芬",
+      "phone": "13887654321",
+      "phoneType": "手机",
+      "wechat": "wangxf_ws",
+      "roleName": "家庭农场负责人",
+      "isPrimary": true,
+      "status": "未验证",
+      "remark": "三七种植户，需实地核实规模。"
+    },
+    {
+      "key": "CT-SUB-04",
+      "entityType": "subject",
+      "entityKey": "SUB-04",
+      "contactName": "陈美玲",
+      "phone": "13867890123",
+      "phoneType": "手机",
+      "wechat": "chenml_pa",
+      "roleName": "基地负责人",
+      "isPrimary": false,
+      "status": "已验证",
+      "remark": "白术基地日常对接人。"
+    },
+    {
+      "key": "CT-SUB-05",
+      "entityType": "subject",
+      "entityKey": "SUB-05",
+      "contactName": "孙立国",
+      "phone": "13954981234",
+      "phoneType": "手机",
+      "wechat": "sunlg_py",
+      "roleName": "合作社负责人",
+      "isPrimary": true,
+      "status": "未验证",
+      "remark": "金银花合作社负责人，电话待二次确认。"
+    },
+    {
+      "key": "CT-VENDOR-01",
+      "entityType": "vendor",
+      "entityKey": "VENDOR-01",
+      "contactName": "马国庆",
+      "phone": "13919876543",
+      "phoneType": "手机",
+      "wechat": "magq_mh",
+      "roleName": "采购",
+      "isPrimary": true,
+      "status": "已验证",
+      "remark": "岷海制药采购部经理。"
+    },
+    {
+      "key": "CT-VENDOR-02",
+      "entityType": "vendor",
+      "entityKey": "VENDOR-02",
+      "contactName": "陈志强",
+      "phone": "13602012345",
+      "phoneType": "手机",
+      "wechat": "chenzq_bys",
+      "roleName": "采购",
+      "isPrimary": true,
+      "status": "已验证",
+      "remark": "白云山饮片采购主管。"
+    },
+    {
+      "key": "CT-VENDOR-03",
+      "entityType": "vendor",
+      "entityKey": "VENDOR-03",
+      "contactName": "刘敏",
+      "phone": "13811223344",
+      "phoneType": "手机",
+      "wechat": "liumin_trt",
+      "roleName": "采购",
+      "isPrimary": true,
+      "status": "未验证",
+      "remark": "同仁堂健康药业采购专员。"
+    },
+    {
+      "key": "CT-VENDOR-04",
+      "entityType": "vendor",
+      "entityKey": "VENDOR-04",
+      "contactName": "赵德海",
+      "phone": "13905556677",
+      "phoneType": "手机",
+      "wechat": "zhaodh_jrt",
+      "roleName": "采购",
+      "isPrimary": true,
+      "status": "未验证",
+      "remark": "亳州济仁堂采购负责人。"
+    }
+  ]
+}
