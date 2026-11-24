@@ -68,6 +68,7 @@ interface MallBanner {
 function mapBanner(b: MallBanner): Banner {
   return {
     id: b.id,
+    // API 只返回原图地址，列表/轮播的缩略尺寸由 q-image 的 width 决定
     image: resolveFileUrl(b.imageUrl),
     title: b.title,
     link: b.linkValue || '',

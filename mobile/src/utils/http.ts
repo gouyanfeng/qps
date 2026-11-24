@@ -133,14 +133,26 @@ function handleUnauthorized(path: string): UnauthorizedError {
 }
 
 /**
- * 把后端返回的文件地址补全为可直接加载的 URL。
- * 本地静态资源（/static）与绝对地址原样返回，上传目录等相对路径拼接 API 基址。
+ * 把后端返回的文件名拼接为可直接加载的 URL。
+ * 本地静态资源（/static）与绝对地址原样返回；其余按约定补 uploads 目录。
  */
 export function resolveFileUrl(path?: string | null): string {
   if (!path) return ''
   if (/^(https?:)?\/\//i.test(path) || path.startsWith('data:')) return path
   if (path.startsWith('/static/')) return path
-  return `${FILE_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+  return `${FILE_BASE_URL}/uploads/${path}`
+}
+
+/**
+ * 取缩略图地址：列表等小尺寸场景用它，避免直出原图拖慢加载。
+ * 走阿里云 OSS 图片处理（IMG），服务端实时缩放，原图不动、任意尺寸可用；
+ * 非 OSS 来源（外链/本地静态资源）原样返回。
+ */
+export function resolveThumbUrl(path?: string | null, width = 120): string {
+  const url = resolveFileUrl(path)
+  if (!url || !/^https?:\/\//i.test(url) || !/aliyuncs\.com/i.test(url)) return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}x-oss-process=image/resize,m_lfit,w_${width}/quality,q_80`
 }
 
 export function request<T>(

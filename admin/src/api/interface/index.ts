@@ -14,7 +14,9 @@ export interface ReqPage {
 
 export namespace Upload {
   export interface ResFileUrl {
+    /** 平铺文件名，不含目录；展示时前端用 resolveFileUrl 自行拼接 */
     fileUrl: string;
+    /** 缩略图文件名；老后端未返回或生成失败时等于 fileUrl */
   }
 }
 

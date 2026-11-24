@@ -63,10 +63,12 @@
           </view>
         </view>
         <view v-if="afterSaleView.evidenceImages.length" class="as-images">
-          <image
+          <q-image
             v-for="(img, index) in afterSaleView.evidenceImages"
             :key="img + index"
-            :src="resolveFileUrl(img)"
+            :src="img"
+            thumb
+            :width="120"
             mode="aspectFill"
             @tap="previewEvidence(index)"
           />
@@ -167,7 +169,7 @@
 
         <view v-for="item in order.items" :key="item.id" class="prod-item">
           <view class="prod-img">
-            <q-cached-image :src="resolveFileUrl(item.productImage) || placeholderImg" mode="aspectFill" />
+            <q-image :src="item.productImage || placeholderImg" thumb :width="120" mode="aspectFill" />
             <view class="prod-tag" v-if="item.badge">{{ item.badge }}</view>
           </view>
           <view class="prod-info">

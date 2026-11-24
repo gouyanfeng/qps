@@ -43,7 +43,7 @@ CrmBusinessEntityAttributeController.SaveAttributes
 # --- CrmFollowTaskController（2 条）
 CrmFollowTaskController.Get
 CrmFollowTaskController.GetOverview
-# --- CrmHerbBaseController（23 条）
+# --- CrmHerbBaseController（24 条）
 CrmHerbBaseController.ChangeHerbBaseSubjectOwner
 CrmHerbBaseController.ChangeSupplyStatus
 CrmHerbBaseController.CreateCustomer
@@ -54,6 +54,7 @@ CrmHerbBaseController.DeleteCustomer
 CrmHerbBaseController.DeleteSupply
 CrmHerbBaseController.GetCustomer
 CrmHerbBaseController.GetCustomers
+CrmHerbBaseController.GetMap
 CrmHerbBaseController.GetHerbBaseSubject
 CrmHerbBaseController.GetHerbBaseSubjects
 CrmHerbBaseController.GetSubjectContacts
@@ -88,8 +89,7 @@ CrmVendorController.SetPrimaryContact
 CrmVendorController.UpdateContact
 CrmVendorController.UpdateContactStatus
 CrmVendorController.UpdateVendor
-# --- CrmVendorDemandController（6 条）
-CrmVendorDemandController.ChangeStatus
+# --- CrmVendorDemandController（5 条）
 CrmVendorDemandController.Create
 CrmVendorDemandController.Delete
 CrmVendorDemandController.Get

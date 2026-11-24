@@ -64,7 +64,7 @@
             @click="goToProductDetail(p.id)"
           >
             <view class="thumb">
-              <q-cached-image :src="p.images[0]" mode="aspectFill" class="thumb-img" />
+              <q-image :src="p.images[0]" thumb :width="375" mode="aspectFill" class="thumb-img" />
               <view v-if="p.promotionBadgeText" class="promo-corner" :style="{ backgroundColor: p.promotionBadgeColor || '#C2410C' }">
                 <text class="promo-corner-text">{{ p.promotionBadgeText }}</text>
               </view>

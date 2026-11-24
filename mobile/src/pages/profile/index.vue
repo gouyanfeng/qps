@@ -9,7 +9,7 @@
         <view class="hero-top">
           <view class="user-row" @click="openAccount">
             <view class="avatar-ring">
-              <image class="avatar-img" :src="'/static/images/avatar-elder.jpg'" mode="aspectFill" />
+              <q-image class="avatar-img" :src="'/static/images/avatar-elder.jpg'" mode="aspectFill" />
               <view class="cert-badge">
                 <q-icon name="check" size="14" color="#ffffff" />
               </view>
@@ -147,7 +147,7 @@
         </text>
 
         <view class="formula-card" @click="goService('prescription')">
-          <image class="formula-img" :src="'/static/images/herb-ginseng-lily.jpg'" mode="aspectFill" />
+          <q-image class="formula-img" :src="'/static/images/herb-ginseng-lily.jpg'" mode="aspectFill" />
           <view class="formula-info">
             <text class="formula-name">长白山鲜人参 &amp; 浙贝母润肺饮</text>
             <view class="formula-tags">

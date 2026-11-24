@@ -59,7 +59,7 @@
         </view>
         <view class="goods-list">
           <view class="goods-item" v-for="item in items" :key="item.productId">
-            <q-cached-image class="goods-img" :src="item.productImage" mode="aspectFill" />
+            <q-image class="goods-img" :src="item.productImage" thumb :width="120" mode="aspectFill" />
             <view class="goods-info">
               <view class="goods-name">{{ item.productName }}</view>
               <view class="goods-spec">{{ item.specName }}</view>
@@ -77,7 +77,7 @@
             <text>赠品（随单赠送，¥0 不参与金额）</text>
           </view>
           <view v-for="gift in gifts" :key="gift.skuId" class="gift-row">
-            <q-cached-image class="gift-img" :src="gift.productImage" mode="aspectFill" />
+            <q-image class="gift-img" :src="gift.productImage" thumb :width="120" mode="aspectFill" />
             <view class="gift-info">
               <view class="gift-name-line">
                 <text class="gift-name">{{ gift.productName }}</text>

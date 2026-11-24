@@ -8,9 +8,11 @@
       <!-- 商品信息 -->
       <view v-if="item" class="product-card">
         <view class="product-image">
-          <q-cached-image
+          <q-image
             v-if="item.productImage"
             :src="item.productImage"
+            thumb
+            :width="120"
             mode="aspectFill"
           />
           <q-icon v-else name="tea" size="28" color="#BDBDBD" />
@@ -84,7 +86,7 @@
         </view>
         <view class="image-grid">
           <view v-for="(img, idx) in images" :key="img" class="image-cell">
-            <image :src="resolveFileUrl(img)" mode="aspectFill" @click="previewImage(idx)" />
+            <q-image :src="img" thumb :width="120" mode="aspectFill" @click="previewImage(idx)" />
             <view class="image-delete" @click.stop="removeImage(idx)">
               <q-icon name="close" size="12" color="#ffffff" />
             </view>

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using QPS.Crm.Contracts;
 using QPS.Crm.Contracts.DTOs;
 using QPS.Crm.Contracts.DTOs.CrmHerbBases;
 using QPS.Crm.Application.Features.CrmHerbBaseSubjects;
@@ -61,11 +62,11 @@ public class CrmHerbBaseCommandTests
     }
 
     [Fact]
-    public async Task GetSubjectList_ShouldAggregateSupplyProductName_AndFilterByProductName()
+    public async Task GetSubjectList_ShouldAggregateBaseProductAttributes_AndFilterByProductName()
     {
         await using var dbContext = TestDbContextFactory.Create();
-        var matchingSubject = AddSubjectWithSupply(dbContext, "Supply Astragalus Subject", "黄芪");
-        AddSubjectWithSupply(dbContext, "Supply Angelica Subject", "当归");
+        var matchingSubject = AddSubjectWithProduct(dbContext, "Supply Astragalus Subject", "黄芪");
+        AddSubjectWithProduct(dbContext, "Supply Angelica Subject", "当归");
         await dbContext.SaveChangesAsync();
 
         var handler = new GetCrmHerbBaseSubjectsHandler(dbContext);
@@ -117,7 +118,7 @@ public class CrmHerbBaseCommandTests
         Assert.Equal(0, list.TotalCount);
     }
 
-    private static CrmHerbBaseSubject AddSubjectWithSupply(
+    private static CrmHerbBaseSubject AddSubjectWithProduct(
         QPS.Persistence.Database.AppDbContext dbContext,
         string subjectName,
         string productName)
@@ -127,9 +128,12 @@ public class CrmHerbBaseCommandTests
         herbBase.SetHerbBaseSubject(subject.Id);
         dbContext.CrmHerbBaseSubjects.Add(subject);
         dbContext.CrmHerbBases.Add(herbBase);
-        dbContext.CrmHerbBaseSupplies.Add(CrmHerbBaseSupply.Create(
-            herbBase.Id, subject.Id, productName, null, string.Empty, string.Empty, string.Empty,
-            string.Empty, null, string.Empty, string.Empty, null, null, string.Empty));
+        // 品类唯一来源：基地级业务属性（供应记录只是已挂出的货，不代表基地品类）
+        dbContext.CrmBusinessEntityAttributes.Add(new CrmBusinessEntityAttribute(
+            CrmCodes.HerbBaseEntityType,
+            herbBase.Id,
+            CrmCodes.AttributeCodes.HerbBaseProduct,
+            productName));
         return subject;
     }
 }

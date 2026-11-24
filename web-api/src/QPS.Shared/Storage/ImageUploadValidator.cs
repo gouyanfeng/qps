@@ -52,21 +52,9 @@ public static class ImageUploadValidator
     }
 
     /// <summary>
-    /// 场景归一：不在白名单内的场景一律落到 fallback，避免任意目录被创建。
+    /// 生成平铺文件名：{guid}{ext}，不含任何目录。
+    /// 存储归一化与前端 URL 拼接各自负责前缀，文件名本身保持中性。
     /// </summary>
-    public static string NormalizeScene(string? scene, IReadOnlySet<string> allowedScenes, string fallback)
-    {
-        if (string.IsNullOrWhiteSpace(scene) || !allowedScenes.Contains(scene))
-        {
-            return fallback;
-        }
-
-        return scene.ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// 生成 relativePath：{scene}/{yyyyMM}/{guid}{ext}，统一 "/" 分隔以兼容 Linux 容器。
-    /// </summary>
-    public static string BuildRelativePath(string scene, string extension)
-        => $"{scene}/{DateTime.Now:yyyyMM}/{Guid.NewGuid():N}{extension}";
+    public static string BuildFileName(string extension)
+        => $"{Guid.NewGuid():N}{extension}";
 }

@@ -15,7 +15,7 @@
           @change="onSwiperChange"
         >
           <swiper-item v-for="(img, idx) in product.images" :key="idx">
-            <q-cached-image :src="img" mode="aspectFill" class="swiper-img" />
+            <q-image :src="img" mode="aspectFill" class="swiper-img" />
           </swiper-item>
         </swiper>
 
@@ -198,11 +198,13 @@
             </view>
             <text class="review-content">{{ review.content }}</text>
             <view v-if="review.images.length" class="review-images">
-              <q-cached-image
+              <q-image
                 v-for="(img, imgIdx) in review.images"
                 :key="imgIdx"
                 class="review-image"
                 :src="img"
+                thumb
+                :width="120"
                 mode="aspectFill"
                 @click="previewReviewImages(review.images, imgIdx)"
               />
@@ -410,11 +412,11 @@ const crossedPrice = computed(() => {
   return sku.discountedPrice !== null && sku.discountedPrice < sku.price ? sku.price : 0
 })
 
-// 详情富文本里的相对图片地址补全为可访问的完整地址
+// 详情富文本里的文件名补全为可访问的完整地址（绝对路径由 resolveFileUrl 原样返回）
 const detailHtml = computed(() => {
   const html = product.value?.detailHtml ?? ''
   if (!html) return ''
-  return html.replace(/src="(\/uploads\/[^"]*)"/g, (_match, path: string) => `src="${resolveFileUrl(path)}"`)
+  return html.replace(/src="([^"]+)"/g, (_match, url: string) => `src="${resolveFileUrl(url)}"`)
 })
 
 // 无评价时整张口碑卡不渲染

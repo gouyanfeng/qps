@@ -7,18 +7,13 @@ namespace QPS.Mall.Controllers;
 
 /// <summary>
 /// 移动端会员图片上传：评价晒图、售后凭证。
+/// 文件平铺存储，接口只返回文件名，URL 由前端自行拼接。
 /// </summary>
 [ApiController]
 [Route("api/mall/file")]
 [Authorize(Policy = "MallMember")]
 public class MallMemberFileController : ControllerBase
 {
-    private static readonly HashSet<string> AllowedScenes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "review",
-        "aftersale"
-    };
-
     private readonly IFileStorage _storage;
 
     public MallMemberFileController(IFileStorage storage)
@@ -27,23 +22,20 @@ public class MallMemberFileController : ControllerBase
     }
 
     /// <summary>
-    /// 上传评价图片，返回可直接访问的相对地址。
+    /// 上传评价/售后图片，仅返回文件名。
     /// </summary>
     [HttpPost("upload/img")]
     [RequestSizeLimit(ImageUploadValidator.MaxFileSize + 1024 * 1024)]
     public async Task<ActionResult<object>> UploadImage(
         IFormFile? file,
-        string scene = "review",
         CancellationToken cancellationToken = default)
     {
         var (photo, extension) = ImageUploadValidator.Validate(file);
-
-        var normalizedScene = ImageUploadValidator.NormalizeScene(scene, AllowedScenes, "review");
-        var relativePath = ImageUploadValidator.BuildRelativePath(normalizedScene, extension);
+        var fileName = ImageUploadValidator.BuildFileName(extension);
 
         await using var stream = photo.OpenReadStream();
-        var fileUrl = await _storage.SaveAsync(relativePath, stream, photo.ContentType, cancellationToken);
+        await _storage.SaveAsync(fileName, stream, photo.ContentType, cancellationToken);
 
-        return Ok(new { fileUrl });
+        return Ok(new { fileUrl = fileName });
     }
 }

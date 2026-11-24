@@ -22,7 +22,7 @@
 | 路径 | 说明 |
 |---|---|
 | `src/pages/` | 页面：`index`（首页）、`category`（分类）、`cart`（购物车）、`profile`（我的）、`product-detail`（商品详情）、`checkout`（确认订单）、`login`（登录）、`search`（搜索，未注册） |
-| `src/components/` | 通用组件：`q-icon`（图标）、`q-page-header`（普通顶栏外壳）、`q-page-header-back`（带返回键顶栏），easycom 自动注册 |
+| `src/components/` | 通用组件：`q-icon`（图标）、`q-image`（图片，原图/缩略图/本地缓存）、`q-page-header`（普通顶栏外壳）、`q-page-header-back`（带返回键顶栏），easycom 自动注册 |
 | `src/icons/` | 图标字体子集（`iconfont.scss`）与码位映射（`iconfont.ts`） |
 | `src/mock/` | `products.json` 等静态数据 |
 | `src/api/` | mock API 层，购物车种子数据与持久化 key |
@@ -97,7 +97,7 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 
 ## 组件规范（强制执行）
 
-- **已有封装组件必须使用**：`q-icon`、`q-page-header`、`q-page-header-back` 等 `src/components` 下的封装组件，开发页面时**必须优先使用**，不得绕过已有封装自行编写功能相同的组件。
+- **已有封装组件必须使用**：`q-icon`、`q-image`、`q-page-header`、`q-page-header-back` 等 `src/components` 下的封装组件，开发页面时**必须优先使用**，不得绕过已有封装自行编写功能相同的组件。
 - **禁止修改基础组件**：`src/components` 下的所有组件（`q-icon`、`q-page-header`、`q-page-header-back` 等）**严禁直接修改**。如需扩展功能或修复缺陷，必须先向负责人说明原因和影响范围，**得到明确确认后才能修改**。未经确认的改动一律退回。
 - 未获确认时，只允许在业务页面内部自行处理，不得触碰共享组件。
 
@@ -108,7 +108,14 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 - 组件保持简单：props 只描述数据与状态（如 `background` / `gap` / `border`），**不要**把页面布局（左中右排布、标题字号、文案）塞进组件
 - 组件内部不写业务数据、不做页面跳转；交互通过 `emits` 交回页面
 - 新增前先比较各页实现：差异大（如首页与分类的商品卡片）就不要强行合并，避免组件堆满条件分支
-- 现有组件：`q-icon`（字体图标）、`q-page-header`（普通顶栏外壳，默认插槽 + 3 个属性）、`q-page-header-back`（带返回键顶栏）
+- 现有组件：`q-icon`（字体图标）、`q-image`（图片，见下）、`q-page-header`（普通顶栏外壳，默认插槽 + 3 个属性）、`q-page-header-back`（带返回键顶栏）
+
+### 图片规范（强制执行）
+
+- **所有图片只用 `<q-image>`**，页面里禁止再写裸 `<image>`（`q-image` 组件内部的条件编译除外），也不要在页面里散落 `resolveThumbUrl` / `resolveFileUrl` 调用。
+- `src` 传后端返回的**纯文件名**、完整 URL 或 `/static/` 本地路径；`q-image` 内部统一拼 URL、决定缩略图与缓存。
+- `thumb` 布尔开关：`false` / 不传 = 原图（商品详情轮播、点击预览、本地静态图）；`true` = 缩略图（列表卡片、图标、晒图），`width` 只作尺寸参数（默认 120，按场景传 120/375/750）。**不要用 `width>0` 隐式判断是否缩略图**。
+- 缩略图走阿里云 OSS IMG 读时处理，非 OSS 来源原样返回；非 H5 平台的本地缓存以最终 URL 为键，原图与缩略图各自独立缓存，坏缓存自动清理回退网络图。
 
 ## 页面与样式约定
 

@@ -60,7 +60,8 @@ public sealed class LocalFileStorage : IFileStorage
             .Replace('\\', '/')
             .Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        if (segments.Length < 2 || segments.Any(segment => segment is "." or ".."))
+        // 文件名即相对路径，允许只有一段（平铺存储）；仍禁止 . / .. 越界。
+        if (segments.Length < 1 || segments.Any(segment => segment is "." or ".."))
         {
             throw new ArgumentException($"非法的相对路径：{relativePath}", nameof(relativePath));
         }

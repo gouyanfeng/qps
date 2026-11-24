@@ -10,7 +10,7 @@ const adminBaseUrl = process.env.ADMIN_BASE_URL || "http://127.0.0.1:5173";
 export default defineConfig({
   testDir: rootDir,
   testMatch: /.*\.spec\.(mjs|ts)/,
-  testIgnore: /system-management\.real-ui\.spec\.ts/,
+  testIgnore: /(system-management\.real-ui\.spec\.ts|comfy-images)/,
   timeout: 120_000,
   expect: {
     timeout: 15_000

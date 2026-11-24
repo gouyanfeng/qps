@@ -6,6 +6,7 @@ using QPS.Mall.Application.Features.MallCoupons;
 using QPS.Mall.Application.Features.MallProducts;
 using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Domain.Services;
+using QPS.Shared.Storage;
 
 namespace QPS.Mall;
 
