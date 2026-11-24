@@ -72,15 +72,16 @@ tests/
 
 ## 文件存储
 
-上传通过 `IFileStorage` 抽象落地：契约与校验在 `QPS.Shared/Storage`，实现（`LocalFileStorage` / `OssFileStorage`）在 `QPS.Host/Storage`，由 `Storage:Provider` 决定。两种模式返回同一套 `/uploads/...` 相对地址，前端无需区分。
+上传通过 `IFileStorage` 抽象落地：契约与校验在 `QPS.Shared/Storage`，实现（`LocalFileStorage` / `OssFileStorage`）在 `QPS.Host/Storage`，由 `Storage:Provider` 决定。文件**平铺存储**，接口只返回纯文件名（如 `d98312314da841cfa4f7d7f938f82d46.png`），完整 URL 由前端按 `VITE_FILE_BASE_URL` 拼接，两种模式对前端一致。
 
 | Provider | 落点 | 访问方式 |
 | --- | --- | --- |
-| `Local`（默认） | `ContentRoot/wwwroot/uploads/{scene}/{yyyyMM}/`，容器内挂 `qps-uploads` 数据卷 | api 静态文件直出，网关 `/uploads/` 或其自身对外 |
-| `Oss` | 阿里云 OSS 对象 `uploads/{scene}/{yyyyMM}/` | 前端拼 `VITE_FILE_BASE_URL` 访问 Bucket 域名 |
+| `Local`（默认） | `ContentRoot/wwwroot/uploads/{guid}.{ext}`，容器内挂 `qps-uploads` 数据卷 | api 静态文件直出，网关 `/uploads/` 或其自身对外 |
+| `Oss` | 阿里云 OSS 对象 `uploads/{guid}.{ext}` | 前端拼 `VITE_FILE_BASE_URL` 访问 Bucket 域名 |
 
-- 场景白名单：管理端 `product/category/banner/activity/avatar/common`，会员端 `review/aftersale`
+- 上传接口不再接收 `scene` 参数，也不再生成 `{scene}/{yyyyMM}/` 子目录或后端缩略图；前端不要把缩略图参数回写进表单的文件名字段
 - 限制：单图 ≤5MB，仅 jpg/jpeg/png/gif/webp，文件名统一为 GUID
+- 缩略图由前端统一走阿里云 OSS 图片处理（IMG）：在 URL 后追加 `x-oss-process=image/resize,m_lfit,w_{width}/quality,q_80`，原图不动、任意尺寸可用；详情页与点击预览仍用原图
 - 默认走 `Local`；切 OSS 时把凭据写进 `appsettings.Local.json`（与 `appsettings.json` 同目录，**不入库**，加载优先级最高），本地 `dotnet run` 立即生效
 - 容器部署：根目录 `.env` 一份即可，启动 `docker compose up -d`；**仓库里保存的是占位符版本**（真实密钥会被 GitHub Push Protection 拦截），本机与服务器各自把 `OSS_ACCESS_KEY_ID/SECRET` 等占位符换成真实值即可，提交时不要把 `.env` 一起 `git add`
 - 图片可访问性：上传后按 `Storage:Oss:ObjectAcl`（默认 `public-read`）给**单个对象**授权，Bucket 保持私有也能读；若账号开了「阻止公共访问」，该授权会被 OSS 拒绝（`Put public object acl is not allowed`），此时需关闭该开关或改走 CDN/签名 URL
