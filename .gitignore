@@ -8,6 +8,9 @@ test-results/
 /agent-temp/
 /ui-tests/*
 !/ui-tests/full-flow/
+!/ui-tests/comfy-images/
+/ui-tests/comfy-images/_*.mjs
+/ui-tests/comfy-images/playwright.config.ts
 !/ui-tests/crm-flow-helpers.mjs
 !/ui-tests/playwright.config.ts
 !/ui-tests/package.json
