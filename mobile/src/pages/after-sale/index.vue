@@ -102,7 +102,7 @@
           </view>
           <view class="image-grid">
             <view v-for="(img, idx) in images" :key="img" class="image-cell">
-              <image :src="resolveFileUrl(img)" mode="aspectFill" @click="previewImage(idx)" />
+              <q-image :src="img" thumb :width="120" mode="aspectFill" @click="previewImage(idx)" />
               <view class="image-delete" @click.stop="removeImage(idx)">
                 <q-icon name="close" size="12" color="#ffffff" />
               </view>

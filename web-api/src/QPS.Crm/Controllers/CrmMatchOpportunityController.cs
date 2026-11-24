@@ -72,7 +72,10 @@ public class CrmMatchOpportunityController(IMediator mediator) : ControllerBase
 
     [HttpDelete("match-opportunities/{id:guid}/items/{itemId:guid}")]
     public async Task<ActionResult<bool>> RemoveItem(Guid id, Guid itemId)
-        => Ok(await mediator.Send(new RemoveCrmMatchOpportunityItemCommand { OpportunityId = id, ItemId = itemId }));
+    {
+        // 块体写法：权限护栏通过方法体识别 MediatR 请求类型（表达式体提取不到会误报缺失）
+        return Ok(await mediator.Send(new RemoveCrmMatchOpportunityItemCommand { OpportunityId = id, ItemId = itemId }));
+    }
 
     [HttpPatch("match-opportunities/{id:guid}/progress")]
     public async Task<ActionResult<bool>> Advance(

@@ -18,7 +18,7 @@
     <scroll-view scroll-y class="page-body" enhanced>
       <swiper v-if="banners.length" class="catalog-banner" autoplay circular indicator-dots>
         <swiper-item v-for="banner in banners" :key="banner.id" @click="handleBannerClick(banner)">
-          <q-cached-image :src="banner.image" mode="aspectFill" class="catalog-banner-image" />
+          <q-image :src="banner.image" thumb :width="750" mode="aspectFill" class="catalog-banner-image" />
           <view class="catalog-banner-title">{{ banner.title }}</view>
         </swiper-item>
       </swiper>
@@ -54,7 +54,7 @@
           class="category-item"
           @click="goToCategory(item.id)"
         >
-          <q-cached-image v-if="item.icon" class="category-dot" :src="item.icon" mode="aspectFill" />
+          <q-image v-if="item.icon" class="category-dot" :src="item.icon" thumb :width="120" mode="aspectFill" />
           <view v-else class="category-dot category-dot-empty">
             <q-icon name="tea" size="36" color="#2E7D32" />
           </view>
@@ -64,7 +64,7 @@
 
       <!-- ===== 节气养生卡 ===== -->
       <view v-if="solarBanner" class="solar-card" @click="handleSolarClick">
-        <image :src="solarBanner.image" mode="widthFix" class="solar-banner-image" />
+        <q-image :src="solarBanner.image" thumb :width="750" mode="widthFix" class="solar-banner-image" />
       </view>
 
       <!-- ===== 道地精选商品网格 ===== -->
@@ -87,7 +87,7 @@
             class="product-card"
             @click="goToProductDetail(p.id)"
           >
-            <q-cached-image :src="p.image" mode="aspectFill" class="product-image" />
+            <q-image :src="p.image" thumb :width="375" mode="aspectFill" class="product-image" />
             <view v-if="p.promoBadge" class="promo-corner" :style="{ backgroundColor: p.promoBadge.color }">
               <text class="promo-corner-text">{{ p.promoBadge.name }}</text>
             </view>

@@ -36,7 +36,7 @@ public sealed class OssStorageOptions
 
     public string AccessKeySecret { get; init; } = string.Empty;
 
-    /// <summary>对象键前缀，落到 OSS 上就是 uploads/product/202611/xxx.png。</summary>
+    /// <summary>对象键前缀，文件平铺存储在 uploads/ 下，如 uploads/xxx.png。</summary>
     public string Prefix { get; init; } = "uploads";
 
     /// <summary>

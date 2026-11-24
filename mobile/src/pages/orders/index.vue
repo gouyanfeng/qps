@@ -82,10 +82,12 @@
             @tap="goDetail(order.orderNo)"
           >
             <view class="item-image-wrap">
-              <q-cached-image
+              <q-image
                 v-if="item.productImage"
                 class="item-image"
                 :src="item.productImage"
+                thumb
+                :width="120"
                 mode="aspectFill"
               />
               <view v-else class="item-image-placeholder">
@@ -156,7 +158,7 @@ import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getMyOrders, cancelOrder as apiCancelOrder, createPayment, simulatePayment, confirmReceipt as apiConfirmReceipt } from '@/api'
 import type { MallOrder, MallOrderItem } from '@/api'
-import { UnauthorizedError, resolveFileUrl } from '@/utils/http'
+import { UnauthorizedError } from '@/utils/http'
 
 const orders = ref<MallOrder[]>([])
 const loading = ref(false)

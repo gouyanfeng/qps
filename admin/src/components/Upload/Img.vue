@@ -15,7 +15,7 @@
       :accept="fileType.join(',')"
     >
       <template v-if="imageUrl">
-        <img :src="imageUrl" class="upload-image" />
+        <img :src="resolveFileUrl(imageUrl)" class="upload-image" />
         <div class="upload-handle" @click.stop>
           <div v-if="!self_disabled" class="handle-icon" @click="editImg">
             <el-icon><Edit /></el-icon>
@@ -43,13 +43,13 @@
     <div class="el-upload__tip">
       <slot name="tip"></slot>
     </div>
-    <el-image-viewer v-if="imgViewVisible" :url-list="[imageUrl]" @close="imgViewVisible = false" />
+    <el-image-viewer v-if="imgViewVisible" :url-list="[resolveFileUrl(imageUrl)]" @close="imgViewVisible = false" />
   </div>
 </template>
 
 <script setup lang="ts" name="UploadImg">
 import { ref, computed, inject } from "vue";
-import { generateUUID } from "@/utils";
+import { generateUUID, resolveFileUrl } from "@/utils";
 import { uploadImg } from "@/api/modules/system/upload";
 import { ElNotification, formContextKey, formItemContextKey } from "element-plus";
 import type { UploadProps, UploadRequestOptions } from "element-plus";
@@ -82,7 +82,9 @@ const props = withDefaults(defineProps<UploadFileProps>(), {
 // 生成组件唯一id
 const uuid = ref("id-" + generateUUID());
 
-// 查看图片
+// 后端只返回文件名，展示时由前端拼完整 URL；表单里始终存纯文件名。
+
+// 查看图片：始终看原图，保证清晰度
 const imgViewVisible = ref(false);
 // 获取 el-form 组件上下文
 const formContext = inject(formContextKey, void 0);

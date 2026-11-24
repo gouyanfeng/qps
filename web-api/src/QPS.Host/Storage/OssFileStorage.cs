@@ -7,7 +7,7 @@ using QPS.Shared.Storage;
 namespace QPS.Host.Storage;
 
 /// <summary>
-/// 阿里云 OSS 存储：对象键为 uploads/{scene}/{yyyyMM}/{guid}.ext，与本地目录结构一致。
+/// 阿里云 OSS 存储：对象键为 uploads/{fileName}，与本地平铺目录结构一致。
 /// 返回给前端的仍是 /uploads/... 相对地址，由前端拼上 VITE_FILE_BASE_URL 访问。
 /// Bucket 可保持私有，上传后按 ObjectAcl 给单个对象授权（默认 public-read），
 /// 这样浏览器能匿名读图，又不必把整个 Bucket 开放出去。

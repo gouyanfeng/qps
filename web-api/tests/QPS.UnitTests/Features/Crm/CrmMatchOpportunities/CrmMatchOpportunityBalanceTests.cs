@@ -44,7 +44,8 @@ public class CrmMatchOpportunityBalanceTests
             .OrderBy(item => item.SortOrder)
             .ToListAsync();
         Assert.Equal(2, items.Count);
-        Assert.Equal(400m, items[0].Quantity);
+        // 新模型：原明细保留成交量（300），空闲余量（100）另起一条
+        Assert.Equal(300m, items[0].Quantity);
         Assert.Equal(100m, items[1].Quantity);
         Assert.Equal("黄芪", items[1].ProductName);
         Assert.True(items[1].SortOrder > items[0].SortOrder);
@@ -127,16 +128,6 @@ public class CrmMatchOpportunityBalanceTests
         await dbContext.SaveChangesAsync();
 
         var opportunity = CrmMatchOpportunity.Create(
-            demandItem.Id,
-            demand.Id,
-            vendor.Id,
-            demandItem.ProductName,
-            source == "supply" ? supplyQuantity : demandQuantity,
-            demandItem.QuantityUnit,
-            demandItem.Specification,
-            demandItem.QualityRequirement,
-            demandItem.ExpectedDeliveryAt,
-            demand.ReceivingAddress,
             null,
             "核实数量",
             DateTime.Today.AddDays(3),
@@ -144,48 +135,24 @@ public class CrmMatchOpportunityBalanceTests
             source);
         dbContext.CrmMatchOpportunities.Add(opportunity);
 
-        var candidate = CrmMatchCandidate.Create(
+        // 发起方与候选统一落在明细子表：只存 EntityType + EntityId，数量等业务字段实时取原明细，不再存快照。
+        // 需求发起：采购明细为发起方，供应信息为中选候选；供应发起则相反。
+        var initiatorItem = CrmMatchOpportunityItem.Create(
             opportunity.Id,
-            supply.Id,
-            herbBase.Id,
-            null,
-            string.Empty,
-            herbBase.BaseName,
-            supply.ProductName,
-            supply.AvailableQuantity,
-            supply.QuantityUnit,
-            supply.Specification,
-            supply.QualityRequirement,
-            supply.ExpectedPrice,
-            supply.PriceUnit,
-            supply.SupplyCycle,
-            supply.ValidUntil,
-            1,
-            source == "supply" ? CrmMatchCandidate.Initiator : CrmMatchCandidate.Candidate);
-        candidate.Select();
-        dbContext.CrmMatchCandidates.Add(candidate);
+            source == "supply" ? CrmMatchOpportunityItem.EntityTypeSupply : CrmMatchOpportunityItem.EntityTypeDemand,
+            source == "supply" ? supply.Id : demandItem.Id,
+            CrmMatchOpportunityItem.Initiator,
+            1);
+        dbContext.CrmMatchOpportunityItems.Add(initiatorItem);
 
-        if (source == "supply")
-        {
-            var demandCandidate = CrmMatchOpportunityDemand.Create(
-                opportunity.Id,
-                demandItem.Id,
-                vendor.Id,
-                vendor.VendorName,
-                demandItem.ProductName,
-                demandQuantity,
-                demandItem.QuantityUnit,
-                demandItem.Specification,
-                demandItem.QualityRequirement,
-                demandItem.TargetPrice,
-                demandItem.PriceUnit,
-                demandItem.ExpectedDeliveryAt,
-                demand.ReceivingAddress,
-                CrmMatchOpportunityDemand.Candidate,
-                1);
-            demandCandidate.Select();
-            dbContext.CrmMatchOpportunityDemands.Add(demandCandidate);
-        }
+        var candidateItem = CrmMatchOpportunityItem.Create(
+            opportunity.Id,
+            source == "supply" ? CrmMatchOpportunityItem.EntityTypeDemand : CrmMatchOpportunityItem.EntityTypeSupply,
+            source == "supply" ? demandItem.Id : supply.Id,
+            CrmMatchOpportunityItem.Candidate,
+            1);
+        candidateItem.Select();
+        dbContext.CrmMatchOpportunityItems.Add(candidateItem);
 
         await dbContext.SaveChangesAsync();
 

@@ -68,7 +68,7 @@
 
               <!-- 2. 商品图 -->
               <view class="goods-image-wrap">
-                <q-cached-image :src="item.productImage" mode="aspectFill" class="goods-image" />
+                <q-image :src="item.productImage" thumb :width="120" mode="aspectFill" class="goods-image" />
                 <view v-if="item.promotionBadgeText" class="goods-badge" :style="{ backgroundColor: item.promotionBadgeColor || '#C2410C' }">
                   <text class="goods-badge-text">{{ item.promotionBadgeText }}</text>
                 </view>
@@ -141,7 +141,7 @@
               <text class="gift-block-text">赠品 · 已随选中商品赠送</text>
             </view>
             <view v-for="gift in gifts" :key="gift.skuId" class="gift-row">
-              <q-cached-image :src="gift.productImage" mode="aspectFill" class="gift-image" />
+              <q-image :src="gift.productImage" thumb :width="120" mode="aspectFill" class="gift-image" />
               <view class="gift-info">
                 <view class="gift-name-line">
                   <text class="gift-name">{{ gift.productName }}</text>

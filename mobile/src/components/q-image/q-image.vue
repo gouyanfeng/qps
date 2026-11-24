@@ -14,19 +14,29 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { resolveFileUrl } from '@/utils/http'
+import { resolveFileUrl, resolveThumbUrl } from '@/utils/http'
 
 const props = withDefaults(defineProps<{
+  /** 文件名、完整 URL 或 /static/ 本地路径 */
   src?: string | null
+  /** true=缩略图（阿里云 IMG 等比缩放），false/不传=原图 */
+  thumb?: boolean
+  /** 缩略图宽度，默认 120；仅 thumb=true 时生效，非 OSS 图片原样返回 */
+  width?: number
   mode?: string
 }>(), {
   src: '',
+  thumb: false,
+  width: 120,
   mode: 'aspectFill'
 })
 
 defineOptions({ inheritAttrs: false })
 
-const networkSrc = computed(() => resolveFileUrl(props.src))
+// 原图/缩略图由布尔开关显式决定，详情/预览不传 thumb 即原图
+const networkSrc = computed(() =>
+  props.thumb ? resolveThumbUrl(props.src, props.width) : resolveFileUrl(props.src)
+)
 
 // #ifndef H5
 import { useLocalImageCache } from '@/utils/imageCache'

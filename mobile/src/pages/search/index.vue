@@ -169,7 +169,7 @@
               @click="goToProductDetail(product.id)"
             >
               <view class="card-thumb">
-                <q-cached-image :src="product.images[0]" mode="aspectFill" class="thumb-img" />
+                <q-image :src="product.images[0]" thumb :width="375" mode="aspectFill" class="thumb-img" />
                 <view v-if="product.promotionBadgeText" class="thumb-badge" :style="{ backgroundColor: product.promotionBadgeColor || '#C2410C' }">
                   <text class="thumb-badge-text">{{ product.promotionBadgeText }}</text>
                 </view>
@@ -224,7 +224,7 @@
                   @click="goToProductDetail(item.id)"
                 >
                   <view class="related-card-top">
-                    <q-cached-image :src="item.images[0]" mode="aspectFill" class="related-img" />
+                    <q-image :src="item.images[0]" thumb :width="375" mode="aspectFill" class="related-img" />
                     <view class="related-info">
                       <text class="related-name">{{ item.name }}</text>
                       <text class="related-desc">{{ item.description || item.categoryName }}</text>

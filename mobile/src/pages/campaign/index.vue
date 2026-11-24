@@ -14,7 +14,7 @@
       <view v-else class="campaign">
         <!-- 头图与主题 -->
         <view class="hero">
-          <q-cached-image v-if="detail.coverImage" :src="detail.coverImage" mode="aspectFill" class="hero-image" />
+          <q-image v-if="detail.coverImage" :src="detail.coverImage" thumb :width="750" mode="aspectFill" class="hero-image" />
           <view v-else class="hero-image hero-image-empty"></view>
           <view class="hero-shade"></view>
           <view class="hero-content">
@@ -55,7 +55,7 @@
             <view v-for="item in group.items" :key="item.campaignProductId" class="product-row">
               <view class="product-main" @tap="goProduct(item)">
                 <view class="product-image-wrap">
-                  <q-cached-image :src="item.image" mode="aspectFill" class="product-image" />
+                  <q-image :src="item.image" thumb :width="375" mode="aspectFill" class="product-image" />
                   <view
                     v-if="item.badgeText"
                     class="product-badge"
@@ -196,7 +196,7 @@ import {
 } from '@/api'
 import type { CampaignCoupon, CampaignDetail, CampaignProductItem } from '@/api'
 import type { Product, Sku } from '@/api/types'
-import { FILE_BASE_URL, UnauthorizedError } from '@/utils/http'
+import { resolveFileUrl, UnauthorizedError } from '@/utils/http'
 import { couponDiscountRateText, isPercentCoupon } from '@/utils/coupon'
 
 interface DisplayProduct {
@@ -258,7 +258,7 @@ const richNodes = computed(() => {
   const html = detail.value?.contentHtml || ''
   if (!html) return ''
   return html
-    .replace(/src="\/uploads/g, `src="${FILE_BASE_URL}/uploads`)
+    .replace(/src="([^"]+)"/g, (_match, url: string) => `src="${resolveFileUrl(url)}"`)
     .replace(/<img/g, '<img style="max-width:100%;height:auto;display:block;"')
 })
 

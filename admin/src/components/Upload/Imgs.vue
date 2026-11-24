@@ -23,7 +23,7 @@
         </slot>
       </div>
       <template #file="{ file }">
-        <img :src="file.url" class="upload-image" />
+        <img :src="resolveFileUrl(file.url || '')" class="upload-image" />
         <div class="upload-handle" @click.stop>
           <div class="handle-icon" @click="handlePictureCardPreview(file)">
             <el-icon><ZoomIn /></el-icon>
@@ -47,8 +47,11 @@
 import { ref, computed, inject, watch } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 import { uploadImg } from "@/api/modules/system/upload";
+import { resolveFileUrl } from "@/utils";
 import type { UploadProps, UploadFile, UploadUserFile, UploadRequestOptions } from "element-plus";
 import { ElNotification, formContextKey, formItemContextKey } from "element-plus";
+
+// 后端只返回文件名；展示时由前端拼 URL。file.url 始终是文件名，供表单/预览使用。
 
 interface UploadFileProps {
   fileList: UploadUserFile[];
@@ -144,7 +147,10 @@ const handleHttpUpload = async (options: UploadRequestOptions) => {
 const emit = defineEmits<{
   "update:fileList": [value: UploadUserFile[]];
 }>();
-const uploadSuccess = (response: { fileUrl: string } | undefined, uploadFile: UploadFile) => {
+const uploadSuccess = (
+  response: { fileUrl: string } | undefined,
+  uploadFile: UploadFile
+) => {
   if (!response) return;
   uploadFile.url = response.fileUrl;
   emit("update:fileList", _fileList.value);
@@ -195,7 +201,7 @@ const handleExceed = () => {
 const viewImageUrl = ref("");
 const imgViewVisible = ref(false);
 const handlePictureCardPreview: UploadProps["onPreview"] = file => {
-  viewImageUrl.value = file.url!;
+  viewImageUrl.value = resolveFileUrl(file.url || "");
   imgViewVisible.value = true;
 };
 </script>

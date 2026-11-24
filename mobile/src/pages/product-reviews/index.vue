@@ -57,11 +57,13 @@
         </view>
         <text class="review-content">{{ review.content }}</text>
         <view v-if="review.images.length" class="review-images">
-          <q-cached-image
+          <q-image
             v-for="(img, imgIdx) in review.images"
             :key="imgIdx"
             class="review-image"
             :src="img"
+            thumb
+            :width="120"
             mode="aspectFill"
             @click="previewReviewImages(review.images, imgIdx)"
           />

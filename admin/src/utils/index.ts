@@ -171,16 +171,32 @@ export const getAllBreadcrumbList = (
  */
 export const FILE_BASE_URL: string = (import.meta.env.VITE_FILE_BASE_URL || "https://qps-bucket.oss-cn-hangzhou.aliyuncs.com").replace(/\/+$/, "");
 
+/** 服务端上传目录对外 URL 前缀，与 FileStorageOptions.UrlPrefix 保持一致。 */
+const UPLOADS_PREFIX = "/uploads";
+
 /**
- * @description 将后端返回的相对文件地址拼接为可访问地址
- * @param path 相对地址或完整地址
+ * @description 将库里存的文件名拼接为可访问地址
+ * @param path 文件名（库里只存文件名）
  * @returns 可直接用于 img src 的地址
  */
 export function resolveFileUrl(path?: string | null): string {
   if (!path) return "";
   if (/^(https?:)?\/\//i.test(path) || path.startsWith("data:")) return path;
+  return `${FILE_BASE_URL}${UPLOADS_PREFIX}/${path}`;
+}
 
-  return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+/**
+ * @description 取缩略图地址：列表等小尺寸场景用它，避免直出原图拖慢加载。
+ * 走阿里云 OSS 图片处理（IMG），服务端实时缩放，原图不动、任意尺寸可用。
+ * @param path 文件名（库里只存文件名）
+ * @param width 缩略图宽度（等比缩放），默认 120
+ * @returns 带 x-oss-process 参数的地址；外链 / data: 等非 OSS 来源原样返回
+ */
+export function resolveThumbUrl(path?: string | null, width = 120): string {
+  const url = resolveFileUrl(path);
+  if (!url || !/^https?:\/\//i.test(url) || !/aliyuncs\.com/i.test(url)) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}x-oss-process=image/resize,m_lfit,w_${width}/quality,q_80`;
 }
 
 /**
@@ -197,15 +213,14 @@ export const API_BASE_URL: string = normalizeApiHost(
 );
 
 /**
- * @description 将文件地址规整为相对路径存库（剥离文件域名或旧 API 来源前缀）
+ * @description 将地址规整为可存库的纯文件名（取最后一段）
  * @param url 用户输入或上传回显的地址
- * @returns 相对路径，如 /uploads/product/202610/xxx.png
+ * @returns 纯文件名，如 xxx.png
  */
 export function toRelativeFileUrl(url: string): string {
-  if (url.startsWith(FILE_BASE_URL)) return url.slice(FILE_BASE_URL.length) || "/";
-  if (url.startsWith(`${API_BASE_URL}/api`)) return url.slice(`${API_BASE_URL}/api`.length) || "/";
-  if (url.startsWith(API_BASE_URL)) return url.slice(API_BASE_URL.length) || "/";
-  return url;
+  if (!url || url.startsWith("data:")) return url;
+  // 剥掉查询参数（如 OSS 缩略图 x-oss-process=...），库里只存纯文件名
+  return url.slice(url.lastIndexOf("/") + 1).split("?")[0];
 }
 
 /**

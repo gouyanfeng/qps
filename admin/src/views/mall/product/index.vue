@@ -40,7 +40,7 @@
             <template #default="{ row }">
               <el-image
                 v-if="row.mainImageUrl"
-                :src="resolveFileUrl(row.mainImageUrl)"
+                :src="resolveThumbUrl(row.mainImageUrl)"
                 :preview-src-list="[resolveFileUrl(row.mainImageUrl)]"
                 preview-teleported
                 fit="cover"
@@ -539,7 +539,7 @@ import { uploadImg } from '@/api/modules/system/upload'
 import UploadImg from '@/components/Upload/Img.vue'
 import UploadImgs from '@/components/Upload/Imgs.vue'
 import QueryPage from '@/components/QueryPage/index.vue'
-import { formatDate, resolveFileUrl, toRelativeFileUrl } from '@/utils'
+import { formatDate, resolveFileUrl, resolveThumbUrl, toRelativeFileUrl } from '@/utils'
 import Permission from "@/components/Permission/index.vue"
 
 const uploadProductDetailImage = async (file: File): Promise<string> => {
