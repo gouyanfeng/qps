@@ -91,6 +91,8 @@ export enum BannerLinkType {
 }
 
 export interface CartItem {
+  storeId?: string
+  storeName?: string
   productId: string
   productName: string
   productImage: string

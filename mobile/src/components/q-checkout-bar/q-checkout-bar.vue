@@ -144,7 +144,6 @@ $theme-primary: #2E7D32;
 .bar-total-label { font-size: 21rpx; }
 .bar-total-origin {
   font-size: 21rpx;
-  text-decoration: line-through;
 }
 .bar-saved {
   font-size: 21rpx;

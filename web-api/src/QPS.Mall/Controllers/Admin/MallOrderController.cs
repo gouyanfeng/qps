@@ -35,6 +35,7 @@ public class MallOrderController : ControllerBase
         [FromQuery] string sortDirection = "Descending",
         [FromQuery] string? status = null,
         [FromQuery] string? keyword = null,
+        [FromQuery] Guid? storeId = null,
         [FromQuery] DateTime? startTime = null,
         [FromQuery] DateTime? endTime = null)
     {
@@ -46,6 +47,7 @@ public class MallOrderController : ControllerBase
             SortDirection = sortDirection,
             Status = status,
             Keyword = keyword,
+            StoreId = storeId,
             StartTime = startTime,
             EndTime = endTime
         };

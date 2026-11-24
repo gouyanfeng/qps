@@ -50,7 +50,7 @@
               <view class="store-icon">
                 <q-icon name="shop" size="14" color="#2E7D32" />
               </view>
-              <text class="store-name">本草国医馆 · 道地药房</text>
+              <text class="store-name">{{ order.items[0]?.storeName || '本草国医馆' }}</text>
               <q-icon name="chevron-right" size="14" color="#707A6C" />
             </view>
             <view class="status-wrap">

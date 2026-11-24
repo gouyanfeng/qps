@@ -235,7 +235,7 @@ export const buildAlbumPrompt = (name, catParent, catName, desc, index = 0, seed
 export const buildBannerPrompt = ({ position = "", title = "", subject = "" } = {}) => {
   const herb = herbOf(`${title} ${subject}`);
   const scene = /首页|home/i.test(position)
-    ? "wide horizontal banner composition, generous empty negative space on the left for overlay"
+    ? "wide horizontal banner composition, generous clean empty space on the left side"
     : "wide horizontal banner composition, centered subject with soft vignette";
   return [
     "Traditional Chinese medicine aesthetic wide banner photograph",

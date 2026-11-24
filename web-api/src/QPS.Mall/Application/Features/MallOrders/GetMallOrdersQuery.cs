@@ -30,6 +30,11 @@ public class GetMallOrdersQuery : PaginationRequest, IRequest<PaginationResponse
     public Guid? MemberId { get; set; }
 
     /// <summary>
+    /// 门店ID，按订单明细所属门店过滤（订单主表无 StoreId 列）。
+    /// </summary>
+    public Guid? StoreId { get; set; }
+
+    /// <summary>
     /// 关键字，匹配订单号、收货人或电话。
     /// </summary>
     public string? Keyword { get; set; }
@@ -71,6 +76,14 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
         if (request.MemberId.HasValue)
         {
             query = query.Where(order => order.MemberId == request.MemberId.Value);
+        }
+
+        if (request.StoreId.HasValue)
+        {
+            // 订单主表无 StoreId，门店挂在明细对应的商品上
+            query = query.Where(order => _dbContext.MallOrderItems.Any(item =>
+                item.OrderId == order.Id &&
+                _dbContext.MallProducts.Any(product => product.Id == item.ProductId && product.StoreId == request.StoreId.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -161,6 +174,10 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
         {
             var items = await (
                 from i in _dbContext.MallOrderItems.AsNoTracking()
+                join p in _dbContext.MallProducts.AsNoTracking() on i.ProductId equals p.Id into prodGroup
+                from p in prodGroup.DefaultIfEmpty()
+                join s in _dbContext.MallStores.AsNoTracking() on p == null ? Guid.Empty : p.StoreId equals s.Id into storeGroup
+                from s in storeGroup.DefaultIfEmpty()
                 where orderIds.Contains(i.OrderId)
                 orderby i.CreatedAt
                 select new { i.OrderId, Dto = new MallOrderItemDto
@@ -168,6 +185,8 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
                     Id = i.Id,
                     SkuId = i.SkuId,
                     ProductId = i.ProductId,
+                    StoreId = s == null ? Guid.Empty : s.Id,
+                    StoreName = s == null ? string.Empty : s.Name,
                     ProductName = i.ProductName,
                     ProductImage = i.ProductImage,
                     SpecName = i.SpecName,
@@ -227,6 +246,14 @@ public class GetMallOrdersHandler : IRequestHandler<GetMallOrdersQuery, Paginati
                     }
 
                     order.Items = orderItems;
+
+                    // 门店挂在明细商品上，列表展示取第一个有效门店（订单主表无 StoreId 列）
+                    var firstStoreItem = orderItems.FirstOrDefault(item => item.StoreId != Guid.Empty);
+                    if (firstStoreItem != null)
+                    {
+                        order.StoreId = firstStoreItem.StoreId;
+                        order.StoreName = firstStoreItem.StoreName;
+                    }
                 }
             }
         }

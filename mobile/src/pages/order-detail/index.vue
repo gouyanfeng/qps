@@ -150,7 +150,7 @@
             </view>
             <view class="pharm-info">
               <view class="pharm-name-row">
-                <text class="pharm-name">本草国医馆</text>
+                <text class="pharm-name">{{ order.items[0]?.storeName || '本草国医馆' }}</text>
                 <view class="gap-badge">
                   <text>GAP</text>
                 </view>

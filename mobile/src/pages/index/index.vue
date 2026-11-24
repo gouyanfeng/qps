@@ -356,6 +356,7 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 }
 
 .verify-btn {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6rpx;
@@ -369,6 +370,7 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
   font-size: 24rpx;
   font-weight: 700;
   color: #ffffff;
+  white-space: nowrap;
 }
 
 .page-body {

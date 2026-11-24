@@ -58,6 +58,10 @@ internal static class MallOrderDetailLoader
 
         dto.Items = await (
             from item in dbContext.MallOrderItems.AsNoTracking()
+            join p in dbContext.MallProducts.AsNoTracking() on item.ProductId equals p.Id into prodGroup
+            from p in prodGroup.DefaultIfEmpty()
+            join s in dbContext.MallStores.AsNoTracking() on p == null ? Guid.Empty : p.StoreId equals s.Id into storeGroup
+            from s in storeGroup.DefaultIfEmpty()
             where item.OrderId == orderId
             orderby item.CreatedAt
             select new MallOrderItemDto
@@ -65,6 +69,8 @@ internal static class MallOrderDetailLoader
                 Id = item.Id,
                 SkuId = item.SkuId,
                 ProductId = item.ProductId,
+                StoreId = s == null ? Guid.Empty : s.Id,
+                StoreName = s == null ? string.Empty : s.Name,
                 ProductName = item.ProductName,
                 ProductImage = item.ProductImage,
                 SkuCode = item.SkuCode,
@@ -81,6 +87,14 @@ internal static class MallOrderDetailLoader
                 OriginalUnitPrice = item.OriginalUnitPrice
             }
         ).ToListAsync(cancellationToken);
+
+        // 门店挂在明细商品上，订单顶层补出门店供详情头部/列表展示（一单多店取首个）
+        var firstStoreItem = dto.Items.FirstOrDefault(item => item.StoreId != Guid.Empty);
+        if (firstStoreItem != null)
+        {
+            dto.StoreId = firstStoreItem.StoreId;
+            dto.StoreName = firstStoreItem.StoreName;
+        }
 
         // 金额恒等式校验：商品原价 − 促销优惠 − 券抵扣（封底为 0）+ 运费 = 应付金额
         MallOrder.EnsureAmountIdentity(

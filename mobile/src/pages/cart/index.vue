@@ -35,16 +35,16 @@
         </section>
 
         <!-- section 店铺分组卡片 -->
-        <section class="shop-section">
+        <section v-for="group in storeGroups" :key="group.storeId" class="shop-section">
           <view class="shop-header">
-            <view class="shop-select" @click="toggleSelectAll">
-              <view :class="['cb', { 'cb-on': isAllSelected }]">
-                <q-icon v-if="isAllSelected" name="check" size="20" color="#ffffff" />
+            <view class="shop-select" @click="toggleStoreSelectAll(group.storeId)">
+              <view :class="['cb', { 'cb-on': isStoreAllSelected(group.storeId) }]">
+                <q-icon v-if="isStoreAllSelected(group.storeId)" name="check" size="20" color="#ffffff" />
               </view>
             </view>
             <view class="shop-name-wrap">
               <q-icon name="shop" size="19" color="#2E7D32" />
-              <text class="shop-name">本草国医馆·道地药房</text>
+              <text class="shop-name">{{ group.storeName }}</text>
             </view>
             <view class="shop-badge">
               <q-icon name="check-circle-filled" size="13" color="#2E7D32" />
@@ -55,7 +55,7 @@
           <!-- 商品卡列表 -->
           <view class="goods-list">
             <view
-              v-for="item in cartItems"
+              v-for="item in group.items"
               :key="item.skuId"
               class="goods-card"
             >
@@ -245,6 +245,29 @@ const giftCount = computed(() => gifts.value.reduce((sum, gift) => sum + gift.qu
 const checkoutCount = computed(() => selectedCount.value + giftCount.value)
 const isAllSelected = computed(() => cartItems.value.length > 0 && selectedLineCount.value === cartItems.value.length)
 
+interface StoreGroup {
+  storeId: string
+  storeName: string
+  items: CartItem[]
+}
+const storeGroups = computed<StoreGroup[]>(() => {
+  const map = new Map<string, StoreGroup>()
+  for (const item of cartItems.value) {
+    const key = item.storeId || '__default__'
+    let group = map.get(key)
+    if (!group) {
+      group = { storeId: key, storeName: item.storeName || '默认门店', items: [] }
+      map.set(key, group)
+    }
+    group.items.push(item)
+  }
+  return Array.from(map.values())
+})
+const isStoreAllSelected = (storeId: string) => {
+  const group = storeGroups.value.find(g => g.storeId === storeId)
+  return !!group && group.items.length > 0 && group.items.every(i => i.selected)
+}
+
 let refreshSeq = 0
 
 function applySummary(summary: CartSummary) {
@@ -291,6 +314,13 @@ function toggleSelection(skuId: string) {
 }
 function toggleSelectAll() {
   cartItems.value = setCartItemsSelection(cartItems.value, !isAllSelected.value)
+  syncPricePreview()
+}
+function toggleStoreSelectAll(storeId: string) {
+  const target = !isStoreAllSelected(storeId)
+  cartItems.value = cartItems.value.map(item =>
+    item.storeId === storeId ? { ...item, selected: target } : item
+  )
   syncPricePreview()
 }
 function syncPricePreview() {
