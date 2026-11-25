@@ -352,6 +352,5 @@ const submitSort = async () => {
 </script>
 
 <style scoped lang="scss">
-.sort-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-.sort-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+@import "./index.scss";
 </style>

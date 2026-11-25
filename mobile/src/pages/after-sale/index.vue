@@ -1,10 +1,10 @@
 <template>
-  <view class="page">
+  <q-page>
     <q-page-header-back :title="pageTitle" />
 
     <view v-if="loading" class="page-body loading">加载中…</view>
 
-    <scroll-view v-else scroll-y class="page-body">
+    <view v-if="!loading">
       <!-- 申请售后：订单概要 -->
       <view v-if="mode !== 'tracking'" class="summary-card">
         <view class="summary-row">
@@ -116,14 +116,16 @@
       </template>
 
       <view class="bottom-space"></view>
-    </scroll-view>
+    </view>
 
+    <template #footer>
     <view v-if="!loading" class="page-footer">
       <view class="submit-btn" :class="{ disabled: uploading || submitting }" @click="submit">
         {{ submitting ? '提交中…' : mode === 'tracking' ? '提交运单' : '提交申请' }}
       </view>
     </view>
-  </view>
+    </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -304,234 +306,5 @@ async function submit() {
 </script>
 
 <style lang="scss" scoped>
-$primary: #2E7D32;
-$primary-dark: #1B5E20;
-$price: #8B5000;
-$on-surface: #1B1C1C;
-$on-surface-var: #40493D;
-$muted: #8A8578;
-$surface: #ffffff;
-$page-bg: #F5F7F5;
-$shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
-
-.page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: $page-bg;
-}
-
-.page-body {
-  flex: 1;
-  padding: 24rpx;
-  box-sizing: border-box;
-}
-
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $muted;
-  font-size: 26rpx;
-}
-
-.summary-card {
-  background: $surface;
-  border-radius: 24rpx;
-  padding: 28rpx;
-  margin-bottom: 20rpx;
-  box-shadow: $shadow-card;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10rpx 0;
-  font-size: 26rpx;
-}
-
-.summary-label { color: $muted; flex-shrink: 0; }
-.summary-value { color: $on-surface; text-align: right; }
-.price { color: $price; font-size: 32rpx; font-weight: 800; }
-
-.summary-tip {
-  display: block;
-  margin-top: 12rpx;
-  padding: 14rpx 16rpx;
-  background: #FFF8E1;
-  border-radius: 10rpx;
-  font-size: 22rpx;
-  color: #B26A00;
-}
-
-.form-card {
-  background: $surface;
-  border-radius: 24rpx;
-  padding: 28rpx;
-  margin-bottom: 20rpx;
-  box-shadow: $shadow-card;
-}
-
-.label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20rpx;
-}
-
-.form-label {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: $on-surface;
-}
-
-.form-hint {
-  font-size: 22rpx;
-  color: $muted;
-}
-
-.reason-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-}
-
-.reason-item {
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
-  padding: 18rpx 16rpx;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: $on-surface-var;
-
-  &.active {
-    background: #F3F8F1;
-
-    .reason-dot {
-      border-color: $primary;
-      background: $primary;
-    }
-
-    text { color: $primary; font-weight: 600; }
-  }
-}
-
-.reason-dot {
-  width: 28rpx;
-  height: 28rpx;
-  border-radius: 50%;
-  border: 2rpx solid #D8D3CB;
-  background: #ffffff;
-}
-
-.description-input {
-  width: 100%;
-  height: 180rpx;
-  padding: 18rpx;
-  box-sizing: border-box;
-  background: #FAFAF8;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: $on-surface-var;
-}
-
-.text-input {
-  width: 100%;
-  height: 84rpx;
-  padding: 0 18rpx;
-  box-sizing: border-box;
-  background: #FAFAF8;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: $on-surface;
-}
-
-.input-placeholder { color: #B0ACA2; }
-
-.return-no {
-  display: block;
-  font-size: 28rpx;
-  color: $on-surface;
-}
-
-.tracking-tip {
-  display: block;
-  padding: 0 8rpx;
-  font-size: 22rpx;
-  color: $muted;
-}
-
-.image-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-.image-cell {
-  position: relative;
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 12rpx;
-  overflow: hidden;
-
-  image { width: 100%; height: 100%; }
-}
-
-.image-delete {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 0 0 0 12rpx;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.image-add {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 12rpx;
-  border: 2rpx dashed #D8D3CB;
-  background: #FAFAF8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6rpx;
-
-  text { font-size: 22rpx; color: $muted; }
-}
-
-.bottom-space { height: 40rpx; }
-
-.page-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
-  border-top: 1rpx solid #F0EFEB;
-}
-
-.submit-btn {
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  border-radius: 100rpx;
-  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
-  color: #ffffff;
-  font-size: 28rpx;
-  font-weight: 600;
-
-  &.disabled { opacity: 0.6; }
-}
-
-.mono { font-family: 'SF Mono', 'Menlo', monospace; }
+@import "./index.scss";
 </style>

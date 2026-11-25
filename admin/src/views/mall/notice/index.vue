@@ -245,4 +245,6 @@ const remove = async (row: any) => {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@import "./index.scss";
+</style>

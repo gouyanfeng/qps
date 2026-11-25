@@ -1,0 +1,154 @@
+.activity-cover {
+  width: 80px;
+  height: 50px;
+  border-radius: 4px;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.campaign-dialog :deep(.el-dialog__body) {
+  max-height: 68vh;
+  overflow-y: auto;
+}
+
+.campaign-tabs {
+  min-height: 420px;
+}
+
+.campaign-content-item {
+  margin-bottom: 0;
+}
+
+.campaign-content-section {
+  width: 100%;
+}
+
+.tab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tab-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.campaign-content-editor {
+  width: 100%;
+}
+
+.content-editor-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.content-editor-hint.is-over-limit {
+  color: var(--el-color-danger);
+  font-weight: 600;
+}
+
+.type-hint {
+  margin-left: 12px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.sort-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.sort-index {
+  width: 20px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.product-thumb-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-placeholder);
+}
+
+.product-info {
+  min-width: 0;
+}
+
+.product-name {
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.product-code {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.products-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+}
+
+.product-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.product-search-tip {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.product-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.selected-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.coupon-name {
+  font-weight: 500;
+}
+
+.coupon-code {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.coupon-value {
+  font-weight: 600;
+  color: var(--el-color-danger);
+}

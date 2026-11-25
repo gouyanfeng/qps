@@ -1,7 +1,6 @@
 <template>
-  <view class="page">
+  <q-page>
     <q-page-header-back title="会员登录" />
-    <view class="page-body">
       <view class="form-card">
         <text class="form-title">{{ isRegister ? '创建会员账号' : '欢迎回来' }}</text>
         <input v-model.trim="phone" class="form-input" type="number" maxlength="11" placeholder="手机号" />
@@ -20,8 +19,7 @@
           {{ isRegister ? '已有账号？去登录' : '还没有账号？立即注册' }}
         </text>
       </view>
-    </view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -68,50 +66,5 @@ async function submit() {
 </script>
 
 <style lang="scss" scoped>
-.page {
-  min-height: 100vh;
-  background: var(--page-bg);
-}
-
-.page-body {
-  padding: 32rpx 24rpx;
-}
-
-.form-card {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-  padding: 32rpx 28rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-}
-
-.form-title {
-  margin-bottom: 8rpx;
-  color: #1B1C1C;
-  font-size: 34rpx;
-  font-weight: 700;
-}
-
-.form-input {
-  height: 88rpx;
-  padding: 0 22rpx;
-  background: #F7F6F2;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-}
-
-.submit-button {
-  margin-top: 12rpx;
-  background: #2E7D32;
-  color: #ffffff;
-  border-radius: 44rpx;
-  font-size: 28rpx;
-}
-
-.toggle-mode {
-  align-self: center;
-  color: #2E7D32;
-  font-size: 24rpx;
-}
+@import "./index.scss";
 </style>

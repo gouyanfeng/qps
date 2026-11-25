@@ -23,6 +23,11 @@
 - 菜单 `meta.permissionCode` 必须与后端权限码完全一致；`ROOT` 不出现在菜单中，分组码（`CRM`、`MALL`、`SYSTEM`）由勾选子页面时自动补齐，不在前端手工拼接祖先链。
 - 完整权限清单、后端校验链路与废弃权限名单见 [`../docs/architecture/permissions.md`](../docs/architecture/permissions.md)，不得在本文件或页面里另立一份。
 
+## 样式文件约定
+
+- 样式统一拆到同目录同名 `.scss` 文件中，vue 里只保留壳：`<style scoped lang="scss">@import "./index.scss";</style>`（组件用同名如 `DetailDrawer.scss`）。新增样式改 `.scss`，不要再往 vue 里内联大段 CSS。
+- 页面存在多个 `<style>` 块时，第 2 个起依次拆为 `index-second.scss` / `index-third.scss`。
+
 ## 列表页与通用模式
 
 - 新增或改造列表页前，先检查同类页面的既有实现；搜索、表格、分页等通用能力优先复用项目组件和既有页面模式。

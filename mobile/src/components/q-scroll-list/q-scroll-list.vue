@@ -43,22 +43,6 @@ function onScrollToLower() {
 }
 </script>
 
-<style scoped>
-.q-scroll-list {
-  flex: 1;
-  min-height: 0;
-}
-
-.q-scroll-list-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28rpx 0 40rpx;
-}
-
-.q-scroll-list-status-text {
-  font-size: 24rpx;
-  color: #8A8578;
-  letter-spacing: 2rpx;
-}
+<style scoped lang="scss">
+@import "./q-scroll-list.scss";
 </style>

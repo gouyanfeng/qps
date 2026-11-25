@@ -1,71 +1,69 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back title="收货地址" />
-    <scroll-view scroll-y class="page-body">
-      <view v-for="address in addresses" :key="address.id" class="address-card" @click="selectAddress(address)">
-        <view class="address-heading">
-          <text class="receiver">{{ address.receiverName }}</text>
-          <text class="phone">{{ address.receiverPhone }}</text>
-          <text v-if="address.isDefault" class="default-tag">默认</text>
-        </view>
-        <text class="address-text">{{ address.fullAddress }}</text>
-        <view class="address-actions">
-          <text @click.stop="removeAddress(address.id)">删除</text>
-          <text class="select-tip">点击选择</text>
-        </view>
+    <view v-for="address in addresses" :key="address.id" class="address-card" @click="selectAddress(address)">
+      <view class="address-heading">
+        <text class="receiver">{{ address.receiverName }}</text>
+        <text class="phone">{{ address.receiverPhone }}</text>
+        <text v-if="address.isDefault" class="default-tag">默认</text>
       </view>
-
-      <view class="form-card">
-        <text class="form-title">新增收货地址</text>
-        <input v-model.trim="form.receiverName" class="form-input" placeholder="收货人" />
-        <input v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" />
-
-        <picker mode="selector" :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
-          <view class="form-picker">
-            <text :class="{ placeholder: !form.provinceName }">
-              {{ form.provinceName || '请选择省份' }}
-            </text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-        <picker
-          mode="selector"
-          :range="cityNames"
-          :value="cityIndex"
-          :disabled="!selectedProvinceCode"
-          @change="onCityChange"
-        >
-          <view class="form-picker" :class="{ disabled: !selectedProvinceCode }">
-            <text :class="{ placeholder: !form.cityName }">
-              {{ form.cityName || (selectedProvinceCode ? '请选择城市' : '请先选省份') }}
-            </text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-        <picker
-          mode="selector"
-          :range="districtNames"
-          :value="districtIndex"
-          :disabled="!selectedCityCode"
-          @change="onDistrictChange"
-        >
-          <view class="form-picker" :class="{ disabled: !selectedCityCode }">
-            <text :class="{ placeholder: !form.districtName }">
-              {{ form.districtName || (selectedCityCode ? '请选择区县' : '请先选城市') }}
-            </text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-
-        <input v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" />
-        <view class="default-option" @click="form.isDefault = !form.isDefault">
-          <checkbox :checked="form.isDefault" color="#2E7D32" />
-          <text>设为默认地址</text>
-        </view>
-        <button class="submit-button" :loading="saving" @click="submit">保存地址</button>
+      <text class="address-text">{{ address.fullAddress }}</text>
+      <view class="address-actions">
+        <text @click.stop="removeAddress(address.id)">删除</text>
+        <text class="select-tip">点击选择</text>
       </view>
-    </scroll-view>
-  </view>
+    </view>
+
+    <view class="form-card">
+      <text class="form-title">新增收货地址</text>
+      <input v-model.trim="form.receiverName" class="form-input" placeholder="收货人" />
+      <input v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" />
+
+      <picker mode="selector" :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
+        <view class="form-picker">
+          <text :class="{ placeholder: !form.provinceName }">
+            {{ form.provinceName || '请选择省份' }}
+          </text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+      <picker
+        mode="selector"
+        :range="cityNames"
+        :value="cityIndex"
+        :disabled="!selectedProvinceCode"
+        @change="onCityChange"
+      >
+        <view class="form-picker" :class="{ disabled: !selectedProvinceCode }">
+          <text :class="{ placeholder: !form.cityName }">
+            {{ form.cityName || (selectedProvinceCode ? '请选择城市' : '请先选省份') }}
+          </text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+      <picker
+        mode="selector"
+        :range="districtNames"
+        :value="districtIndex"
+        :disabled="!selectedCityCode"
+        @change="onDistrictChange"
+      >
+        <view class="form-picker" :class="{ disabled: !selectedCityCode }">
+          <text :class="{ placeholder: !form.districtName }">
+            {{ form.districtName || (selectedCityCode ? '请选择区县' : '请先选城市') }}
+          </text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+
+      <input v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" />
+      <view class="default-option" @click="form.isDefault = !form.isDefault">
+        <checkbox :checked="form.isDefault" color="#2E7D32" />
+        <text>设为默认地址</text>
+      </view>
+      <button class="submit-button" :loading="saving" @click="submit">保存地址</button>
+    </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -77,6 +75,7 @@ import { UnauthorizedError } from '@/utils/http'
 
 const addresses = ref<MallAddress[]>([])
 const saving = ref(false)
+const refreshing = ref(false)
 const regionAll = ref<ChinaRegionNode[]>([])
 
 const form = reactive({
@@ -132,6 +131,16 @@ async function loadAddresses() {
     console.error('加载收货地址失败', error)
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '地址加载失败', icon: 'none' })
+  }
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await Promise.all([loadAddresses(), loadRegions()])
+    syncFormFromIndex()
+  } finally {
+    refreshing.value = false
   }
 }
 
@@ -215,121 +224,5 @@ async function submit() {
 </script>
 
 <style lang="scss" scoped>
-.page {
-  min-height: 100vh;
-  background: var(--page-bg);
-}
-
-.page-body {
-  height: calc(100vh - var(--page-top-offset));
-  padding: 24rpx;
-  box-sizing: border-box;
-}
-
-.address-card,
-.form-card {
-  margin-bottom: 20rpx;
-  padding: 24rpx;
-  background: #ffffff;
-  border-radius: 18rpx;
-}
-
-.address-heading {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.receiver {
-  color: #1B1C1C;
-  font-size: 28rpx;
-  font-weight: 700;
-}
-
-.phone,
-.address-text,
-.select-tip {
-  color: #6B6B6B;
-  font-size: 23rpx;
-}
-
-.address-text {
-  display: block;
-  margin-top: 12rpx;
-}
-
-.default-tag {
-  padding: 4rpx 12rpx;
-  color: #2E7D32;
-  background: #E8F5E9;
-  border-radius: 10rpx;
-  font-size: 20rpx;
-}
-
-.address-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 18rpx;
-  color: #C62828;
-  font-size: 22rpx;
-}
-
-.form-title {
-  display: block;
-  margin-bottom: 16rpx;
-  color: #1B1C1C;
-  font-size: 28rpx;
-  font-weight: 700;
-}
-
-.form-input {
-  height: 78rpx;
-  margin-bottom: 14rpx;
-  padding: 0 16rpx;
-  background: #F7F6F2;
-  border-radius: 10rpx;
-  font-size: 23rpx;
-}
-
-.form-picker {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 78rpx;
-  margin-bottom: 14rpx;
-  padding: 0 16rpx;
-  background: #F7F6F2;
-  border-radius: 10rpx;
-  font-size: 23rpx;
-  color: #1B1C1C;
-
-  &.placeholder {
-    color: #999;
-  }
-
-  &.disabled {
-    color: #bbb;
-  }
-}
-
-.picker-arrow {
-  color: #bbb;
-  font-size: 32rpx;
-}
-
-.default-option {
-  display: flex;
-  align-items: center;
-  margin: 10rpx 0;
-  color: #40493D;
-  font-size: 23rpx;
-}
-
-.submit-button {
-  margin-top: 16rpx;
-  color: #ffffff;
-  background: #2E7D32;
-  border-radius: 42rpx;
-  font-size: 26rpx;
-}
+@import "./index.scss";
 </style>

@@ -344,21 +344,5 @@ const formatCombination = (combo: Record<string, string>) => {
 </script>
 
 <style scoped lang="scss">
-.low-stock {
-  color: var(--el-color-danger);
-  font-weight: 600;
-}
-
-.stock-in {
-  color: var(--el-color-success);
-}
-
-.stock-out {
-  color: var(--el-color-danger);
-}
-
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-}
+@import "./index.scss";
 </style>

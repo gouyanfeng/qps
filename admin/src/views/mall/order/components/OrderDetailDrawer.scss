@@ -1,0 +1,60 @@
+.drawer-layout {
+  padding: 4px 8px 24px;
+}
+
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.detail-kicker {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+  }
+}
+
+.head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-descriptions {
+  margin-bottom: 16px;
+}
+
+.detail-card {
+  margin-bottom: 16px;
+
+  .section-title {
+    margin-bottom: 10px;
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+  }
+}

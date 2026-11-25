@@ -157,7 +157,6 @@ const matchProgressLabel = (demand: any) => {
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleDateString("zh-CN") : "-";
 </script>
 
-<style scoped>
-.matched { color: var(--el-color-success); }
-.no-remaining { color: var(--el-text-color-placeholder); }
+<style scoped lang="scss">
+@import "./index.scss";
 </style>

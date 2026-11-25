@@ -122,7 +122,8 @@ npm run type-check  # vue-tsc --noEmit，改完 TS/组件后必跑
 - 页面改写时**只改 `template` 与 `style`**，保留原有 `script` 逻辑与 mock 数据绑定
 - 颜色优先用主题变量（`$theme-primary` 等），避免散落硬编码色值
 - 特效统一走 `App.vue` 的 `.qps-*` 皮肤类（`qps-card` / `qps-search-bar` / `qps-hero` / `qps-tap` 等）
-- 分部样式写在页面 `<style lang="scss">` 中，页面样式默认非 scoped，注意类名冲突
+- **样式拆分约定**：页面的全部样式写在同目录同名 `.scss` 文件中，vue 里只保留一个壳：`<style lang="scss" scoped>@import "./index.scss";</style>`（组件用同名如 `q-icon.scss`）。新增样式改 `.scss`，不要再往 vue 里内联大段 CSS
+- 页面样式默认非 scoped，注意类名冲突；拆出的 `.scss` 里可继续用 `$theme-*` 等主题变量（定义随文件一起搬走）
 - `<script setup>` 里的 `computed` / `ref` 必须从 `vue` 导入，**不要从 `@dcloudio/uni-app` 导入 `computed`**（会导致模块加载失败）
 - 已开启 `verbatimModuleSyntax`：纯类型导入必须写成 `import type { ... }`，值导入不能被编译器当作类型擦除
 - 不使用 `<keep-alive>` 缓存页面，避免全局路由 watcher 跨页干扰

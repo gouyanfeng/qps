@@ -256,9 +256,6 @@ watch(() => [props.demandItemId, props.opportunityId, props.replace, props.prese
 onMounted(() => { void loadCandidates(); });
 </script>
 
-<style scoped>
-.candidate-selector { display: grid; gap: 16px; }
-.filter-form { margin: 0; }
-.product-filter { width: 240px; }
-.selector-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+<style scoped lang="scss">
+@import "./CandidateSelector.scss";
 </style>

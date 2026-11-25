@@ -16,6 +16,12 @@ public class MallOrderDto
     /// <summary>会员昵称（无昵称时回退手机号），用于管理端订单列表展示。</summary>
     public string MemberName { get; set; } = string.Empty;
 
+    /// <summary>门店ID（订单主表不存门店，由明细商品反查；一单多店时取首个）。</summary>
+    public Guid StoreId { get; set; }
+
+    /// <summary>门店名称（同 StoreId，由明细商品反查）。</summary>
+    public string StoreName { get; set; } = string.Empty;
+
     public string Status { get; set; } = string.Empty;
 
     public string ReceiverName { get; set; } = string.Empty;
@@ -94,6 +100,8 @@ public class MallOrderItemDto
     public Guid Id { get; set; }
     public Guid SkuId { get; set; }
     public Guid ProductId { get; set; }
+    public Guid StoreId { get; set; }
+    public string StoreName { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public string ProductImage { get; set; } = string.Empty;
     public string Badge { get; set; } = string.Empty;

@@ -1,0 +1,22 @@
+@import "../index.scss";
+
+.password-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+
+  .forgot-link {
+    font-size: 12px;
+    font-weight: 500;
+    color: #4f46e5;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+
+    &:hover {
+      color: #4338ca;
+      text-decoration: underline;
+    }
+  }
+}

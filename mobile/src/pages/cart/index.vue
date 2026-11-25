@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <!-- ============ 顶栏：标题 + 管理按钮 ============ -->
     <q-page-header-back :show-back="false" title="购物车">
       <template #right>
@@ -10,7 +10,6 @@
     </q-page-header-back>
 
     <!-- ============ 内容区 ============ -->
-    <scroll-view scroll-y class="page-body" enhanced>
       <view class="page-body-inner">
       <!-- 空车态 -->
       <view v-if="cartItems.length === 0" class="empty-wrap">
@@ -35,16 +34,16 @@
         </section>
 
         <!-- section 店铺分组卡片 -->
-        <section class="shop-section">
+        <section v-for="group in storeGroups" :key="group.storeId" class="shop-section">
           <view class="shop-header">
-            <view class="shop-select" @click="toggleSelectAll">
-              <view :class="['cb', { 'cb-on': isAllSelected }]">
-                <q-icon v-if="isAllSelected" name="check" size="20" color="#ffffff" />
+            <view class="shop-select" @click="toggleStoreSelectAll(group.storeId)">
+              <view :class="['cb', { 'cb-on': isStoreAllSelected(group.storeId) }]">
+                <q-icon v-if="isStoreAllSelected(group.storeId)" name="check" size="20" color="#ffffff" />
               </view>
             </view>
             <view class="shop-name-wrap">
               <q-icon name="shop" size="19" color="#2E7D32" />
-              <text class="shop-name">本草国医馆·道地药房</text>
+              <text class="shop-name">{{ group.storeName }}</text>
             </view>
             <view class="shop-badge">
               <q-icon name="check-circle-filled" size="13" color="#2E7D32" />
@@ -55,7 +54,7 @@
           <!-- 商品卡列表 -->
           <view class="goods-list">
             <view
-              v-for="item in cartItems"
+              v-for="item in group.items"
               :key="item.skuId"
               class="goods-card"
             >
@@ -184,8 +183,8 @@
         </section>
       </block>
       </view>
-    </scroll-view>
 
+    <template #footer>
     <!-- ============ 底部固定结算栏：应付/合计 + 明细抽屉 + 去结算 ============ -->
     <q-checkout-bar
       v-if="cartItems.length > 0"
@@ -212,7 +211,8 @@
         </view>
       </template>
     </q-checkout-bar>
-  </view>
+    </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -230,12 +230,19 @@ import type { CartItem } from '@/api/types'
 import type { CartGiftItem, CartSummary } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
+interface StoreGroup {
+  storeId: string
+  storeName: string
+  items: CartItem[]
+}
+
 const cartItems = ref<CartItem[]>([])
 const gifts = ref<CartGiftItem[]>([])
 const selectedAmount = ref(0)
 const promotionDiscount = ref(0)
 const payableAmount = ref(0)
 const editMode = ref(false)
+const refreshing = ref(false)
 
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const selectedLineCount = computed(() => selectedItems.value.length)
@@ -244,6 +251,34 @@ const selectedCount = computed(() => selectedItems.value.reduce((sum, item) => s
 const giftCount = computed(() => gifts.value.reduce((sum, gift) => sum + gift.quantity, 0))
 const checkoutCount = computed(() => selectedCount.value + giftCount.value)
 const isAllSelected = computed(() => cartItems.value.length > 0 && selectedLineCount.value === cartItems.value.length)
+
+const storeGroups = computed<StoreGroup[]>(() => {
+  const map = new Map<string, StoreGroup>()
+  for (const item of cartItems.value) {
+    const key = item.storeId || '__default__'
+    let group = map.get(key)
+    if (!group) {
+      group = { storeId: key, storeName: item.storeName || '默认门店', items: [] }
+      map.set(key, group)
+    }
+    group.items.push(item)
+  }
+  return Array.from(map.values())
+})
+const isStoreAllSelected = (storeId: string) => {
+  const group = storeGroups.value.find(g => g.storeId === storeId)
+  return !!group && group.items.length > 0 && group.items.every(i => i.selected)
+}
+
+onShow(async () => {
+  try {
+    await loadCart()
+  } catch (error) {
+    console.error('加载购物车失败', error)
+    if (error instanceof UnauthorizedError) return
+    uni.showToast({ title: '购物车加载失败', icon: 'none' })
+  }
+})
 
 let refreshSeq = 0
 
@@ -263,7 +298,7 @@ function itemHasDiscount(item: CartItem): boolean {
   return itemPrice(item) < item.price
 }
 
-async function refreshCart() {
+async function loadCart() {
   const seq = ++refreshSeq
   // 首次加载本地还没有商品时按全部选中处理
   const selectedSkuIds = cartItems.value.length
@@ -274,15 +309,11 @@ async function refreshCart() {
   applySummary(summary)
 }
 
-onShow(async () => {
-  try {
-    await refreshCart()
-  } catch (error) {
-    console.error('加载购物车失败', error)
-    if (error instanceof UnauthorizedError) return
-    uni.showToast({ title: '购物车加载失败', icon: 'none' })
-  }
-})
+async function onRefresh() {
+  refreshing.value = true
+  try { await loadCart() }
+  finally { refreshing.value = false }
+}
 
 function toggleEditMode() { editMode.value = !editMode.value }
 function toggleSelection(skuId: string) {
@@ -293,8 +324,15 @@ function toggleSelectAll() {
   cartItems.value = setCartItemsSelection(cartItems.value, !isAllSelected.value)
   syncPricePreview()
 }
+function toggleStoreSelectAll(storeId: string) {
+  const target = !isStoreAllSelected(storeId)
+  cartItems.value = cartItems.value.map(item =>
+    item.storeId === storeId ? { ...item, selected: target } : item
+  )
+  syncPricePreview()
+}
 function syncPricePreview() {
-  refreshCart().catch(error => {
+  loadCart().catch(error => {
     console.error('计算优惠失败', error)
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '优惠计算失败', icon: 'none' })
@@ -367,300 +405,5 @@ function goToIndex() { uni.switchTab({ url: '/pages/index/index' }) }
 </script>
 
 <style lang="scss" scoped>
-// ===== 主题令牌 =====
-$theme-primary: #2E7D32;
-$theme-accent: #FF9800;
-$theme-bg: #FCF9F8;
-
-$on-surface: #1b1c1c;
-$on-surface-variant: #40493d;
-$outline-variant: #bfcaba;
-$surface-lowest: #ffffff;
-$surface-low: #f6f3f2;
-$surface-highest: #e5e2e1;
-$herbal-shadow: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.06);
-$float-shadow: 0 -8rpx 48rpx -4rpx rgba(33, 33, 33, 0.07);
-
-.page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: var(--page-bg);
-}
-
-.title {
-  flex: 1;
-  text-align: center;
-  font-size: 34rpx;
-  font-weight: 700;
-  color: $on-surface;
-}
-
-// ============ 顶栏 ============
-.manage-btn {
-  flex-shrink: 0;
-  font-size: 26rpx;
-  color: $on-surface-variant;
-
-  &.manage-btn-on {
-    color: $theme-primary;
-  }
-}
-
-// ============ main 内容 ============
-.page-body {
-  flex: 1;
-}
-.page-body-inner {
-  padding: 0 30rpx 240rpx;
-}
-
-.empty-wrap {
-  padding: 120rpx 60rpx;
-  display: flex; flex-direction: column; align-items: center; gap: 32rpx;
-}
-.empty-desc {
-  font-size: 24rpx;
-  color: #A9A498;
-  text-align: center;
-  line-height: 1.6;
-}
-.empty-btn {
-  width: 360rpx;
-  height: 80rpx;
-  margin-top: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 100rpx;
-  background: $theme-primary;
-  color: #FFFFFF;
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-// ============ section 满额免邮横幅 ============
-.promo-section {
-  display: flex; align-items: center; gap: 12rpx;
-  padding: 18rpx 20rpx;
-  margin: 20rpx 0;
-  border-radius: 18rpx;
-  background: #EDF7E7;
-  border: 1rpx solid #D9EBCE;
-}
-.promo-icon {
-  width: 46rpx; height: 46rpx; border-radius: 50%;
-  background: #DCEFCF;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.promo-text {
-  flex: 1; min-width: 0;
-  font-size: 21rpx; font-weight: 500; color: #40493D;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.promo-gap-hl { font-weight: 700; color: #A85A00; }
-.promo-action { display: flex; align-items: center; gap: 2rpx; flex-shrink: 0; }
-.promo-action-text { font-size: 23rpx; font-weight: 700; color: $theme-primary; }
-
-// ============ section 店铺分组 ============
-.shop-section {
-  background: $surface-lowest;
-  border-radius: 24rpx; overflow: hidden;
-  border: 1rpx solid rgba(229, 226, 225, 0.6);
-  box-shadow: $herbal-shadow;
-  margin-bottom: 24rpx;
-}
-.shop-header {
-  display: flex; align-items: center; gap: 12rpx;
-  padding: 22rpx 28rpx;
-  border-bottom: 1rpx solid rgba(229, 226, 225, 0.4);
-  background: rgba(246, 243, 242, 0.4);
-}
-.shop-select { flex-shrink: 0; }
-.shop-name-wrap { display: flex; align-items: center; gap: 10rpx; flex: 1; min-width: 0; }
-.shop-name { font-size: 28rpx; font-weight: 600; color: $on-surface; }
-.shop-badge {
-  display: flex; align-items: center; gap: 4rpx;
-  background: rgba(46, 125, 50, 0.1); padding: 6rpx 14rpx; border-radius: 100rpx;
-  flex-shrink: 0;
-}
-.shop-badge-text { font-size: 20rpx; color: $theme-primary; font-weight: 500; }
-
-// ============ 商品卡列表 ============
-.goods-list { padding: 0 22rpx; }
-.goods-card {
-  display: flex; gap: 16rpx;
-  padding: 22rpx 0;
-  border-bottom: 1rpx solid $surface-highest;
-  &:last-child { border-bottom: none; }
-}
-.goods-check {
-  // 扩大整行左侧的点击热区，避免只点到 20px 圆点
-  width: 64rpx;
-  flex-shrink: 0;
-  margin-left: -16rpx;
-  padding-left: 16rpx;
-  padding-top: 4rpx;
-  box-sizing: border-box;
-  display: flex;
-  align-items: flex-start;
-}
-
-// 自绘选择框（与设计稿一致的绿色圆形勾选）
-.cb {
-  width: 40rpx; height: 40rpx; border-radius: 50%;
-  border: 2rpx solid #BFCABA;
-  background: #ffffff;
-  display: flex; align-items: center; justify-content: center;
-  box-sizing: border-box;
-}
-.cb.cb-on {
-  background: $theme-primary;
-  border-color: $theme-primary;
-}
-
-.goods-image-wrap {
-  width: 152rpx; height: 152rpx;
-  border-radius: 14rpx; overflow: hidden; flex-shrink: 0;
-  background: $surface-low;
-  position: relative;
-}
-.goods-image { width: 100%; height: 100%; }
-.goods-badge {
-  position: absolute; top: 0; left: 0;
-  background: #2D5A27;
-  padding: 4rpx 12rpx 4rpx 10rpx;
-  border-radius: 16rpx 0 12rpx 0;
-}
-.goods-badge-text { font-size: 18rpx; font-weight: 600; color: #F5F0E8; letter-spacing: 0.5rpx; }
-
-.goods-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10rpx; }
-.goods-name {
-  font-size: 26rpx; font-weight: 700; color: $on-surface;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.spec-chip {
-  display: inline-flex; align-items: center; gap: 4rpx;
-  background: $surface-highest; padding: 6rpx 14rpx; border-radius: 6rpx;
-  align-self: flex-start; max-width: 360rpx;
-}
-.spec-text { font-size: 22rpx; color: $on-surface-variant; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.cert-chip {
-  display: inline-flex; align-items: center; gap: 4rpx;
-  background: rgba(46, 125, 50, 0.06); padding: 4rpx 12rpx; border-radius: 6rpx;
-  border: 1rpx solid rgba(46, 125, 50, 0.35);
-  align-self: flex-start;
-}
-.cert-text { font-size: 20rpx; color: $theme-primary; font-weight: 500; }
-
-.stock-tip { display: flex; align-items: center; gap: 4rpx; }
-.stock-tip-text { font-size: 20rpx; color: #D32F2F; font-weight: 500; }
-
-.goods-bottom { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 8rpx; }
-.price-wrap { display: flex; flex-direction: column; gap: 2rpx; }
-.price-row { display: flex; align-items: baseline; gap: 2rpx; }
-.price-symbol { font-size: 22rpx; font-weight: 700; color: #8B5000; }
-.price-value { font-size: 36rpx; font-weight: 700; color: #8B5000; line-height: 1; }
-.price-origin { margin-left: 6rpx; font-size: 20rpx; color: #B0ACA2; text-decoration: line-through; }
-.goods-subtotal { font-size: 20rpx; color: #8A8F86; font-weight: 500; }
-
-// stepper
-.stepper {
-  display: flex; align-items: center;
-  border: 1rpx solid #E6E2DA; border-radius: 10rpx;
-  background: #FBFAF7; overflow: hidden;
-}
-.step-btn {
-  width: 46rpx; height: 50rpx; display: flex; align-items: center; justify-content: center;
-  &.disabled { opacity: 0.3; }
-}
-.step-val { width: 54rpx; text-align: center; font-size: 25rpx; font-weight: 600; color: $on-surface; }
-
-// 管理态单行操作
-.row-actions { display: flex; align-items: center; }
-.row-action-btn {
-  display: flex; align-items: center; gap: 6rpx;
-  padding: 12rpx 20rpx;
-  border: 1rpx solid rgba(211, 47, 47, 0.35);
-  border-radius: 100rpx;
-  background: rgba(211, 47, 47, 0.06);
-}
-.row-action-text { font-size: 24rpx; font-weight: 600; color: #D32F2F; }
-
-// ============ 赠品区 ============
-.gift-block {
-  margin: 0 22rpx 22rpx;
-  padding: 18rpx 20rpx;
-  border-radius: 16rpx;
-  background: #FDF6EC;
-  border: 1rpx dashed #E9C9A6;
-}
-.gift-block-title { display: flex; align-items: center; gap: 8rpx; margin-bottom: 12rpx; }
-.gift-block-text { font-size: 22rpx; font-weight: 600; color: #A85A00; }
-.gift-row { display: flex; align-items: center; gap: 14rpx; padding: 10rpx 0; }
-.gift-image {
-  width: 88rpx; height: 88rpx; border-radius: 12rpx; flex-shrink: 0;
-  background: #ffffff;
-}
-.gift-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
-.gift-name-line { display: flex; align-items: center; gap: 10rpx; }
-.gift-name {
-  font-size: 24rpx; font-weight: 600; color: $on-surface;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.gift-tag {
-  flex-shrink: 0; padding: 2rpx 10rpx; border-radius: 6rpx;
-  background: #E2601F;
-}
-.gift-tag text { font-size: 18rpx; font-weight: 600; color: #FFFFFF; }
-.gift-spec { font-size: 21rpx; color: #8A8F86; }
-.gift-promo {
-  font-size: 20rpx; color: #A85A00;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.gift-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4rpx; flex-shrink: 0; }
-.gift-price { font-size: 28rpx; font-weight: 700; color: #8B5000; }
-.gift-qty { font-size: 21rpx; color: #8A8F86; }
-
-// ============ section 道地承诺 三栏 ============
-.promise-section {
-  display: flex; align-items: center; gap: 8rpx;
-  padding: 24rpx 20rpx;
-  background: #ffffff;
-  border-radius: 24rpx;
-  border: 1rpx solid rgba(229, 226, 225, 0.6);
-  box-shadow: $herbal-shadow;
-  justify-content: space-around;
-}
-.promise-item {
-  display: flex; flex-direction: column; align-items: center; gap: 8rpx;
-  flex: 1; min-width: 0;
-}
-.promise-icon {
-  width: 76rpx; height: 76rpx; border-radius: 50%;
-  background: rgba(46, 125, 50, 0.08);
-  display: flex; align-items: center; justify-content: center;
-}
-.promise-title { font-size: 23rpx; font-weight: 700; color: $on-surface; }
-.promise-sub {
-  font-size: 19rpx; color: #8A8F86; text-align: center;
-  line-height: 1.3;
-}
-
-// ============ 底部结算栏操作按钮（q-checkout-bar 插槽） ============
-.checkout-btn {
-  flex-shrink: 0;
-  height: 76rpx;
-  padding: 0 28rpx;
-  display: flex; align-items: center; justify-content: center; gap: 6rpx;
-  background: $theme-primary;
-  border-radius: 100rpx;
-  box-shadow: 0 6rpx 18rpx rgba(46, 125, 50, 0.28);
-  &.checkout-btn-disabled { opacity: 0.45; box-shadow: none; }
-}
-.checkout-text {
-  font-size: 27rpx; font-weight: 700; color: #ffffff;
-}
+@import "./index.scss";
 </style>

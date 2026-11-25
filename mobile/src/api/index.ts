@@ -457,6 +457,8 @@ function mapCartSummary(cart: MallCartResponse): CartSummary {
 
 interface MallCartResponse {
   items: Array<{
+    storeId: string
+    storeName: string
     skuId: string
     productId: string
     productName: string
@@ -509,6 +511,8 @@ async function fetchRemoteCart(selectedSkuIds?: string[]): Promise<MallCartRespo
 
 function mapCartItems(cart: MallCartResponse): CartItem[] {
   return (cart.items || []).map(item => ({
+    storeId: item.storeId,
+    storeName: item.storeName,
     productId: item.productId,
     productName: item.productName,
     productImage: resolveFileUrl(item.productImage),
@@ -740,6 +744,8 @@ export function getMyOrders(status?: string): Promise<ApiPage<MallOrder>> {
 
 export interface MallOrderItem {
   id: string
+  storeId?: string
+  storeName?: string
   productId: string
   productName: string
   productImage: string

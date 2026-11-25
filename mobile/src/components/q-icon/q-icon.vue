@@ -25,10 +25,6 @@ const iconStyle = computed(() => ({
 }))
 </script>
 
-<style scoped>
-.q-icon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
-}
+<style scoped lang="scss">
+@import "./q-icon.scss";
 </style>

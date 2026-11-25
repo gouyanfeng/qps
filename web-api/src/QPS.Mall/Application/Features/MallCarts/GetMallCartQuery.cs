@@ -56,10 +56,11 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         var skuRows = (await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
+                join store in _dbContext.MallStores on product.StoreId equals store.Id
                 where skuIds.Contains(sku.Id)
-                select new { Sku = sku, Product = product })
+                select new { Sku = sku, Product = product, Store = store })
             .ToListAsync(cancellationToken))
-            .Select(row => new CartSkuRow(row.Sku, row.Product))
+            .Select(row => new CartSkuRow(row.Sku, row.Product, row.Store))
             .ToList();
 
         var skuMap = skuRows.ToDictionary(row => row.Sku.Id);
@@ -116,6 +117,8 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
                     Id = cartItem.Id,
                     SkuId = cartItem.SkuId,
                     ProductId = cartItem.ProductId,
+                    StoreId = row.Store.Id,
+                    StoreName = row.Store.Name,
                     Quantity = cartItem.Quantity,
                     ProductName = row.Product.Name,
                     ProductCode = row.Product.Code,
@@ -228,5 +231,5 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             .ToDictionary(item => item.SkuId, item => item.Price);
     }
 
-    private sealed record CartSkuRow(MallSku Sku, MallProduct Product);
+    private sealed record CartSkuRow(MallSku Sku, MallProduct Product, MallStore Store);
 }

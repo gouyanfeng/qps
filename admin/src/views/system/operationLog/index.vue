@@ -156,21 +156,7 @@ const openDetail = (row: any) => {
 </script>
 
 <style scoped lang="scss">
-.operation-detail {
-  max-height: 420px;
-  margin: 0;
-  padding: 10px;
-  overflow: auto;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  background: #f8fafc;
-  color: var(--el-text-color-regular);
-  font-family: Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
+@import "./index.scss";
 </style>
 
 

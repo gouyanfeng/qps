@@ -1,0 +1,134 @@
+.product-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+}
+
+.product-tag {
+  margin: 2px 4px 2px 0;
+}
+
+.tag-toolbar {
+  margin-bottom: 12px;
+}
+
+.empty-image {
+  color: var(--el-text-color-placeholder);
+}
+
+.low-stock {
+  color: var(--el-color-danger);
+  font-weight: 600;
+}
+
+.sku-main {
+  min-height: 300px;
+}
+
+.spec-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.spec-empty {
+  padding: 4px 0 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.spec-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px dashed var(--el-border-color-lighter);
+}
+
+.spec-name-input {
+  width: 150px;
+  flex-shrink: 0;
+}
+
+.spec-values {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.spec-value-tag {
+  margin: 0;
+}
+
+.spec-value-input {
+  width: 160px;
+}
+
+.combo-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+}
+
+.batch-label {
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.batch-bar .el-input-number {
+  width: 130px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.panel-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-tip {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.text-hint {
+  color: var(--el-text-color-secondary);
+}
+
+.product-detail-editor {
+  width: 100%;
+}
+
+.detail-editor-hint {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.detail-editor-hint.is-over-limit {
+  color: var(--el-color-danger);
+}

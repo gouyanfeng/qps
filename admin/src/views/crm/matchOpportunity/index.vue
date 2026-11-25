@@ -386,11 +386,6 @@ onActivated(() => { void loadDemandFromRoute(); });
 onMounted(() => { void loadVendorOptions(); void loadSubjectOptions(); void loadOwnerOptions(); });
 </script>
 
-<style scoped>
-.candidate-panel { padding: 20px; }
-.candidate-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-weight: 600; }
-.candidate-direction { display: inline-flex; align-items: center; gap: 8px; }
-.next-action-time { display: block; margin-top: 4px; color: var(--el-text-color-secondary); font-size: 12px; }
-.candidate-name-wrap { display: flex; flex-wrap: wrap; align-items: center; }
-.candidate-name-wrap :deep(.el-button + .el-button) { margin-left: 0px; }
+<style scoped lang="scss">
+@import "./index.scss";
 </style>

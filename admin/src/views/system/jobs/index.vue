@@ -21,17 +21,5 @@ const dashboardUrl = computed(() =>
 </script>
 
 <style scoped lang="scss">
-.jobs-dashboard {
-    height: 100%;
-}
-
-.jobs-frame {
-    display: block;
-    width: 100%;
-    // 占满 el-main 内容区：视口高度减去顶栏与内边距
-    height: calc(100vh - 110px);
-    border: none;
-    border-radius: var(--el-border-radius-base);
-    background: var(--el-bg-color);
-}
+@import "./index.scss";
 </style>

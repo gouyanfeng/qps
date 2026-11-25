@@ -1,8 +1,7 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back :title="detail?.name || '活动专题'" />
 
-    <scroll-view scroll-y class="page-body">
       <view v-if="loading" class="loading-state">
         <text class="loading-text">正在加载活动…</text>
       </view>
@@ -150,38 +149,39 @@
 
         <view class="footer-space"></view>
       </view>
-    </scroll-view>
 
-    <!-- 底部操作栏 -->
-    <view v-if="detail" class="action-bar">
-      <block v-if="detail.type === 0">
-        <view class="action-summary">
-          <text class="summary-label">搭配合计</text>
-          <view class="summary-price-row">
-            <text class="summary-symbol">¥</text>
-            <text class="summary-price">{{ groupTotalText }}</text>
-            <text class="summary-count">共 {{ campaignProducts.length }} 件</text>
-          </view>
+      <template #footer>
+        <!-- 底部操作栏 -->
+        <view v-if="detail" class="action-bar">
+          <block v-if="detail.type === 0">
+            <view class="action-summary">
+              <text class="summary-label">搭配合计</text>
+              <view class="summary-price-row">
+                <text class="summary-symbol">¥</text>
+                <text class="summary-price">{{ groupTotalText }}</text>
+                <text class="summary-count">共 {{ campaignProducts.length }} 件</text>
+              </view>
+            </view>
+            <view class="action-button" :class="{ disabled: !canTrade || !campaignProducts.length }" @tap="addAll">
+              <text class="action-button-text">{{ detail.status === 'Upcoming' ? '未开始' : detail.status === 'Ended' ? '已结束' : '整组加入购物车' }}</text>
+            </view>
+          </block>
+          <block v-else>
+            <view class="action-summary">
+              <text class="summary-label">券包共 {{ detail.coupons.length }} 张</text>
+              <text class="summary-count">已领取 {{ claimedIds.length }} 张</text>
+            </view>
+            <view
+              class="action-button"
+              :class="{ disabled: !canTrade || !claimableCoupons.length }"
+              @tap="claimAll"
+            >
+              <text class="action-button-text">{{ claimAllButtonText }}</text>
+            </view>
+          </block>
         </view>
-        <view class="action-button" :class="{ disabled: !canTrade || !campaignProducts.length }" @tap="addAll">
-          <text class="action-button-text">{{ detail.status === 'Upcoming' ? '未开始' : detail.status === 'Ended' ? '已结束' : '整组加入购物车' }}</text>
-        </view>
-      </block>
-      <block v-else>
-        <view class="action-summary">
-          <text class="summary-label">券包共 {{ detail.coupons.length }} 张</text>
-          <text class="summary-count">已领取 {{ claimedIds.length }} 张</text>
-        </view>
-        <view
-          class="action-button"
-          :class="{ disabled: !canTrade || !claimableCoupons.length }"
-          @tap="claimAll"
-        >
-          <text class="action-button-text">{{ claimAllButtonText }}</text>
-        </view>
-      </block>
-    </view>
-  </view>
+      </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -225,6 +225,8 @@ interface ProductGroup {
 
 const detail = ref<CampaignDetail | null>(null)
 const loading = ref(true)
+const refreshing = ref(false)
+const campaignId = ref('')
 const errorText = ref('')
 const campaignProducts = ref<DisplayProduct[]>([])
 const loadingProducts = ref(false)
@@ -300,7 +302,12 @@ const claimAllButtonText = computed(() => {
 })
 
 onLoad(async (options) => {
-  const id = options?.id
+  campaignId.value = options?.id || ''
+  await loadCampaign()
+})
+
+async function loadCampaign() {
+  const id = campaignId.value
   if (!id) {
     loading.value = false
     errorText.value = '活动链接无效'
@@ -318,7 +325,16 @@ onLoad(async (options) => {
   } finally {
     loading.value = false
   }
-})
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadCampaign()
+  } finally {
+    refreshing.value = false
+  }
+}
 
 async function loadProducts(campaignId: string, targetPage: number) {
   if (loadingProducts.value) return
@@ -547,531 +563,5 @@ async function claimAll() {
 </script>
 
 <style scoped lang="scss">
-$primary: #0d631b;
-$primary-soft: #2e7d32;
-$surface: #fcf9f8;
-$ink: #1b1c1c;
-$muted: #707a6c;
-$line: rgba(112, 122, 108, 0.22);
-$accent: #8b5000;
-
-.page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: $surface;
-}
-
-.page-body {
-  flex: 1;
-  min-height: 0;
-}
-
-.loading-state {
-  padding: 120rpx 0;
-  text-align: center;
-}
-
-.loading-text {
-  font-size: 26rpx;
-  color: $muted;
-}
-
-.campaign {
-  padding-bottom: 0;
-}
-
-.hero {
-  position: relative;
-  height: 520rpx;
-  overflow: hidden;
-  background: #eae7e7;
-}
-
-.hero-image {
-  width: 100%;
-  height: 100%;
-}
-
-.hero-image-empty {
-  background: linear-gradient(160deg, #e8efe7, #f6f3f2);
-}
-
-.hero-shade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(20, 30, 18, 0.05) 0%, rgba(20, 30, 18, 0.62) 70%, rgba(20, 30, 18, 0.82) 100%);
-}
-
-.hero-content {
-  position: absolute;
-  left: 40rpx;
-  right: 40rpx;
-  bottom: 44rpx;
-  display: flex;
-  flex-direction: column;
-}
-
-.hero-overline {
-  font-size: 20rpx;
-  letter-spacing: 6rpx;
-  color: rgba(255, 255, 255, 0.72);
-  margin-bottom: 16rpx;
-}
-
-.hero-title {
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
-  font-size: 52rpx;
-  line-height: 1.3;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.hero-meta {
-  display: flex;
-  align-items: center;
-  gap: 18rpx;
-  margin-top: 24rpx;
-}
-
-.status-pill {
-  padding: 6rpx 18rpx;
-  border-radius: 100rpx;
-  font-size: 22rpx;
-  font-weight: 600;
-  color: #ffffff;
-  background: rgba(13, 99, 27, 0.85);
-}
-
-.status-upcoming {
-  background: rgba(139, 80, 0, 0.9);
-}
-
-.status-ended {
-  background: rgba(60, 60, 60, 0.85);
-}
-
-.hero-period {
-  font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.state-notice {
-  margin: 28rpx 32rpx 0;
-  padding: 24rpx 28rpx;
-  border: 1rpx solid $line;
-  border-radius: 16rpx;
-  background: #ffffff;
-}
-
-.state-notice-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: $ink;
-}
-
-.state-notice-text {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  line-height: 1.6;
-  color: $muted;
-}
-
-.article {
-  padding: 40rpx 36rpx 8rpx;
-}
-
-.article-rich {
-  font-size: 28rpx;
-  line-height: 1.9;
-  color: #40493d;
-}
-
-.section-head {
-  padding: 48rpx 36rpx 8rpx;
-  border-top: 1rpx solid $line;
-  margin-top: 40rpx;
-}
-
-.section-overline {
-  display: block;
-  font-size: 20rpx;
-  letter-spacing: 4rpx;
-  color: $accent;
-}
-
-.section-title {
-  display: block;
-  margin-top: 12rpx;
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
-  font-size: 40rpx;
-  font-weight: 600;
-  color: $ink;
-}
-
-.section-desc {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 24rpx;
-  line-height: 1.7;
-  color: $muted;
-}
-
-.product-group {
-  margin-top: 32rpx;
-}
-
-.group-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 0 36rpx 16rpx;
-}
-
-.group-name {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: $ink;
-}
-
-.group-count {
-  font-size: 22rpx;
-  color: $muted;
-}
-
-.product-row {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 22rpx 32rpx;
-  border-top: 1rpx solid $line;
-  background: #ffffff;
-}
-
-.product-main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 22rpx;
-  min-width: 0;
-}
-
-.product-image-wrap {
-  position: relative;
-  width: 156rpx;
-  height: 156rpx;
-  flex-shrink: 0;
-}
-
-.product-image {
-  width: 156rpx;
-  height: 156rpx;
-  border-radius: 12rpx;
-}
-
-.product-badge {
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx 0 12rpx 0;
-}
-
-.product-badge-text {
-  font-size: 18rpx;
-  color: #ffffff;
-}
-
-.product-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.product-name {
-  font-size: 28rpx;
-  font-weight: 600;
-  line-height: 1.4;
-  color: $ink;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.product-spec {
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  color: $muted;
-}
-
-.product-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  margin-top: 8rpx;
-}
-
-.product-tag {
-  padding: 2rpx 10rpx;
-  border: 1rpx solid $line;
-  border-radius: 100rpx;
-  font-size: 18rpx;
-  color: $muted;
-}
-
-.product-price-row {
-  display: flex;
-  align-items: baseline;
-  margin-top: 12rpx;
-}
-
-.price-symbol {
-  font-size: 20rpx;
-  color: $primary;
-}
-
-.price-value {
-  font-size: 34rpx;
-  font-weight: 700;
-  color: $primary;
-  margin-left: 2rpx;
-}
-
-.price-original {
-  margin-left: 12rpx;
-  font-size: 22rpx;
-  color: #a9b1a6;
-  text-decoration: line-through;
-}
-
-.product-add {
-  flex-shrink: 0;
-  padding: 14rpx 20rpx;
-  border: 1rpx solid $primary;
-  border-radius: 100rpx;
-}
-
-.product-add-text {
-  font-size: 21rpx;
-  font-weight: 600;
-  color: $primary;
-}
-
-.product-add.disabled {
-  border-color: #c7cdc4;
-}
-
-.product-add.disabled .product-add-text {
-  color: #a9b1a6;
-}
-
-.empty-block {
-  margin: 40rpx 32rpx;
-  padding: 48rpx 32rpx;
-  border: 1rpx dashed $line;
-  border-radius: 16rpx;
-  text-align: center;
-}
-
-.empty-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: $ink;
-}
-
-.empty-text {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 24rpx;
-  color: $muted;
-}
-
-.loading-more {
-  padding: 28rpx 0 8rpx;
-  text-align: center;
-}
-
-.loading-more-text {
-  font-size: 22rpx;
-  color: $muted;
-}
-
-.coupon-card {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin: 20rpx 32rpx 0;
-  padding: 26rpx 22rpx;
-  border: 1rpx solid $line;
-  border-radius: 18rpx;
-  background: #ffffff;
-}
-
-.coupon-left {
-  width: 150rpx;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.coupon-value {
-  display: flex;
-  align-items: baseline;
-  color: $primary;
-}
-
-.coupon-value-symbol {
-  font-size: 26rpx;
-  font-weight: 600;
-}
-
-.coupon-value-text {
-  font-size: 48rpx;
-  font-weight: 700;
-  font-family: 'Noto Serif SC', serif;
-}
-
-.coupon-threshold {
-  margin-top: 4rpx;
-  font-size: 20rpx;
-  color: $muted;
-}
-
-.coupon-dash {
-  width: 1rpx;
-  align-self: stretch;
-  border-left: 1rpx dashed $line;
-}
-
-.coupon-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.coupon-name {
-  font-size: 27rpx;
-  font-weight: 600;
-  color: $ink;
-}
-
-.coupon-scope {
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  color: $muted;
-}
-
-.coupon-remain {
-  margin-top: 4rpx;
-  font-size: 20rpx;
-  color: #a9b1a6;
-}
-
-.coupon-action {
-  flex-shrink: 0;
-  padding: 12rpx 20rpx;
-  border-radius: 100rpx;
-  background: $primary;
-}
-
-.coupon-action-text {
-  font-size: 20rpx;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.coupon-action.disabled {
-  background: #e5e2e1;
-}
-
-.coupon-action.disabled .coupon-action-text {
-  color: $muted;
-}
-
-.assurance {
-  padding: 44rpx 36rpx 8rpx;
-  border-top: 1rpx solid $line;
-  margin: 48rpx 32rpx 0;
-}
-
-.assurance-item {
-  font-size: 22rpx;
-  color: $muted;
-  line-height: 1.9;
-  display: block;
-}
-
-.footer-space {
-  height: 220rpx;
-}
-
-.action-bar {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  padding: 18rpx 24rpx calc(18rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
-  background: #ffffff;
-}
-
-.action-summary {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.summary-label {
-  font-size: 20rpx;
-  color: $muted;
-}
-
-.summary-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6rpx;
-  margin-top: 2rpx;
-}
-
-.summary-symbol {
-  font-size: 22rpx;
-  color: $primary;
-}
-
-.summary-price {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: $primary;
-  font-family: 'Noto Serif SC', serif;
-}
-
-.summary-count {
-  margin-left: 8rpx;
-  font-size: 20rpx;
-  color: $muted;
-}
-
-.action-button {
-  padding: 20rpx 34rpx;
-  border-radius: 100rpx;
-  background: $primary;
-}
-
-.action-button-text {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.action-button.disabled {
-  background: #c7cdc4;
-}
+@import "./index.scss";
 </style>

@@ -1,9 +1,9 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back title="订单详情" />
 
-    <scroll-view scroll-y class="page-body" v-if="order">
-      <view class="status-banner" :class="'status-' + order.status">
+      <template v-if="order">
+        <view class="status-banner" :class="'status-' + order.status">
         <view class="status-deco"></view>
         <view class="status-main">
           <view class="status-top">
@@ -150,7 +150,7 @@
             </view>
             <view class="pharm-info">
               <view class="pharm-name-row">
-                <text class="pharm-name">本草国医馆</text>
+                <text class="pharm-name">{{ order.items[0]?.storeName || '本草国医馆' }}</text>
                 <view class="gap-badge">
                   <text>GAP</text>
                 </view>
@@ -249,52 +249,57 @@
       </view>
 
       <view class="bottom-space"></view>
-    </scroll-view>
+      </template>
 
-    <view v-if="order" class="footer-bar">
-      <view class="fb-left" @tap="consult">
-        <q-icon name="service" size="18" color="#40493D" />
-        <text>药师</text>
-      </view>
-      <view class="fb-left" @tap="afterSale">
-        <q-icon name="shield-error" size="18" color="#40493D" />
-        <text>售后</text>
-      </view>
-      <view class="fb-btns">
-        <button
-          v-if="order.status === 'PendingPayment'"
-          class="fb-btn solid"
-          @tap="handlePay"
-        >立即付款</button>
-        <button
-          v-if="order.status === 'Shipped'"
-          class="fb-btn solid"
-          @tap="handleConfirm"
-        >确认收货</button>
-        <button
-          v-if="order.status === 'PendingPayment'"
-          class="fb-btn ghost"
-          @tap="handleCancel"
-        >取消订单</button>
-        <button
-          v-if="order.status === 'Paid'"
-          class="fb-btn ghost"
-          @tap="goRefundApply"
-        >申请仅退款</button>
-        <button
-          v-if="(order.status === 'Shipped' || order.status === 'Completed') && !hasActiveReturn"
-          class="fb-btn ghost"
-          @tap="goReturnApply"
-        >退货退款</button>
-        <button
-          v-if="needReturnTracking"
-          class="fb-btn solid"
-          @tap="goReturnTracking"
-        >填写寄回运单</button>
-      </view>
-    </view>
-    <view v-else class="page-body loading">加载中…</view>
-  </view>
+      <template v-else>
+        <view class="page-body loading">加载中…</view>
+      </template>
+
+      <template #footer>
+        <view v-if="order" class="footer-bar">
+          <view class="fb-left" @tap="consult">
+            <q-icon name="service" size="18" color="#40493D" />
+            <text>药师</text>
+          </view>
+          <view class="fb-left" @tap="afterSale">
+            <q-icon name="shield-error" size="18" color="#40493D" />
+            <text>售后</text>
+          </view>
+          <view class="fb-btns">
+            <button
+              v-if="order.status === 'PendingPayment'"
+              class="fb-btn solid"
+              @tap="handlePay"
+            >立即付款</button>
+            <button
+              v-if="order.status === 'Shipped'"
+              class="fb-btn solid"
+              @tap="handleConfirm"
+            >确认收货</button>
+            <button
+              v-if="order.status === 'PendingPayment'"
+              class="fb-btn ghost"
+              @tap="handleCancel"
+            >取消订单</button>
+            <button
+              v-if="order.status === 'Paid'"
+              class="fb-btn ghost"
+              @tap="goRefundApply"
+            >申请仅退款</button>
+            <button
+              v-if="(order.status === 'Shipped' || order.status === 'Completed') && !hasActiveReturn"
+              class="fb-btn ghost"
+              @tap="goReturnApply"
+            >退货退款</button>
+            <button
+              v-if="needReturnTracking"
+              class="fb-btn solid"
+              @tap="goReturnTracking"
+            >填写寄回运单</button>
+          </view>
+        </view>
+      </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -305,6 +310,7 @@ import { resolveFileUrl } from '@/utils/http'
 import type { MallOrderDetail, MallOrderItem } from '@/api'
 
 const order = ref<MallOrderDetail | null>(null)
+const refreshing = ref(false)
 
 /** 实付金额：已支付取实付，未支付/已取消取应付，保证与列表显示口径一致 */
 const actualPayAmount = computed(() => {
@@ -425,6 +431,15 @@ async function loadOrder() {
   } catch (err) {
     console.error(err)
     uni.showToast({ title: '加载失败', icon: 'none' })
+  }
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadOrder()
+  } finally {
+    refreshing.value = false
   }
 }
 
@@ -623,398 +638,5 @@ async function handleConfirm() {
 </script>
 
 <style lang="scss" scoped>
-$primary: #2E7D32;
-$primary-dark: #1B5E20;
-$price: #8B5000;
-$on-surface: #1B1C1C;
-$on-surface-var: #40493D;
-$muted: #8A8578;
-$card-bg: #ffffff;
-$page-bg: #F5F7F5;
-$shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
-
-.page {
-  min-height: 100vh;
-  background: $page-bg;
-  padding-bottom: 180rpx;
-}
-
-.header-right {
-  display: flex; align-items: center; gap: 4rpx;
-  padding: 8rpx 16rpx;
-  background: #F3F8F1;
-  border-radius: 100rpx;
-  font-size: 22rpx; color: $on-surface-var;
-}
-
-.page-body {
-  height: calc(100vh - 100rpx);
-  padding: 24rpx;
-  box-sizing: border-box;
-}
-
-.loading { display: flex; align-items: center; justify-content: center; color: $muted; font-size: 26rpx; }
-
-/* ===== 状态横幅 ===== */
-.status-banner {
-  position: relative;
-  padding: 36rpx 28rpx 32rpx;
-  border-radius: 24rpx;
-  margin-bottom: 20rpx;
-  overflow: hidden;
-  color: #ffffff;
-  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
-
-  &.status-PendingPayment { background: linear-gradient(135deg, #FF9800, #F57C00); }
-  &.status-Paid { background: linear-gradient(135deg, $primary, #43A047); }
-  &.status-Completed { background: linear-gradient(135deg, #546E7A, #78909C); }
-  &.status-Cancelled { background: linear-gradient(135deg, #9E9E9E, #BDBDBD); }
-  &.status-Refunding, &.status-Refunded { background: linear-gradient(135deg, #E53935, #EF5350); }
-  &.status-Returning, &.status-Returned { background: linear-gradient(135deg, #EF6C00, #FB8C00); }
-}
-.status-deco {
-  position: absolute;
-  width: 320rpx; height: 320rpx;
-  right: -80rpx; top: -80rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-}
-.status-main { position: relative; z-index: 2; }
-.status-top { display: flex; align-items: center; gap: 16rpx; margin-bottom: 10rpx; }
-.status-label {
-  font-size: 38rpx; font-weight: 800;
-  letter-spacing: -1rpx;
-}
-.ship-tag {
-  display: flex; align-items: center; gap: 4rpx;
-  padding: 6rpx 14rpx;
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 100rpx;
-  font-size: 20rpx; font-weight: 600;
-}
-.status-sub {
-  display: block;
-  font-size: 26rpx; font-weight: 500;
-  opacity: 0.92;
-  margin-bottom: 14rpx;
-}
-.cloud-tag {
-  display: inline-flex; align-items: center; gap: 8rpx;
-  padding: 6rpx 14rpx;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8rpx;
-  font-size: 20rpx;
-}
-.cloud-dot {
-  width: 10rpx; height: 10rpx;
-  border-radius: 50%;
-  background: #4CAF50;
-  box-shadow: 0 0 8rpx #4CAF50;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
-}
-
-/* ===== 通用卡片 ===== */
-.card {
-  background: $card-bg;
-  border-radius: 24rpx;
-  padding: 28rpx;
-  margin-bottom: 20rpx;
-  box-shadow: $shadow-card;
-}
-
-.card-head {
-  display: flex; align-items: center; gap: 14rpx;
-  padding-bottom: 20rpx;
-  margin-bottom: 16rpx;
-  border-bottom: 1rpx solid #F2F1EC;
-}
-.head-icon {
-  width: 48rpx; height: 48rpx;
-  background: #F3F8F1;
-  border-radius: 14rpx;
-  display: flex; align-items: center; justify-content: center;
-}
-.head-text { flex: 1; min-width: 0; }
-.head-title { font-size: 28rpx; font-weight: 700; color: $on-surface; display: block; }
-.head-sub { font-size: 22rpx; color: $muted; font-family: monospace; }
-.head-more {
-  display: flex; align-items: center; gap: 2rpx;
-  font-size: 22rpx; color: $muted;
-}
-
-/* ===== 物流卡片：仅展示真实运单信息，无轨迹数据不伪造节点 ===== */
-.ship-info { display: flex; flex-direction: column; gap: 14rpx; }
-.ship-row { display: flex; align-items: baseline; gap: 20rpx; }
-.ship-label {
-  width: 130rpx;
-  flex-shrink: 0;
-  font-size: 24rpx;
-  color: $muted;
-}
-.ship-val {
-  font-size: 26rpx;
-  color: $on-surface-var;
-  word-break: break-all;
-}
-.mono { font-family: monospace; }
-
-/* ===== 售后进度卡片 ===== */
-.card-aftersale {
-  border: 1rpx solid rgba(46, 125, 50, 0.12);
-}
-.as-status {
-  padding: 6rpx 16rpx;
-  border-radius: 100rpx;
-  font-size: 22rpx;
-  font-weight: 600;
-  background: #FFF8E1;
-  color: #B26A00;
-
-  &.as-Approved { background: #E3F2FD; color: #1565C0; }
-  &.as-Rejected { background: #F3F3F0; color: $muted; }
-  &.as-Received, &.as-Completed, &.as-Success { background: #F3F8F1; color: $primary; }
-  &.as-Failed { background: #FFEBEE; color: #C62828; }
-}
-.ship-val.price { color: $price; font-weight: 700; }
-.ship-val.reject { color: #E53935; }
-.as-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-top: 16rpx;
-
-  image {
-    width: 120rpx;
-    height: 120rpx;
-    border-radius: 10rpx;
-  }
-}
-.as-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4rpx;
-  margin-top: 18rpx;
-  padding: 16rpx 0;
-  border-radius: 12rpx;
-  background: #F3F8F1;
-  border: 1rpx solid rgba(46, 125, 50, 0.18);
-
-  text { font-size: 24rpx; font-weight: 600; color: $primary; }
-}
-
-/* ===== 地址卡片 ===== */
-.addr-head {
-  display: flex; align-items: center; gap: 14rpx;
-  margin-bottom: 14rpx;
-}
-.addr-icon {
-  width: 52rpx; height: 52rpx;
-  background: #F3F8F1;
-  border-radius: 14rpx;
-  display: flex; align-items: center; justify-content: center;
-}
-.addr-receiver { flex: 1; display: flex; align-items: center; gap: 12rpx; }
-.rc-name { font-size: 28rpx; font-weight: 700; color: $on-surface; }
-.rc-phone { font-size: 26rpx; color: $on-surface-var; font-family: monospace; }
-.addr-edit { display: flex; align-items: center; font-size: 22rpx; color: $muted; }
-.addr-full {
-  display: block;
-  font-size: 26rpx; color: $on-surface-var;
-  line-height: 1.5;
-  padding-left: 66rpx;
-}
-.addr-note {
-  display: flex; align-items: center; gap: 8rpx;
-  margin-top: 16rpx;
-  padding: 12rpx 16rpx;
-  margin-left: 66rpx;
-  background: #FFF8E1;
-  border-radius: 10rpx;
-  font-size: 22rpx; color: #B26A00;
-}
-
-/* ===== 药房 / 商品卡片 ===== */
-.pharm-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-bottom: 20rpx;
-  margin-bottom: 12rpx;
-  border-bottom: 1rpx solid #F2F1EC;
-}
-.pharm-left { display: flex; align-items: center; gap: 14rpx; flex: 1; min-width: 0; }
-.pharm-avatar {
-  width: 56rpx; height: 56rpx;
-  background: linear-gradient(135deg, $primary, $primary-dark);
-  border-radius: 16rpx;
-  display: flex; align-items: center; justify-content: center;
-  color: #ffffff; font-size: 28rpx; font-weight: 800;
-}
-.pharm-info { flex: 1; min-width: 0; }
-.pharm-name-row { display: flex; align-items: center; gap: 10rpx; margin-bottom: 6rpx; }
-.pharm-name { font-size: 28rpx; font-weight: 700; color: $on-surface; }
-.gap-badge {
-  padding: 2rpx 10rpx;
-  background: $price;
-  border-radius: 6rpx;
-  font-size: 18rpx; color: #ffffff; font-weight: 700;
-  letter-spacing: 1rpx;
-}
-.pharm-row {
-  display: flex; align-items: center; gap: 4rpx;
-  font-size: 22rpx; color: $muted;
-}
-.pharm-go {
-  display: flex; align-items: center; gap: 2rpx;
-  font-size: 22rpx; color: $primary; font-weight: 600;
-}
-
-.prod-item {
-  display: flex; gap: 18rpx;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #F2F1EC;
-
-  &:last-of-type { border-bottom: none; }
-}
-.prod-img {
-  position: relative;
-  width: 180rpx; height: 180rpx;
-  border-radius: 16rpx;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: #F3F3F0;
-}
-.prod-img image { width: 100%; height: 100%; }
-.prod-tag {
-  position: absolute; top: 0; left: 0;
-  padding: 4rpx 10rpx;
-  background: rgba(46, 125, 50, 0.92);
-  border-radius: 0 0 12rpx 0;
-  font-size: 18rpx; color: #ffffff; font-weight: 600;
-}
-.prod-info { flex: 1; display: flex; flex-direction: column; gap: 6rpx; min-width: 0; }
-.prod-name {
-  font-size: 28rpx; font-weight: 600; color: $on-surface;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
-}
-.prod-spec { font-size: 22rpx; color: $muted; }
-.prod-tags { display: flex; gap: 10rpx; flex-wrap: wrap; }
-.pt-gap, .pt-cold {
-  display: flex; align-items: center; gap: 4rpx;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
-  font-size: 18rpx; font-weight: 500;
-}
-.pt-gap { background: #F3F8F1; color: $primary; }
-.pt-cold { background: #E1F5FE; color: #0288D1; }
-.prod-bottom { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; }
-.prod-bottom-right { display: flex; align-items: center; gap: 14rpx; }
-.prod-price { font-size: 28rpx; font-weight: 700; color: $price; }
-.prod-price-left { display: flex; align-items: baseline; gap: 10rpx; min-width: 0; }
-.prod-price-origin { font-size: 22rpx; color: #B0ACA2; text-decoration: line-through; }
-.prod-promo { display: block; margin-top: 6rpx; font-size: 22rpx; color: $muted; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.prod-qty { font-size: 24rpx; color: $muted; }
-.review-btn {
-  padding: 8rpx 22rpx;
-  border-radius: 100rpx;
-  background: #F3F8F1;
-  border: 1rpx solid rgba(46, 125, 50, 0.3);
-
-  text { font-size: 20rpx; font-weight: 600; color: $primary; }
-
-  &.done {
-    background: #F3F3F0;
-    border-color: #E0DDD6;
-
-    text { color: $muted; }
-  }
-}
-
-.prod-actions {
-  display: flex; gap: 14rpx;
-  margin-top: 20rpx;
-}
-.pa-btn {
-  flex: 1;
-  display: flex; align-items: center; justify-content: center; gap: 6rpx;
-  padding: 16rpx 0;
-  border-radius: 12rpx;
-  font-size: 24rpx; font-weight: 500;
-
-  &.ghost {
-    background: #F3F8F1;
-    color: $primary;
-    border: 1rpx solid rgba(46, 125, 50, 0.18);
-  }
-}
-
-/* ===== 金额卡 ===== */
-.card-amount { padding: 24rpx 28rpx; }
-.amt-row {
-  display: flex; justify-content: space-between;
-  padding: 10rpx 0;
-  font-size: 26rpx; color: $on-surface-var;
-
-  &.discount text:last-child { color: #E53935; }
-  &.total {
-    padding-top: 16rpx; margin-top: 8rpx;
-    border-top: 1rpx solid #F2F1EC;
-    font-size: 28rpx; font-weight: 600; color: $on-surface;
-  }
-}
-.payable { font-size: 36rpx; font-weight: 800; color: $price; letter-spacing: -0.5rpx; }
-
-/* ===== 订单信息 ===== */
-.card-order-info { padding: 24rpx 28rpx; }
-.oi-row {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 20rpx;
-  padding: 8rpx 0;
-  font-size: 24rpx;
-}
-.oi-label { color: $muted; flex-shrink: 0; }
-.oi-val { color: $on-surface; text-align: right; flex: 1; }
-.mono { font-family: 'SF Mono', 'Menlo', monospace; }
-
-/* ===== 底部操作栏 ===== */
-.bottom-space { height: 40rpx; }
-
-.footer-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-  background: #ffffff;
-  padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  display: flex; align-items: center; gap: 16rpx;
-  border-top: 1rpx solid #F0EFEB;
-}
-.fb-left {
-  display: flex; flex-direction: column; align-items: center; gap: 2rpx;
-  padding: 4rpx 12rpx;
-  font-size: 18rpx; color: $on-surface-var;
-}
-.fb-btns { display: flex; gap: 12rpx; flex: 1; }
-.fb-btn {
-  flex: 1; height: 76rpx; line-height: 76rpx;
-  text-align: center;
-  border-radius: 100rpx;
-  font-size: 26rpx; font-weight: 600;
-  border: none;
-
-  &.solid {
-    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
-    color: #ffffff;
-  }
-  &.ghost {
-    background: #ffffff;
-    border: 2rpx solid $primary;
-    color: $primary;
-  }
-}
+@import "./index.scss";
 </style>

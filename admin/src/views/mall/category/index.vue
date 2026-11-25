@@ -335,17 +335,5 @@ const deleteCategory = async (row: any) => {
 </script>
 
 <style scoped lang="scss">
-.form-tip {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-.category-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  vertical-align: middle;
-}
-.icon-empty {
-  color: var(--el-text-color-placeholder);
-}
+@import "./index.scss";
 </style>

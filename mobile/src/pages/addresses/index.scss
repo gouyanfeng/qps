@@ -1,0 +1,117 @@
+.page {
+  min-height: 100vh;
+  background: var(--page-bg);
+}
+
+.page-body {
+  height: calc(100vh - var(--page-top-offset));
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.address-card,
+.form-card {
+  margin-bottom: 20rpx;
+  padding: 24rpx;
+  background: #ffffff;
+  border-radius: 18rpx;
+}
+
+.address-heading {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.receiver {
+  color: #1B1C1C;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.phone,
+.address-text,
+.select-tip {
+  color: #6B6B6B;
+  font-size: 23rpx;
+}
+
+.address-text {
+  display: block;
+  margin-top: 12rpx;
+}
+
+.default-tag {
+  padding: 4rpx 12rpx;
+  color: #2E7D32;
+  background: #E8F5E9;
+  border-radius: 10rpx;
+  font-size: 20rpx;
+}
+
+.address-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  color: #C62828;
+  font-size: 22rpx;
+}
+
+.form-title {
+  display: block;
+  margin-bottom: 16rpx;
+  color: #1B1C1C;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.form-input {
+  height: 78rpx;
+  margin-bottom: 14rpx;
+  padding: 0 16rpx;
+  background: #F7F6F2;
+  border-radius: 10rpx;
+  font-size: 23rpx;
+}
+
+.form-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 78rpx;
+  margin-bottom: 14rpx;
+  padding: 0 16rpx;
+  background: #F7F6F2;
+  border-radius: 10rpx;
+  font-size: 23rpx;
+  color: #1B1C1C;
+
+  &.placeholder {
+    color: #999;
+  }
+
+  &.disabled {
+    color: #bbb;
+  }
+}
+
+.picker-arrow {
+  color: #bbb;
+  font-size: 32rpx;
+}
+
+.default-option {
+  display: flex;
+  align-items: center;
+  margin: 10rpx 0;
+  color: #40493D;
+  font-size: 23rpx;
+}
+
+.submit-button {
+  margin-top: 16rpx;
+  color: #ffffff;
+  background: #2E7D32;
+  border-radius: 42rpx;
+  font-size: 26rpx;
+}
