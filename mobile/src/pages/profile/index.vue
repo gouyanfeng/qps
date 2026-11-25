@@ -1,9 +1,8 @@
 ﻿﻿﻿﻿﻿<template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <!-- ============ 顶栏 ============ -->
     <q-page-header-back :show-back="false" title="个人中心" />
 
-    <scroll-view scroll-y class="page-body" enhanced>
       <!-- ============ Hero 会员卡片 ============ -->
       <view class="hero-card">
         <view class="hero-top">
@@ -250,8 +249,7 @@
         <text class="license-text">本草国医馆 · 严选中国地理标志道地药材</text>
         <text class="license-text license-sub">药品经营质量管理规范 GSP 认证 · 互联网中药房备案许可</text>
       </view>
-    </scroll-view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -295,8 +293,9 @@ const orderBadge = ref<MallMemberOrderBadge>({
   returning: 0
 })
 const couponsCount = ref(0)
+const refreshing = ref(false)
 
-onShow(async () => {
+async function loadProfile() {
   try {
     const [member, memberOrderBadge, memberCouponCount] = await Promise.all([
       getMemberProfile(),
@@ -311,7 +310,15 @@ onShow(async () => {
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '会员信息加载失败', icon: 'none' })
   }
-})
+}
+
+onShow(loadProfile)
+
+async function onRefresh() {
+  refreshing.value = true
+  try { await loadProfile() }
+  finally { refreshing.value = false }
+}
 
 function openAccount() {
   if (!profile.value) uni.navigateTo({ url: '/pages/account/index' })

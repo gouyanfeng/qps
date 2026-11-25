@@ -1,10 +1,10 @@
 <template>
-  <view class="page">
+  <q-page>
     <q-page-header-back title="发表评价" />
 
     <view v-if="loading" class="page-body loading">加载中…</view>
 
-    <scroll-view v-else scroll-y class="page-body">
+    <view v-if="!loading">
       <!-- 商品信息 -->
       <view v-if="item" class="product-card">
         <view class="product-image">
@@ -99,8 +99,9 @@
       </view>
 
       <view class="bottom-space"></view>
-    </scroll-view>
+    </view>
 
+    <template #footer>
     <view v-if="!loading" class="page-footer">
       <view
         class="submit-btn"
@@ -108,7 +109,8 @@
         @click="submit"
       >{{ submitting ? '提交中…' : '提交评价' }}</view>
     </view>
-  </view>
+    </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">

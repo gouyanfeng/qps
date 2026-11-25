@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled show-loadmore :refresher-triggered="refreshing" :loading="loading" :has-more="hasMore" @refresh="onRefresh" @loadmore="loadMore">
     <q-page-header-back title="商品评价" />
 
     <view class="summary-card">
@@ -79,20 +79,16 @@
       </view>
     </view>
 
-    <view v-if="reviews.length" class="list-status">
-      <text>{{ loading ? '加载中…' : (hasMore ? '' : '没有更多了') }}</text>
-    </view>
-
     <view v-if="loaded && !loading && !reviews.length" class="empty-state">
       <q-icon name="chat" size="48" color="#BDBDBD" />
       <text class="empty-text">暂无评价</text>
     </view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad, onReachBottom } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
 import { getProductReviews } from '@/api'
 import type { ProductReview, ReviewTagStat } from '@/api/types'
 import { resolveFileUrl } from '@/utils/http'
@@ -109,6 +105,7 @@ const page = ref(1)
 const hasMore = ref(false)
 const loading = ref(false)
 const loaded = ref(false)
+const refreshing = ref(false)
 
 const positiveRateText = computed(() => {
   const rate = Number(positiveRate.value) || 0
@@ -125,11 +122,20 @@ onLoad((options) => {
   loadReviews(true)
 })
 
-onReachBottom(() => {
+function loadMore() {
   if (!hasMore.value || loading.value) return
   page.value++
   loadReviews()
-})
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadReviews(true)
+  } finally {
+    refreshing.value = false
+  }
+}
 
 let requestSeq = 0
 

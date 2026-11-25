@@ -1,10 +1,10 @@
 <template>
-  <view class="page">
+  <q-page>
     <q-page-header-back :title="pageTitle" />
 
     <view v-if="loading" class="page-body loading">加载中…</view>
 
-    <scroll-view v-else scroll-y class="page-body">
+    <view v-if="!loading">
       <!-- 申请售后：订单概要 -->
       <view v-if="mode !== 'tracking'" class="summary-card">
         <view class="summary-row">
@@ -116,14 +116,16 @@
       </template>
 
       <view class="bottom-space"></view>
-    </scroll-view>
+    </view>
 
+    <template #footer>
     <view v-if="!loading" class="page-footer">
       <view class="submit-btn" :class="{ disabled: uploading || submitting }" @click="submit">
         {{ submitting ? '提交中…' : mode === 'tracking' ? '提交运单' : '提交申请' }}
       </view>
     </view>
-  </view>
+    </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">

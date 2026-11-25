@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <!-- ============ 顶栏：统一标题 ============ -->
     <q-page-header-back :show-back="false" title="本草国医馆" />
     <view class="page-subbar">
@@ -13,9 +13,6 @@
         <text class="verify-text">查真伪</text>
       </view>
     </view>
-
-    <!-- ============ main 主内容区 ============ -->
-    <scroll-view scroll-y class="page-body" enhanced>
       <swiper v-if="banners.length" class="catalog-banner" autoplay circular indicator-dots>
         <swiper-item v-for="banner in banners" :key="banner.id" @click="handleBannerClick(banner)">
           <q-image :src="banner.image" thumb :width="750" mode="aspectFill" class="catalog-banner-image" />
@@ -124,8 +121,7 @@
       <view class="footer">
         <text class="footer-text">— 大医精诚 · 悬壶济世 · 道地保真 —</text>
       </view>
-    </scroll-view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -159,8 +155,11 @@ const banners = ref<Banner[]>([])
 const solarBanner = ref<Banner | null>(null)
 
 const featured = ref<FeaturedItem[]>([])
+const refreshing = ref(false)
 
-onMounted(async () => {
+onMounted(loadHomeData)
+
+async function loadHomeData() {
   try {
     const [categories, products, loadedBanners, solarList] = await Promise.all([
       getCategories(),
@@ -214,7 +213,13 @@ onMounted(async () => {
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '首页数据加载失败', icon: 'none' })
   }
-})
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try { await loadHomeData() }
+  finally { refreshing.value = false }
+}
 
 async function quickAdd(item: FeaturedItem) {
   try {

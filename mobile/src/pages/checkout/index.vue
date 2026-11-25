@@ -1,9 +1,8 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <!-- ============ 顶栏 ============ -->
     <q-page-header-back title="确认订单" />
 
-    <scroll-view scroll-y class="page-body">
       <!-- 冷链配送地址卡 -->
       <section class="card address-card">
         <view class="address-head">
@@ -210,8 +209,8 @@
       </section>
 
       <view class="bottom-placeholder"></view>
-    </scroll-view>
 
+    <template #footer>
     <!-- 底部固定结算栏：应付/合计 + 明细抽屉入口 + 提交订单 -->
     <q-checkout-bar
       :payable-amount="finalPrice"
@@ -314,7 +313,8 @@
         </view>
       </view>
     </view>
-  </view>
+    </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -338,6 +338,7 @@ const addressOptions = ref<MallAddress[]>([])
 const promotionPreview = ref<OrderPreview | null>(null)
 // 立即购买不经过购物车，下单成功后不能改动购物车
 const isBuyNow = ref(false)
+const refreshing = ref(false)
 
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
@@ -386,7 +387,9 @@ async function refreshPreview() {
   })
 }
 
-onShow(async () => {
+onShow(() => { loadCheckout() })
+
+async function loadCheckout() {
   try {
     // 先确定收货地址，预览的运费才知道按哪个地区计算
     const addresses = await getAddresses()
@@ -440,7 +443,16 @@ onShow(async () => {
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '结算数据加载失败', icon: 'none' })
   }
-})
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadCheckout()
+  } finally {
+    refreshing.value = false
+  }
+}
 
 // 离开结算页（返回或切换页面）时清理立即购买上下文，避免下次购物车结算串单
 onUnload(() => {

@@ -1,9 +1,8 @@
 <template>
-  <view class="page">
+  <q-page>
     <!-- 顶部返回 -->
     <q-page-header-back title="登录" fallback="/pages/index/index" />
 
-    <view class="body">
       <!-- 品牌徽记 -->
       <view class="brand">
         <view class="crest">
@@ -90,8 +89,7 @@
           </text>
         </view>
       </view>
-    </view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">

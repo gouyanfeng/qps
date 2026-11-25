@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <!-- ============ 顶栏：标题 + 管理按钮 ============ -->
     <q-page-header-back :show-back="false" title="购物车">
       <template #right>
@@ -10,7 +10,6 @@
     </q-page-header-back>
 
     <!-- ============ 内容区 ============ -->
-    <scroll-view scroll-y class="page-body" enhanced>
       <view class="page-body-inner">
       <!-- 空车态 -->
       <view v-if="cartItems.length === 0" class="empty-wrap">
@@ -184,8 +183,8 @@
         </section>
       </block>
       </view>
-    </scroll-view>
 
+    <template #footer>
     <!-- ============ 底部固定结算栏：应付/合计 + 明细抽屉 + 去结算 ============ -->
     <q-checkout-bar
       v-if="cartItems.length > 0"
@@ -212,7 +211,8 @@
         </view>
       </template>
     </q-checkout-bar>
-  </view>
+    </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -230,12 +230,19 @@ import type { CartItem } from '@/api/types'
 import type { CartGiftItem, CartSummary } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
+interface StoreGroup {
+  storeId: string
+  storeName: string
+  items: CartItem[]
+}
+
 const cartItems = ref<CartItem[]>([])
 const gifts = ref<CartGiftItem[]>([])
 const selectedAmount = ref(0)
 const promotionDiscount = ref(0)
 const payableAmount = ref(0)
 const editMode = ref(false)
+const refreshing = ref(false)
 
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const selectedLineCount = computed(() => selectedItems.value.length)
@@ -245,11 +252,6 @@ const giftCount = computed(() => gifts.value.reduce((sum, gift) => sum + gift.qu
 const checkoutCount = computed(() => selectedCount.value + giftCount.value)
 const isAllSelected = computed(() => cartItems.value.length > 0 && selectedLineCount.value === cartItems.value.length)
 
-interface StoreGroup {
-  storeId: string
-  storeName: string
-  items: CartItem[]
-}
 const storeGroups = computed<StoreGroup[]>(() => {
   const map = new Map<string, StoreGroup>()
   for (const item of cartItems.value) {
@@ -267,6 +269,16 @@ const isStoreAllSelected = (storeId: string) => {
   const group = storeGroups.value.find(g => g.storeId === storeId)
   return !!group && group.items.length > 0 && group.items.every(i => i.selected)
 }
+
+onShow(async () => {
+  try {
+    await loadCart()
+  } catch (error) {
+    console.error('加载购物车失败', error)
+    if (error instanceof UnauthorizedError) return
+    uni.showToast({ title: '购物车加载失败', icon: 'none' })
+  }
+})
 
 let refreshSeq = 0
 
@@ -286,7 +298,7 @@ function itemHasDiscount(item: CartItem): boolean {
   return itemPrice(item) < item.price
 }
 
-async function refreshCart() {
+async function loadCart() {
   const seq = ++refreshSeq
   // 首次加载本地还没有商品时按全部选中处理
   const selectedSkuIds = cartItems.value.length
@@ -297,15 +309,11 @@ async function refreshCart() {
   applySummary(summary)
 }
 
-onShow(async () => {
-  try {
-    await refreshCart()
-  } catch (error) {
-    console.error('加载购物车失败', error)
-    if (error instanceof UnauthorizedError) return
-    uni.showToast({ title: '购物车加载失败', icon: 'none' })
-  }
-})
+async function onRefresh() {
+  refreshing.value = true
+  try { await loadCart() }
+  finally { refreshing.value = false }
+}
 
 function toggleEditMode() { editMode.value = !editMode.value }
 function toggleSelection(skuId: string) {
@@ -324,7 +332,7 @@ function toggleStoreSelectAll(storeId: string) {
   syncPricePreview()
 }
 function syncPricePreview() {
-  refreshCart().catch(error => {
+  loadCart().catch(error => {
     console.error('计算优惠失败', error)
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '优惠计算失败', icon: 'none' })

@@ -1,8 +1,7 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back :title="detail?.name || '活动专题'" />
 
-    <scroll-view scroll-y class="page-body">
       <view v-if="loading" class="loading-state">
         <text class="loading-text">正在加载活动…</text>
       </view>
@@ -150,38 +149,39 @@
 
         <view class="footer-space"></view>
       </view>
-    </scroll-view>
 
-    <!-- 底部操作栏 -->
-    <view v-if="detail" class="action-bar">
-      <block v-if="detail.type === 0">
-        <view class="action-summary">
-          <text class="summary-label">搭配合计</text>
-          <view class="summary-price-row">
-            <text class="summary-symbol">¥</text>
-            <text class="summary-price">{{ groupTotalText }}</text>
-            <text class="summary-count">共 {{ campaignProducts.length }} 件</text>
-          </view>
+      <template #footer>
+        <!-- 底部操作栏 -->
+        <view v-if="detail" class="action-bar">
+          <block v-if="detail.type === 0">
+            <view class="action-summary">
+              <text class="summary-label">搭配合计</text>
+              <view class="summary-price-row">
+                <text class="summary-symbol">¥</text>
+                <text class="summary-price">{{ groupTotalText }}</text>
+                <text class="summary-count">共 {{ campaignProducts.length }} 件</text>
+              </view>
+            </view>
+            <view class="action-button" :class="{ disabled: !canTrade || !campaignProducts.length }" @tap="addAll">
+              <text class="action-button-text">{{ detail.status === 'Upcoming' ? '未开始' : detail.status === 'Ended' ? '已结束' : '整组加入购物车' }}</text>
+            </view>
+          </block>
+          <block v-else>
+            <view class="action-summary">
+              <text class="summary-label">券包共 {{ detail.coupons.length }} 张</text>
+              <text class="summary-count">已领取 {{ claimedIds.length }} 张</text>
+            </view>
+            <view
+              class="action-button"
+              :class="{ disabled: !canTrade || !claimableCoupons.length }"
+              @tap="claimAll"
+            >
+              <text class="action-button-text">{{ claimAllButtonText }}</text>
+            </view>
+          </block>
         </view>
-        <view class="action-button" :class="{ disabled: !canTrade || !campaignProducts.length }" @tap="addAll">
-          <text class="action-button-text">{{ detail.status === 'Upcoming' ? '未开始' : detail.status === 'Ended' ? '已结束' : '整组加入购物车' }}</text>
-        </view>
-      </block>
-      <block v-else>
-        <view class="action-summary">
-          <text class="summary-label">券包共 {{ detail.coupons.length }} 张</text>
-          <text class="summary-count">已领取 {{ claimedIds.length }} 张</text>
-        </view>
-        <view
-          class="action-button"
-          :class="{ disabled: !canTrade || !claimableCoupons.length }"
-          @tap="claimAll"
-        >
-          <text class="action-button-text">{{ claimAllButtonText }}</text>
-        </view>
-      </block>
-    </view>
-  </view>
+      </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -225,6 +225,8 @@ interface ProductGroup {
 
 const detail = ref<CampaignDetail | null>(null)
 const loading = ref(true)
+const refreshing = ref(false)
+const campaignId = ref('')
 const errorText = ref('')
 const campaignProducts = ref<DisplayProduct[]>([])
 const loadingProducts = ref(false)
@@ -300,7 +302,12 @@ const claimAllButtonText = computed(() => {
 })
 
 onLoad(async (options) => {
-  const id = options?.id
+  campaignId.value = options?.id || ''
+  await loadCampaign()
+})
+
+async function loadCampaign() {
+  const id = campaignId.value
   if (!id) {
     loading.value = false
     errorText.value = '活动链接无效'
@@ -318,7 +325,16 @@ onLoad(async (options) => {
   } finally {
     loading.value = false
   }
-})
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadCampaign()
+  } finally {
+    refreshing.value = false
+  }
+}
 
 async function loadProducts(campaignId: string, targetPage: number) {
   if (loadingProducts.value) return

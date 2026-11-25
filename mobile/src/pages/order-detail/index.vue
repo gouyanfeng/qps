@@ -1,9 +1,9 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back title="订单详情" />
 
-    <scroll-view scroll-y class="page-body" v-if="order">
-      <view class="status-banner" :class="'status-' + order.status">
+      <template v-if="order">
+        <view class="status-banner" :class="'status-' + order.status">
         <view class="status-deco"></view>
         <view class="status-main">
           <view class="status-top">
@@ -249,52 +249,57 @@
       </view>
 
       <view class="bottom-space"></view>
-    </scroll-view>
+      </template>
 
-    <view v-if="order" class="footer-bar">
-      <view class="fb-left" @tap="consult">
-        <q-icon name="service" size="18" color="#40493D" />
-        <text>药师</text>
-      </view>
-      <view class="fb-left" @tap="afterSale">
-        <q-icon name="shield-error" size="18" color="#40493D" />
-        <text>售后</text>
-      </view>
-      <view class="fb-btns">
-        <button
-          v-if="order.status === 'PendingPayment'"
-          class="fb-btn solid"
-          @tap="handlePay"
-        >立即付款</button>
-        <button
-          v-if="order.status === 'Shipped'"
-          class="fb-btn solid"
-          @tap="handleConfirm"
-        >确认收货</button>
-        <button
-          v-if="order.status === 'PendingPayment'"
-          class="fb-btn ghost"
-          @tap="handleCancel"
-        >取消订单</button>
-        <button
-          v-if="order.status === 'Paid'"
-          class="fb-btn ghost"
-          @tap="goRefundApply"
-        >申请仅退款</button>
-        <button
-          v-if="(order.status === 'Shipped' || order.status === 'Completed') && !hasActiveReturn"
-          class="fb-btn ghost"
-          @tap="goReturnApply"
-        >退货退款</button>
-        <button
-          v-if="needReturnTracking"
-          class="fb-btn solid"
-          @tap="goReturnTracking"
-        >填写寄回运单</button>
-      </view>
-    </view>
-    <view v-else class="page-body loading">加载中…</view>
-  </view>
+      <template v-else>
+        <view class="page-body loading">加载中…</view>
+      </template>
+
+      <template #footer>
+        <view v-if="order" class="footer-bar">
+          <view class="fb-left" @tap="consult">
+            <q-icon name="service" size="18" color="#40493D" />
+            <text>药师</text>
+          </view>
+          <view class="fb-left" @tap="afterSale">
+            <q-icon name="shield-error" size="18" color="#40493D" />
+            <text>售后</text>
+          </view>
+          <view class="fb-btns">
+            <button
+              v-if="order.status === 'PendingPayment'"
+              class="fb-btn solid"
+              @tap="handlePay"
+            >立即付款</button>
+            <button
+              v-if="order.status === 'Shipped'"
+              class="fb-btn solid"
+              @tap="handleConfirm"
+            >确认收货</button>
+            <button
+              v-if="order.status === 'PendingPayment'"
+              class="fb-btn ghost"
+              @tap="handleCancel"
+            >取消订单</button>
+            <button
+              v-if="order.status === 'Paid'"
+              class="fb-btn ghost"
+              @tap="goRefundApply"
+            >申请仅退款</button>
+            <button
+              v-if="(order.status === 'Shipped' || order.status === 'Completed') && !hasActiveReturn"
+              class="fb-btn ghost"
+              @tap="goReturnApply"
+            >退货退款</button>
+            <button
+              v-if="needReturnTracking"
+              class="fb-btn solid"
+              @tap="goReturnTracking"
+            >填写寄回运单</button>
+          </view>
+        </view>
+      </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -305,6 +310,7 @@ import { resolveFileUrl } from '@/utils/http'
 import type { MallOrderDetail, MallOrderItem } from '@/api'
 
 const order = ref<MallOrderDetail | null>(null)
+const refreshing = ref(false)
 
 /** 实付金额：已支付取实付，未支付/已取消取应付，保证与列表显示口径一致 */
 const actualPayAmount = computed(() => {
@@ -425,6 +431,15 @@ async function loadOrder() {
   } catch (err) {
     console.error(err)
     uni.showToast({ title: '加载失败', icon: 'none' })
+  }
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadOrder()
+  } finally {
+    refreshing.value = false
   }
 }
 

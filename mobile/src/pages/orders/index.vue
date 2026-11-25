@@ -1,8 +1,7 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled show-loadmore :refresher-triggered="refreshing" :loading="loading" :has-more="hasMore" @refresh="onRefresh" @loadmore="loadMore">
     <q-page-header-back title="我的订单" />
 
-    <q-scroll-list class="page-body" :loading="loading" :has-more="hasMore" @loadmore="loadMore">
       <!-- Search Bar -->
       <view class="search-bar">
         <view class="search-input-wrap">
@@ -149,8 +148,7 @@
         <q-icon name="certificate" size="14" color="#2E7D32" />
         <text class="reassurance-text">国家中医药管理局规范标准 · 一物一码全程溯源 · 顺丰冷链恒温直达</text>
       </view>
-    </q-scroll-list>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -166,6 +164,7 @@ const activeTab = ref('')
 const keyword = ref('')
 const currentPage = ref(1)
 const hasMore = ref(false)
+const refreshing = ref(false)
 
 interface TabItem {
   label: string
@@ -193,10 +192,10 @@ onLoad(options => {
 })
 
 onShow(() => {
-  fetchOrders(true)
+  loadOrders(true)
 })
 
-async function fetchOrders(reset: boolean = false) {
+async function loadOrders(reset: boolean = false) {
   if (reset) currentPage.value = 1
   loading.value = true
   try {
@@ -214,20 +213,29 @@ async function fetchOrders(reset: boolean = false) {
   }
 }
 
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadOrders(true)
+  } finally {
+    refreshing.value = false
+  }
+}
+
 function loadMore() {
   if (!loading.value && hasMore.value) {
     currentPage.value++
-    fetchOrders()
+    loadOrders()
   }
 }
 
 function switchTab(value: string) {
   activeTab.value = value
-  fetchOrders(true)
+  loadOrders(true)
 }
 
 function onSearch() {
-  fetchOrders(true)
+  loadOrders(true)
 }
 
 function orderStatusText(value: string) {
@@ -357,7 +365,7 @@ function cancelOrder(orderNo: string) {
         await apiCancelOrder(orderNo)
         uni.hideLoading()
         uni.showToast({ title: '订单已取消', icon: 'success' })
-        fetchOrders(true)
+        loadOrders(true)
       } catch (e: any) {
         uni.hideLoading()
         uni.showToast({ title: e?.message || '取消失败', icon: 'none' })
@@ -377,7 +385,7 @@ async function payOrder(orderNo: string) {
     uni.hideLoading()
 
     uni.showToast({ title: '支付成功', icon: 'success' })
-    fetchOrders(true)
+    loadOrders(true)
   } catch (e: any) {
     uni.hideLoading()
     uni.showToast({ title: e?.message || '支付失败', icon: 'none' })
@@ -395,7 +403,7 @@ function confirmReceive(orderNo: string) {
         await apiConfirmReceipt(orderNo)
         uni.hideLoading()
         uni.showToast({ title: '已确认收货', icon: 'success' })
-        fetchOrders(true)
+        loadOrders(true)
       } catch (e: any) {
         uni.hideLoading()
         uni.showToast({ title: e?.message || '操作失败', icon: 'none' })

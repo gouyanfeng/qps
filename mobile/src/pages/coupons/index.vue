@@ -1,8 +1,7 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back title="优惠券中心" />
 
-    <scroll-view scroll-y class="page-body">
       <!-- 券码兑换区 -->
       <view class="redeem-card">
         <view class="redeem-header">
@@ -217,8 +216,7 @@
       <view v-if="loading" class="loading-more">
         <text class="loading-text">加载中...</text>
       </view>
-    </scroll-view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -231,6 +229,7 @@ import { couponDiscountRateText, couponTypeLabel, isPercentCoupon } from '@/util
 
 const activeTab = ref('available')
 const loading = ref(false)
+const refreshing = ref(false)
 const couponCode = ref('')
 
 const availableCoupons = ref<MemberCoupon[]>([])
@@ -273,7 +272,7 @@ function endLoading() {
   if (pendingCount === 0) loading.value = false
 }
 
-async function fetchAvailable() {
+async function loadAvailableCoupons() {
   const seq = (requestSeq.available += 1)
   beginLoading()
   try {
@@ -289,7 +288,7 @@ async function fetchAvailable() {
   }
 }
 
-async function fetchExpired() {
+async function loadExpiredCoupons() {
   const seq = (requestSeq.expired += 1)
   beginLoading()
   try {
@@ -308,7 +307,7 @@ async function fetchExpired() {
   }
 }
 
-async function fetchClaimCoupons() {
+async function loadClaimCoupons() {
   const seq = (requestSeq.claim += 1)
   beginLoading()
   try {
@@ -323,10 +322,19 @@ async function fetchClaimCoupons() {
   }
 }
 
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await Promise.all([loadAvailableCoupons(), loadClaimCoupons(), loadExpiredCoupons()])
+  } finally {
+    refreshing.value = false
+  }
+}
+
 function fetchActiveTab() {
-  if (activeTab.value === 'available') fetchAvailable()
-  else if (activeTab.value === 'claim') fetchClaimCoupons()
-  else fetchExpired()
+  if (activeTab.value === 'available') loadAvailableCoupons()
+  else if (activeTab.value === 'claim') loadClaimCoupons()
+  else loadExpiredCoupons()
 }
 
 function switchTab(value: string) {
@@ -415,7 +423,7 @@ async function handleClaim(item: AvailableCoupon) {
     claimedIds.value = new Set([...claimedIds.value, item.id])
     uni.showToast({ title: '领取成功！', icon: 'success' })
     // 领券成功后同步刷新「可使用」与「领券中心」，无需退出页面
-    await Promise.all([fetchAvailable(), fetchClaimCoupons()])
+    await Promise.all([loadAvailableCoupons(), loadClaimCoupons()])
   } catch (e: any) {
     uni.hideLoading()
     uni.showToast({ title: e?.message || '领取失败', icon: 'none' })

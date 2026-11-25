@@ -1,7 +1,6 @@
 <template>
-  <view class="page">
+  <q-page>
     <q-page-header-back title="会员登录" />
-    <view class="page-body">
       <view class="form-card">
         <text class="form-title">{{ isRegister ? '创建会员账号' : '欢迎回来' }}</text>
         <input v-model.trim="phone" class="form-input" type="number" maxlength="11" placeholder="手机号" />
@@ -20,8 +19,7 @@
           {{ isRegister ? '已有账号？去登录' : '还没有账号？立即注册' }}
         </text>
       </view>
-    </view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">

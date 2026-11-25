@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <q-page>
     <q-page-header-back>
       <template #title>
         <view class="search-box">
@@ -26,7 +26,6 @@
       </template>
     </q-page-header-back>
 
-    <scroll-view scroll-y class="page-body" enhanced>
       <!-- ============ 初始态：热门搜索 + 搜索历史 ============ -->
       <view v-if="!hasSearched" class="search-init">
         <view class="hot-searches">
@@ -247,8 +246,7 @@
           </view>
         </template>
       </view>
-    </scroll-view>
-  </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">

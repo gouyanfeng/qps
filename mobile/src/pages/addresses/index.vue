@@ -1,71 +1,69 @@
 <template>
-  <view class="page">
+  <q-page refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <q-page-header-back title="收货地址" />
-    <scroll-view scroll-y class="page-body">
-      <view v-for="address in addresses" :key="address.id" class="address-card" @click="selectAddress(address)">
-        <view class="address-heading">
-          <text class="receiver">{{ address.receiverName }}</text>
-          <text class="phone">{{ address.receiverPhone }}</text>
-          <text v-if="address.isDefault" class="default-tag">默认</text>
-        </view>
-        <text class="address-text">{{ address.fullAddress }}</text>
-        <view class="address-actions">
-          <text @click.stop="removeAddress(address.id)">删除</text>
-          <text class="select-tip">点击选择</text>
-        </view>
+    <view v-for="address in addresses" :key="address.id" class="address-card" @click="selectAddress(address)">
+      <view class="address-heading">
+        <text class="receiver">{{ address.receiverName }}</text>
+        <text class="phone">{{ address.receiverPhone }}</text>
+        <text v-if="address.isDefault" class="default-tag">默认</text>
       </view>
-
-      <view class="form-card">
-        <text class="form-title">新增收货地址</text>
-        <input v-model.trim="form.receiverName" class="form-input" placeholder="收货人" />
-        <input v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" />
-
-        <picker mode="selector" :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
-          <view class="form-picker">
-            <text :class="{ placeholder: !form.provinceName }">
-              {{ form.provinceName || '请选择省份' }}
-            </text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-        <picker
-          mode="selector"
-          :range="cityNames"
-          :value="cityIndex"
-          :disabled="!selectedProvinceCode"
-          @change="onCityChange"
-        >
-          <view class="form-picker" :class="{ disabled: !selectedProvinceCode }">
-            <text :class="{ placeholder: !form.cityName }">
-              {{ form.cityName || (selectedProvinceCode ? '请选择城市' : '请先选省份') }}
-            </text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-        <picker
-          mode="selector"
-          :range="districtNames"
-          :value="districtIndex"
-          :disabled="!selectedCityCode"
-          @change="onDistrictChange"
-        >
-          <view class="form-picker" :class="{ disabled: !selectedCityCode }">
-            <text :class="{ placeholder: !form.districtName }">
-              {{ form.districtName || (selectedCityCode ? '请选择区县' : '请先选城市') }}
-            </text>
-            <text class="picker-arrow">›</text>
-          </view>
-        </picker>
-
-        <input v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" />
-        <view class="default-option" @click="form.isDefault = !form.isDefault">
-          <checkbox :checked="form.isDefault" color="#2E7D32" />
-          <text>设为默认地址</text>
-        </view>
-        <button class="submit-button" :loading="saving" @click="submit">保存地址</button>
+      <text class="address-text">{{ address.fullAddress }}</text>
+      <view class="address-actions">
+        <text @click.stop="removeAddress(address.id)">删除</text>
+        <text class="select-tip">点击选择</text>
       </view>
-    </scroll-view>
-  </view>
+    </view>
+
+    <view class="form-card">
+      <text class="form-title">新增收货地址</text>
+      <input v-model.trim="form.receiverName" class="form-input" placeholder="收货人" />
+      <input v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" />
+
+      <picker mode="selector" :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
+        <view class="form-picker">
+          <text :class="{ placeholder: !form.provinceName }">
+            {{ form.provinceName || '请选择省份' }}
+          </text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+      <picker
+        mode="selector"
+        :range="cityNames"
+        :value="cityIndex"
+        :disabled="!selectedProvinceCode"
+        @change="onCityChange"
+      >
+        <view class="form-picker" :class="{ disabled: !selectedProvinceCode }">
+          <text :class="{ placeholder: !form.cityName }">
+            {{ form.cityName || (selectedProvinceCode ? '请选择城市' : '请先选省份') }}
+          </text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+      <picker
+        mode="selector"
+        :range="districtNames"
+        :value="districtIndex"
+        :disabled="!selectedCityCode"
+        @change="onDistrictChange"
+      >
+        <view class="form-picker" :class="{ disabled: !selectedCityCode }">
+          <text :class="{ placeholder: !form.districtName }">
+            {{ form.districtName || (selectedCityCode ? '请选择区县' : '请先选城市') }}
+          </text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+
+      <input v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" />
+      <view class="default-option" @click="form.isDefault = !form.isDefault">
+        <checkbox :checked="form.isDefault" color="#2E7D32" />
+        <text>设为默认地址</text>
+      </view>
+      <button class="submit-button" :loading="saving" @click="submit">保存地址</button>
+    </view>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -77,6 +75,7 @@ import { UnauthorizedError } from '@/utils/http'
 
 const addresses = ref<MallAddress[]>([])
 const saving = ref(false)
+const refreshing = ref(false)
 const regionAll = ref<ChinaRegionNode[]>([])
 
 const form = reactive({
@@ -132,6 +131,16 @@ async function loadAddresses() {
     console.error('加载收货地址失败', error)
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '地址加载失败', icon: 'none' })
+  }
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await Promise.all([loadAddresses(), loadRegions()])
+    syncFormFromIndex()
+  } finally {
+    refreshing.value = false
   }
 }
 

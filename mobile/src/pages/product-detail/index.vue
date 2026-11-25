@@ -1,9 +1,8 @@
 ﻿<template>
-  <view v-if="product" class="page">
+  <q-page v-if="product" refresh-enabled :refresher-triggered="refreshing" @refresh="onRefresh">
     <!-- ============ 顶栏：与其他页面统一 ============ -->
     <q-page-header-back :title="product.name" />
 
-    <scroll-view scroll-y class="page-body" enhanced>
       <!-- ============ section 大图轮播 ============ -->
       <view class="swiper-section">
         <swiper
@@ -271,24 +270,25 @@
           </view>
         </view>
       </view>
-    </scroll-view>
 
-    <!-- ============ 底部固定操作栏 ============ -->
-    <view class="page-footer">
-      <view class="footer-bar">
-        <view class="bb-icon" @click="consult">
-          <q-icon name="service" size="22" color="#40493D" />
-          <text>药师咨询</text>
+      <!-- ============ 底部固定操作栏 ============ -->
+      <template #footer>
+        <view class="page-footer">
+          <view class="footer-bar">
+            <view class="bb-icon" @click="consult">
+              <q-icon name="service" size="22" color="#40493D" />
+              <text>药师咨询</text>
+            </view>
+            <view class="bb-icon" @click="goCart">
+              <q-icon name="cart" size="22" color="#40493D" />
+              <text>购物车</text>
+            </view>
+            <view class="bb-btn ghost" @click="addToCart">加入购物车</view>
+            <view class="bb-btn solid" @click="buyNow">立即购买 ¥{{ displayPrice }}</view>
+          </view>
         </view>
-        <view class="bb-icon" @click="goCart">
-          <q-icon name="cart" size="22" color="#40493D" />
-          <text>购物车</text>
-        </view>
-        <view class="bb-btn ghost" @click="addToCart">加入购物车</view>
-        <view class="bb-btn solid" @click="buyNow">立即购买 ¥{{ displayPrice }}</view>
-      </view>
-    </view>
-  </view>
+      </template>
+  </q-page>
 </template>
 
 <script setup lang="ts">
@@ -301,6 +301,7 @@ import { resolveTagColor, tagChipStyle } from '@/utils/tagColor'
 
 const product = ref<Product | null>(null)
 const productId = ref('')
+const refreshing = ref(false)
 const quantity = ref(1)
 const selectedSpecs = ref<Record<string, string>>({})
 // 规格展示形式：grid 网格（默认）/ flat 平铺；可在此切换默认值
@@ -320,9 +321,14 @@ const reviews = ref<ProductReviewPage>({
 onLoad(async (opts) => {
   if (!opts?.id) return
   productId.value = opts.id
-  void loadFeaturedReviews(opts.id)
+  await loadProduct()
+})
+
+async function loadProduct() {
+  if (!productId.value) return
+  void loadFeaturedReviews(productId.value)
   try {
-    product.value = (await getProductById(opts.id)) ?? null
+    product.value = (await getProductById(productId.value)) ?? null
     // 默认选中第一个有库存的规格，全部售罄时退回第一条供页面展示
     const skus = product.value?.skus ?? []
     const initialSku = skus.find(sku => sku.stock > 0) ?? skus[0]
@@ -332,7 +338,16 @@ onLoad(async (opts) => {
     if (error instanceof UnauthorizedError) return
     uni.showToast({ title: '商品详情加载失败', icon: 'none' })
   }
-})
+}
+
+async function onRefresh() {
+  refreshing.value = true
+  try {
+    await loadProduct()
+  } finally {
+    refreshing.value = false
+  }
+}
 
 // 详情页只展示后台勾选的精选评价，按页取满直到取完
 async function loadFeaturedReviews(productId: string) {
