@@ -126,11 +126,17 @@ public class MallPromotionContextBuilder
         MallSku sku,
         MallProduct product,
         int quantity,
-        IReadOnlyDictionary<Guid, Guid[]> categoryAncestors)
+        IReadOnlyDictionary<Guid, Guid[]> categoryAncestorsByProductId)
     {
-        var categoryIds = product.CategoryId.HasValue
-            ? categoryAncestors.GetValueOrDefault(product.CategoryId.Value)?.ToList() ?? new List<Guid> { product.CategoryId.Value }
-            : new List<Guid>();
+        // 祖先链索引以商品 Id 为键（见 LoadCategoryAncestorsAsync），这里必须按 product.Id 取值；
+        // 取不到时退化为仅含自身分类，避免父级分类范围促销整体失效。
+        var categoryIds = categoryAncestorsByProductId.GetValueOrDefault(product.Id)?.ToList();
+        if (categoryIds is null || categoryIds.Count == 0)
+        {
+            categoryIds = product.CategoryId.HasValue
+                ? new List<Guid> { product.CategoryId.Value }
+                : new List<Guid>();
+        }
 
         return new SkuOrderRow
         {
