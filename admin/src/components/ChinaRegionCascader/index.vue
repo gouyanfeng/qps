@@ -180,7 +180,5 @@ onMounted(loadRegions);
 </script>
 
 <style scoped lang="scss">
-.china-region-cascader {
-  width: 100%;
-}
+@import "./index.scss";
 </style>

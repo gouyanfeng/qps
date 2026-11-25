@@ -1,0 +1,135 @@
+.message-tabs {
+  // stretch 已让三个 Tab 均分宽度，这里只收边距、去 item 内边距，保证左中右贴边对齐
+  :deep(.el-tabs__header) {
+    margin-bottom: 10px;
+  }
+
+  :deep(.el-tabs__item) {
+    padding: 0;
+    text-align: center;
+  }
+
+  :deep(.el-tabs__content) {
+    padding-top: 0;
+  }
+}
+
+.message-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 260px;
+  line-height: 45px;
+}
+
+.message-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+// 列表滚动容器：固定高度内滚动，触底由 v-infinite-scroll 续拉下一页
+.message-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.message-loading {
+  padding: 10px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+
+  .message-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    // 左侧留出未读圆点的位置，已读条目该位置为空，文字仍对齐
+    padding: 12px 6px 12px 18px;
+    border-bottom: 1px solid var(--el-border-color-light);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    // 未读指示点：默认隐藏，未读时显形
+    &::before {
+      position: absolute;
+      top: 16px;
+      left: 6px;
+      width: 6px;
+      height: 6px;
+      background-color: var(--el-color-primary);
+      border-radius: 50%;
+      opacity: 0;
+      content: "";
+    }
+
+    &:hover {
+      background-color: var(--el-fill-color-light);
+    }
+
+    &:last-child {
+      border: none;
+    }
+
+    .message-title {
+      color: var(--el-text-color-regular);
+    }
+
+    // 未读：圆点 + 主色淡底 + 标题加粗置深，已读保持常规灰
+    &.is-unread {
+      background-color: var(--el-color-primary-light-9);
+
+      &::before {
+        opacity: 1;
+      }
+
+      &:hover {
+        background-color: var(--el-color-primary-light-8);
+      }
+
+      .message-title {
+        font-weight: 600;
+        color: var(--el-text-color-primary);
+      }
+    }
+
+    .message-content {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+
+      .message-title {
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .message-tag {
+        margin-right: 6px;
+      }
+
+      .message-desc {
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        color: var(--el-text-color-secondary);
+      }
+
+      .message-date {
+        font-size: 12px;
+        color: var(--el-text-color-placeholder);
+      }
+    }
+  }
+}

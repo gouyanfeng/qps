@@ -25,7 +25,6 @@ const emit = defineEmits<{
 const label = computed(() => candidateStatusLabel(props.status));
 </script>
 
-<style scoped>
-.candidate-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.candidate-actions :deep(.el-button + .el-button) { margin-left: 0; }
+<style scoped lang="scss">
+@import "./CandidateActions.scss";
 </style>

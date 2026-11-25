@@ -96,8 +96,6 @@ const formatDate = (value?: string | null) => value ? new Date(value).toLocaleSt
 const statusType = (status?: string) => ({ "撮合中": "success", "已暂停": "warning", "已结束": "info", "已采购完成": "success" }[status || ""] || undefined);
 </script>
 
-<style scoped>
-.matched { color: var(--el-color-success); }
-.no-remaining { color: var(--el-text-color-placeholder); }
-:deep(.completed-demand-item) { color: var(--el-text-color-placeholder); }
+<style scoped lang="scss">
+@import "./DemandItemPickerDialog.scss";
 </style>

@@ -93,13 +93,5 @@ const handleReset = () => {
 </script>
 
 <style scoped lang="scss">
-.header-title-text {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.text-gray {
-  color: #909399;
-}
+@import "./index.scss";
 </style>

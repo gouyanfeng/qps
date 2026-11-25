@@ -282,28 +282,5 @@ const getOrderStatusText = (status: string) => {
 </script>
 
 <style scoped lang="scss">
-.drawer-body {
-  padding: 4px 8px 24px;
-
-  h2 {
-    margin: 6px 0 16px;
-    font-size: 20px;
-  }
-}
-
-.detail-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.detail-kicker {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.void-info {
-  margin-top: 16px;
-}
+@import "./index.scss";
 </style>

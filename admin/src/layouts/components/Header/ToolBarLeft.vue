@@ -13,13 +13,7 @@ const globalStore = useGlobalStore();
 </script>
 
 <style scoped lang="scss">
-.tool-bar-lf {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  white-space: nowrap;
-}
+@import "./ToolBarLeft.scss";
 </style>
 
 

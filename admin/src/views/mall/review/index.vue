@@ -307,19 +307,5 @@ const remove = async (row: any) => {
 </script>
 
 <style scoped lang="scss">
-.review-content {
-  width: 100%;
-  padding: 8px 12px;
-  background: #f7f8fa;
-  border-radius: 4px;
-  color: #606266;
-  font-size: 13px;
-  line-height: 1.6;
-  word-break: break-all;
-}
-.product-tag { margin-right: 5px; }
-.review-images { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-.review-image { width: 40px; height: 40px; border-radius: 4px; }
-.featured-cell { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.featured-sort { width: 80px; }
+@import "./index.scss";
 </style>

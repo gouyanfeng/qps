@@ -293,22 +293,5 @@ loadTypeOptions()
 </script>
 
 <style scoped lang="scss">
-.color-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.color-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  border: 1px solid #dcdfe6;
-  flex-shrink: 0;
-}
-
-.color-text {
-  color: #606266;
-  font-size: 12px;
-}
+@import "./index.scss";
 </style>

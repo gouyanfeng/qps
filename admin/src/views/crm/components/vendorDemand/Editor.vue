@@ -161,9 +161,6 @@ const reset = async () => {
 watch(() => props.modelValue, visible => { if (visible) void reset(); });
 </script>
 
-<style scoped>
-.item-header { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 12px; font-weight: 600; }
-.item-table :deep(.el-input-number), .item-table :deep(.el-select), .item-table :deep(.el-date-editor) { width: 100%; }
-.el-form :deep(.el-form-item__label) { white-space: nowrap; }
-.muted { color: var(--el-text-color-placeholder); }
+<style scoped lang="scss">
+@import "./Editor.scss";
 </style>

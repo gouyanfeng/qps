@@ -119,29 +119,5 @@ const openDetail = (row: any) => {
 </script>
 
 <style scoped lang="scss">
-.error-detail-block {
-  margin-top: 14px;
-
-  h4 {
-    margin: 0 0 8px;
-    color: var(--el-text-color-primary);
-    font-size: 14px;
-  }
-
-  pre {
-    max-height: 220px;
-    margin: 0;
-    padding: 10px;
-    overflow: auto;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 6px;
-    background: #f8fafc;
-    color: var(--el-text-color-regular);
-    font-family: Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-}
+@import "./index.scss";
 </style>
