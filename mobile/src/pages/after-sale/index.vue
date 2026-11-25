@@ -4,7 +4,7 @@
 
     <view v-if="loading" class="page-body loading">加载中…</view>
 
-    <view v-if="!loading">
+    <view v-if="!loading" class="page-body">
       <!-- 申请售后：订单概要 -->
       <view v-if="mode !== 'tracking'" class="summary-card">
         <view class="summary-row">

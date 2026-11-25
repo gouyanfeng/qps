@@ -4,7 +4,7 @@
 
     <view v-if="loading" class="page-body loading">加载中…</view>
 
-    <view v-if="!loading">
+    <view v-if="!loading" class="page-body">
       <!-- 商品信息 -->
       <view v-if="item" class="product-card">
         <view class="product-image">

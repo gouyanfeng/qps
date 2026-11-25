@@ -106,11 +106,11 @@
             <el-option v-for="item in scopeTargetOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
-        <div class="promotion-scope-hint">
-          订单门槛按所选范围内商品的金额累计计算；选全场时按全订单金额计算。
+        <div class="promotion-scope-hint" v-if="form.promotionType === 0">
+          订单门槛按所选范围内商品的折后金额累计计算；选全场时按全订单金额计算。
         </div>
         <el-row :gutter="16">
-          <el-col :span="12">
+          <el-col :span="12" v-if="form.promotionType === 0">
             <el-form-item label="订单门槛" required>
               <el-input-number v-model="form.thresholdAmount" :min="0.01" :precision="2" style="width: 100%" />
             </el-form-item>
@@ -289,10 +289,10 @@ const getPromotionRule = (promotion: any) => {
     return `满 ¥${threshold.toFixed(2)} 减 ¥${Number(action.amount || 0).toFixed(2)}`
   }
   if (promotion.actionType === 'DiscountRate') {
-    return `满 ¥${threshold.toFixed(2)} 打 ${(Number(action.rate || 1) * 10).toFixed(1)} 折`
+    return `打 ${(Number(action.rate || 1) * 10).toFixed(1)} 折`
   }
   if (promotion.actionType === 'Gift') {
-    return `满 ¥${threshold.toFixed(2)} 赠 ${Number(action.quantity || 1)} 件赠品`
+    return `赠 ${Number(action.quantity || 1)} 件赠品`
   }
   return promotion.description || '-'
 }
@@ -379,7 +379,7 @@ const submitForm = async () => {
   if (form.scopeType !== 'Global' && !form.scopeTargetIds.length) {
     ElMessage.warning('请选择适用对象'); return
   }
-  if (!(form.thresholdAmount > 0)) {
+  if (form.promotionType === 0 && !(form.thresholdAmount > 0)) {
     ElMessage.warning('请输入订单门槛')
     return
   }
@@ -408,7 +408,7 @@ const submitForm = async () => {
       name: form.name.trim(),
       description: form.description.trim(),
       promotionType: form.promotionType,
-      thresholdAmount: form.thresholdAmount,
+      thresholdAmount: form.promotionType === 0 ? form.thresholdAmount : 0,
       actionType,
       actionConfigJson,
       promotionTagId: form.promotionTagId || null,

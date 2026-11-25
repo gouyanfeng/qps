@@ -3,6 +3,7 @@
     <q-page-header-back title="订单详情" />
 
       <template v-if="order">
+        <view class="page-body">
         <view class="status-banner" :class="'status-' + order.status">
         <view class="status-deco"></view>
         <view class="status-main">
@@ -155,10 +156,6 @@
                   <text>GAP</text>
                 </view>
               </view>
-              <text class="pharm-row">
-                <q-icon name="location" size="10" color="#8A8578" />
-                <text>杭州总仓 · 西湖区文三路 288 号</text>
-              </text>
             </view>
           </view>
           <view class="pharm-go" @tap="goShop">
@@ -175,16 +172,6 @@
           <view class="prod-info">
             <text class="prod-name">{{ item.productName }}</text>
             <text class="prod-spec">{{ item.specName }}</text>
-            <view class="prod-tags">
-              <view class="pt-gap">
-                <q-icon name="certificate" size="10" color="#2E7D32" />
-                <text>GAP道地直采</text>
-              </view>
-              <view class="pt-cold">
-                <q-icon name="snowflake" size="10" color="#0288D1" />
-                <text>本草低温速运</text>
-              </view>
-            </view>
             <view class="prod-bottom">
               <view class="prod-price-left">
                 <text class="prod-price">¥{{ item.unitPrice.toFixed(2) }}</text>
@@ -205,7 +192,6 @@
                 </view>
               </view>
             </view>
-            <text v-if="promotionText(item)" class="prod-promo">{{ promotionText(item) }}</text>
           </view>
         </view>
 
@@ -249,6 +235,7 @@
       </view>
 
       <view class="bottom-space"></view>
+        </view>
       </template>
 
       <template v-else>
@@ -531,29 +518,6 @@ function copyTrackNo() {
   const no = order.value?.shipment?.trackingNo
   if (!no) return
   uni.setClipboardData({ data: no, success: () => uni.showToast({ title: '已复制', icon: 'success' }) })
-}
-
-interface PromotionSnapshotEntry {
-  id: string
-  name: string
-  actionType: string
-  amount: number
-}
-
-/** 促销文案由前端按结构化快照拼装，数据侧只存促销名称与金额 */
-function promotionText(item: MallOrderItem) {
-  let entries: PromotionSnapshotEntry[] = []
-  try {
-    entries = JSON.parse(item.promotionSnapshot || '[]') as PromotionSnapshotEntry[]
-  } catch {
-    entries = []
-  }
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return item.promotionName || ''
-  }
-  return entries
-    .map(entry => (entry.amount > 0 ? `${entry.name} -¥${entry.amount.toFixed(2)}` : entry.name))
-    .join('；')
 }
 
 function maskPhone(p: string) {

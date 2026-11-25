@@ -186,9 +186,9 @@ public class MallProductPromotionEnricher
             }
         };
 
-        // 商品列表没有购物车上下文，折扣促销的订单累计门槛无法判定：
-        // 展示时按折扣率给出到手价（ignoreRateThreshold），门槛仍由购物车试算与下单按完整订单判断。
-        var matches = _promotionEngine.Match(promotions, promotionScopeMap, orderContext, ignoreRateThreshold: true);
+        // 商品列表展示按折扣率给出到手价（DiscountRate 永远不检查门槛），
+        // 满减/满赠/免运费仍按自身门槛过滤。
+        var matches = _promotionEngine.Match(promotions, promotionScopeMap, orderContext);
         return _promotionEngine.Apply(orderContext.Items, matches).Items[0];
     }
 
@@ -268,7 +268,7 @@ public class MallProductPromotionEnricher
     {
         using var actionConfig = JsonDocument.Parse(promotion.ActionConfigJson);
         var action = actionConfig.RootElement;
-        var condition = promotion.ThresholdAmount > 0.01m
+        var condition = promotion.ActionType == AmountAction && promotion.ThresholdAmount > 0.01m
             ? $"满 ¥{promotion.ThresholdAmount:0.##}"
             : string.Empty;
 

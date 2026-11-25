@@ -24,6 +24,9 @@ internal static class MallPromotionRules
         "Global", "Product", "Category", "Sku"
     };
 
+    /// <summary>只有满减（DiscountAmount）需要订单门槛，折扣/买赠/免运费均不使用门槛。</summary>
+    public static bool RequiresThreshold(string actionType) => actionType == "DiscountAmount";
+
     public static void ValidateCreate(MallPromotionCreateRequest req)
     {
         Validate(req.Name, req.Description, req.PromotionType, req.ThresholdAmount, req.ActionType,
@@ -57,11 +60,14 @@ internal static class MallPromotionRules
         if (!Enum.IsDefined(typeof(MallPromotionType), promotionType))
             throw new BusinessException(400, $"无效的促销类型：{promotionType}");
 
-        if (thresholdAmount <= 0)
-            throw new BusinessException(400, "订单门槛必须大于 0");
-
         if (string.IsNullOrWhiteSpace(actionType)) throw new BusinessException(400, "优惠方式不能为空");
         if (!ValidActionTypes.Contains(actionType)) throw new BusinessException(400, $"无效的优惠方式：{actionType}");
+
+        if (RequiresThreshold(actionType))
+        {
+            if (thresholdAmount <= 0)
+                throw new BusinessException(400, "订单门槛必须大于 0");
+        }
 
         if (string.IsNullOrWhiteSpace(scopeType)) throw new BusinessException(400, "适用范围不能为空");
         if (!ValidScopeTypes.Contains(scopeType)) throw new BusinessException(400, $"无效的适用范围：{scopeType}");

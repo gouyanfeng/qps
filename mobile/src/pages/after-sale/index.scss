@@ -201,7 +201,7 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
   text { font-size: 22rpx; color: $muted; }
 }
 
-.bottom-space { height: 40rpx; }
+.bottom-space { height: calc(120rpx + env(safe-area-inset-bottom)); }
 
 .page-footer {
   position: fixed;

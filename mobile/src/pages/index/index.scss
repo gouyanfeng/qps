@@ -278,11 +278,11 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 
 .promo-corner {
   position: absolute;
-  top: 20rpx;
-  left: 20rpx;
+  top: 0;
+  left: 0;
   z-index: 2;
   padding: 4rpx 14rpx;
-  border-radius: 12rpx 0 12rpx 12rpx;
+  border-radius: 18rpx 0 12rpx 0;
 }
 
 .promo-corner-text {
@@ -292,11 +292,11 @@ $shadow-card: 0 8rpx 28rpx -8rpx rgba(46, 125, 50, 0.18);
 }
 
 .product-image {
-  width: calc(100% - 40rpx);
+  width: 100%;
   height: 375rpx;
   display: block;
-  margin: 20rpx 20rpx 0;
-  border-radius: 12rpx;
+  margin: 0;
+  border-radius: 0;
 }
 
 .product-info {

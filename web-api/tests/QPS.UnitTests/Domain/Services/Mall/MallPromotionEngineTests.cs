@@ -308,10 +308,10 @@ public class MallPromotionEngineTests
     }
 
     [Fact]
-    public void Match_RateThreshold_StillGatesSettlement_UnlessDisplayFlagIsUsed()
+    public void Match_RatePromotion_NeverChecksThreshold()
     {
         var promotion = MallPromotion.Create(
-            "满100打8折",
+            "满100打8折（但折扣不受门槛限制）",
             string.Empty,
             MallPromotionType.DiscountRate,
             100m,
@@ -328,15 +328,8 @@ public class MallPromotionEngineTests
         };
         var engine = CreateEngine();
 
-        // 结算/预览口径：单行 50 < 门槛 100，不命中
-        Assert.Empty(engine.Match([promotion], new Dictionary<Guid, List<MallPromotionScope>>(), context));
-
-        // 商品列表展示口径：忽略订单累计门槛，按折扣率给出到手价
-        var matched = engine.Match(
-            [promotion],
-            new Dictionary<Guid, List<MallPromotionScope>>(),
-            context,
-            ignoreRateThreshold: true);
+        // 折扣（DiscountRate）永远不检查门槛：50 < 100 但依然命中
+        var matched = engine.Match([promotion], new Dictionary<Guid, List<MallPromotionScope>>(), context);
         var result = engine.Apply(context.Items, matched);
 
         Assert.Single(matched);
@@ -430,13 +423,13 @@ public class MallPromotionEngineTests
     }
 
     [Fact]
-    public void GiftPromotion_RequiresScopedAmountToReachThreshold()
+    public void GiftPromotion_IgnoresThreshold_OnlyScopeMatters()
     {
         var targetProductId = Guid.NewGuid();
         var otherProductId = Guid.NewGuid();
         var giftSkuId = Guid.NewGuid();
         var promotion = MallPromotion.Create(
-            "指定商品满额买赠",
+            "指定商品买赠（门槛已废弃）",
             string.Empty,
             MallPromotionType.Gift,
             40m,
@@ -461,10 +454,7 @@ public class MallPromotionEngineTests
         };
         var engine = CreateEngine();
 
-        // 目标商品金额未达门槛（20 < 40）→ 不触发
-        Assert.Empty(engine.Match([promotion], scopeMap, context));
-
-        context.Items[0].Quantity = 2;
+        // 买赠不检查订单门槛：目标商品金额 20 未达 40，依然触发
         var matched = engine.Match([promotion], scopeMap, context);
         var result = engine.Apply(context.Items, matched);
 

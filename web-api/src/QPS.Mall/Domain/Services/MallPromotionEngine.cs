@@ -28,19 +28,15 @@ public class MallPromotionEngine
     }
 
     /// <summary>
-    /// 命中促销：只做范围与行级门槛过滤，不做满减门槛判断（满减门槛依赖行级折扣后的金额，在 Apply 阶段计算）。
+    /// 命中促销：只做范围过滤，门槛只在满减（DiscountAmount）阶段判断。
+    /// - 折扣（DiscountRate）、满赠（Gift）、免运费（FreightFree）均不检查门槛，直接生效。
+    /// - 满减（DiscountAmount）不在 Match 检查门槛，留 Apply 阶段按折后金额判断。
     /// 返回顺序固定为 CreatedAt → Id，保证择优结果可复现。
     /// </summary>
-    /// <param name="ignoreRateThreshold">
-    /// 仅商品列表展示使用：列表没有购物车上下文，折扣促销的订单累计门槛无法判定，
-    /// 展示时按折扣率给出到手价，门槛仍由购物车试算与下单按完整订单判断。
-    /// 结算/预览调用不传该参数，保持原有门槛语义。
-    /// </param>
     public List<MatchedPromotion> Match(
         List<MallPromotion> promotions,
         Dictionary<Guid, List<MallPromotionScope>> scopeMap,
-        OrderContext ctx,
-        bool ignoreRateThreshold = false)
+        OrderContext ctx)
     {
         var allMatched = new List<MatchedPromotion>();
 
@@ -52,16 +48,6 @@ public class MallPromotionEngine
             var scopes = scopeMap.TryGetValue(p.Id, out var s) ? s : new List<MallPromotionScope>();
             var scopeRows = FilterByScope(p, scopes, ctx.Items);
             if (scopeRows.Count == 0) continue;
-
-            // 行级促销（折扣/买赠/免运费）的门槛按自身覆盖范围内的商品原价合计判断；满减留到 Apply 阶段。
-            if (p.ActionType != ActionDiscountAmount)
-            {
-                var thresholdAmount = ignoreRateThreshold && p.ActionType == ActionDiscountRate
-                    ? 0m
-                    : p.ThresholdAmount;
-                var scopedAmount = scopeRows.Sum(item => item.OriginalPrice * item.Quantity);
-                if (scopedAmount < thresholdAmount) continue;
-            }
 
             allMatched.Add(new MatchedPromotion
             {
