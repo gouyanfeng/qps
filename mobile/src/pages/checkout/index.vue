@@ -3,6 +3,8 @@
     <!-- ============ 顶栏 ============ -->
     <q-page-header-back title="确认订单" />
 
+    <view class="page-body">
+
       <!-- 冷链配送地址卡 -->
       <section class="card address-card">
         <view class="address-head">
@@ -49,7 +51,7 @@
         <view class="shop-head">
           <view class="shop-head-left">
             <q-icon name="shop" size="32" color="#2E7D32" />
-            <text class="shop-name">本草国医馆·道地药房</text>
+            <text class="shop-name">{{ shopName }}</text>
             <view class="tag tag-green tag-sm">
               <q-icon name="check-circle-filled" size="20" color="#FFFFFF" />
               <text>道地认证</text>
@@ -63,7 +65,8 @@
               <view class="goods-name">{{ item.productName }}</view>
               <view class="goods-spec">{{ item.specName }}</view>
               <view class="goods-bottom">
-                <text class="goods-price">¥{{ item.price.toFixed(2) }}</text>
+                <text class="goods-price">¥{{ (item.discountedPrice ?? item.price).toFixed(2) }}</text>
+                <text v-if="item.discountedPrice !== undefined && item.discountedPrice < item.price" class="goods-price-origin">¥{{ item.price.toFixed(2) }}</text>
                 <text class="goods-qty">×{{ item.quantity }}</text>
               </view>
             </view>
@@ -114,7 +117,7 @@
         <view v-if="rateDiscount > 0" class="discount-row promotion-row">
           <view class="discount-row-left">
             <q-icon name="coupon" size="30" color="#E2601F" />
-            <text>折后优惠</text>
+            <text>促销</text>
           </view>
           <view class="discount-row-right">
             <text class="discount-neg">-¥{{ rateDiscount.toFixed(2) }}</text>
@@ -209,6 +212,7 @@
       </section>
 
       <view class="bottom-placeholder"></view>
+    </view>
 
     <template #footer>
     <!-- 底部固定结算栏：应付/合计 + 明细抽屉入口 + 提交订单 -->
@@ -238,6 +242,7 @@
           </view>
         </view>
         <scroll-view scroll-y class="picker-body">
+          <view class="picker-body-inner">
           <view
             v-for="c in availableCoupons"
             :key="c.id"
@@ -265,6 +270,7 @@
           <view v-if="!availableCoupons.length" class="picker-empty">
             <text class="picker-empty-text">暂无优惠券</text>
           </view>
+          </view>
         </scroll-view>
         <view v-if="selectedCoupon" class="picker-footer">
           <view class="picker-clear-btn" @tap="pickCoupon(null)">
@@ -283,6 +289,7 @@
           </view>
         </view>
         <scroll-view scroll-y class="picker-body address-picker-body">
+          <view class="picker-body-inner">
           <view
             v-for="item in addressOptions"
             :key="item.id"
@@ -304,6 +311,7 @@
           </view>
           <view v-if="!addressOptions.length" class="picker-empty">
             <text class="picker-empty-text">还没有收货地址，请先新增</text>
+          </view>
           </view>
         </scroll-view>
         <view class="picker-footer">
@@ -343,6 +351,8 @@ const refreshing = ref(false)
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
 )
+// 店铺名取商品所属门店，与购物车/订单页保持一致，无门店信息时回退默认名
+const shopName = computed(() => items.value.find(i => i.storeName)?.storeName || '本草国医馆')
 
 const promotionDiscount = computed(() => promotionPreview.value?.promotionDiscountAmount ?? 0)
 const rateDiscount = computed(() => promotionPreview.value?.rateDiscountAmount ?? 0)
@@ -410,6 +420,7 @@ async function loadCheckout() {
         skuId: buyNow.skuId,
         productId: buyNow.productId,
         productName: buyNow.productName,
+        storeName: buyNow.storeName,
         productImage: buyNow.productImage,
         specName: buyNow.specName,
         price: buyNow.price,

@@ -281,8 +281,8 @@ $price: #8B5000;
 }
 .thumb {
   position: relative;
-  margin: 14rpx 14rpx 0;
-  border-radius: 12rpx;
+  margin: 0;
+  border-radius: 0;
   overflow: hidden;
 }
 .promo-corner {
@@ -291,7 +291,7 @@ $price: #8B5000;
   left: 0;
   z-index: 2;
   padding: 4rpx 14rpx;
-  border-radius: 12rpx 0 12rpx 12rpx;
+  border-radius: 16rpx 0 12rpx 0;
 }
 .promo-corner-text {
   color: #ffffff;

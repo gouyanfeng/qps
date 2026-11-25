@@ -49,7 +49,7 @@ public class UpdateMallPromotionHandler : IRequestHandler<UpdateMallPromotionCom
             req.Name.Trim(),
             req.Description?.Trim() ?? string.Empty,
             (MallPromotionType)req.PromotionType,
-            req.ThresholdAmount,
+            MallPromotionRules.RequiresThreshold(req.ActionType) ? req.ThresholdAmount : 0m,
             req.ActionType,
             req.ActionConfigJson,
             req.ScopeType,

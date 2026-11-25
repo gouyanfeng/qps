@@ -23,7 +23,6 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 }
 
 .page-body {
-  height: calc(100vh - 100rpx);
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -238,10 +237,6 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
   font-size: 18rpx; color: #ffffff; font-weight: 700;
   letter-spacing: 1rpx;
 }
-.pharm-row {
-  display: flex; align-items: center; gap: 4rpx;
-  font-size: 22rpx; color: $muted;
-}
 .pharm-go {
   display: flex; align-items: center; gap: 2rpx;
   font-size: 22rpx; color: $primary; font-weight: 600;
@@ -280,21 +275,11 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
   overflow: hidden;
 }
 .prod-spec { font-size: 22rpx; color: $muted; }
-.prod-tags { display: flex; gap: 10rpx; flex-wrap: wrap; }
-.pt-gap, .pt-cold {
-  display: flex; align-items: center; gap: 4rpx;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
-  font-size: 18rpx; font-weight: 500;
-}
-.pt-gap { background: #F3F8F1; color: $primary; }
-.pt-cold { background: #E1F5FE; color: #0288D1; }
 .prod-bottom { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; }
 .prod-bottom-right { display: flex; align-items: center; gap: 14rpx; }
 .prod-price { font-size: 28rpx; font-weight: 700; color: $price; }
 .prod-price-left { display: flex; align-items: baseline; gap: 10rpx; min-width: 0; }
 .prod-price-origin { font-size: 22rpx; color: #B0ACA2; text-decoration: line-through; }
-.prod-promo { display: block; margin-top: 6rpx; font-size: 22rpx; color: $muted; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prod-qty { font-size: 24rpx; color: $muted; }
 .review-btn {
   padding: 8rpx 22rpx;
@@ -359,7 +344,8 @@ $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 .mono { font-family: 'SF Mono', 'Menlo', monospace; }
 
 /* ===== 底部操作栏 ===== */
-.bottom-space { height: 40rpx; }
+/* 固定底栏高度（76rpx 按钮 + 上下 16rpx 内边距 + 安全区），留出可完整滚动到底的占位 */
+.bottom-space { height: calc(140rpx + env(safe-area-inset-bottom)); }
 
 .footer-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;

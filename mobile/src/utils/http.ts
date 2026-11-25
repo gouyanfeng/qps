@@ -17,7 +17,7 @@ const normalizeApiBaseUrl = (value: string) => {
 // 各请求路径本身已含 /api（BASE_URL + "/api/..."）。
 export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL === undefined
-    ? 'http://127.0.0.1:5000'
+    ? 'http://47.114.97.160:5000'
     : normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
 
 /** 静态文件（图片等）访问域名，可通过 VITE_FILE_BASE_URL 覆盖；未配置时默认走阿里云 OSS */

@@ -7,6 +7,7 @@
       :refresher-enabled="refreshEnabled"
       :refresher-triggered="refresherTriggered"
       refresher-default-style="black"
+      refresher-background="var(--page-bg)"
       :refresher-threshold="refresherThreshold"
       :lower-threshold="lowerThreshold"
       @refresherrefresh="onRefresh"
@@ -38,10 +39,10 @@ const props = withDefaults(defineProps<{
   moreText?: string
   lowerThreshold?: number
 }>(), {
-  background: 'var(--page-bg)',
+  background: '#FCF9F8',
   refreshEnabled: false,
   refresherTriggered: false,
-  refresherThreshold: 60,
+  refresherThreshold: 30,
   showLoadmore: false,
   hasMore: true,
   loading: false,

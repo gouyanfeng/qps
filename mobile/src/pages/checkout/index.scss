@@ -243,6 +243,13 @@ $page-padding: 24rpx;
   font-size: 30rpx;
   font-weight: 700;
 }
+.goods-price-origin {
+  color: #B0ACA2;
+  font-size: 20rpx;
+  font-weight: 400;
+  text-decoration: line-through;
+  margin-left: 6rpx;
+}
 .goods-qty {
   color: #888;
   font-size: 26rpx;
@@ -479,7 +486,7 @@ $page-padding: 24rpx;
 }
 
 /* ===== 底部占位 ===== */
-.bottom-placeholder { height: 180rpx; }
+.bottom-placeholder { height: calc(180rpx + env(safe-area-inset-bottom)); }
 
 /* ===== 提交订单按钮（结算栏操作区 slot） ===== */
 .submit-btn {
@@ -613,8 +620,14 @@ $page-padding: 24rpx;
 
 .picker-body {
   flex: 1;
-  padding: 16rpx 32rpx;
+  padding: 16rpx 0 0;
+  box-sizing: border-box;
   max-height: 50vh;
+}
+/* scroll-view 横向 padding 会被内容宽度挤掉，改由内层容器兜住左右边距 */
+.picker-body-inner {
+  padding: 0 32rpx 16rpx;
+  box-sizing: border-box;
 }
 
 .picker-coupon-item {

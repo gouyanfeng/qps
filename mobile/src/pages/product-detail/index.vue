@@ -547,6 +547,7 @@ function buyNow() {
     skuId: sku.id,
     productId: product.value.id,
     productName: product.value.name,
+    storeName: product.value.storeName,
     productImage: product.value.images[0] || '',
     specName: sku.specName || '默认规格',
     price: sku.price,

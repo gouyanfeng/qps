@@ -102,6 +102,10 @@ public class MallOrderItemDto
     public Guid ProductId { get; set; }
     public Guid StoreId { get; set; }
     public string StoreName { get; set; } = string.Empty;
+
+    /// <summary>门店地址（由商品所属门店反查，无门店时为空）。</summary>
+    public string StoreAddress { get; set; } = string.Empty;
+
     public string ProductName { get; set; } = string.Empty;
     public string ProductImage { get; set; } = string.Empty;
     public string Badge { get; set; } = string.Empty;
