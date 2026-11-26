@@ -1,5 +1,5 @@
 <template>
-  <div class="upload-box">
+  <div class="upload-box" :style="uploadVars">
     <el-upload
       v-model:file-list="_fileList"
       action="#"
@@ -90,6 +90,13 @@ const self_disabled = computed(() => {
 });
 
 const _fileList = ref<UploadUserFile[]>(props.fileList);
+
+// 尺寸通过自定义属性注入，供 Imgs.scss 使用（样式拆到独立文件后 v-bind() 不会被 SFC 扫描到）
+const uploadVars = computed(() => ({
+  "--upload-width": props.width,
+  "--upload-height": props.height,
+  "--upload-radius": props.borderRadius
+}));
 
 // 监听 props.fileList 列表默认值改变
 watch(

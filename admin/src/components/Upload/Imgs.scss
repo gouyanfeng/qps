@@ -36,7 +36,7 @@
       padding: 0;
       overflow: hidden;
       border: 1px dashed var(--el-border-color-darker);
-      border-radius: v-bind(borderRadius);
+      border-radius: var(--upload-radius);
       &:hover {
         border: 1px dashed var(--el-color-primary);
       }
@@ -47,10 +47,10 @@
     }
     .el-upload-list__item,
     .el-upload--picture-card {
-      width: v-bind(width);
-      height: v-bind(height);
+      width: var(--upload-width);
+      height: var(--upload-height);
       background-color: transparent;
-      border-radius: v-bind(borderRadius);
+      border-radius: var(--upload-radius);
     }
     .upload-image {
       width: 100%;

@@ -1,5 +1,5 @@
 <template>
-  <div class="upload-box">
+  <div class="upload-box" :style="uploadVars">
     <el-upload
       :id="uuid"
       action="#"
@@ -81,6 +81,13 @@ const props = withDefaults(defineProps<UploadFileProps>(), {
 
 // 生成组件唯一id
 const uuid = ref("id-" + generateUUID());
+
+// 尺寸通过自定义属性注入，供 Img.scss 使用（样式拆到独立文件后 v-bind() 不会被 SFC 扫描到）
+const uploadVars = computed(() => ({
+  "--upload-width": props.width,
+  "--upload-height": props.height,
+  "--upload-radius": props.borderRadius
+}));
 
 // 后端只返回文件名，展示时由前端拼完整 URL；表单里始终存纯文件名。
 
