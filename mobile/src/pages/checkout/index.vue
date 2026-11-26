@@ -114,25 +114,16 @@
             <q-icon name="chevron-right" size="28" color="#999999" />
           </view>
         </view>
-        <view v-if="rateDiscount > 0" class="discount-row promotion-row">
+        <view v-if="totalPromotionDiscount > 0" class="discount-row promotion-row">
           <view class="discount-row-left">
             <q-icon name="coupon" size="30" color="#E2601F" />
-            <text>促销</text>
+            <text>促销优惠</text>
           </view>
           <view class="discount-row-right">
-            <text class="discount-neg">-¥{{ rateDiscount.toFixed(2) }}</text>
+            <text class="discount-neg">-¥{{ totalPromotionDiscount.toFixed(2) }}</text>
           </view>
         </view>
-        <view v-if="amountDiscount > 0" class="discount-row promotion-row">
-          <view class="discount-row-left">
-            <q-icon name="coupon" size="30" color="#E2601F" />
-            <text>满减优惠</text>
-          </view>
-          <view class="discount-row-right">
-            <text class="discount-neg">-¥{{ amountDiscount.toFixed(2) }}</text>
-          </view>
-        </view>
-        <view v-if="rateDiscount === 0 && amountDiscount === 0" class="discount-row promotion-row">
+        <view v-else class="discount-row promotion-row">
           <view class="discount-row-left">
             <q-icon name="coupon" size="30" color="#E2601F" />
             <text>促销优惠</text>
@@ -142,8 +133,9 @@
           </view>
         </view>
 
-        <!-- 促销优惠明细 -->
+        <!-- 优惠构成：逐条列出命中的促销，各行金额之和等于上方合计，不额外计入 -->
         <view v-if="promotionDetails.length" class="promotion-detail">
+          <text class="promotion-detail-title">优惠构成</text>
           <view v-for="detail in promotionDetails" :key="detail.promotionId" class="promotion-detail-row">
             <text class="promotion-detail-name">{{ detail.name }}</text>
             <text class="promotion-detail-value">-¥{{ detail.discountAmount.toFixed(2) }}</text>
@@ -219,7 +211,7 @@
     <q-checkout-bar
       :payable-amount="finalPrice"
       :goods-amount="subtotal"
-      :promotion-discount="promotionDiscount"
+      :promotion-discount="totalPromotionDiscount"
       :coupon-discount="couponDiscount"
       :coupon-name="couponName"
       :freight-amount="freightAmount"
@@ -356,6 +348,10 @@ const shopName = computed(() => items.value.find(i => i.storeName)?.storeName ||
 const promotionDiscount = computed(() => promotionPreview.value?.promotionDiscountAmount ?? 0)
 const rateDiscount = computed(() => promotionPreview.value?.rateDiscountAmount ?? 0)
 const amountDiscount = computed(() => promotionPreview.value?.amountDiscountAmount ?? 0)
+// 合计只取后端汇总字段；万一接口没带汇总，用分项之和兜底，避免合计行显示 0
+const totalPromotionDiscount = computed(() =>
+  promotionDiscount.value > 0 ? promotionDiscount.value : rateDiscount.value + amountDiscount.value
+)
 const promotionDetails = computed(() => promotionPreview.value?.promotionDetails ?? [])
 const couponDiscount = computed(() => promotionPreview.value?.couponDiscountAmount ?? 0)
 const couponName = computed(() => promotionPreview.value?.couponName ?? '')
@@ -518,7 +514,7 @@ function submitOrder() {
 
   uni.showModal({
     title: '确认提交',
-    content: `商品金额 ¥${subtotal.value.toFixed(2)}，促销优惠 ¥${promotionDiscount.value.toFixed(2)}，优惠券抵扣 ¥${couponDiscount.value.toFixed(2)}，应付 ¥${finalPrice.value.toFixed(2)}。${giftLine}确认创建订单？`,
+    content: `商品金额 ¥${subtotal.value.toFixed(2)}，促销优惠 ¥${totalPromotionDiscount.value.toFixed(2)}，优惠券抵扣 ¥${couponDiscount.value.toFixed(2)}，应付 ¥${finalPrice.value.toFixed(2)}。${giftLine}确认创建订单？`,
     success: async r => {
       if (!r.confirm || !address.value) return
       try {
