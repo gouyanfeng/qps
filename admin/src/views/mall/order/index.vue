@@ -104,7 +104,9 @@ const statusOptions = [
   { label: '已完成', value: 'Completed' },
   { label: '已取消', value: 'Cancelled' },
   { label: '退款中', value: 'Refunding' },
-  { label: '已退款', value: 'Refunded' }
+  { label: '已退款', value: 'Refunded' },
+  { label: '退货中', value: 'Returning' },
+  { label: '已退货', value: 'Returned' }
 ]
 
 const searchForm = reactive({
@@ -195,7 +197,9 @@ const getStatusType = (status: string) => {
     Completed: 'success',
     Cancelled: 'info',
     Refunding: 'warning',
-    Refunded: 'danger'
+    Refunded: 'danger',
+    Returning: 'warning',
+    Returned: 'danger'
   }
   return map[status] || 'info'
 }
@@ -208,7 +212,9 @@ const getStatusText = (status: string) => {
     Completed: '已完成',
     Cancelled: '已取消',
     Refunding: '退款中',
-    Refunded: '已退款'
+    Refunded: '已退款',
+    Returning: '退货中',
+    Returned: '已退货'
   }
   return map[status] || status
 }

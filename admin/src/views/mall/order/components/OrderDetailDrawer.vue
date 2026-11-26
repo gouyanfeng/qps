@@ -293,7 +293,9 @@ const getOrderStatusType = (status: string) => {
     Completed: 'success',
     Cancelled: 'info',
     Refunding: 'warning',
-    Refunded: 'danger'
+    Refunded: 'danger',
+    Returning: 'warning',
+    Returned: 'danger'
   }
   return map[status] || 'info'
 }
@@ -306,7 +308,9 @@ const getOrderStatusText = (status: string) => {
     Completed: '已完成',
     Cancelled: '已取消',
     Refunding: '退款中',
-    Refunded: '已退款'
+    Refunded: '已退款',
+    Returning: '退货中',
+    Returned: '已退货'
   }
   return map[status] || status
 }

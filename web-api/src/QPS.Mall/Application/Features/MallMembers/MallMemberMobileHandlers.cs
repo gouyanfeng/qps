@@ -113,10 +113,21 @@ public class GetMallMemberOrderBadgeHandler : IRequestHandler<GetMallMemberOrder
             Paid = GetCount(counts, MallOrderStatus.Paid),
             Shipped = GetCount(counts, MallOrderStatus.Shipped),
             Completed = GetCount(counts, MallOrderStatus.Completed),
-            Returning = GetCount(counts, MallOrderStatus.Returning)
+            // 与订单列表「退款/售后」tab 口径一致：退款中/已退款/退货中/已退货都算
+            Returning = GetCount(counts, MallOrderStatus.Refunding)
+                      + GetCount(counts, MallOrderStatus.Refunded)
+                      + GetCount(counts, MallOrderStatus.Returning)
+                      + GetCount(counts, MallOrderStatus.Returned)
         };
     }
 
-    private static int GetCount(IReadOnlyDictionary<string, int> counts, string status) =>
-        counts.TryGetValue(status, out var count) ? count : 0;
+    private static int GetCount(IReadOnlyDictionary<string, int> counts, params string[] statuses)
+    {
+        var total = 0;
+        foreach (var status in statuses)
+        {
+            if (counts.TryGetValue(status, out var count)) total += count;
+        }
+        return total;
+    }
 }
