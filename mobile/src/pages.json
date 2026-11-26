@@ -29,6 +29,13 @@
 			}
 		},
 		{
+			"path": "pages/profile-edit/index",
+			"style": {
+				"navigationBarTitleText": "编辑个人信息",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/product-detail/index",
 			"style": {
 				"navigationBarTitleText": "商品详情",

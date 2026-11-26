@@ -8,7 +8,7 @@
         <view class="hero-top">
           <view class="user-row" @click="openAccount">
             <view class="avatar-ring">
-              <q-image class="avatar-img" :src="'/static/images/avatar-elder.jpg'" mode="aspectFill" />
+              <q-image class="avatar-img" :src="profile?.avatar || '/static/images/avatar-elder.jpg'" mode="aspectFill" />
               <view class="cert-badge">
                 <q-icon name="check" size="14" color="#ffffff" />
               </view>
@@ -220,6 +220,16 @@
           </view>
           <q-icon name="chevron-right" size="15" color="#6B6B6B" />
         </view>
+        <view v-if="profile" class="setting-divider"></view>
+        <view v-if="profile" class="setting-cell logout-cell" @tap="onLogout">
+          <view class="setting-icon">
+            <q-icon name="arrow-left" size="18" color="#C62828" />
+          </view>
+          <view class="setting-info">
+            <text class="setting-label logout-label">退出登录</text>
+          </view>
+          <q-icon name="chevron-right" size="15" color="#6B6B6B" />
+        </view>
       </view>
 
       <!-- ============ 底部品质认证 ============ -->
@@ -255,7 +265,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getMemberProfile, getMemberOrderBadge, getMyCouponCount } from '@/api'
+import { getMemberProfile, getMemberOrderBadge, getMyCouponCount, logout } from '@/api'
 import type { MallMemberOrderBadge, MemberProfile } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 // #ifndef H5
@@ -321,7 +331,27 @@ async function onRefresh() {
 }
 
 function openAccount() {
-  if (!profile.value) uni.navigateTo({ url: '/pages/login/index' })
+  if (!profile.value) {
+    uni.navigateTo({ url: '/pages/login/index' })
+    return
+  }
+  uni.navigateTo({ url: '/pages/profile-edit/index' })
+}
+
+function onLogout() {
+  uni.showModal({
+    title: '退出登录',
+    content: '确定要退出当前账号吗？',
+    confirmColor: '#C62828',
+    success: (res) => {
+      if (!res.confirm) return
+      logout()
+      profile.value = null
+      orderBadge.value = { pendingPayment: 0, paid: 0, shipped: 0, completed: 0, returning: 0 }
+      couponsCount.value = 0
+      uni.reLaunch({ url: '/pages/login/index' })
+    }
+  })
 }
 
 function goOrder(status: string) {
