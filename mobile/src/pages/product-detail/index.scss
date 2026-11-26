@@ -9,17 +9,8 @@ $line: #EFEEEB;
 
 $shadow-card: 0 4rpx 20rpx -4rpx rgba(46, 125, 50, 0.08);
 
-.page {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: var(--page-bg);
-}
-
-.page-body {
-  flex: 1;
-  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
-}
+/* 底部固定操作栏的占位：底栏高 112rpx（14rpx × 2 + 84rpx），另留 8rpx 呼吸空间 */
+.bottom-space { height: calc(120rpx + env(safe-area-inset-bottom)); }
 
 /* ===== section 大图轮播（卡片式，保留边距） ===== */
 .swiper-section {

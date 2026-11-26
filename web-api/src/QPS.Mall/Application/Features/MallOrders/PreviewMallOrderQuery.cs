@@ -5,6 +5,7 @@ using QPS.Mall.Application.Features.MallFreightRules;
 using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
+using QPS.Mall.Domain.Services;
 using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallOrders;
@@ -93,10 +94,9 @@ public class PreviewMallOrderHandler : IRequestHandler<PreviewMallOrderQuery, Ma
 
         var freightAmount = await CalculateFreightAsync(request, preview, cancellationToken);
 
-        // 商品部分封底为 0，运费在封底后再加，保证与下单口径一致
-        var discountedGoodsAmount = Math.Max(
-            0,
-            preview.GoodsAmount - preview.DiscountAmount - couponDiscount);
+        // 与下单共用同一金额拆分口径：商品部分封底为 0，运费在封底后再加
+        var breakdown = new PriceBreakdown(
+            preview.GoodsAmount, preview.DiscountAmount, couponDiscount, freightAmount);
 
         // 赠品在结算阶段才由促销引擎算出，提交前先透出清单
         var gifts = await _promotionPreview.ResolveGiftItemsAsync(
@@ -122,7 +122,7 @@ public class PreviewMallOrderHandler : IRequestHandler<PreviewMallOrderQuery, Ma
             CouponGapAmount = couponGapAmount,
             CouponHint = couponHint,
             FreightAmount = freightAmount,
-            PayableAmount = discountedGoodsAmount + freightAmount,
+            PayableAmount = breakdown.PayableAmount,
             Gifts = gifts.Select(gift => new MallPromotionGiftDto
             {
                 SkuId = gift.SkuId,

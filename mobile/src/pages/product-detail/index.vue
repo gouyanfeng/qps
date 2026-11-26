@@ -271,6 +271,9 @@
         </view>
       </view>
 
+      <!-- 底部固定操作栏的滚动占位，避免最后一块内容被底栏压住 -->
+      <view class="bottom-space"></view>
+
       <!-- ============ 底部固定操作栏 ============ -->
       <template #footer>
         <view class="page-footer">

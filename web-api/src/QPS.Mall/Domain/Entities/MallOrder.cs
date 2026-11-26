@@ -1,5 +1,6 @@
 using QPS.Shared.Common;
 using QPS.Shared.Exceptions;
+using QPS.Mall.Domain.Services;
 
 namespace QPS.Mall.Domain.Entities;
 
@@ -153,7 +154,8 @@ public class MallOrder : BaseEntity
         CouponId = couponId;
         CouponName = couponName;
         FreightAmount = freightAmount;
-        PayableAmount = CalculatePayableAmount(goodsAmount, promotionDiscountAmount, couponDiscountAmount, freightAmount);
+        PayableAmount = new PriceBreakdown(
+            goodsAmount, promotionDiscountAmount, couponDiscountAmount, freightAmount).PayableAmount;
         TotalWeightGram = totalWeightGram;
         Remark = remark;
         Status = MallOrderStatus.PendingPayment;
@@ -196,18 +198,6 @@ public class MallOrder : BaseEntity
     }
 
     /// <summary>
-    /// 应付金额唯一口径：商品原价扣除促销与券后封底为 0，再加运费。
-    /// </summary>
-    private static decimal CalculatePayableAmount(
-        decimal goodsAmount,
-        decimal promotionDiscountAmount,
-        decimal couponDiscountAmount,
-        decimal freightAmount)
-    {
-        return Math.Max(0, goodsAmount - promotionDiscountAmount - couponDiscountAmount) + freightAmount;
-    }
-
-    /// <summary>
     /// 金额恒等式校验：商品原价 − 促销优惠 − 券抵扣（封底为 0）+ 运费 = 应付金额。
     /// 下单时与订单查询时共用，口径不一致直接暴露错误，不静默展示。
     /// </summary>
@@ -219,17 +209,9 @@ public class MallOrder : BaseEntity
         decimal freightAmount,
         decimal payableAmount)
     {
-        var expected = CalculatePayableAmount(
-            goodsAmount,
-            promotionDiscountAmount,
-            couponDiscountAmount,
-            freightAmount);
-        if (Math.Abs(expected - payableAmount) > 0.01m)
-        {
-            throw new BusinessException(
-                500,
-                $"订单 {orderNo} 金额不自洽：商品 {goodsAmount:0.00} - 促销 {promotionDiscountAmount:0.00} - 券 {couponDiscountAmount:0.00} + 运费 {freightAmount:0.00} = {expected:0.00}，实际应付 {payableAmount:0.00}");
-        }
+        new PriceBreakdown(
+            goodsAmount, promotionDiscountAmount, couponDiscountAmount, freightAmount)
+            .EnsurePayableMatches(payableAmount, orderNo);
     }
 
     /// <summary>

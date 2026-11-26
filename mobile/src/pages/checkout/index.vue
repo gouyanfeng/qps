@@ -366,8 +366,8 @@ const availableCouponCount = computed(() =>
   availableCoupons.value.filter(item => item.isAvailable).length
 )
 
-// 实付金额以后端预览为准，预览失败时回退为商品金额
-const finalPrice = computed(() => Math.max(0, promotionPreview.value?.payableAmount ?? subtotal.value))
+// 实付金额一律取后端预览，前端不再兜底算价（公式只在后端 PriceBreakdown 一处）
+const finalPrice = computed(() => promotionPreview.value?.payableAmount ?? 0)
 const gifts = computed(() => promotionPreview.value?.gifts ?? [])
 // 件数含赠品：赠品 0 元但按件计入
 const itemCount = computed(() =>
@@ -519,6 +519,12 @@ function submitOrder() {
   }
   if (items.value.length === 0) {
     uni.showToast({ title: '购物车没有已选商品', icon: 'none' })
+    return
+  }
+  // 未拿到后端试算结果时禁止下单，避免前端 0 元占位被误当成实付金额
+  if (!promotionPreview.value) {
+    uni.showToast({ title: '价格试算未完成，请重试', icon: 'none' })
+    refreshPreview()
     return
   }
 

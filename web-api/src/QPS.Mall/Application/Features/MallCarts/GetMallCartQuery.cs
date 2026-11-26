@@ -190,7 +190,8 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             PromotionDiscountAmount = preview.DiscountAmount,
             RateDiscountAmount = preview.RateDiscountAmount,
             AmountDiscountAmount = preview.AmountDiscountAmount,
-            PayableAmount = Math.Max(0, selectedAmount - preview.DiscountAmount),
+            PayableAmount = new PriceBreakdown(
+                selectedAmount, preview.DiscountAmount).PayableAmount,
             PromotionDetails = preview.Lines
                 .Select(line => new MallCartPromotionDto
                 {
