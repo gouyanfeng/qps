@@ -90,16 +90,19 @@
                     />
                   </span>
                 </el-tooltip>
-                <el-input-number
-                  v-model="row.sortOrder"
-                  :min="0"
-                  :max="99"
-                  :disabled="!isApproved(row) || !row.isFeatured"
-                  size="small"
-                  controls-position="right"
-                  class="featured-sort"
-                  @change="(value: any, oldValue: any) => changeFeaturedSort(row, oldValue)"
-                />
+                <div class="featured-order">
+                  <span class="featured-order-label">顺序</span>
+                  <el-input-number
+                    v-model="row.sortOrder"
+                    :min="0"
+                    :max="99"
+                    :disabled="!isApproved(row) || !row.isFeatured"
+                    size="small"
+                    controls-position="right"
+                    class="featured-sort"
+                    @change="(value: any, oldValue: any) => changeFeaturedSort(row, oldValue)"
+                  />
+                </div>
               </div>
             </template>
           </el-table-column>
