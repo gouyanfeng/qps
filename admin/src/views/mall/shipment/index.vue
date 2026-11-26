@@ -9,9 +9,9 @@
             </el-select>
           </el-form-item>
           <el-form-item label="关键字">
-            <el-input v-model="searchForm.keyword" placeholder="订单号 / 运单号" clearable />
+            <el-input v-model="searchForm.keyword" :placeholder="keywordPlaceholder" clearable />
           </el-form-item>
-          <el-form-item :label="isPending ? '下单时间' : '发货时间'">
+          <el-form-item :label="dateLabel">
             <el-date-picker
               v-model="dateRange"
               type="daterange"
@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts" name="mallShipment">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { Van, View, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { mallShipmentApi } from '@/api/modules/mall/mallShipment'
@@ -138,6 +138,18 @@ const queryRef = ref()
 const filterKey = computed(() => statusFilter.value)
 const isPending = computed(() => statusFilter.value === 'pending')
 
+// 不同页签的搜索语义不同，提示文案跟着页签走，避免用错条件
+const keywordPlaceholder = computed(() => {
+  if (statusFilter.value === 'pending') return '订单号 / 收货人 / 电话'
+  if (statusFilter.value === 'all') return '订单号 / 发货单号 / 运单号 / 收货人'
+  return '订单号 / 发货单号 / 运单号'
+})
+const dateLabel = computed(() => {
+  if (statusFilter.value === 'pending') return '下单时间'
+  if (statusFilter.value === 'all') return '发货/付款时间'
+  return '发货时间'
+})
+
 const searchForm = reactive({
   keyword: '',
   startTime: '',
@@ -159,14 +171,15 @@ const queryParams = computed(() => {
       params.status = 'Paid'
       break
     case 'shipped':
-      params.status = 'Shipped'
+      // 已发货含已签收：只排除作废运单，不按运单状态精确过滤，否则已签收（Delivered）记录会被漏掉
       params.isVoided = false
       break
     case 'voided':
       params.isVoided = true
       break
     default:
-      // 全部：展示全部运单（含已作废）
+      // 全部：运单（含已作废）+ 尚未发货的待发货订单，只查运单会漏掉待发货订单
+      params.includePendingOrders = true
       break
   }
   return params
@@ -189,6 +202,17 @@ const handleDateChange = (value: string[] | null) => {
   }
 }
 
+// 切换页签时日期含义会变（下单时间 / 发货时间），清空旧区间避免把下单日期套用到发货筛选
+watch(
+  statusFilter,
+  () => {
+    dateRange.value = []
+    searchForm.startTime = ''
+    searchForm.endTime = ''
+  },
+  { flush: 'sync' }
+)
+
 const handleReset = () => {
   searchForm.keyword = ''
   searchForm.startTime = ''
@@ -199,6 +223,8 @@ const handleReset = () => {
 const isOrderRow = (row: any) => !row.shipmentNo
 
 const getItemCount = (row: any) => {
+  // 运单行由后端直接汇总件数，订单行按明细累加
+  if (typeof row.itemCount === 'number') return row.itemCount
   const items = row.items || []
   if (!items.length) return '-'
   return items.reduce((total: number, item: any) => total + Number(item.quantity || 0), 0)
@@ -217,7 +243,8 @@ const getRowStatusType = (row: any) => {
 }
 
 const openShipmentDialog = (row: any) => {
-  currentOrderId.value = row.id
+  // 待发货订单行只有 id（订单ID），运单行两者都有，统一取 orderId 保证发货弹窗拿到的都是订单ID
+  currentOrderId.value = row.orderId || row.id
   currentOrderNo.value = row.orderNo || ''
   shipmentDialogVisible.value = true
 }

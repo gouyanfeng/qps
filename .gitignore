@@ -40,3 +40,8 @@ qps-ui-tests/
 
 # 本机私有配置（含 OSS 凭据，不入库）
 appsettings.Local.json
+
+# 前端构建备份目录（构建前 mv 产生的历史副本，不入库）
+admin/dist-bak-*/
+admin/dist-old-*/
+mobile/dist/build/h5-bak-*/

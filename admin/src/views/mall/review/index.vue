@@ -78,29 +78,29 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="详情展示" width="180" align="center">
+          <el-table-column label="详情展示" width="100" align="center">
             <template #default="{ row }">
-              <div class="featured-cell">
-                <el-tooltip content="请先审核通过" placement="top" :disabled="isApproved(row)">
-                  <span class="featured-switch">
-                    <el-switch
-                      v-model="row.isFeatured"
-                      :disabled="!isApproved(row)"
-                      @change="(value: any) => changeFeaturedSwitch(row, Boolean(value))"
-                    />
-                  </span>
-                </el-tooltip>
-                <el-input-number
-                  v-model="row.sortOrder"
-                  :min="0"
-                  :max="99"
-                  :disabled="!isApproved(row) || !row.isFeatured"
-                  size="small"
-                  controls-position="right"
-                  class="featured-sort"
-                  @change="(value: any, oldValue: any) => changeFeaturedSort(row, oldValue)"
+              <el-tooltip content="请先审核通过" placement="top" :disabled="isApproved(row)">
+                <el-switch
+                  v-model="row.isFeatured"
+                  :disabled="!isApproved(row)"
+                  @change="(value: any) => changeFeaturedSwitch(row, Boolean(value))"
                 />
-              </div>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="顺序" width="100" align="center">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.sortOrder"
+                :min="0"
+                :max="99"
+                :disabled="!isApproved(row) || !row.isFeatured"
+                size="small"
+                controls-position="right"
+                class="featured-sort"
+                @change="(value: any, oldValue: any) => changeFeaturedSort(row, oldValue)"
+              />
             </template>
           </el-table-column>
           <el-table-column label="评价时间" width="170" align="center">

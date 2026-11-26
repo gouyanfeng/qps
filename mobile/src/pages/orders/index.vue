@@ -187,7 +187,8 @@ onLoad(options => {
     unpaid: 'PendingPayment',
     ship: 'Paid',
     receive: 'Shipped',
-    done: 'Completed'
+    done: 'Completed',
+    refund: 'Refunding,Refunded,Returning,Returned'
   } as Record<string, string>)[filter] || ''
 })
 

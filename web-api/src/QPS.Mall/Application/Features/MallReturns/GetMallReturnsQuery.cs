@@ -43,6 +43,18 @@ public class GetMallReturnsHandler : IRequestHandler<GetMallReturnsQuery, Pagina
             query = query.Where(item => item.Return.Status == status);
         }
 
+        // 订单主表无 StoreId，门店挂在明细对应的商品上（与订单列表口径一致）
+        if (request.StoreId.HasValue)
+        {
+            var storeId = request.StoreId.Value;
+            query = query.Where(item =>
+                item.Order != null &&
+                _dbContext.MallOrderItems.Any(orderItem =>
+                    orderItem.OrderId == item.Return.OrderId &&
+                    _dbContext.MallProducts.Any(product =>
+                        product.Id == orderItem.ProductId && product.StoreId == storeId)));
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = $"%{request.Keyword.Trim()}%";

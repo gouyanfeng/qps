@@ -179,7 +179,12 @@ export function uploadAfterSaleImage(filePath: string): Promise<string> {
   return uploadImage(filePath, 'aftersale')
 }
 
-function uploadImage(filePath: string, scene: 'review' | 'aftersale'): Promise<string> {
+/** 会员头像上传，返回 OSS 文件名，保存资料时传给后端 */
+export function uploadAvatarImage(filePath: string): Promise<string> {
+  return uploadImage(filePath, 'avatar')
+}
+
+function uploadImage(filePath: string, scene: 'review' | 'aftersale' | 'avatar'): Promise<string> {
   return new Promise((resolve, reject) => {
     const token = uni.getStorageSync(MEMBER_TOKEN_STORAGE_KEY) || ''
     uni.uploadFile({
@@ -686,6 +691,8 @@ export interface MemberProfile {
   phone: string
   nickname: string
   avatar: string
+  birthday?: string | null
+  gender?: string | null
   levelName: string
   availablePoints: number
   totalOrders: number
@@ -694,6 +701,18 @@ export interface MemberProfile {
 
 export function getMemberProfile(): Promise<MemberProfile> {
   return request<MemberProfile>('/api/mall/member/me')
+}
+
+export interface MemberProfileUpdate {
+  nickname?: string
+  avatar?: string
+  birthday?: string | null
+  gender?: string | null
+}
+
+/** 更新会员资料（昵称、头像、性别、生日） */
+export function updateMemberProfile(payload: MemberProfileUpdate): Promise<MemberProfile> {
+  return request<MemberProfile>('/api/mall/member/me', 'PUT', payload)
 }
 
 export interface MallMemberOrderBadge {

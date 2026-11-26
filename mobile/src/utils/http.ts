@@ -24,7 +24,7 @@ export const BASE_URL =
 export const FILE_BASE_URL = (import.meta.env.VITE_FILE_BASE_URL || 'https://qps-bucket.oss-cn-hangzhou.aliyuncs.com').replace(/\/+$/, '')
 
 const TOKEN_KEY = 'qps_member_token'
-const LOGIN_PATH = '/pages/account/index'
+const LOGIN_PATH = '/pages/login/index'
 const LOGIN_REDIRECT_PATH_KEY = 'qps_login_redirect_path'
 
 let unauthorizedPromptVisible = false
@@ -68,7 +68,7 @@ export function isLoggedIn(): boolean {
 
 function isLoginPath(path: string): boolean {
   const route = path.split('?')[0]
-  return route === LOGIN_PATH || route === '/pages/login/index'
+  return route === LOGIN_PATH
 }
 
 export function consumeLoginRedirectPath(): string | null {

@@ -29,6 +29,13 @@
 			}
 		},
 		{
+			"path": "pages/profile-edit/index",
+			"style": {
+				"navigationBarTitleText": "编辑个人信息",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/product-detail/index",
 			"style": {
 				"navigationBarTitleText": "商品详情",
@@ -53,13 +60,6 @@
 			"path": "pages/search/index",
 			"style": {
 				"navigationBarTitleText": "搜索商品",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/account/index",
-			"style": {
-				"navigationBarTitleText": "会员登录",
 				"navigationStyle": "custom"
 			}
 		},
