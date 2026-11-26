@@ -57,13 +57,6 @@
 			}
 		},
 		{
-			"path": "pages/account/index",
-			"style": {
-				"navigationBarTitleText": "会员登录",
-				"navigationStyle": "custom"
-			}
-		},
-		{
 			"path": "pages/addresses/index",
 			"style": {
 				"navigationBarTitleText": "收货地址",

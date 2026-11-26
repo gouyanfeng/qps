@@ -89,15 +89,28 @@
             v-model="password"
             class="input"
             :password="!showPassword"
-            placeholder="请输入账号密码"
+            :placeholder="isRegister ? '请设置密码（至少 6 位）' : '请输入账号密码'"
             placeholder-class="input-placeholder"
           />
           <text class="eye" @tap="showPassword = !showPassword">{{ showPassword ? '隐藏' : '显示' }}</text>
         </view>
+        <view v-if="isRegister" class="field">
+          <q-icon name="user-vip" size="20" color="#1E7A33" />
+          <input
+            v-model="nickname"
+            class="input"
+            maxlength="30"
+            placeholder="昵称（选填）"
+            placeholder-class="input-placeholder"
+          />
+        </view>
+        <view class="mode-switch" @tap="isRegister = !isRegister">
+          <text>{{ isRegister ? '已有账号？去登录' : '还没有账号？立即注册' }}</text>
+        </view>
       </view>
 
       <view :class="['submit', { loading: submitting }]" @tap="submit">
-        <text>{{ submitting ? '登录中…' : '立即登录' }}</text>
+        <text>{{ submitting ? (isRegister ? '注册中…' : '登录中…') : (isRegister ? '注册并登录' : '立即登录') }}</text>
         <q-icon name="chevron-right" size="20" color="#ffffff" />
       </view>
     </view>
@@ -141,15 +154,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { login as loginApi } from '@/api'
+import { login as loginApi, register as registerApi } from '@/api'
 import { consumeLoginRedirectPath } from '@/utils/http'
 
 type LoginTab = 'code' | 'password'
 
 const activeTab = ref<LoginTab>('code')
+const isRegister = ref(false)
 const phone = ref('')
 const code = ref('')
 const password = ref('')
+const nickname = ref('')
 const showPassword = ref(false)
 const agreed = ref(true)
 const submitting = ref(false)
@@ -189,7 +204,15 @@ async function submit() {
 
   submitting.value = true
   try {
-    await loginApi({ phone: phone.value, password: password.value })
+    if (isRegister.value) {
+      await registerApi({
+        phone: phone.value,
+        password: password.value,
+        nickname: nickname.value || undefined
+      })
+    } else {
+      await loginApi({ phone: phone.value, password: password.value })
+    }
     uni.showToast({ title: '登录成功', icon: 'success' })
     const redirectPath = consumeLoginRedirectPath()
     setTimeout(() => {

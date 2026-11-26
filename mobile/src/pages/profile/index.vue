@@ -321,7 +321,7 @@ async function onRefresh() {
 }
 
 function openAccount() {
-  if (!profile.value) uni.navigateTo({ url: '/pages/account/index' })
+  if (!profile.value) uni.navigateTo({ url: '/pages/login/index' })
 }
 
 function goOrder(status: string) {
