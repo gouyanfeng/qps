@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using QPS.Mall.Application.Features.MallOrders;
 using QPS.Mall.Application.Features.MallProducts;
 using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Contracts;
@@ -22,6 +23,12 @@ public class GetMallCartQuery : IRequest<MallCartDto>
     /// 为 null 时使用购物车中已有的行。数量以这里传入的为准，不与购物车累加。
     /// </summary>
     public IReadOnlyCollection<CartPreviewLine>? PreviewItems { get; set; }
+
+    /// <summary>收货地址 ID；传入时按该地址计算运费，购物车阶段不传（运费 0）。</summary>
+    public Guid? AddressId { get; set; }
+
+    /// <summary>会员券 ID；传入时计算券抵扣，购物车阶段不传。</summary>
+    public Guid? MemberCouponId { get; set; }
 }
 
 public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
@@ -29,15 +36,18 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
     private readonly IMallDbContext _dbContext;
     private readonly MallPromotionPreviewService _promotionPreview;
     private readonly MallProductPromotionEnricher _productEnricher;
+    private readonly MallCheckoutPricingService _checkoutPricing;
 
     public GetMallCartHandler(
         IMallDbContext dbContext,
         MallPromotionPreviewService promotionPreview,
-        MallProductPromotionEnricher productEnricher)
+        MallProductPromotionEnricher productEnricher,
+        MallCheckoutPricingService checkoutPricing)
     {
         _dbContext = dbContext;
         _promotionPreview = promotionPreview;
         _productEnricher = productEnricher;
+        _checkoutPricing = checkoutPricing;
     }
 
     public async Task<MallCartDto> Handle(
@@ -188,6 +198,14 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             request.UserId,
             selectedPromotionItems,
             cancellationToken);
+        // 券与运费与结算页共用同一定价服务：购物车阶段不传地址/券，两者为 0
+        var pricing = await _checkoutPricing.CalculateAsync(
+            request.UserId,
+            preview,
+            selectedPromotionItems,
+            request.AddressId,
+            request.MemberCouponId,
+            cancellationToken);
         // 按选中商品试算出赠品，让用户在购物车阶段就知道会送什么
         var gifts = await _promotionPreview.ResolveGiftItemsAsync(
             preview.GiftSkus,
@@ -213,8 +231,13 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             PromotionDiscountAmount = preview.DiscountAmount,
             RateDiscountAmount = preview.RateDiscountAmount,
             AmountDiscountAmount = preview.AmountDiscountAmount,
-            PayableAmount = new PriceBreakdown(
-                selectedAmount, preview.DiscountAmount).PayableAmount,
+            CouponDiscountAmount = pricing.CouponDiscountAmount,
+            CouponName = pricing.CouponName,
+            CouponGapAmount = pricing.CouponGapAmount,
+            CouponHint = pricing.CouponHint,
+            FreightAmount = pricing.FreightAmount,
+            DiscountedGoodsAmount = pricing.Breakdown.DiscountedGoodsAmount,
+            PayableAmount = pricing.Breakdown.PayableAmount,
             PromotionDetails = preview.Lines
                 .Select(line => new MallCartPromotionDto
                 {

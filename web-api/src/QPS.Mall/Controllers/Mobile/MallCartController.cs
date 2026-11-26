@@ -26,7 +26,9 @@ public class MallCartController : ControllerBase
     [HttpGet("carts/{userId:guid}")]
     public async Task<ActionResult<MallCartDto>> GetCart(
         Guid userId,
-        [FromQuery] string? skuIds = null)
+        [FromQuery] string? skuIds = null,
+        [FromQuery] Guid? addressId = null,
+        [FromQuery] Guid? memberCouponId = null)
     {
         EnsurePathUser(userId);
 
@@ -38,7 +40,9 @@ public class MallCartController : ControllerBase
         return Ok(await _mediator.Send(new GetMallCartQuery
         {
             UserId = _currentUser.GetUserId(),
-            SelectedSkuIds = selectedSkuIds
+            SelectedSkuIds = selectedSkuIds,
+            AddressId = addressId,
+            MemberCouponId = memberCouponId
         }));
     }
 
@@ -85,7 +89,9 @@ public class MallCartController : ControllerBase
         return Ok(await _mediator.Send(new GetMallCartQuery
         {
             UserId = _currentUser.GetUserId(),
-            PreviewItems = request.Items
+            PreviewItems = request.Items,
+            AddressId = request.AddressId,
+            MemberCouponId = request.MemberCouponId
         }));
     }
 
