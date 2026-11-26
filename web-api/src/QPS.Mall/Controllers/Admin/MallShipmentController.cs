@@ -33,7 +33,8 @@ public class MallShipmentController : ControllerBase
         [FromQuery] DateTime? startTime = null,
         [FromQuery] DateTime? endTime = null,
         [FromQuery] bool? isVoided = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] bool includePendingOrders = false)
     {
         var query = new GetMallShipmentsQuery
         {
@@ -43,7 +44,8 @@ public class MallShipmentController : ControllerBase
             StartTime = startTime,
             EndTime = endTime,
             IsVoided = isVoided,
-            Status = status
+            Status = status,
+            IncludePendingOrders = includePendingOrders
         };
 
         return Ok(await _mediator.Send(query));

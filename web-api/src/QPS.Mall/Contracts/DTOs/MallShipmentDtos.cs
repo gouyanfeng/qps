@@ -33,6 +33,18 @@ public class MallShipmentListDto
     public string VoidedBy { get; set; } = string.Empty;
 
     public string VoidReason { get; set; } = string.Empty;
+
+    /// <summary>会员昵称，为空时回退手机号。</summary>
+    public string MemberName { get; set; } = string.Empty;
+
+    /// <summary>订单实付金额。</summary>
+    public decimal PaidAmount { get; set; }
+
+    /// <summary>订单付款时间。</summary>
+    public DateTime? PaidAt { get; set; }
+
+    /// <summary>商品件数（含赠品）。</summary>
+    public int ItemCount { get; set; }
 }
 
 /// <summary>
@@ -42,16 +54,9 @@ public class MallShipmentDetailDto : MallShipmentListDto
 {
     public string OrderStatus { get; set; } = string.Empty;
 
-    public string MemberName { get; set; } = string.Empty;
-
     public string ReceiverName { get; set; } = string.Empty;
 
     public string ReceiverPhone { get; set; } = string.Empty;
-
-    public decimal PaidAmount { get; set; }
-
-    /// <summary>商品件数（含赠品）。</summary>
-    public int ItemCount { get; set; }
 }
 
 /// <summary>
