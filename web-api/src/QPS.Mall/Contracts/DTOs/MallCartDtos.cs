@@ -20,7 +20,28 @@ public class MallCartDto
     /// <summary>其中满减优惠（DiscountAmount）金额。</summary>
     public decimal AmountDiscountAmount { get; set; }
 
-    /// <summary>预计应付金额 = SelectedAmount - PromotionDiscountAmount。</summary>
+    /// <summary>优惠券抵扣金额；购物车阶段（未选券）为 0。</summary>
+    public decimal CouponDiscountAmount { get; set; }
+
+    /// <summary>使用的优惠券名称（未使用券时为空）。</summary>
+    public string? CouponName { get; set; }
+
+    /// <summary>券因差额未达门槛时还差的金额，其他不可用场景为 null。</summary>
+    public decimal? CouponGapAmount { get; set; }
+
+    /// <summary>券不可用原因提示（可用时为空）。</summary>
+    public string? CouponHint { get; set; }
+
+    /// <summary>运费金额；购物车阶段（无地址）为 0。</summary>
+    public decimal FreightAmount { get; set; }
+
+    /// <summary>折后商品额 = max(0, SelectedAmount - 促销 - 券)。</summary>
+    public decimal DiscountedGoodsAmount { get; set; }
+
+    /// <summary>
+    /// 预计应付金额 = max(0, SelectedAmount - 促销 - 券) + 运费。
+    /// 传地址/券后与结算页口径完全一致；购物车阶段两者为 0。
+    /// </summary>
     public decimal PayableAmount { get; set; }
 
     /// <summary>预计促销优惠明细（逐条促销的优惠金额）。</summary>
@@ -91,6 +112,30 @@ public class MallCartItemDto
     public bool IsValid { get; set; } = true;
 
     public string? InvalidReason { get; set; }
+}
+
+/// <summary>临时试算的一行商品：用 skuId + 数量复用购物车组装与试算，不写入购物车库。</summary>
+public class CartPreviewLine
+{
+    [Required(ErrorMessage = "请指定商品规格")]
+    public Guid SkuId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "数量必须大于 0")]
+    public int Quantity { get; set; }
+}
+
+/// <summary>临时行试算请求：不写购物车，仅按传入的规格与数量预览商品价格与促销。</summary>
+public class MallCartPreviewRequest
+{
+    [Required(ErrorMessage = "请指定要试算的商品")]
+    [MinLength(1, ErrorMessage = "请指定要试算的商品")]
+    public List<CartPreviewLine> Items { get; set; } = new();
+
+    /// <summary>收货地址 ID；结算页传入以计算运费，纯商品预览可不传。</summary>
+    public Guid? AddressId { get; set; }
+
+    /// <summary>会员券 ID；结算页传入以计算券抵扣。</summary>
+    public Guid? MemberCouponId { get; set; }
 }
 
 public class MallCartAddRequest

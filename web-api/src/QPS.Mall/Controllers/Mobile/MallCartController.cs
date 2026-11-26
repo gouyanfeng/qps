@@ -26,7 +26,9 @@ public class MallCartController : ControllerBase
     [HttpGet("carts/{userId:guid}")]
     public async Task<ActionResult<MallCartDto>> GetCart(
         Guid userId,
-        [FromQuery] string? skuIds = null)
+        [FromQuery] string? skuIds = null,
+        [FromQuery] Guid? addressId = null,
+        [FromQuery] Guid? memberCouponId = null)
     {
         EnsurePathUser(userId);
 
@@ -38,7 +40,9 @@ public class MallCartController : ControllerBase
         return Ok(await _mediator.Send(new GetMallCartQuery
         {
             UserId = _currentUser.GetUserId(),
-            SelectedSkuIds = selectedSkuIds
+            SelectedSkuIds = selectedSkuIds,
+            AddressId = addressId,
+            MemberCouponId = memberCouponId
         }));
     }
 
@@ -73,6 +77,22 @@ public class MallCartController : ControllerBase
     {
         request.UserId = _currentUser.GetUserId();
         return Ok(await _mediator.Send(new AddToMallCartCommand { Request = request }));
+    }
+
+    /// <summary>
+    /// 临时行试算：按传入的 skuId + 数量复用购物车同一套商品组装与促销试算，
+    /// 不写入购物车库。用于立即购买等不污染购物车数据的结算入口。
+    /// </summary>
+    [HttpPost("carts/preview")]
+    public async Task<ActionResult<MallCartDto>> PreviewCart([FromBody] MallCartPreviewRequest request)
+    {
+        return Ok(await _mediator.Send(new GetMallCartQuery
+        {
+            UserId = _currentUser.GetUserId(),
+            PreviewItems = request.Items,
+            AddressId = request.AddressId,
+            MemberCouponId = request.MemberCouponId
+        }));
     }
 
     [HttpPut("carts/update-item")]

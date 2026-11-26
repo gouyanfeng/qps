@@ -389,6 +389,15 @@ export async function getCartItems(): Promise<CartItem[]> {
   return getRemoteCart()
 }
 
+/** 临时行试算：按 skuId+数量预览商品价格与促销，不写入购物车（立即购买用） */
+export async function previewCartItems(items: Array<{ skuId: string; quantity: number }>): Promise<CartItem[]> {
+  if (items.some(item => !isGuid(item.skuId) || item.quantity <= 0)) {
+    throw new Error('商品规格或数量无效')
+  }
+  const cart = await request<MallCartResponse>('/api/mall/carts/preview', 'POST', { items })
+  return mapCartItems(cart)
+}
+
 export interface CartPromotionDetail {
   promotionId: string
   name: string
@@ -417,7 +426,16 @@ export interface CartSummary {
   rateDiscountAmount: number
   /** 其中满减优惠金额 */
   amountDiscountAmount: number
-  /** 预计应付金额 */
+  /** 折后商品额 = max(0, 商品额 - 促销 - 券) */
+  discountedGoodsAmount: number
+  /** 优惠券抵扣金额 */
+  couponDiscountAmount: number
+  couponName: string | null
+  couponGapAmount: number | null
+  couponHint: string | null
+  /** 运费金额 */
+  freightAmount: number
+  /** 预计应付金额 = 折后商品额 + 运费 */
   payableAmount: number
   /** 预计促销优惠明细 */
   promotionDetails: CartPromotionDetail[]
@@ -436,6 +454,12 @@ function mapCartSummary(cart: MallCartResponse): CartSummary {
     promotionDiscountAmount: Number(cart.promotionDiscountAmount || 0),
     rateDiscountAmount: Number(cart.rateDiscountAmount || 0),
     amountDiscountAmount: Number(cart.amountDiscountAmount || 0),
+    discountedGoodsAmount: Number(cart.discountedGoodsAmount || 0),
+    couponDiscountAmount: Number(cart.couponDiscountAmount || 0),
+    couponName: cart.couponName ?? null,
+    couponGapAmount: cart.couponGapAmount ?? null,
+    couponHint: cart.couponHint ?? null,
+    freightAmount: Number(cart.freightAmount || 0),
     payableAmount: Number(cart.payableAmount || 0),
     promotionDetails: (cart.promotionDetails || []).map(detail => ({
       promotionId: detail.promotionId,
@@ -479,6 +503,12 @@ interface MallCartResponse {
   promotionDiscountAmount?: number
   rateDiscountAmount?: number
   amountDiscountAmount?: number
+  discountedGoodsAmount?: number
+  couponDiscountAmount?: number
+  couponName?: string | null
+  couponGapAmount?: number | null
+  couponHint?: string | null
+  freightAmount?: number
   payableAmount?: number
   selectedAmount?: number
   promotionDetails?: Array<{
@@ -852,25 +882,43 @@ export interface OrderPreview {
   promotionDetails: OrderPromotionDetail[]
   couponDiscountAmount: number
   couponName: string | null
+  /** 券差额提示：还差 X 元可用 / 不可用原因 */
+  couponGapAmount: number | null
+  couponHint: string | null
   freightAmount: number
   payableAmount: number
   /** 赠品清单（0 元，不参与金额，用于提交前展示） */
   gifts: CartGiftItem[]
 }
 
-/** 订单确认页价格预览：必须先有收货地址，金额（含运费）以后端为准。 */
+/**
+ * 订单确认页价格预览：与购物车页共用 POST /api/mall/carts/preview，
+ * 传入 skuId+数量 + 地址 + 券，返回同一套促销/券/运费/应付口径。
+ */
 export async function previewOrder(
   items: Array<{ skuId: string; quantity: number }>,
-  addressId: string,
+  addressId: string | null,
   memberCouponId?: string
 ): Promise<OrderPreview> {
-  const preview = await request<OrderPreview>('/api/mall/orders/preview', 'POST', { items, memberCouponId, addressId })
+  const cart = await request<MallCartResponse>('/api/mall/carts/preview', 'POST', {
+    items,
+    addressId: addressId || undefined,
+    memberCouponId
+  })
+  const summary = mapCartSummary(cart)
   return {
-    ...preview,
-    gifts: (preview.gifts || []).map(gift => ({
-      ...gift,
-      productImage: resolveFileUrl(gift.productImage)
-    }))
+    goodsAmount: summary.selectedAmount,
+    promotionDiscountAmount: summary.promotionDiscountAmount,
+    rateDiscountAmount: summary.rateDiscountAmount,
+    amountDiscountAmount: summary.amountDiscountAmount,
+    promotionDetails: summary.promotionDetails,
+    couponDiscountAmount: summary.couponDiscountAmount,
+    couponName: summary.couponName,
+    couponGapAmount: summary.couponGapAmount,
+    couponHint: summary.couponHint,
+    freightAmount: summary.freightAmount,
+    payableAmount: summary.payableAmount,
+    gifts: summary.gifts
   }
 }
 

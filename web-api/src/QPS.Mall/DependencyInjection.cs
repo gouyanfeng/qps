@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
 using QPS.Mall.Application.Features.MallCarts;
 using QPS.Mall.Application.Features.MallCoupons;
+using QPS.Mall.Application.Features.MallOrders;
 using QPS.Mall.Application.Features.MallProducts;
 using QPS.Mall.Application.Features.MallPromotions;
 using QPS.Mall.Domain.Services;
@@ -32,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<MallPromotionContextBuilder>();
         services.AddScoped<MallPromotionPreviewService>();
         services.AddScoped<MallCouponService>();
+        services.AddScoped<MallCheckoutPricingService>();
         services.AddScoped<MallProductPromotionEnricher>();
 
         mvcBuilder.ConfigureApplicationPartManager(manager =>

@@ -328,7 +328,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow, onUnload } from '@dcloudio/uni-app'
-import { getCartItems, removeCartItems, getAddresses, createOrder, getCheckoutCoupons, previewOrder } from '@/api'
+import { getCartItems, previewCartItems, removeCartItems, getAddresses, createOrder, getCheckoutCoupons, previewOrder } from '@/api'
 import { couponDiscountRateText, isPercentCoupon } from '@/utils/coupon'
 import type { CheckoutCoupon, MallAddress, OrderPreview } from '@/api'
 import type { CartItem } from '@/api/types'
@@ -344,13 +344,12 @@ const showCouponPicker = ref(false)
 const showAddressPicker = ref(false)
 const addressOptions = ref<MallAddress[]>([])
 const promotionPreview = ref<OrderPreview | null>(null)
-// 立即购买不经过购物车，下单成功后不能改动购物车
-const isBuyNow = ref(false)
 const refreshing = ref(false)
+// 立即购买走临时行试算（不落购物车）；购物车结算为 false
+const isPreviewCheckout = ref(false)
 
-const subtotal = computed(() =>
-  items.value.reduce((s, i) => s + i.price * i.quantity, 0)
-)
+// 商品金额一律取后端试算结果，前端不再自行累加（价格公式只在后端一处）
+const subtotal = computed(() => promotionPreview.value?.goodsAmount ?? 0)
 // 店铺名取商品所属门店，与购物车/订单页保持一致，无门店信息时回退默认名
 const shopName = computed(() => items.value.find(i => i.storeName)?.storeName || '本草国医馆')
 
@@ -366,8 +365,8 @@ const availableCouponCount = computed(() =>
   availableCoupons.value.filter(item => item.isAvailable).length
 )
 
-// 实付金额以后端预览为准，预览失败时回退为商品金额
-const finalPrice = computed(() => Math.max(0, promotionPreview.value?.payableAmount ?? subtotal.value))
+// 实付金额一律取后端预览，前端不再兜底算价（公式只在后端 PriceBreakdown 一处）
+const finalPrice = computed(() => promotionPreview.value?.payableAmount ?? 0)
 const gifts = computed(() => promotionPreview.value?.gifts ?? [])
 // 件数含赠品：赠品 0 元但按件计入
 const itemCount = computed(() =>
@@ -381,15 +380,10 @@ async function refreshPreview() {
     promotionPreview.value = null
     return
   }
-  // 预览必须带收货地址：未选地址时不请求，避免后端 400
-  if (!address.value) {
-    promotionPreview.value = null
-    uni.showToast({ title: '请选择收货地址', icon: 'none' })
-    return
-  }
+  // 统一试算接口：地址可选，未选地址时运费按 0，商品金额/促销仍由后端出
   promotionPreview.value = await previewOrder(
     items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
-    address.value.id,
+    address.value?.id ?? null,
     selectedCoupon.value?.id
   ).catch(error => {
     console.error('订单试算失败', error)
@@ -413,24 +407,14 @@ async function loadCheckout() {
       ?? addresses[0]
       ?? null
 
-    const buyNow = uni.getStorageSync('qps_buy_now_item')
-    if (buyNow && typeof buyNow === 'object' && buyNow.skuId) {
-      isBuyNow.value = true
-      items.value = [{
-        skuId: buyNow.skuId,
-        productId: buyNow.productId,
-        productName: buyNow.productName,
-        storeName: buyNow.storeName,
-        productImage: buyNow.productImage,
-        specName: buyNow.specName,
-        price: buyNow.price,
-        quantity: buyNow.quantity,
-        weightGram: buyNow.weightGram ?? 0,
-        selected: true
-      }]
-      // 立即购买上下文要保留到结算流程结束：去地址页/优惠券页再返回仍按原商品结算
+    // 立即购买：只带 skuId + 数量走临时行试算，不写购物车、数量不与购物车累加
+    const previewItems = uni.getStorageSync('qps_checkout_preview_items') as
+      | Array<{ skuId: string; quantity: number }> | null
+    if (Array.isArray(previewItems) && previewItems.length > 0) {
+      isPreviewCheckout.value = true
+      items.value = await previewCartItems(previewItems)
     } else {
-      isBuyNow.value = false
+      isPreviewCheckout.value = false
       items.value = (await getCartItems()).filter(item => item.selected)
     }
     if (items.value.length > 0) {
@@ -465,9 +449,9 @@ async function onRefresh() {
   }
 }
 
-// 离开结算页（返回或切换页面）时清理立即购买上下文，避免下次购物车结算串单
+// 离开结算页（返回或切换页面）时清理临时试算上下文，避免下次购物车结算串单
 onUnload(() => {
-  uni.removeStorageSync('qps_buy_now_item')
+  uni.removeStorageSync('qps_checkout_preview_items')
 })
 
 function editAddress() { showAddressPicker.value = true }
@@ -521,6 +505,12 @@ function submitOrder() {
     uni.showToast({ title: '购物车没有已选商品', icon: 'none' })
     return
   }
+  // 未拿到后端试算结果时禁止下单，避免前端 0 元占位被误当成实付金额
+  if (!promotionPreview.value) {
+    uni.showToast({ title: '价格试算未完成，请重试', icon: 'none' })
+    refreshPreview()
+    return
+  }
 
   const giftLine = gifts.value.length
     ? `\n赠品：${gifts.value.map(gift => `${gift.productName}${gift.specName ? `·${gift.specName}` : ''}×${gift.quantity}`).join('，')}（¥0，不参与金额）`
@@ -538,17 +528,15 @@ function submitOrder() {
           items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
           memberCouponId: selectedCoupon.value?.id
         })
-        const buyNowOrder = isBuyNow.value
-        // 下单成功即为结算流程结束，立即购买上下文可以清理
-        if (buyNowOrder) uni.removeStorageSync('qps_buy_now_item')
-        try {
-          // 只移除本次下单的规格明细，保留购物车中未购买的商品；立即购买不改动购物车
-          if (!buyNowOrder) {
+        // 购物车结算才移除本次下单的规格，保留未购买的商品；
+        // 立即购买走临时行、从未写入购物车，无需也不能删购物车行
+        if (!isPreviewCheckout.value) {
+          try {
             await removeCartItems(items.value.map(item => item.skuId))
+          } catch (error) {
+            console.error('订单已创建但同步购物车失败', error)
+            uni.showToast({ title: '订单已创建，购物车同步失败', icon: 'none' })
           }
-        } catch (error) {
-          console.error('订单已创建但同步购物车失败', error)
-          uni.showToast({ title: '订单已创建，购物车同步失败', icon: 'none' })
         }
         uni.showModal({
           title: '订单已创建',

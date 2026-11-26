@@ -271,6 +271,9 @@
         </view>
       </view>
 
+      <!-- 底部固定操作栏的滚动占位，避免最后一块内容被底栏压住 -->
+      <view class="bottom-space"></view>
+
       <!-- ============ 底部固定操作栏 ============ -->
       <template #footer>
         <view class="page-footer">
@@ -542,18 +545,9 @@ function buyNow() {
     uni.showToast({ title: '请选择商品规格', icon: 'none' })
     return
   }
-  // 立即购买不走购物车：写入直购缓存，由确认订单页读取
-  uni.setStorageSync('qps_buy_now_item', {
-    skuId: sku.id,
-    productId: product.value.id,
-    productName: product.value.name,
-    storeName: product.value.storeName,
-    productImage: product.value.images[0] || '',
-    specName: sku.specName || '默认规格',
-    price: sku.price,
-    quantity: quantity.value,
-    weightGram: sku.weightGram
-  })
+  // 立即购买不写入购物车，只传 skuId + 数量；结算页走临时行试算接口，
+  // 商品详情与价格与购物车同源，但不会与已有购物车数据累加或互相删除。
+  uni.setStorageSync('qps_checkout_preview_items', [{ skuId: sku.id, quantity: quantity.value }])
   uni.navigateTo({ url: '/pages/checkout/index' })
 }
 function goCart() { uni.switchTab({ url: '/pages/cart/index' }) }
