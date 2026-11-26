@@ -68,8 +68,7 @@ export function isLoggedIn(): boolean {
 
 function isLoginPath(path: string): boolean {
   const route = path.split('?')[0]
-  // 兼容历史存储里残留的 account 登录页路径
-  return route === LOGIN_PATH || route === '/pages/account/index'
+  return route === LOGIN_PATH
 }
 
 export function consumeLoginRedirectPath(): string | null {
