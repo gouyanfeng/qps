@@ -93,6 +93,24 @@ public class MallCartItemDto
     public string? InvalidReason { get; set; }
 }
 
+/// <summary>临时试算的一行商品：用 skuId + 数量复用购物车组装与试算，不写入购物车库。</summary>
+public class CartPreviewLine
+{
+    [Required(ErrorMessage = "请指定商品规格")]
+    public Guid SkuId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "数量必须大于 0")]
+    public int Quantity { get; set; }
+}
+
+/// <summary>临时行试算请求：不写购物车，仅按传入的规格与数量预览商品价格与促销。</summary>
+public class MallCartPreviewRequest
+{
+    [Required(ErrorMessage = "请指定要试算的商品")]
+    [MinLength(1, ErrorMessage = "请指定要试算的商品")]
+    public List<CartPreviewLine> Items { get; set; } = new();
+}
+
 public class MallCartAddRequest
 {
     public Guid UserId { get; set; }

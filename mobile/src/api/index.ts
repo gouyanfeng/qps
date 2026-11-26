@@ -389,6 +389,15 @@ export async function getCartItems(): Promise<CartItem[]> {
   return getRemoteCart()
 }
 
+/** 临时行试算：按 skuId+数量预览商品价格与促销，不写入购物车（立即购买用） */
+export async function previewCartItems(items: Array<{ skuId: string; quantity: number }>): Promise<CartItem[]> {
+  if (items.some(item => !isGuid(item.skuId) || item.quantity <= 0)) {
+    throw new Error('商品规格或数量无效')
+  }
+  const cart = await request<MallCartResponse>('/api/mall/carts/preview', 'POST', { items })
+  return mapCartItems(cart)
+}
+
 export interface CartPromotionDetail {
   promotionId: string
   name: string

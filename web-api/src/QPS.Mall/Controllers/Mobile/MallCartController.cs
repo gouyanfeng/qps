@@ -75,6 +75,20 @@ public class MallCartController : ControllerBase
         return Ok(await _mediator.Send(new AddToMallCartCommand { Request = request }));
     }
 
+    /// <summary>
+    /// 临时行试算：按传入的 skuId + 数量复用购物车同一套商品组装与促销试算，
+    /// 不写入购物车库。用于立即购买等不污染购物车数据的结算入口。
+    /// </summary>
+    [HttpPost("carts/preview")]
+    public async Task<ActionResult<MallCartDto>> PreviewCart([FromBody] MallCartPreviewRequest request)
+    {
+        return Ok(await _mediator.Send(new GetMallCartQuery
+        {
+            UserId = _currentUser.GetUserId(),
+            PreviewItems = request.Items
+        }));
+    }
+
     [HttpPut("carts/update-item")]
     public async Task<ActionResult<MallCartDto>> UpdateCartItem([FromBody] MallCartUpdateItemRequest request)
     {

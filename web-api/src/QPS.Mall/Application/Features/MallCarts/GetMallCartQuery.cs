@@ -6,6 +6,7 @@ using QPS.Mall.Contracts;
 using QPS.Mall.Contracts.DTOs;
 using QPS.Mall.Domain.Entities;
 using QPS.Mall.Domain.Services;
+using QPS.Shared.Exceptions;
 
 namespace QPS.Mall.Application.Features.MallCarts;
 
@@ -15,6 +16,12 @@ public class GetMallCartQuery : IRequest<MallCartDto>
 
     /// <summary>当前选中的 SKU；为 null 表示全部选中。</summary>
     public IReadOnlyCollection<Guid>? SelectedSkuIds { get; set; }
+
+    /// <summary>
+    /// 临时试算行（skuId + 数量），不落购物车库。用于立即购买等不希望污染购物车的入口；
+    /// 为 null 时使用购物车中已有的行。数量以这里传入的为准，不与购物车累加。
+    /// </summary>
+    public IReadOnlyCollection<CartPreviewLine>? PreviewItems { get; set; }
 }
 
 public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
@@ -37,12 +44,28 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         GetMallCartQuery request,
         CancellationToken cancellationToken)
     {
-        var cartItems = await _dbContext.MallCartItems
-            .Where(i => i.UserId == request.UserId)
-            .OrderBy(i => i.CreatedAt)
-            .ToListAsync(cancellationToken);
+        // 临时试算行（立即购买）与购物车行共用后续组装/试算逻辑，但不写库、不与购物车数量累加
+        List<CartLine> cartLines;
+        if (request.PreviewItems is not null)
+        {
+            var invalid = request.PreviewItems.FirstOrDefault(i => i.Quantity <= 0);
+            if (invalid is not null) throw new BusinessException(400, "数量必须大于 0");
+            cartLines = request.PreviewItems
+                .Select(i => new CartLine(Guid.Empty, i.SkuId, Guid.Empty, i.Quantity))
+                .ToList();
+        }
+        else
+        {
+            var cartEntities = await _dbContext.MallCartItems
+                .Where(i => i.UserId == request.UserId)
+                .OrderBy(i => i.CreatedAt)
+                .ToListAsync(cancellationToken);
+            cartLines = cartEntities
+                .Select(i => new CartLine(i.Id, i.SkuId, i.ProductId, i.Quantity))
+                .ToList();
+        }
 
-        if (cartItems.Count == 0)
+        if (cartLines.Count == 0)
         {
             return new MallCartDto
             {
@@ -52,7 +75,7 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             };
         }
 
-        var skuIds = cartItems.Select(i => i.SkuId).Distinct().ToList();
+        var skuIds = cartLines.Select(i => i.SkuId).Distinct().ToList();
         var skuRows = (await (
                 from sku in _dbContext.MallSkus
                 join product in _dbContext.MallProducts on sku.ProductId equals product.Id
@@ -94,7 +117,7 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
         var selectedAmount = 0m;
         var totalQuantity = 0;
 
-        foreach (var cartItem in cartItems)
+        foreach (var cartItem in cartLines)
         {
             var isSelected = request.SelectedSkuIds is null || request.SelectedSkuIds.Contains(cartItem.SkuId);
 
@@ -232,5 +255,6 @@ public class GetMallCartHandler : IRequestHandler<GetMallCartQuery, MallCartDto>
             .ToDictionary(item => item.SkuId, item => item.Price);
     }
 
+    private sealed record CartLine(Guid Id, Guid SkuId, Guid ProductId, int Quantity);
     private sealed record CartSkuRow(MallSku Sku, MallProduct Product, MallStore Store);
 }

@@ -328,7 +328,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onShow, onUnload } from '@dcloudio/uni-app'
-import { getCartItems, removeCartItems, getAddresses, createOrder, getCheckoutCoupons, previewOrder } from '@/api'
+import { getCartItems, previewCartItems, removeCartItems, getAddresses, createOrder, getCheckoutCoupons, previewOrder } from '@/api'
 import { couponDiscountRateText, isPercentCoupon } from '@/utils/coupon'
 import type { CheckoutCoupon, MallAddress, OrderPreview } from '@/api'
 import type { CartItem } from '@/api/types'
@@ -344,9 +344,9 @@ const showCouponPicker = ref(false)
 const showAddressPicker = ref(false)
 const addressOptions = ref<MallAddress[]>([])
 const promotionPreview = ref<OrderPreview | null>(null)
-// 立即购买不经过购物车，下单成功后不能改动购物车
-const isBuyNow = ref(false)
 const refreshing = ref(false)
+// 立即购买走临时行试算（不落购物车）；购物车结算为 false
+const isPreviewCheckout = ref(false)
 
 const subtotal = computed(() =>
   items.value.reduce((s, i) => s + i.price * i.quantity, 0)
@@ -413,24 +413,14 @@ async function loadCheckout() {
       ?? addresses[0]
       ?? null
 
-    const buyNow = uni.getStorageSync('qps_buy_now_item')
-    if (buyNow && typeof buyNow === 'object' && buyNow.skuId) {
-      isBuyNow.value = true
-      items.value = [{
-        skuId: buyNow.skuId,
-        productId: buyNow.productId,
-        productName: buyNow.productName,
-        storeName: buyNow.storeName,
-        productImage: buyNow.productImage,
-        specName: buyNow.specName,
-        price: buyNow.price,
-        quantity: buyNow.quantity,
-        weightGram: buyNow.weightGram ?? 0,
-        selected: true
-      }]
-      // 立即购买上下文要保留到结算流程结束：去地址页/优惠券页再返回仍按原商品结算
+    // 立即购买：只带 skuId + 数量走临时行试算，不写购物车、数量不与购物车累加
+    const previewItems = uni.getStorageSync('qps_checkout_preview_items') as
+      | Array<{ skuId: string; quantity: number }> | null
+    if (Array.isArray(previewItems) && previewItems.length > 0) {
+      isPreviewCheckout.value = true
+      items.value = await previewCartItems(previewItems)
     } else {
-      isBuyNow.value = false
+      isPreviewCheckout.value = false
       items.value = (await getCartItems()).filter(item => item.selected)
     }
     if (items.value.length > 0) {
@@ -465,9 +455,9 @@ async function onRefresh() {
   }
 }
 
-// 离开结算页（返回或切换页面）时清理立即购买上下文，避免下次购物车结算串单
+// 离开结算页（返回或切换页面）时清理临时试算上下文，避免下次购物车结算串单
 onUnload(() => {
-  uni.removeStorageSync('qps_buy_now_item')
+  uni.removeStorageSync('qps_checkout_preview_items')
 })
 
 function editAddress() { showAddressPicker.value = true }
@@ -544,17 +534,15 @@ function submitOrder() {
           items: items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
           memberCouponId: selectedCoupon.value?.id
         })
-        const buyNowOrder = isBuyNow.value
-        // 下单成功即为结算流程结束，立即购买上下文可以清理
-        if (buyNowOrder) uni.removeStorageSync('qps_buy_now_item')
-        try {
-          // 只移除本次下单的规格明细，保留购物车中未购买的商品；立即购买不改动购物车
-          if (!buyNowOrder) {
+        // 购物车结算才移除本次下单的规格，保留未购买的商品；
+        // 立即购买走临时行、从未写入购物车，无需也不能删购物车行
+        if (!isPreviewCheckout.value) {
+          try {
             await removeCartItems(items.value.map(item => item.skuId))
+          } catch (error) {
+            console.error('订单已创建但同步购物车失败', error)
+            uni.showToast({ title: '订单已创建，购物车同步失败', icon: 'none' })
           }
-        } catch (error) {
-          console.error('订单已创建但同步购物车失败', error)
-          uni.showToast({ title: '订单已创建，购物车同步失败', icon: 'none' })
         }
         uni.showModal({
           title: '订单已创建',
