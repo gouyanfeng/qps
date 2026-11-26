@@ -175,7 +175,7 @@ async function loadHomeData() {
     }))
     banners.value = loadedBanners
     solarBanner.value = solarList[0] ?? null
-    featured.value = products.filter(product => product.skus.length > 0).slice(0, 6).map((product: Product) => {
+    featured.value = products.filter(product => product.skus.length > 0).map((product: Product) => {
       // 列表价取所有规格中折后价最低的一条，折后价由后端计算
       const sku = product.skus.reduce((min, item) => {
         const current = item.discountedPrice ?? item.price

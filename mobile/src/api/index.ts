@@ -210,9 +210,23 @@ function uploadImage(filePath: string, scene: 'review' | 'aftersale'): Promise<s
   })
 }
 
-export async function getHotProducts(): Promise<Product[]> {
-  const data = await request<ApiPage<ApiProduct>>('/api/mall/products?isHot=true&pageSize=50')
-  return (data.items || data.list || []).map(mapProduct)
+export async function getHotProducts(pageSize: number = 50): Promise<Product[]> {
+  const all: Product[] = []
+  let page = 1
+  // 首页需要展示后端全部热销商品，这里按 totalCount 逐页拉取，直到取满为止
+  for (;;) {
+    const data = await request<ApiPage<ApiProduct>>(
+      `/api/mall/products?isHot=true&page=${page}&pageSize=${pageSize}`
+    )
+    const items = (data.items || data.list || []).map(mapProduct)
+    if (!items.length) break
+    all.push(...items)
+    const total = data.totalCount ?? data.total ?? 0
+    const hasMore = data.hasMore ?? (items.length === pageSize && all.length < total)
+    if (!hasMore) break
+    page++
+  }
+  return all
 }
 
 export async function searchProducts(keyword: string): Promise<Product[]> {
