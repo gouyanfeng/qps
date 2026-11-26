@@ -32,11 +32,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: v-bind(width);
-      height: v-bind(height);
+      width: var(--upload-width);
+      height: var(--upload-height);
       overflow: hidden;
       border: 1px dashed var(--el-border-color-darker);
-      border-radius: v-bind(borderRadius);
+      border-radius: var(--upload-radius);
       transition: var(--el-transition-duration-fast);
       &:hover {
         border-color: var(--el-color-primary);
@@ -54,7 +54,7 @@
         overflow: hidden;
         background-color: transparent;
         border: 1px dashed var(--el-border-color-darker);
-        border-radius: v-bind(borderRadius);
+        border-radius: var(--upload-radius);
         &:hover {
           border: 1px dashed var(--el-color-primary);
         }
