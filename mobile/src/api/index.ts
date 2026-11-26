@@ -897,11 +897,13 @@ export interface OrderPreview {
  */
 export async function previewOrder(
   items: Array<{ skuId: string; quantity: number }>,
-  addressId: string,
+  addressId: string | null,
   memberCouponId?: string
 ): Promise<OrderPreview> {
   const cart = await request<MallCartResponse>('/api/mall/carts/preview', 'POST', {
-    items, addressId, memberCouponId
+    items,
+    addressId: addressId || undefined,
+    memberCouponId
   })
   const summary = mapCartSummary(cart)
   return {

@@ -348,9 +348,8 @@ const refreshing = ref(false)
 // 立即购买走临时行试算（不落购物车）；购物车结算为 false
 const isPreviewCheckout = ref(false)
 
-const subtotal = computed(() =>
-  items.value.reduce((s, i) => s + i.price * i.quantity, 0)
-)
+// 商品金额一律取后端试算结果，前端不再自行累加（价格公式只在后端一处）
+const subtotal = computed(() => promotionPreview.value?.goodsAmount ?? 0)
 // 店铺名取商品所属门店，与购物车/订单页保持一致，无门店信息时回退默认名
 const shopName = computed(() => items.value.find(i => i.storeName)?.storeName || '本草国医馆')
 
@@ -381,15 +380,10 @@ async function refreshPreview() {
     promotionPreview.value = null
     return
   }
-  // 预览必须带收货地址：未选地址时不请求，避免后端 400
-  if (!address.value) {
-    promotionPreview.value = null
-    uni.showToast({ title: '请选择收货地址', icon: 'none' })
-    return
-  }
+  // 统一试算接口：地址可选，未选地址时运费按 0，商品金额/促销仍由后端出
   promotionPreview.value = await previewOrder(
     items.value.map(item => ({ skuId: item.skuId, quantity: item.quantity })),
-    address.value.id,
+    address.value?.id ?? null,
     selectedCoupon.value?.id
   ).catch(error => {
     console.error('订单试算失败', error)
