@@ -28,6 +28,7 @@ public class CreateMallProductReviewHandler
     private const int MinContentLength = 5;
     private const int MaxContentLength = 500;
     private const int MaxImageCount = 6;
+    private const int MaxImageLength = 200;
 
     private readonly IMallDbContext _dbContext;
 
@@ -124,7 +125,9 @@ public class CreateMallProductReviewHandler
             throw new BusinessException(400, "评价图片最多 6 张");
         }
 
-        if (images.Any(image => !image.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)))
+        // 上传接口只返回 OSS 文件名（如 xxx.jpg），展示时才由前端 resolveFileUrl 拼完整地址；
+        // 这里与实体 SetImages 保持一致，只校验长度，不再要求 /uploads/ 前缀。
+        if (images.Any(image => image.Length > MaxImageLength))
         {
             throw new BusinessException(400, "评价图片地址不合法");
         }
