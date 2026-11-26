@@ -112,7 +112,6 @@
           <view class="order-item" @click="goOrder('done')">
             <view class="order-icon">
               <q-icon name="check-circle" size="16" color="#2E7D32" />
-              <view v-if="orderBadge.completed" class="order-badge">{{ orderBadge.completed }}</view>
             </view>
             <text class="order-label">已完成</text>
           </view>

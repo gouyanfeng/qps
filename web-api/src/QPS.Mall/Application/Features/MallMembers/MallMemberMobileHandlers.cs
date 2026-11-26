@@ -113,11 +113,9 @@ public class GetMallMemberOrderBadgeHandler : IRequestHandler<GetMallMemberOrder
             Paid = GetCount(counts, MallOrderStatus.Paid),
             Shipped = GetCount(counts, MallOrderStatus.Shipped),
             Completed = GetCount(counts, MallOrderStatus.Completed),
-            // 与订单列表「退款/售后」tab 口径一致：退款中/已退款/退货中/已退货都算
+            // 角标只提醒进行中的售后（退款中/退货中），已退款/已退货不再提醒
             Returning = GetCount(counts, MallOrderStatus.Refunding)
-                      + GetCount(counts, MallOrderStatus.Refunded)
                       + GetCount(counts, MallOrderStatus.Returning)
-                      + GetCount(counts, MallOrderStatus.Returned)
         };
     }
 
