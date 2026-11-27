@@ -1,0 +1,47 @@
+/* QPS 统一搜索框：胶囊背景 + 搜索图标 + 输入 + 清除按钮。 */
+.q-search-bar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  transition: background 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    background: #F1EDEA;
+    box-shadow: 0 0 0 2rpx rgba(46, 125, 50, 0.18);
+  }
+}
+
+.q-search-bar-icon {
+  flex-shrink: 0;
+}
+
+.q-search-bar-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #1B1C1C;
+  background: transparent;
+  border: none;
+  outline: none;
+  line-height: 1.4;
+}
+
+.q-search-bar-placeholder {
+  color: #9E9E9E;
+  font-size: 24rpx;
+}
+
+.q-search-bar-clear {
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: rgba(112, 122, 108, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

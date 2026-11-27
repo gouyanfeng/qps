@@ -2,22 +2,19 @@
   <q-page>
     <q-page-header-back>
       <template #title>
-        <view class="search-box">
-          <q-icon name="search" size="22" color="#707A6C" />
-          <input
-            v-model="keyword"
-            class="search-input"
-            type="text"
-            placeholder="道地人参、黄芪、陈皮..."
-            placeholder-class="search-placeholder"
-            confirm-type="search"
-            :focus="true"
-            @confirm="handleSearch"
-          />
-          <view v-if="keyword" class="clear-btn" @click="handleClear">
-            <q-icon name="close" size="16" color="#ffffff" />
-          </view>
-        </view>
+        <q-search-bar
+          v-model="keyword"
+          class="search-box"
+          placeholder="道地人参、黄芪、陈皮..."
+          confirm-type="search"
+          :focus="true"
+          :maxlength="50"
+          bg="#F5F3ED"
+          radius="20rpx"
+          height="62rpx"
+          @confirm="handleSearch"
+          @clear="handleClear"
+        />
       </template>
       <template #right>
         <view class="search-btn" @click="handleSearch">

@@ -156,7 +156,7 @@
     {
       "path": "/mall",
       "name": "mall",
-      "redirect": "/mall/store",
+      "redirect": "/mall/dashboard",
       "meta": {
         "icon": "Shop",
         "title": "商城管理",
@@ -168,6 +168,21 @@
         "isKeepAlive": true
       },
       "children": [
+        {
+          "path": "/mall/dashboard",
+          "name": "mallDashboard",
+          "component": "/mall/dashboard/index",
+          "meta": {
+            "icon": "DataAnalysis",
+            "title": "数据看板",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true,
+            "permissionCode": "MALL_DASHBOARD_VIEW"
+          }
+        },
         {
           "path": "/mall/product",
           "name": "mallProduct",

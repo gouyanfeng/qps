@@ -12,13 +12,12 @@ const normalizeApiBaseUrl = (value: string) => {
   return url.replace(/\/api$/i, '')
 }
 
-// API 基址：未显式设置 VITE_API_BASE_URL 时本地默认连 5000；
-// 容器部署时由 .env 提供 http://<server>:5000，前端直连后端（后端 CORS 已全开），
+// API 基址：未设置 VITE_API_BASE_URL 时本地默认连本机 5000（本地 dev 不加载 env 文件）；
+// 容器部署时由 .env.example 提供 http://<server>:5000，前端直连后端（后端 CORS 已全开），
 // 各请求路径本身已含 /api（BASE_URL + "/api/..."）。
-export const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL === undefined
-    ? 'http://47.114.97.160:5000'
-    : normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
+export const BASE_URL = normalizeApiBaseUrl(
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+)
 
 /** 静态文件（图片等）访问域名，可通过 VITE_FILE_BASE_URL 覆盖；未配置时默认走阿里云 OSS */
 export const FILE_BASE_URL = (import.meta.env.VITE_FILE_BASE_URL || 'https://qps-bucket.oss-cn-hangzhou.aliyuncs.com').replace(/\/+$/, '')

@@ -448,16 +448,23 @@ $accent: #8b5000;
 }
 
 .assurance {
-  padding: 44rpx 36rpx 8rpx;
-  border-top: 1rpx solid $line;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 18rpx;
+  row-gap: 6rpx;
   margin: 48rpx 32rpx 0;
+  padding: 32rpx 24rpx 16rpx;
+  border-top: 1rpx solid $line;
 }
 
 .assurance-item {
   font-size: 22rpx;
   color: $muted;
-  line-height: 1.9;
-  display: block;
+  line-height: 1.5;
+  letter-spacing: 1rpx;
+  white-space: nowrap;
 }
 
 .footer-space {

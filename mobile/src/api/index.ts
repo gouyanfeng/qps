@@ -715,6 +715,31 @@ export function updateMemberProfile(payload: MemberProfileUpdate): Promise<Membe
   return request<MemberProfile>('/api/mall/member/me', 'PUT', payload)
 }
 
+export interface ChangeMemberPasswordPayload {
+  oldPassword: string
+  newPassword: string
+}
+
+/** 修改会员密码（后端校验原密码，新密码至少 6 位） */
+export function changeMemberPassword(payload: ChangeMemberPasswordPayload): Promise<boolean> {
+  return request<boolean>('/api/mall/member/me/password', 'PUT', payload)
+}
+
+export interface MemberPointLog {
+  id: string
+  changeAmount: number
+  balance: number
+  changeType: string
+  refNo: string | null
+  remark: string
+  createdAt: string
+}
+
+/** 积分流水（后端按 limit 取最近 N 条） */
+export function getMemberPointLogs(limit = 50): Promise<MemberPointLog[]> {
+  return request<MemberPointLog[]>(`/api/mall/member/me/points?limit=${limit}`)
+}
+
 export interface MallMemberOrderBadge {
   pendingPayment: number
   paid: number
@@ -800,9 +825,16 @@ export function getCheckoutCoupons(
   return request<CheckoutCoupon[]>('/api/mall/coupons/for-order', 'POST', { items })
 }
 
-export function getMyOrders(status?: string): Promise<ApiPage<MallOrder>> {
-  const statusQuery = status ? `&status=${encodeURIComponent(status)}` : ''
-  return request<ApiPage<MallOrder>>(`/api/mall/orders?page=1&pageSize=50${statusQuery}`)
+export function getMyOrders(
+  status?: string,
+  page = 1,
+  pageSize = 10,
+  keyword?: string
+): Promise<ApiPage<MallOrder>> {
+  const params: string[] = [`page=${page}`, `pageSize=${pageSize}`]
+  if (status) params.push(`status=${encodeURIComponent(status)}`)
+  if (keyword?.trim()) params.push(`keyword=${encodeURIComponent(keyword.trim())}`)
+  return request<ApiPage<MallOrder>>(`/api/mall/orders?${params.join('&')}`)
 }
 
 export interface MallOrderItem {

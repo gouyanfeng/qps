@@ -235,8 +235,7 @@ $page-padding: 24rpx;
 }
 .goods-bottom {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
 }
 .goods-price {
   color: $theme-accent;
@@ -251,6 +250,7 @@ $page-padding: 24rpx;
   margin-left: 6rpx;
 }
 .goods-qty {
+  margin-left: auto;
   color: #888;
   font-size: 26rpx;
 }
@@ -334,6 +334,12 @@ $page-padding: 24rpx;
   padding: 4rpx 0 12rpx;
   margin-left: 58rpx;
   border-bottom: 1rpx solid #F2EEE9;
+}
+.promotion-detail-title {
+  display: block;
+  padding: 2rpx 0 6rpx;
+  font-size: 22rpx;
+  color: #9A958F;
 }
 .promotion-detail-row {
   display: flex;

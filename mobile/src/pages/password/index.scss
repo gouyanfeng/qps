@@ -1,0 +1,52 @@
+.page-body {
+  height: calc(100vh - var(--page-top-offset));
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.tips-card {
+  margin-bottom: 20rpx;
+  padding: 20rpx 24rpx;
+  color: #6B6B6B;
+  background: #F1F7E9;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
+.form-card {
+  margin-bottom: 20rpx;
+  padding: 8rpx 24rpx;
+  background: #ffffff;
+  border-radius: 18rpx;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+  gap: 20rpx;
+}
+
+.form-label {
+  color: #1B1C1C;
+  font-size: 26rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+  width: 140rpx;
+}
+
+/* 输入框外观由 q-field 接管 */
+
+.form-divider {
+  height: 1rpx;
+  background: #EFEFEC;
+}
+
+.submit-button {
+  margin-top: 16rpx;
+  color: #ffffff;
+  background: #2E7D32;
+  border-radius: 42rpx;
+  font-size: 26rpx;
+}

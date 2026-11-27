@@ -22,10 +22,10 @@
           <!-- 昵称 -->
           <view class="form-row">
             <text class="form-label">昵称</text>
-            <input
+            <q-field
               v-model.trim="form.nickname"
-              class="form-input"
-              maxlength="20"
+              align="right"
+              :maxlength="20"
               placeholder="请输入昵称"
             />
           </view>

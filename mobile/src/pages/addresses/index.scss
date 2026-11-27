@@ -51,10 +51,19 @@
 
 .address-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  gap: 32rpx;
   margin-top: 18rpx;
   color: #C62828;
   font-size: 22rpx;
+
+  .edit-action {
+    color: #2E7D32;
+  }
+
+  .select-tip {
+    margin-left: auto;
+  }
 }
 
 .form-title {
@@ -65,13 +74,9 @@
   font-weight: 700;
 }
 
+/* 输入框外观由 q-field 接管，仅保留间距 */
 .form-input {
-  height: 78rpx;
   margin-bottom: 14rpx;
-  padding: 0 16rpx;
-  background: #F7F6F2;
-  border-radius: 10rpx;
-  font-size: 23rpx;
 }
 
 .form-picker {
@@ -108,8 +113,22 @@
   font-size: 23rpx;
 }
 
-.submit-button {
+.form-actions {
+  display: flex;
+  gap: 20rpx;
   margin-top: 16rpx;
+}
+
+.cancel-button {
+  color: #40493D;
+  background: #EFEFEC;
+  border-radius: 42rpx;
+  font-size: 26rpx;
+}
+
+.submit-button {
+  flex: 1;
+  margin-top: 0;
   color: #ffffff;
   background: #2E7D32;
   border-radius: 42rpx;

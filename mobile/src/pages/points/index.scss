@@ -1,0 +1,108 @@
+.page-body {
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.points-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36rpx 24rpx 40rpx;
+  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  border-radius: 18rpx;
+}
+
+.summary-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 24rpx;
+}
+
+.summary-value {
+  margin: 12rpx 0 8rpx;
+  color: #ffffff;
+  font-size: 72rpx;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.summary-tip {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 20rpx;
+}
+
+.section-title {
+  margin: 32rpx 0 16rpx;
+  color: #1B1C1C;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.state-tip {
+  padding: 48rpx 0;
+  color: #8A8578;
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.log-list {
+  background: #ffffff;
+  border-radius: 18rpx;
+  overflow: hidden;
+}
+
+.log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 112rpx;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid #F0EFEC;
+}
+
+.log-row:last-child {
+  border-bottom: none;
+}
+
+.log-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.log-type {
+  color: #1B1C1C;
+  font-size: 26rpx;
+}
+
+.log-time {
+  color: #9A9A9A;
+  font-size: 22rpx;
+}
+
+.log-amount-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+  margin-left: 20rpx;
+}
+
+.log-amount {
+  font-size: 30rpx;
+  font-weight: 600;
+
+  &.plus {
+    color: #2E7D32;
+  }
+
+  &.minus {
+    color: #C0392B;
+  }
+}
+
+.log-balance {
+  color: #9A9A9A;
+  font-size: 22rpx;
+}

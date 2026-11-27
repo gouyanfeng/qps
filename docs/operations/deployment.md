@@ -20,9 +20,8 @@
 
 | 文件 | 入库 | 用途 |
 |---|---|---|
-| `.env.example` | 是 | 脱敏占位模板；CI 用 `--env-file` 引用；服务器 `cp .env.example .env` 后填真实值 |
-| `.env` | 否（gitignore） | 服务器/本地实际生效值 |
-| `.env.dev` | 否（gitignore） | 本地容器模式专用真实凭据（`DB_HOST=host.docker.internal`） |
+| `.env.example` | 是 | 唯一入库 env：脱敏占位模板；CI 用 `--env-file` 引用；服务器 `cp .env.example .env` 后填真实值 |
+| `.env` | 否（gitignore） | 服务器/本地实际生效值（本地直跑前端不加载 env 文件，代码默认连 localhost:5000） |
 | `appsettings.Local.json` | 否（gitignore/dockerignore） | 后端本机私有配置，`Program.cs` 以 optional 加载、优先级最高 |
 
 两类变量，传递机制完全不同：

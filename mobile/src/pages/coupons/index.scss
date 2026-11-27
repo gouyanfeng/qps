@@ -53,28 +53,7 @@
   color: #40493D;
 }
 
-.redeem-input-row {
-  display: flex;
-  align-items: center;
-  background: #F6F3F2;
-  border-radius: 16rpx;
-  padding: 12rpx;
-  gap: 12rpx;
-}
-
-.redeem-input {
-  flex: 1;
-  font-size: 24rpx;
-  color: #1B1C1C;
-  background: transparent;
-  padding: 0 16rpx;
-  height: 64rpx;
-}
-
-.redeem-placeholder {
-  color: #707A6C;
-  font-size: 24rpx;
-}
+/* 兑换码输入框样式由 q-field 通过 props 接管，此处仅保留右侧按钮 */
 
 .redeem-btn {
   background: #0D631B;
