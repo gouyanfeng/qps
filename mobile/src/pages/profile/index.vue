@@ -38,7 +38,7 @@
           <text class="growth-label">成长值</text>
           <text class="growth-value">{{ profile?.availablePoints ?? 0 }}</text>
           <text class="growth-tip">可用积分</text>
-          <view class="growth-more">
+          <view class="growth-more" @tap="goPoints">
             <text>权益明细</text>
             <q-icon name="chevron-right" size="15" color="rgba(255,255,255,0.9)" />
           </view>
@@ -56,7 +56,7 @@
             </view>
             <text class="asset-label">专享优惠券</text>
           </view>
-          <view class="asset-item">
+          <view class="asset-item" @tap="goPoints">
             <text class="asset-val">{{ profile?.availablePoints ?? 0 }}</text>
             <text class="asset-label">道地积分</text>
           </view>
@@ -209,6 +209,17 @@
           <q-icon name="chevron-right" size="15" color="#6B6B6B" />
         </view>
         <view class="setting-divider"></view>
+        <view class="setting-cell" @tap="goPassword">
+          <view class="setting-icon">
+            <q-icon name="lock-on" size="18" color="#40493D" />
+          </view>
+          <view class="setting-info">
+            <text class="setting-label">修改密码</text>
+            <text class="setting-sub">验证原密码后设置新密码</text>
+          </view>
+          <q-icon name="chevron-right" size="15" color="#6B6B6B" />
+        </view>
+        <view class="setting-divider"></view>
         <view class="setting-cell" @tap="clearImageCache">
           <view class="setting-icon">
             <q-icon name="delete" size="18" color="#40493D" />
@@ -335,6 +346,22 @@ function openAccount() {
     return
   }
   uni.navigateTo({ url: '/pages/profile-edit/index' })
+}
+
+function goPoints() {
+  if (!profile.value) {
+    uni.navigateTo({ url: '/pages/login/index' })
+    return
+  }
+  uni.navigateTo({ url: '/pages/points/index' })
+}
+
+function goPassword() {
+  if (!profile.value) {
+    uni.navigateTo({ url: '/pages/login/index' })
+    return
+  }
+  uni.navigateTo({ url: '/pages/password/index' })
 }
 
 function onLogout() {

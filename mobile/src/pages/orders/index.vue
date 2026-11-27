@@ -4,17 +4,14 @@
 
       <!-- Search Bar -->
       <view class="search-bar">
-        <view class="search-input-wrap">
-          <q-icon name="search" size="16" color="#707A6C" />
-          <input
-            class="search-input"
-            placeholder="搜索道地药材品名、订单号..."
-            placeholder-class="search-placeholder"
-            confirm-type="search"
-            @confirm="onSearch"
-            v-model="keyword"
-          />
-        </view>
+        <q-search-bar
+          v-model="keyword"
+          placeholder="搜索订单号 / 收货人 / 手机号"
+          confirm-type="search"
+          :maxlength="50"
+          @confirm="onSearch"
+          @clear="onSearch"
+        />
       </view>
 
       <!-- Status Tabs -->
@@ -158,6 +155,8 @@ import { getMyOrders, cancelOrder as apiCancelOrder, createPayment, simulatePaym
 import type { MallOrder, MallOrderItem } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
+const PAGE_SIZE = 10
+
 const orders = ref<MallOrder[]>([])
 const loading = ref(false)
 const activeTab = ref('')
@@ -200,11 +199,16 @@ async function loadOrders(reset: boolean = false) {
   if (reset) currentPage.value = 1
   loading.value = true
   try {
-    const response = await getMyOrders(activeTab.value || undefined)
+    const response = await getMyOrders(
+      activeTab.value || undefined,
+      currentPage.value,
+      PAGE_SIZE,
+      keyword.value.trim() || undefined
+    )
     const list = response.list ?? response.items ?? []
     orders.value = reset ? list : [...orders.value, ...list]
     const total = response.totalCount ?? response.total ?? 0
-    hasMore.value = orders.value.length < total
+    hasMore.value = currentPage.value * PAGE_SIZE < total
   } catch (error) {
     console.error('加载订单失败', error)
     if (error instanceof UnauthorizedError) return

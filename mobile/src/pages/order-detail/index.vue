@@ -292,7 +292,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { getOrderDetail, cancelOrder, confirmReceipt } from '@/api'
+import { getOrderDetail, cancelOrder, confirmReceipt, createPayment, simulatePayment } from '@/api'
 import { resolveFileUrl } from '@/utils/http'
 import type { MallOrderDetail, MallOrderItem } from '@/api'
 
@@ -564,8 +564,29 @@ function statusDesc(o: MallOrderDetail) {
   }
 }
 
+const paying = ref(false)
+
 async function handlePay() {
-  uni.showToast({ title: '正在调起支付…', icon: 'none' })
+  if (paying.value || !order.value || order.value.status !== 'PendingPayment') return
+  paying.value = true
+  try {
+    uni.showLoading({ title: '创建支付单...' })
+    const payment = await createPayment(orderNo.value)
+    uni.hideLoading()
+
+    uni.showLoading({ title: '支付处理中...' })
+    await simulatePayment(payment.paymentNo, true)
+    uni.hideLoading()
+
+    uni.showToast({ title: '支付成功', icon: 'success' })
+    await loadOrder()
+  } catch (e: any) {
+    uni.hideLoading()
+    console.error('支付失败', e)
+    uni.showToast({ title: e?.message || '支付失败', icon: 'none' })
+  } finally {
+    paying.value = false
+  }
 }
 async function handleCancel() {
   uni.showModal({

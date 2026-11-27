@@ -11,19 +11,23 @@
           </view>
           <text class="redeem-rules" @tap="showRules">使用规则说明</text>
         </view>
-        <view class="redeem-input-row">
-          <input
-            class="redeem-input"
-            placeholder="请输入纸质券码或礼品卡兑换码..."
-            placeholder-class="redeem-placeholder"
-            v-model="couponCode"
-            confirm-type="done"
-            @confirm="redeemCode"
-          />
-          <view class="redeem-btn" @tap="redeemCode">
-            <text class="redeem-btn-text">立即兑换</text>
-          </view>
-        </view>
+        <q-field
+          v-model="couponCode"
+          class="redeem-input-row"
+          placeholder="请输入纸质券码或礼品卡兑换码..."
+          confirm-type="done"
+          bg="#F6F3F2"
+          radius="16rpx"
+          height="88rpx"
+          padding="0 12rpx 0 16rpx"
+          @confirm="redeemCode"
+        >
+          <template #suffix>
+            <view class="redeem-btn" @tap="redeemCode">
+              <text class="redeem-btn-text">立即兑换</text>
+            </view>
+          </template>
+        </q-field>
       </view>
 
       <!-- Tab 切换 -->

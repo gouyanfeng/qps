@@ -108,16 +108,9 @@ $hairline: #ECEFEA;
 .form-fields {
   margin-top: 32rpx;
 }
+/* 输入框外观由 q-field 接管，.field 仅保留布局间距 */
 .field {
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
   margin-bottom: 20rpx;
-  padding: 0 28rpx;
-  height: 100rpx;
-  border-radius: 18rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx -8rpx rgba(30, 122, 51, 0.12), 0 0 0 1rpx $hairline;
 }
 .prefix-text {
   flex-shrink: 0;
@@ -131,16 +124,6 @@ $hairline: #ECEFEA;
   margin-right: 4rpx;
   background: $hairline;
 }
-.input {
-  flex: 1;
-  min-width: 0;
-  font-size: 29rpx;
-  color: $on-surface;
-  letter-spacing: 1rpx;
-}
-.input-placeholder {
-  color: #B7BBB4;
-}
 .code-btn {
   flex-shrink: 0;
   padding: 12rpx 20rpx;
@@ -148,11 +131,6 @@ $hairline: #ECEFEA;
   background: #EAF5EC;
   font-size: 25rpx;
   font-weight: 600;
-  color: $primary;
-}
-.eye {
-  flex-shrink: 0;
-  font-size: 24rpx;
   color: $primary;
 }
 .mode-switch {

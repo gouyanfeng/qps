@@ -39,71 +39,105 @@
 
       <!-- 手机验证码 -->
       <view v-if="activeTab === 'code'" class="form-fields">
-        <view class="field">
-          <q-icon name="send" size="20" color="#1E7A33" />
-          <text class="prefix-text">+86</text>
-          <view class="prefix-divider"></view>
-          <input
-            v-model="phone"
-            class="input"
-            type="number"
-            maxlength="11"
-            placeholder="请输入手机号"
-            placeholder-class="input-placeholder"
-          />
-        </view>
-        <view class="field">
-          <q-icon name="lock-on" size="20" color="#1E7A33" />
-          <input
-            v-model="code"
-            class="input"
-            type="number"
-            maxlength="6"
-            placeholder="请输入验证码"
-            placeholder-class="input-placeholder"
-          />
-          <view class="code-btn" @tap="sendCode">
-            <text>获取验证码</text>
-          </view>
-        </view>
+        <q-field
+          v-model="phone"
+          class="field"
+          type="number"
+          :maxlength="11"
+          placeholder="请输入手机号"
+          shadow
+          bg="#FFFFFF"
+          radius="18rpx"
+          height="100rpx"
+          padding="0 28rpx"
+          font-size="29rpx"
+        >
+          <template #prefix>
+            <q-icon name="send" size="20" color="#1E7A33" />
+            <text class="prefix-text">+86</text>
+            <view class="prefix-divider"></view>
+          </template>
+        </q-field>
+        <q-field
+          v-model="code"
+          class="field"
+          type="number"
+          :maxlength="6"
+          placeholder="请输入验证码"
+          shadow
+          bg="#FFFFFF"
+          radius="18rpx"
+          height="100rpx"
+          padding="0 28rpx"
+          font-size="29rpx"
+        >
+          <template #prefix>
+            <q-icon name="lock-on" size="20" color="#1E7A33" />
+          </template>
+          <template #suffix>
+            <view class="code-btn" @tap="sendCode">
+              <text>获取验证码</text>
+            </view>
+          </template>
+        </q-field>
       </view>
 
       <!-- 账号密码 -->
       <view v-else class="form-fields">
-        <view class="field">
-          <q-icon name="send" size="20" color="#1E7A33" />
-          <text class="prefix-text">+86</text>
-          <view class="prefix-divider"></view>
-          <input
-            v-model="phone"
-            class="input"
-            type="number"
-            maxlength="11"
-            placeholder="请输入手机号"
-            placeholder-class="input-placeholder"
-          />
-        </view>
-        <view class="field">
-          <q-icon name="lock-on" size="20" color="#1E7A33" />
-          <input
-            v-model="password"
-            class="input"
-            :password="!showPassword"
-            :placeholder="isRegister ? '请设置密码（至少 6 位）' : '请输入账号密码'"
-            placeholder-class="input-placeholder"
-          />
-          <text class="eye" @tap="showPassword = !showPassword">{{ showPassword ? '隐藏' : '显示' }}</text>
-        </view>
-        <view v-if="isRegister" class="field">
-          <q-icon name="user-vip" size="20" color="#1E7A33" />
-          <input
-            v-model="nickname"
-            class="input"
-            maxlength="30"
-            placeholder="昵称（选填）"
-            placeholder-class="input-placeholder"
-          />
-        </view>
+        <q-field
+          v-model="phone"
+          class="field"
+          type="number"
+          :maxlength="11"
+          placeholder="请输入手机号"
+          shadow
+          bg="#FFFFFF"
+          radius="18rpx"
+          height="100rpx"
+          padding="0 28rpx"
+          font-size="29rpx"
+        >
+          <template #prefix>
+            <q-icon name="send" size="20" color="#1E7A33" />
+            <text class="prefix-text">+86</text>
+            <view class="prefix-divider"></view>
+          </template>
+        </q-field>
+        <q-field
+          v-model="password"
+          class="field"
+          password
+          show-password-toggle
+          :maxlength="32"
+          :placeholder="isRegister ? '请设置密码（至少 6 位）' : '请输入账号密码'"
+          shadow
+          bg="#FFFFFF"
+          radius="18rpx"
+          height="100rpx"
+          padding="0 28rpx"
+          font-size="29rpx"
+        >
+          <template #prefix>
+            <q-icon name="lock-on" size="20" color="#1E7A33" />
+          </template>
+        </q-field>
+        <q-field
+          v-if="isRegister"
+          v-model="nickname"
+          class="field"
+          :maxlength="30"
+          placeholder="昵称（选填）"
+          shadow
+          bg="#FFFFFF"
+          radius="18rpx"
+          height="100rpx"
+          padding="0 28rpx"
+          font-size="29rpx"
+        >
+          <template #prefix>
+            <q-icon name="user-vip" size="20" color="#1E7A33" />
+          </template>
+        </q-field>
         <view class="mode-switch" @tap="isRegister = !isRegister">
           <text>{{ isRegister ? '已有账号？去登录' : '还没有账号？立即注册' }}</text>
         </view>
@@ -165,7 +199,6 @@ const phone = ref('')
 const code = ref('')
 const password = ref('')
 const nickname = ref('')
-const showPassword = ref(false)
 const agreed = ref(true)
 const submitting = ref(false)
 

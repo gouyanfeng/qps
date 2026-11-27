@@ -9,15 +9,16 @@
       </view>
       <text class="address-text">{{ address.fullAddress }}</text>
       <view class="address-actions">
+        <text class="edit-action" @click.stop="startEdit(address)">编辑</text>
         <text @click.stop="removeAddress(address.id)">删除</text>
         <text class="select-tip">点击选择</text>
       </view>
     </view>
 
     <view class="form-card">
-      <text class="form-title">新增收货地址</text>
-      <input v-model.trim="form.receiverName" class="form-input" placeholder="收货人" />
-      <input v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" />
+      <text class="form-title">{{ editingId ? '编辑收货地址' : '新增收货地址' }}</text>
+      <q-field v-model.trim="form.receiverName" class="form-input" placeholder="收货人" height="78rpx" />
+      <q-field v-model.trim="form.receiverPhone" class="form-input" type="number" placeholder="联系电话" height="78rpx" />
 
       <picker mode="selector" :range="provinceNames" :value="provinceIndex" @change="onProvinceChange">
         <view class="form-picker">
@@ -56,12 +57,17 @@
         </view>
       </picker>
 
-      <input v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" />
+      <q-field v-model.trim="form.detailAddress" class="form-input" placeholder="详细地址" height="78rpx" />
       <view class="default-option" @click="form.isDefault = !form.isDefault">
         <checkbox :checked="form.isDefault" color="#2E7D32" />
         <text>设为默认地址</text>
       </view>
-      <button class="submit-button" :loading="saving" @click="submit">保存地址</button>
+      <view class="form-actions">
+        <button v-if="editingId" class="cancel-button" @click="cancelEdit">取消编辑</button>
+        <button class="submit-button" :loading="saving" @click="submit">
+          {{ editingId ? '保存修改' : '保存地址' }}
+        </button>
+      </view>
     </view>
   </q-page>
 </template>
@@ -69,7 +75,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { deleteAddress, getAddresses, getChinaRegions, saveAddress } from '@/api'
+import { deleteAddress, getAddresses, getChinaRegions, saveAddress, updateAddress } from '@/api'
 import type { ChinaRegionNode, MallAddress } from '@/api'
 import { UnauthorizedError } from '@/utils/http'
 
@@ -77,6 +83,7 @@ const addresses = ref<MallAddress[]>([])
 const saving = ref(false)
 const refreshing = ref(false)
 const regionAll = ref<ChinaRegionNode[]>([])
+const editingId = ref<string | null>(null)
 
 const form = reactive({
   receiverName: '',
@@ -103,6 +110,7 @@ const districtNames = computed(() => districts.value.map(r => r.name))
 const districtIndex = ref(0)
 
 onShow(async () => {
+  cancelEdit()
   await Promise.all([loadAddresses(), loadRegions()])
   syncFormFromIndex()
 })
@@ -142,6 +150,44 @@ async function onRefresh() {
   } finally {
     refreshing.value = false
   }
+}
+
+function resetForm() {
+  Object.assign(form, {
+    receiverName: '',
+    receiverPhone: '',
+    provinceName: '',
+    cityName: '',
+    districtName: '',
+    detailAddress: '',
+    isDefault: false
+  })
+  provinceIndex.value = 0
+  cityIndex.value = 0
+  districtIndex.value = 0
+  editingId.value = null
+  syncFormFromIndex()
+}
+
+function startEdit(address: MallAddress) {
+  editingId.value = address.id
+  provinceIndex.value = Math.max(0, provinces.value.findIndex(r => r.name === address.provinceName))
+  cityIndex.value = Math.max(0, cities.value.findIndex(r => r.name === address.cityName))
+  districtIndex.value = Math.max(0, districts.value.findIndex(r => r.name === address.districtName))
+  Object.assign(form, {
+    receiverName: address.receiverName,
+    receiverPhone: address.receiverPhone,
+    provinceName: address.provinceName,
+    cityName: address.cityName,
+    districtName: address.districtName,
+    detailAddress: address.detailAddress,
+    isDefault: address.isDefault
+  })
+  uni.showToast({ title: '请修改后保存', icon: 'none' })
+}
+
+function cancelEdit() {
+  resetForm()
 }
 
 function selectAddress(address: MallAddress) {
@@ -192,31 +238,25 @@ async function submit() {
   if (!form.districtName) { uni.showToast({ title: '请选择区县', icon: 'none' }); return }
   if (!form.detailAddress) { uni.showToast({ title: '请填写详细地址', icon: 'none' }); return }
   saving.value = true
+  const isEdit = !!editingId.value
   try {
-    const saved = await saveAddress({ ...form })
-    // 从结算页「新增收货地址」进入时回写新地址 ID，返回结算页后可自动选中
-    const savedId = typeof saved === 'string' ? saved : ''
-    if (savedId && uni.getStorageSync('qps_checkout_add_address')) {
-      uni.setStorageSync('qps_checkout_address_id', savedId)
+    if (isEdit) {
+      await updateAddress(editingId.value!, { ...form })
+    } else {
+      const saved = await saveAddress({ ...form })
+      // 从结算页「新增收货地址」进入时回写新地址 ID，返回结算页后可自动选中
+      const savedId = typeof saved === 'string' ? saved : ''
+      if (savedId && uni.getStorageSync('qps_checkout_add_address')) {
+        uni.setStorageSync('qps_checkout_address_id', savedId)
+      }
     }
-    Object.assign(form, {
-      receiverName: '',
-      receiverPhone: '',
-      provinceName: '',
-      cityName: '',
-      districtName: '',
-      detailAddress: '',
-      isDefault: false
-    })
-    provinceIndex.value = 0
-    cityIndex.value = 0
-    districtIndex.value = 0
+    resetForm()
     await loadAddresses()
-    uni.showToast({ title: '地址已保存', icon: 'success' })
+    uni.showToast({ title: isEdit ? '修改成功' : '地址已保存', icon: 'success' })
   } catch (error) {
     console.error('保存收货地址失败', error)
     if (error instanceof UnauthorizedError) return
-    uni.showToast({ title: '地址保存失败', icon: 'none' })
+    uni.showToast({ title: isEdit ? '修改失败' : '地址保存失败', icon: 'none' })
   } finally {
     saving.value = false
   }

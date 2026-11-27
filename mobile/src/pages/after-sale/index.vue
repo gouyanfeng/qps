@@ -34,11 +34,14 @@
             <text class="form-label">快递公司</text>
             <text class="form-hint">必填</text>
           </view>
-          <input
+          <q-field
             v-model="expressCompany"
-            class="text-input"
             placeholder="如：顺丰速运"
-            placeholder-class="input-placeholder"
+            bg="#FAFAF8"
+            radius="12rpx"
+            height="84rpx"
+            padding="0 18rpx"
+            font-size="26rpx"
             :maxlength="50"
           />
         </view>
@@ -48,11 +51,14 @@
             <text class="form-label">快递单号</text>
             <text class="form-hint">必填</text>
           </view>
-          <input
+          <q-field
             v-model="trackingNo"
-            class="text-input"
             placeholder="请输入寄回快递单号"
-            placeholder-class="input-placeholder"
+            bg="#FAFAF8"
+            radius="12rpx"
+            height="84rpx"
+            padding="0 18rpx"
+            font-size="26rpx"
             :maxlength="64"
           />
         </view>

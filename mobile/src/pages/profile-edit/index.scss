@@ -74,16 +74,7 @@
   font-size: 22rpx;
 }
 
-.form-input {
-  flex: 1;
-  min-width: 0;
-  height: 72rpx;
-  padding: 0 16rpx;
-  background: #F7F6F2;
-  border-radius: 10rpx;
-  font-size: 24rpx;
-  text-align: right;
-}
+/* 昵称输入框外观由 q-field 接管（右对齐） */
 
 .form-value {
   color: #1B1C1C;

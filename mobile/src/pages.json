@@ -36,6 +36,20 @@
 			}
 		},
 		{
+			"path": "pages/password/index",
+			"style": {
+				"navigationBarTitleText": "修改密码",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/points/index",
+			"style": {
+				"navigationBarTitleText": "积分明细",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/product-detail/index",
 			"style": {
 				"navigationBarTitleText": "商品详情",

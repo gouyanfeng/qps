@@ -10,40 +10,10 @@ $price: #8B5000;
   background: var(--page-bg);
 }
 
-/* ============ 顶栏搜索框 ============ */
+/* ============ 顶栏搜索框（样式由 q-search-bar 通过 props 接管） ============ */
 .search-box {
   flex: 1;
   min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-  height: 62rpx;
-  padding: 0 18rpx;
-  background: #F5F3ED;
-  border-radius: 20rpx;
-}
-
-.search-input {
-  flex: 1;
-  min-width: 0;
-  font-size: 24rpx;
-  color: $on-surface;
-}
-
-.search-placeholder {
-  color: $outline;
-  font-size: 24rpx;
-}
-
-.clear-btn {
-  width: 30rpx;
-  height: 30rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(112, 122, 108, 0.35);
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .search-btn {

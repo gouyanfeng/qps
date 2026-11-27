@@ -46,7 +46,8 @@ public class MallOrderController : ControllerBase
     public async Task<ActionResult<PaginationResponse<MallOrderDto>>> GetMyOrders(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] string? keyword = null)
     {
         var memberId = _currentUser.GetUserId();
         var query = new GetMallOrdersQuery
@@ -54,7 +55,8 @@ public class MallOrderController : ControllerBase
             Page = page,
             PageSize = pageSize,
             MemberId = memberId,
-            Status = status
+            Status = status,
+            Keyword = keyword
         };
         return Ok(await _mediator.Send(query));
     }
