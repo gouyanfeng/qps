@@ -1,18 +1,21 @@
 .mall-dashboard {
-  min-height: calc(100vh - 96px);
-  padding: 18px 20px 28px;
+  height: calc(100vh - 120px);
+  padding: 16px 20px;
   background: var(--el-bg-color-page);
+  overflow: hidden;
 }
 
 .dashboard-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-height: 420px;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
 }
 
 .section-heading {
   display: flex;
+  flex: none;
   align-items: baseline;
   gap: 10px;
 
@@ -31,12 +34,16 @@
 
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  flex: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
 }
 
 .chart-grid :deep(.chart-block) {
-  height: 400px;
+  height: auto;
+  min-height: 0;
 }
 
 .chart-grid :deep(.chart) {
@@ -49,8 +56,25 @@
   flex: 1;
 }
 
+@media (max-width: 1200px) {
+  .chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
+  .mall-dashboard {
+    height: auto;
+    overflow: visible;
+  }
+
   .chart-grid {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .chart-grid :deep(.chart-block) {
+    height: 320px;
   }
 }
