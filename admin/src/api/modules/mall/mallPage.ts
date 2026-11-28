@@ -17,7 +17,7 @@ export const mallPageApi = {
     return http.delete(`/admin/mall/pages/${id}`);
   },
   changeStatus: (id: string, isActive: boolean) => {
-    return http.patch<any>(`/admin/mall/pages/${id}/status`, null, { params: { isActive } });
+    return http.put<any>(`/admin/mall/pages/${id}/status`, null, { params: { isActive } });
   }
 };
 
