@@ -17,7 +17,7 @@ export const mallBannerApi = {
     return http.delete(`/admin/mall/banners/${id}`);
   },
   changeStatus: (id: string, isActive: boolean) => {
-    return http.patch<any>(`/admin/mall/banners/${id}/status`, null, { params: { isActive } });
+    return http.put<any>(`/admin/mall/banners/${id}/status`, null, { params: { isActive } });
   },
   batchSort: (items: any[]) => {
     return http.post<any>("/admin/mall/banners/batch-sort", { items });

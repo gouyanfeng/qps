@@ -17,10 +17,10 @@ export const mallNoticeApi = {
     return http.delete(`/admin/mall/notices/${id}`);
   },
   changeStatus: (id: string, isActive: boolean) => {
-    return http.patch<any>(`/admin/mall/notices/${id}/status`, null, { params: { isActive } });
+    return http.put<any>(`/admin/mall/notices/${id}/status`, null, { params: { isActive } });
   },
   setTop: (id: string, isTop: boolean) => {
-    return http.patch<any>(`/admin/mall/notices/${id}/top`, null, { params: { isTop } });
+    return http.put<any>(`/admin/mall/notices/${id}/top`, null, { params: { isTop } });
   }
 };
 

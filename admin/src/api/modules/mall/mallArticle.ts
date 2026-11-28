@@ -17,13 +17,13 @@ export const mallArticleApi = {
     return http.delete(`/admin/mall/articles/${id}`);
   },
   publish: (id: string) => {
-    return http.patch<any>(`/admin/mall/articles/${id}/publish`);
+    return http.put<any>(`/admin/mall/articles/${id}/publish`);
   },
   unpublish: (id: string) => {
-    return http.patch<any>(`/admin/mall/articles/${id}/unpublish`);
+    return http.put<any>(`/admin/mall/articles/${id}/unpublish`);
   },
   setTop: (id: string, isTop: boolean) => {
-    return http.patch<any>(`/admin/mall/articles/${id}/top`, null, { params: { isTop } });
+    return http.put<any>(`/admin/mall/articles/${id}/top`, null, { params: { isTop } });
   }
 };
 
